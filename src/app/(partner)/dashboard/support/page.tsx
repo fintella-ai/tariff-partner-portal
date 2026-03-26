@@ -1,0 +1,248 @@
+"use client";
+
+import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useDevice } from "@/lib/useDevice";
+import { FIRM_SHORT, FIRM_PHONE, TICKET_CATEGORIES } from "@/lib/constants";
+
+type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
+
+interface DemoTicket {
+  id: string;
+  subject: string;
+  category: string;
+  status: TicketStatus;
+  createdAt: string;
+  lastReply: string;
+  messages: number;
+}
+
+const DEMO_TICKETS: DemoTicket[] = [
+  { id: "t1", subject: "Commission not showing for Pacific Textile Group", category: "Commission Question", status: "in_progress", createdAt: "2025-03-18", lastReply: "2025-03-19", messages: 3 },
+  { id: "t2", subject: "Cannot access referral link page on mobile", category: "Tech Error / Bug", status: "resolved", createdAt: "2025-03-10", lastReply: "2025-03-12", messages: 5 },
+];
+
+const STATUS_STYLES: Record<TicketStatus, { bg: string; text: string; label: string }> = {
+  open: { bg: "bg-blue-500/10 border-blue-500/20", text: "text-blue-400", label: "Open" },
+  in_progress: { bg: "bg-yellow-500/10 border-yellow-500/20", text: "text-yellow-400", label: "In Progress" },
+  resolved: { bg: "bg-green-500/10 border-green-500/20", text: "text-green-400", label: "Resolved" },
+  closed: { bg: "bg-white/5 border-white/10", text: "text-white/40", label: "Closed" },
+};
+
+export default function SupportPage() {
+  const { data: session } = useSession();
+  const device = useDevice();
+  const [view, setView] = useState<"list" | "new">("list");
+  const [tickets] = useState<DemoTicket[]>(DEMO_TICKETS);
+
+  // New ticket form
+  const [subject, setSubject] = useState("");
+  const [category, setCategory] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function validate(): boolean {
+    const e: Record<string, string> = {};
+    if (!subject.trim()) e.subject = "Subject is required";
+    if (!category) e.category = "Please select a category";
+    if (!message.trim()) e.message = "Please describe your issue";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  async function handleSubmit(ev: React.FormEvent) {
+    ev.preventDefault();
+    if (!validate()) return;
+    setSubmitting(true);
+    // Simulate API call
+    await new Promise((r) => setTimeout(r, 1000));
+    setSubmitting(false);
+    setSubmitted(true);
+  }
+
+  function resetForm() {
+    setSubject("");
+    setCategory("");
+    setMessage("");
+    setErrors({});
+    setSubmitted(false);
+    setView("list");
+  }
+
+  const inputClass = "w-full bg-white/5 border border-white/[0.12] rounded-lg px-4 py-3 text-white font-body text-sm outline-none focus:border-brand-gold/40 transition-colors placeholder:text-white/30";
+  const labelClass = "font-body text-[11px] tracking-[1px] uppercase text-white/50 mb-2 block";
+
+  return (
+    <div>
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h2 className={`font-display ${device.isMobile ? "text-lg" : "text-[22px]"} font-bold mb-1.5`}>
+            Support Center
+          </h2>
+          <p className="font-body text-[13px] text-white/40">
+            Submit tickets, ask questions, or report issues. Call {FIRM_PHONE} for urgent help.
+          </p>
+        </div>
+        {view === "list" && (
+          <button
+            onClick={() => setView("new")}
+            className="btn-gold text-[12px] px-4 py-2.5 shrink-0"
+          >
+            + New Ticket
+          </button>
+        )}
+      </div>
+
+      {/* ═══ NEW TICKET FORM ═══ */}
+      {view === "new" && !submitted && (
+        <div className={`card ${device.cardPadding}`}>
+          <div className="flex items-center justify-between mb-5">
+            <div className="font-body font-semibold text-sm">Submit a Support Ticket</div>
+            <button onClick={() => setView("list")} className="font-body text-[11px] text-white/40 hover:text-white/60 transition-colors">
+              ← Back to Tickets
+            </button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2"} gap-4 mb-4`}>
+              <div>
+                <label className={labelClass}>Subject *</label>
+                <input
+                  className={inputClass}
+                  placeholder="Brief description of your issue"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                />
+                {errors.subject && <div className="font-body text-[11px] text-red-400 mt-1">{errors.subject}</div>}
+              </div>
+              <div>
+                <label className={labelClass}>Category *</label>
+                <select
+                  className={inputClass}
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  <option value="">Select a category...</option>
+                  {TICKET_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                {errors.category && <div className="font-body text-[11px] text-red-400 mt-1">{errors.category}</div>}
+              </div>
+            </div>
+            <div className="mb-5">
+              <label className={labelClass}>Describe your issue *</label>
+              <textarea
+                className={`${inputClass} min-h-[140px] resize-y`}
+                placeholder="Please provide as much detail as possible..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+              {errors.message && <div className="font-body text-[11px] text-red-400 mt-1">{errors.message}</div>}
+            </div>
+            <button type="submit" disabled={submitting} className="btn-gold w-full">
+              {submitting ? "Submitting..." : "Submit Ticket"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* ═══ TICKET SUBMITTED ═══ */}
+      {view === "new" && submitted && (
+        <div className={`card ${device.cardPadding} text-center py-12`}>
+          <div className="w-16 h-16 rounded-full bg-green-500/15 border border-green-500/25 flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">✓</span>
+          </div>
+          <div className="font-display text-xl font-bold text-white mb-2">Ticket Submitted</div>
+          <p className="font-body text-[13px] text-white/50 mb-6 max-w-md mx-auto">
+            Our support team will review your ticket and respond shortly. You&apos;ll receive a notification when there&apos;s a reply.
+          </p>
+          <button onClick={resetForm} className="btn-gold text-[12px] px-6 py-2.5">
+            Back to Tickets
+          </button>
+        </div>
+      )}
+
+      {/* ═══ TICKET LIST ═══ */}
+      {view === "list" && (
+        <div className="card">
+          <div className="px-4 sm:px-6 py-4 border-b border-white/[0.06]">
+            <div className="font-body font-semibold text-sm">Your Tickets ({tickets.length})</div>
+          </div>
+
+          {tickets.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="font-body text-sm text-white/35 mb-3">No support tickets yet.</div>
+              <button onClick={() => setView("new")} className="font-body text-[12px] text-brand-gold hover:text-brand-gold/80 transition-colors">
+                Submit your first ticket →
+              </button>
+            </div>
+          ) : device.isMobile ? (
+            <div>
+              {tickets.map((t) => {
+                const s = STATUS_STYLES[t.status];
+                return (
+                  <div key={t.id} className="px-4 py-4 border-b border-white/[0.04] last:border-b-0">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="font-body text-[13px] font-medium text-white leading-snug flex-1">
+                        {t.subject}
+                      </div>
+                      <span className={`${s.bg} ${s.text} border rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase shrink-0`}>
+                        {s.label}
+                      </span>
+                    </div>
+                    <div className="font-body text-[11px] text-white/30 mb-1">{t.category}</div>
+                    <div className="flex justify-between items-center">
+                      <div className="font-body text-[10px] text-white/25">
+                        Opened {new Date(t.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {t.messages} messages
+                      </div>
+                      <button className="font-body text-[11px] text-brand-gold/70 hover:text-brand-gold transition-colors">
+                        View →
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div>
+              <div className="grid grid-cols-[2fr_1fr_0.8fr_0.8fr_0.5fr] gap-4 px-6 py-3 border-b border-white/[0.06]">
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">Subject</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">Category</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">Status</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">Last Activity</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35 text-right">Action</div>
+              </div>
+              {tickets.map((t) => {
+                const s = STATUS_STYLES[t.status];
+                return (
+                  <div key={t.id} className="grid grid-cols-[2fr_1fr_0.8fr_0.8fr_0.5fr] gap-4 px-6 py-4 border-b border-white/[0.04] last:border-b-0 items-center hover:bg-white/[0.02] transition-colors">
+                    <div>
+                      <div className="font-body text-[13px] text-white/80 truncate">{t.subject}</div>
+                      <div className="font-body text-[10px] text-white/25 mt-0.5">{t.messages} messages</div>
+                    </div>
+                    <div className="font-body text-[12px] text-white/50">{t.category}</div>
+                    <div>
+                      <span className={`${s.bg} ${s.text} border rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase`}>
+                        {s.label}
+                      </span>
+                    </div>
+                    <div className="font-body text-[12px] text-white/40">
+                      {new Date(t.lastReply).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </div>
+                    <div className="text-right">
+                      <button className="font-body text-[11px] text-brand-gold/70 hover:text-brand-gold transition-colors">
+                        View →
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

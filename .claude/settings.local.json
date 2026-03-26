@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --no-import-alias --use-npm)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npm ls:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(wc -l \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(partner\\)/dashboard/submit-lead/page.tsx\" \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(partner\\)/dashboard/referral-links/page.tsx\" \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(partner\\)/dashboard/deals/page.tsx\" \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(partner\\)/dashboard/downline/page.tsx\")",
+      "Bash(wc -l \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(partner\\)/dashboard/documents/page.tsx\")",
+      "Bash(wc -l \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(admin\\)/admin/partners/page.tsx\" \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(admin\\)/admin/commissions/page.tsx\" \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(admin\\)/admin/support/page.tsx\" \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(admin\\)/admin/documents/page.tsx\" \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(admin\\)/admin/payouts/page.tsx\")",
+      "Bash(npx tsx:*)",
+      "Bash(wc -l \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(admin\\)/admin/partners/[id]/page.tsx\" \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(admin\\)/admin/communications/page.tsx\")",
+      "Bash(ls -la \"C:\\\\Users\\\\john\\\\Documents\\\\tariff-partner-portal\\\\.claude\"\" 2>/dev/null || echo \"Directory does not exist or cannot be accessed \")",
+      "Bash(wc -l \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(partner\\)/dashboard/home/page.tsx\")"
+    ]
+  }
+}
