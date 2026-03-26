@@ -13,7 +13,12 @@
       "Bash(npx tsx:*)",
       "Bash(wc -l \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(admin\\)/admin/partners/[id]/page.tsx\" \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(admin\\)/admin/communications/page.tsx\")",
       "Bash(ls -la \"C:\\\\Users\\\\john\\\\Documents\\\\tariff-partner-portal\\\\.claude\"\" 2>/dev/null || echo \"Directory does not exist or cannot be accessed \")",
-      "Bash(wc -l \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(partner\\)/dashboard/home/page.tsx\")"
+      "Bash(wc -l \"C:/Users/john/Documents/tariff-partner-portal/src/app/\\(partner\\)/dashboard/home/page.tsx\")",
+      "Bash(winget install:*)",
+      "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH\")",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(npx vercel:*)"
     ]
   }
 }
