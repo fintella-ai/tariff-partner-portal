@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+@layer base {
+  body {
+    @apply bg-brand-dark text-white font-body;
+  }
+}
+
+@layer components {
+  .gold-gradient {
+    background: linear-gradient(90deg, #c4a050, #f0d070, #c4a050);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 4s linear infinite;
+  }
+
+  .btn-gold {
+    @apply bg-gradient-to-br from-brand-gold to-[#e8c060] text-brand-dark font-body font-bold text-sm tracking-wider uppercase px-8 py-4 rounded-md cursor-pointer transition-all duration-300 border-none;
+  }
+  .btn-gold:hover {
+    @apply -translate-y-0.5;
+    box-shadow: 0 8px 28px rgba(196, 160, 80, 0.35);
+  }
+  .btn-gold:active {
+    @apply scale-[0.98];
+  }
+  .btn-gold:disabled {
+    @apply opacity-50 cursor-not-allowed translate-y-0;
+  }
+
+  .stat-card {
+    @apply p-5 border border-brand-gold/10 rounded-xl bg-brand-gold/[0.025] transition-all duration-300;
+  }
+  .stat-card:hover {
+    @apply border-brand-gold/30 bg-brand-gold/[0.05];
+  }
+
+  .card {
+    @apply bg-white/[0.02] border border-white/[0.07] rounded-xl overflow-hidden;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease forwards;
+}
+
+.animate-fade-up-delay {
+  animation: fadeUp 0.6s 0.08s ease both;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(196, 160, 80, 0.2); border-radius: 2px; }
+
+/* Spinner */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(196, 160, 80, 0.2);
+  border-top-color: #c4a050;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}

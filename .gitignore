@@ -1,0 +1,25 @@
+node_modules
+.next
+out
+
+# Environment
+.env
+.env.local
+.env.production.local
+
+# Database
+prisma/dev.db
+prisma/dev.db-journal
+
+# Prisma
+/generated/prisma
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+.vercel

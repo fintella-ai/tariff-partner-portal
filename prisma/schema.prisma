@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ADMIN USERS ─────────────────────────────────────────────────────────────
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         String   @default("admin") // admin, super_admin
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+}
+
+// ─── PARTNER COMMISSION OVERRIDES ────────────────────────────────────────────
+model PartnerOverride {
+  id          String   @id @default(cuid())
+  partnerCode String   @unique
+  l1Rate      Float?   // null = use default
+  l2Rate      Float?
+  l3Rate      Float?   // 0 or null = L3 disabled
+  l3Enabled   Boolean  @default(false)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── PARTNER PROFILE (address, payout info) ──────────────────────────────────
+model PartnerProfile {
+  id              String   @id @default(cuid())
+  partnerCode     String   @unique
+  // Address
+  street          String?
+  city            String?
+  state           String?
+  zip             String?
+  country         String   @default("US")
+  phone           String?
+  // Payout info (encrypted)
+  payoutMethod    String?  // "ach", "wire", "paypal", "check"
+  bankName        String?
+  routingNumber   String?  // encrypted
+  accountNumber   String?  // encrypted
+  paypalEmail     String?
+  // Status
+  isBlocked       Boolean  @default(false)
+  blockReason     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ─── DOCUMENTS ───────────────────────────────────────────────────────────────
+model Document {
+  id          String   @id @default(cuid())
+  partnerCode String
+  docType     String   // "w9", "tax_form", "agreement", "other"
+  fileName    String
+  fileUrl     String
+  fileSize    Int?
+  status      String   @default("uploaded") // uploaded, under_review, approved, rejected, expired
+  uploadedBy  String   // "partner" or admin user id
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  notes       String?
+  required    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── PARTNERSHIP AGREEMENTS ──────────────────────────────────────────────────
+model PartnershipAgreement {
+  id                  String   @id @default(cuid())
+  partnerCode         String
+  version             Int      @default(1)
+  signwellDocumentId  String?
+  status              String   @default("not_sent") // not_sent, pending, signed, amended
+  sentDate            DateTime?
+  signedDate          DateTime?
+  documentUrl         String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([partnerCode])
+}
+
+// ─── SUPPORT TICKETS ─────────────────────────────────────────────────────────
+model SupportTicket {
+  id          String   @id @default(cuid())
+  partnerCode String
+  subject     String
+  category    String   // "deal_tracking", "tech_error", "portal_question", "commission_question", "other"
+  status      String   @default("open") // open, in_progress, resolved, closed
+  priority    String   @default("normal") // low, normal, high, urgent
+  adminNotes  String?  // internal only
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages TicketMessage[]
+
+  @@index([partnerCode])
+  @@index([status])
+}
+
+model TicketMessage {
+  id         String   @id @default(cuid())
+  ticketId   String
+  authorType String   // "partner" or "admin"
+  authorId   String   // partnerCode or admin userId
+  content    String
+  createdAt  DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+// ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+model Notification {
+  id          String   @id @default(cuid())
+  recipientType String // "partner" or "admin"
+  recipientId   String // partnerCode or admin userId
+  type        String   // "deal_update", "commission_paid", "document_request", "ticket_response", etc.
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  link        String?  // optional deep link
+  createdAt   DateTime @default(now())
+
+  @@index([recipientId, read])
+}
+
+// ─── COMMISSION LEDGER ───────────────────────────────────────────────────────
+model CommissionLedger {
+  id             String   @id @default(cuid())
+  partnerCode    String
+  dealId         String
+  dealName       String?
+  tier           String   // "l1", "l2", "l3"
+  amount         Float
+  status         String   @default("pending") // pending, due, paid
+  periodMonth    String?  // "2025-03" format
+  payoutDate     DateTime?
+  payoutMethod   String?
+  payoutReference String?
+  batchId        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  batch PayoutBatch? @relation(fields: [batchId], references: [id])
+
+  @@index([partnerCode])
+  @@index([status])
+  @@index([batchId])
+}
+
+// ─── PAYOUT BATCHES ──────────────────────────────────────────────────────────
+model PayoutBatch {
+  id            String   @id @default(cuid())
+  totalAmount   Float
+  partnerCount  Int
+  status        String   @default("draft") // draft, approved, processed
+  processedDate DateTime?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  commissions CommissionLedger[]
+}
+
+// ─── TRAINING MODULES ────────────────────────────────────────────────────────
+model TrainingModule {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   // "onboarding", "sales", "product", "tools"
+  content     String?  // rich text / markdown
+  videoUrl    String?
+  duration    String?  // e.g., "12 min", "18 min"
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TrainingProgress {
+  id          String   @id @default(cuid())
+  partnerCode String
+  moduleId    String
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@unique([partnerCode, moduleId])
+}
+
+// ─── TRAINING RESOURCES ──────────────────────────────────────────────────────
+model TrainingResource {
+  id          String   @id @default(cuid())
+  moduleId    String?  // null = general resource not tied to a module
+  title       String
+  description String?
+  fileUrl     String
+  fileType    String   // "pdf", "checklist", "template", "guide"
+  fileSize    String?  // "1.2 MB"
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── FREQUENTLY ASKED QUESTIONS ──────────────────────────────────────────────
+model FAQ {
+  id          String   @id @default(cuid())
+  question    String
+  answer      String   // markdown
+  category    String   @default("general") // "general", "commissions", "leads", "technical"
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── CONFERENCE SCHEDULE ─────────────────────────────────────────────────────
+model ConferenceSchedule {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  embedUrl    String?  // Zoom/Jitsi/Meet embed URL
+  joinUrl     String?  // Direct join link
+  schedule    String?  // "Weekly, Thursdays at 2pm ET"
+  nextCall    DateTime?
+  recordingUrl String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
