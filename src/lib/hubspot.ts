@@ -208,6 +208,7 @@ export function getDemoDownlineDeals() {
         product_type: "ieepa",
         createdate: "2025-03-14",
         submitting_partner: "PTNSC8K2F",
+        submitting_partner_name: "Sarah Chen",
       },
     },
     {
@@ -222,6 +223,7 @@ export function getDemoDownlineDeals() {
         product_type: "ieepa",
         createdate: "2025-03-16",
         submitting_partner: "PTNMT3X7Q",
+        submitting_partner_name: "Mike Torres",
       },
     },
   ];

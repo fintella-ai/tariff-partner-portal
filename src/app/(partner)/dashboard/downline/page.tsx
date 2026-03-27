@@ -5,6 +5,7 @@ import { useDevice } from "@/lib/useDevice";
 import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { fmt$, fmtDate } from "@/lib/format";
+import { DEFAULT_L2_RATE, DEFAULT_FIRM_FEE_RATE } from "@/lib/constants";
 import { getDemoDownlinePartners, getDemoDownlineDeals } from "@/lib/hubspot";
 
 export default function DownlinePage() {
@@ -22,11 +23,18 @@ export default function DownlinePage() {
   // Build a map from partner code → partner name for display in downline deals
   const partnerNameMap: Record<string, string> = {};
   for (const partner of partners) {
-    const p = partner.properties;
-    if (p.partner_code) {
-      partnerNameMap[p.partner_code] = `${p.firstname} ${p.lastname}`.trim();
+    const pp = partner.properties;
+    if (pp.partner_code) {
+      partnerNameMap[pp.partner_code] = `${pp.firstname} ${pp.lastname}`.trim();
     }
   }
+
+  // Resolve partner name: prefer submitting_partner_name, then map lookup, then code
+  const resolvePartnerName = (p: any) =>
+    p.submitting_partner_name || partnerNameMap[p.submitting_partner] || p.submitting_partner;
+
+  // L2 commission percentage display
+  const l2Pct = `${(DEFAULT_L2_RATE * 100).toFixed(0)}%`;
 
   if (loading) {
     return (
@@ -199,15 +207,23 @@ export default function DownlinePage() {
                     <StageBadge stage={p.dealstage} />
                   </div>
                   <div className="font-body text-[11px] text-white/30 mb-3">
-                    Via {partnerNameMap[p.submitting_partner] || p.submitting_partner} · {fmtDate(p.createdate)}
+                    Via {resolvePartnerName(p)} · {fmtDate(p.createdate)}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <div>
                       <div className="font-body text-[9px] text-white/30 tracking-wider uppercase mb-0.5">
                         Est. Refund
                       </div>
                       <div className="font-body text-[13px] text-white/80">
                         {fmt$(p.estimated_refund_amount)}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-body text-[9px] text-white/30 tracking-wider uppercase mb-0.5">
+                        L2 Rate
+                      </div>
+                      <div className="font-body text-[13px] text-purple-400 font-semibold">
+                        {l2Pct}
                       </div>
                     </div>
                     <div className="text-right">
@@ -230,7 +246,7 @@ export default function DownlinePage() {
           /* ── Desktop/Tablet: Grid table ── */
           <div>
             {/* Header */}
-            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_0.7fr] gap-4 px-6 py-3 border-b border-white/[0.06]">
+            <div className="grid grid-cols-[2fr_1fr_1fr_0.6fr_1fr_0.7fr] gap-4 px-6 py-3 border-b border-white/[0.06]">
               <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
                 Client / Deal
               </div>
@@ -239,6 +255,9 @@ export default function DownlinePage() {
               </div>
               <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
                 Est. Refund
+              </div>
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35 text-center">
+                L2 %
               </div>
               <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
                 L2 Commission
@@ -253,15 +272,15 @@ export default function DownlinePage() {
               return (
                 <div
                   key={deal.id}
-                  className="grid grid-cols-[2fr_1fr_1fr_1fr_0.7fr] gap-4 px-6 py-4 border-b border-white/[0.04] last:border-b-0 items-center hover:bg-white/[0.02] transition-colors"
+                  className="grid grid-cols-[2fr_1fr_1fr_0.6fr_1fr_0.7fr] gap-4 px-6 py-4 border-b border-white/[0.04] last:border-b-0 items-center hover:bg-white/[0.02] transition-colors"
                 >
-                  {/* Col 1: Deal name */}
+                  {/* Col 1: Deal name + partner name */}
                   <div>
                     <div className="font-body text-[13px] font-medium text-white truncate">
                       {p.dealname}
                     </div>
                     <div className="font-body text-[11px] text-white/30 mt-0.5 truncate">
-                      Via {partnerNameMap[p.submitting_partner] || p.submitting_partner} · {fmtDate(p.createdate)}
+                      Via {resolvePartnerName(p)} · {fmtDate(p.createdate)}
                     </div>
                   </div>
                   {/* Col 2: Stage */}
@@ -272,11 +291,17 @@ export default function DownlinePage() {
                   <div className="font-body text-[13px] text-white/80">
                     {fmt$(p.estimated_refund_amount)}
                   </div>
-                  {/* Col 4: L2 Commission */}
+                  {/* Col 4: L2 % */}
+                  <div className="text-center">
+                    <span className="font-body text-[12px] text-purple-400 font-semibold bg-purple-500/10 border border-purple-500/20 rounded px-2 py-0.5">
+                      {l2Pct}
+                    </span>
+                  </div>
+                  {/* Col 5: L2 Commission */}
                   <div className="font-display text-[15px] font-semibold text-brand-gold">
                     {fmt$(p.l2_commission_amount)}
                   </div>
-                  {/* Col 5: Status */}
+                  {/* Col 6: Status */}
                   <div className="text-right">
                     <StatusBadge status={p.l2_commission_status} />
                   </div>
