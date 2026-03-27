@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type DocEntry = {
   id: string;
@@ -151,6 +151,23 @@ export default function DocumentTrackingPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* ── SignWell Agreement Quick Actions ─────────────────────────────── */}
+      <div className="card p-4 sm:p-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="font-body font-semibold text-sm">Partnership Agreements (SignWell)</div>
+            <div className="font-body text-[11px] text-white/35 mt-0.5">Send or resend agreements for e-signing</div>
+          </div>
+          <span className="font-body text-[10px] text-white/30 border border-white/10 rounded px-2 py-1 uppercase tracking-wider">
+            {process.env.NEXT_PUBLIC_SIGNWELL_CONFIGURED === "true" ? "Live" : "Demo Mode"}
+          </span>
+        </div>
+        <div className="font-body text-[12px] text-white/40 bg-white/[0.03] border border-white/[0.06] rounded-lg p-3">
+          To send a partnership agreement, go to <strong className="text-white/60">Partners &rarr; View Partner &rarr; Documents</strong> section, or use the admin API endpoint <code className="text-brand-gold/60 bg-brand-gold/10 px-1 rounded text-[11px]">POST /api/admin/agreement/[partnerCode]</code>.
+          {" "}Webhook callbacks from SignWell automatically update agreement status when signed.
+        </div>
       </div>
 
       {/* Tabs */}

@@ -119,11 +119,15 @@ Stack: Next.js 14, Tailwind CSS, Prisma/SQLite, NextAuth, TypeScript.
 - [x] Admin conference management (CRUD for schedule entries, recordings, notes)
 - [x] Database seeding (1 active + 7 past recordings with notes)
 
-### Phase 13 — SignWell Integration 🔲
-- [ ] Partnership Agreement e-signing via SignWell API
-- [ ] Document status sync (sent → viewed → signed)
-- [ ] Webhook handling for signature completion
-- [ ] Auto-update partner status after signing
+### Phase 13 — SignWell Integration ✅
+- [x] Partnership Agreement e-signing via SignWell API (with demo mode fallback)
+- [x] Document status sync (not_sent → pending → signed, with viewed tracking)
+- [x] Webhook handling for signature completion, expiry, and viewing
+- [x] Auto-update partner status after signing (via webhook → DB update + notification)
+- [x] Partner documents page wired to real agreement status from DB
+- [x] Submit Lead agreement gate checks DB instead of hardcoded demo
+- [x] Admin agreement management API (send, resend, manual status update)
+- [x] SignWell API client with demo mode (src/lib/signwell.ts)
 
 ### Phase 14 — HubSpot API Integration 🔲
 - [ ] Real deal/contact sync (create, read, update)

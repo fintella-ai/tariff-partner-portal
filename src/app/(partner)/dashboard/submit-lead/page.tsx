@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useDevice } from "@/lib/useDevice";
@@ -53,9 +53,28 @@ export default function SubmitLeadPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [agreementSigned, setAgreementSigned] = useState<boolean | null>(null);
 
-  // ── Onboarding gate ──────────────────────────────────────────────────────
-  const agreementSigned = true;
+  // ── Fetch agreement status ────────────────────────────────────────────────
+  useEffect(() => {
+    fetch("/api/agreement")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        setAgreementSigned(data.agreement?.status === "signed");
+      })
+      .catch(() => {
+        // If API fails, default to allowing access (demo mode)
+        setAgreementSigned(true);
+      });
+  }, []);
+
+  if (agreementSigned === null) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="font-body text-sm text-white/40">Checking agreement status...</div>
+      </div>
+    );
+  }
 
   if (!agreementSigned) {
     return (

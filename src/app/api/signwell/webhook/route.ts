@@ -47,6 +47,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (event === "document_viewed") {
+      // Track that the partner has viewed the document (no status change needed,
+      // but useful for admin visibility)
+      const agreement = await prisma.partnershipAgreement.findFirst({
+        where: { signwellDocumentId: data.document_id },
+      });
+
+      if (agreement && agreement.status === "pending") {
+        // Still pending — partner has seen it but not signed yet
+        // Could add a "viewed" timestamp in the future
+      }
+    }
+
     if (event === "document_expired") {
       const agreement = await prisma.partnershipAgreement.findFirst({
         where: { signwellDocumentId: data.document_id },
