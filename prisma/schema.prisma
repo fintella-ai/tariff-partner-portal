@@ -76,16 +76,17 @@ model Document {
 
 // ─── PARTNERSHIP AGREEMENTS ──────────────────────────────────────────────────
 model PartnershipAgreement {
-  id                  String   @id @default(cuid())
-  partnerCode         String
-  version             Int      @default(1)
-  signwellDocumentId  String?
-  status              String   @default("not_sent") // not_sent, pending, signed, amended
-  sentDate            DateTime?
-  signedDate          DateTime?
-  documentUrl         String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  partnerCode           String
+  version               Int      @default(1)
+  signwellDocumentId    String?
+  embeddedSigningUrl    String?  // SignWell embedded signing URL for in-portal signing
+  status                String   @default("not_sent") // not_sent, pending, signed, amended
+  sentDate              DateTime?
+  signedDate            DateTime?
+  documentUrl           String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   @@index([partnerCode])
 }

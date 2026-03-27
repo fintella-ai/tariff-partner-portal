@@ -33,6 +33,12 @@ interface SignWellDocumentResponse {
   completed_at: string | null;
   original_file_url: string | null;
   completed_pdf_url: string | null;
+  embedded_signing_url?: string;
+  recipients_with_urls?: Array<{
+    id: string;
+    email: string;
+    embedded_signing_url: string;
+  }>;
 }
 
 /**
@@ -48,11 +54,11 @@ export function isSignWellConfigured(): boolean {
  */
 export async function sendForSigning(
   options: SignWellSendOptions
-): Promise<{ documentId: string; status: string }> {
-  // Demo mode — return a mock document ID
+): Promise<{ documentId: string; status: string; embeddedSigningUrl: string | null }> {
+  // Demo mode — return a mock document ID with a demo signing URL
   if (!SIGNWELL_API_KEY) {
     const mockId = `demo-sw-${Date.now()}`;
-    return { documentId: mockId, status: "pending" };
+    return { documentId: mockId, status: "pending", embeddedSigningUrl: null };
   }
 
   const body: Record<string, any> = {
@@ -68,6 +74,8 @@ export async function sendForSigning(
     })),
     reminders: true,
     apply_signing_order: false,
+    embedded_signing: true,
+    embedded_signing_notifications: true,
   };
 
   // Use template or file URL
@@ -92,7 +100,14 @@ export async function sendForSigning(
   }
 
   const doc: SignWellDocumentResponse = await res.json();
-  return { documentId: doc.id, status: "pending" };
+
+  // Extract embedded signing URL for the first recipient
+  const embeddedSigningUrl =
+    doc.recipients_with_urls?.[0]?.embedded_signing_url ||
+    doc.embedded_signing_url ||
+    null;
+
+  return { documentId: doc.id, status: "pending", embeddedSigningUrl };
 }
 
 /**
@@ -125,6 +140,31 @@ export async function getDocumentStatus(
     completedAt: doc.completed_at,
     documentUrl: doc.completed_pdf_url || doc.original_file_url,
   };
+}
+
+/**
+ * Get the embedded signing URL for a specific recipient on a document.
+ */
+export async function getEmbeddedSigningUrl(
+  documentId: string,
+  recipientEmail?: string
+): Promise<string | null> {
+  if (!SIGNWELL_API_KEY) return null;
+
+  const res = await fetch(`${SIGNWELL_API_BASE}/documents/${documentId}`, {
+    headers: { "X-Api-Key": SIGNWELL_API_KEY },
+  });
+
+  if (!res.ok) return null;
+
+  const doc: SignWellDocumentResponse = await res.json();
+
+  if (recipientEmail && doc.recipients_with_urls) {
+    const match = doc.recipients_with_urls.find((r) => r.email === recipientEmail);
+    if (match) return match.embedded_signing_url;
+  }
+
+  return doc.recipients_with_urls?.[0]?.embedded_signing_url || doc.embedded_signing_url || null;
 }
 
 /**

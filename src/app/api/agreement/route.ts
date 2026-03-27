@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendForSigning, isSignWellConfigured } from "@/lib/signwell";
+import { sendForSigning, getEmbeddedSigningUrl, isSignWellConfigured } from "@/lib/signwell";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
 
 /**
@@ -25,6 +25,12 @@ export async function GET(req: NextRequest) {
       orderBy: { version: "desc" },
     });
 
+    // For pending agreements, try to get the embedded signing URL
+    let embeddedSigningUrl = agreement?.embeddedSigningUrl || null;
+    if (agreement?.status === "pending" && !embeddedSigningUrl && agreement.signwellDocumentId) {
+      embeddedSigningUrl = await getEmbeddedSigningUrl(agreement.signwellDocumentId);
+    }
+
     return NextResponse.json({
       agreement: agreement
         ? {
@@ -34,6 +40,7 @@ export async function GET(req: NextRequest) {
             sentDate: agreement.sentDate,
             signedDate: agreement.signedDate,
             documentUrl: agreement.documentUrl,
+            embeddedSigningUrl,
             signwellConfigured: isSignWellConfigured(),
           }
         : null,
@@ -77,12 +84,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (existing?.status === "pending") {
+      // Try to get embedded signing URL if not stored
+      let existingEmbedUrl = existing.embeddedSigningUrl;
+      if (!existingEmbedUrl && existing.signwellDocumentId) {
+        existingEmbedUrl = await getEmbeddedSigningUrl(existing.signwellDocumentId) || null;
+      }
       return NextResponse.json({
         agreement: {
           id: existing.id,
           status: existing.status,
           version: existing.version,
           sentDate: existing.sentDate,
+          embeddedSigningUrl: existingEmbedUrl,
         },
         message: "Agreement already sent for signing",
       });
@@ -95,8 +108,8 @@ export async function POST(req: NextRequest) {
     });
     const nextVersion = (latestVersion?.version || 0) + 1;
 
-    // Send via SignWell
-    const { documentId } = await sendForSigning({
+    // Send via SignWell (with embedded signing enabled)
+    const { documentId, embeddedSigningUrl } = await sendForSigning({
       name: `${FIRM_SHORT} Partnership Agreement — ${partnerName}`,
       subject: `${FIRM_SHORT} Partnership Agreement`,
       message: `Hi ${partnerName}, please review and sign your ${FIRM_NAME} partnership agreement.`,
@@ -116,6 +129,7 @@ export async function POST(req: NextRequest) {
         partnerCode,
         version: nextVersion,
         signwellDocumentId: documentId,
+        embeddedSigningUrl: embeddedSigningUrl || null,
         status: "pending",
         sentDate: new Date(),
       },
@@ -127,6 +141,7 @@ export async function POST(req: NextRequest) {
         status: agreement.status,
         version: agreement.version,
         sentDate: agreement.sentDate,
+        embeddedSigningUrl: embeddedSigningUrl || null,
       },
     }, { status: 201 });
   } catch (err: any) {

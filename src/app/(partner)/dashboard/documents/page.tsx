@@ -43,6 +43,7 @@ interface AgreementData {
   sentDate: string | null;
   signedDate: string | null;
   documentUrl: string | null;
+  embeddedSigningUrl: string | null;
 }
 
 export default function DocumentsPage() {
@@ -53,6 +54,18 @@ export default function DocumentsPage() {
   const [agreementData, setAgreementData] = useState<AgreementData | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showSigningModal, setShowSigningModal] = useState(false);
+
+  // Close modal on ESC
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowSigningModal(false);
+    };
+    if (showSigningModal) {
+      document.addEventListener("keydown", handleEsc);
+      return () => document.removeEventListener("keydown", handleEsc);
+    }
+  }, [showSigningModal]);
 
   // Demo fallback docs
   const requiredDocs: RequiredDoc[] = [
@@ -80,7 +93,7 @@ export default function DocumentsPage() {
   const isSigned = agreementStatus === "signed";
   const isPending = agreementStatus === "pending";
 
-  // Request signing
+  // Request signing — sends agreement then opens embedded signing modal
   const handleSignAgreement = async () => {
     setSending(true);
     try {
@@ -88,12 +101,31 @@ export default function DocumentsPage() {
       if (res.ok) {
         const data = await res.json();
         setAgreementData(data.agreement);
+        // Open embedded signing modal (shows iframe if URL available, demo state otherwise)
+        setShowSigningModal(true);
       }
     } catch {
       // silently fail
     } finally {
       setSending(false);
     }
+  };
+
+  // Open embedded signing for a pending agreement
+  const handleOpenSigning = () => {
+    setShowSigningModal(true);
+  };
+
+  // Called when signing is completed in the embedded modal
+  const handleSigningComplete = () => {
+    setShowSigningModal(false);
+    // Re-fetch agreement status
+    fetch("/api/agreement")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        if (data.agreement) setAgreementData(data.agreement);
+      })
+      .catch(() => {});
   };
 
   if (loading) {
@@ -159,9 +191,20 @@ export default function DocumentsPage() {
                 Agreement Sent — Awaiting Your Signature
               </p>
               <p className="font-body text-xs text-white/50 leading-relaxed">
-                Sent on {fmtDate(agreementData?.sentDate)}. Check your email for the signing link from SignWell.
+                Sent on {fmtDate(agreementData?.sentDate)}.
+                {agreementData?.embeddedSigningUrl
+                  ? " Click below to review and sign right here."
+                  : " Check your email for the signing link from SignWell."}
               </p>
             </div>
+            {agreementData?.embeddedSigningUrl && (
+              <button
+                onClick={handleOpenSigning}
+                className="shrink-0 btn-gold text-[12px] px-5 py-2"
+              >
+                Sign Now
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex items-start gap-4 p-4 bg-yellow-500/[0.06] border border-yellow-500/20 rounded-lg">
@@ -291,6 +334,78 @@ export default function DocumentsPage() {
           </p>
         </div>
       </div>
+
+      {/* ── Embedded Signing Modal ─────────────────────────────────────────── */}
+      {showSigningModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowSigningModal(false)}
+          />
+          {/* Modal */}
+          <div className="relative w-full max-w-4xl mx-4 h-[85vh] flex flex-col bg-brand-dark border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.08] shrink-0">
+              <div>
+                <h3 className="font-display text-sm font-bold">
+                  Sign Partnership Agreement
+                </h3>
+                <p className="font-body text-[11px] text-white/40 mt-0.5">
+                  Review and sign your {FIRM_SHORT} partnership agreement below
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSigningComplete}
+                  className="btn-gold text-[11px] px-4 py-1.5"
+                >
+                  Done Signing
+                </button>
+                <button
+                  onClick={() => setShowSigningModal(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+                >
+                  <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            {/* Signing iframe */}
+            <div className="flex-1 bg-white">
+              {agreementData?.embeddedSigningUrl ? (
+                <iframe
+                  src={agreementData.embeddedSigningUrl}
+                  className="w-full h-full border-0"
+                  title="Sign Partnership Agreement"
+                  allow="camera; microphone"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full bg-brand-dark">
+                  <div className="w-16 h-16 rounded-full bg-brand-gold/10 border border-brand-gold/25 flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                  </div>
+                  <p className="font-display text-sm font-semibold mb-2">Demo Mode</p>
+                  <p className="font-body text-xs text-white/50 text-center max-w-sm leading-relaxed">
+                    In demo mode, the signing document is not available for embedded viewing.
+                    When SignWell is configured with a real API key, the agreement will load
+                    right here for you to review and sign without leaving the portal.
+                  </p>
+                  <button
+                    onClick={handleSigningComplete}
+                    className="btn-gold text-[12px] px-6 py-2.5 mt-5"
+                  >
+                    Complete Demo Signing
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
