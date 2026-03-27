@@ -111,11 +111,13 @@ Stack: Next.js 14, Tailwind CSS, Prisma/SQLite, NextAuth, TypeScript.
 - [x] Admin training management (CRUD for modules, resources, FAQs + progress analytics)
 - [x] Database seeding (8 modules, 5 resources, 10 FAQs)
 
-### Phase 12 — Live Weekly (Conference) Page 🔲
-- [ ] Weekly meeting schedule display
-- [ ] Zoom/Google Meet link integration
-- [ ] Past recordings archive
-- [ ] Meeting notes / summaries
+### Phase 12 — Live Weekly (Conference) Page ✅
+- [x] Weekly meeting schedule display (from DB via ConferenceSchedule model)
+- [x] Zoom/Google Meet link integration (Join Call button, Add to Calendar .ics)
+- [x] Past recordings archive (inline VideoModal + external link fallback)
+- [x] Meeting notes / summaries (expandable notes per recording)
+- [x] Admin conference management (CRUD for schedule entries, recordings, notes)
+- [x] Database seeding (1 active + 7 past recordings with notes)
 
 ### Phase 13 — SignWell Integration 🔲
 - [ ] Partnership Agreement e-signing via SignWell API
@@ -177,4 +179,4 @@ Stack: Next.js 14, Tailwind CSS, Prisma/SQLite, NextAuth, TypeScript.
 
 ---
 
-*Last updated: March 26, 2026*
+*Last updated: March 27, 2026*

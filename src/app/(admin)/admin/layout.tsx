@@ -9,6 +9,7 @@ const ADMIN_NAV_ITEMS = [
   { id: "commissions", href: "/admin/commissions", icon: "\u{1F4B0}", label: "Commissions" },
   { id: "communications", href: "/admin/communications", icon: "\u{1F4E7}", label: "Communications" },
   { id: "training", href: "/admin/training", icon: "\u{1F393}", label: "Training" },
+  { id: "conference", href: "/admin/conference", icon: "\u{1F4F9}", label: "Live Weekly" },
   { id: "documents", href: "/admin/documents", icon: "\u{1F4C4}", label: "Documents" },
   { id: "support", href: "/admin/support", icon: "\u{1F3AB}", label: "Support" },
   { id: "payouts", href: "/admin/payouts", icon: "\u{1F4B3}", label: "Payouts" },

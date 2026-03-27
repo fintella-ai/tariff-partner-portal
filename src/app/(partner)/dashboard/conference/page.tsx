@@ -1,25 +1,140 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useDevice } from "@/lib/useDevice";
 import { FIRM_SHORT } from "@/lib/constants";
+import { fmtDate } from "@/lib/format";
+import VideoModal from "@/components/ui/VideoModal";
 
-const NEXT_CALL = {
+/* ── Types ─────────────────────────────────────────────────────────────── */
+
+interface ConferenceEntry {
+  id: string;
+  title: string;
+  description: string | null;
+  embedUrl: string | null;
+  joinUrl: string | null;
+  recordingUrl: string | null;
+  schedule: string | null;
+  nextCall: string | null;
+  hostName: string | null;
+  duration: string | null;
+  weekNumber: number | null;
+  notes: string | null;
+  isActive: boolean;
+}
+
+/* ── Demo fallback data ────────────────────────────────────────────────── */
+
+const DEMO_ACTIVE: ConferenceEntry = {
+  id: "demo-active",
   title: "Weekly Partner Training & Q&A",
-  date: "Thursday, March 27, 2025",
-  time: "2:00 PM — 3:00 PM ET",
-  host: "TRRLN Leadership Team",
-  joinUrl: "#", // Will be replaced with actual Zoom/Meet link
+  description: "Product updates, training topics, success stories, and live Q&A.",
+  embedUrl: null,
+  joinUrl: "#",
+  recordingUrl: null,
+  schedule: "Every Thursday at 2:00 PM ET — 45-60 minutes",
+  nextCall: new Date().toISOString(),
+  hostName: "TRRLN Leadership Team",
+  duration: null,
+  weekNumber: null,
+  notes: null,
+  isActive: true,
 };
 
-const PAST_RECORDINGS = [
-  { title: "Week 12 — Section 301 Update & New Partner Tools", date: "Mar 20, 2025", duration: "52 min", url: "#" },
-  { title: "Week 11 — Commission Deep Dive & Top Partner Q&A", date: "Mar 13, 2025", duration: "47 min", url: "#" },
-  { title: "Week 10 — IEEPA Changes & Client Outreach Strategies", date: "Mar 6, 2025", duration: "58 min", url: "#" },
-  { title: "Week 9 — Onboarding Best Practices for New Partners", date: "Feb 27, 2025", duration: "41 min", url: "#" },
+const DEMO_RECORDINGS: ConferenceEntry[] = [
+  { id: "d1", title: "Section 301 Update & New Partner Tools", description: null, embedUrl: null, joinUrl: null, recordingUrl: "#", schedule: null, nextCall: "2026-03-19T18:00:00Z", hostName: "Sarah Mitchell", duration: "52 min", weekNumber: 12, notes: null, isActive: false },
+  { id: "d2", title: "Commission Deep Dive & Top Partner Q&A", description: null, embedUrl: null, joinUrl: null, recordingUrl: "#", schedule: null, nextCall: "2026-03-12T18:00:00Z", hostName: "John Orlando", duration: "47 min", weekNumber: 11, notes: null, isActive: false },
+  { id: "d3", title: "IEEPA Changes & Client Outreach Strategies", description: null, embedUrl: null, joinUrl: null, recordingUrl: "#", schedule: null, nextCall: "2026-03-05T19:00:00Z", hostName: "Sarah Mitchell", duration: "58 min", weekNumber: 10, notes: null, isActive: false },
+  { id: "d4", title: "Onboarding Best Practices for New Partners", description: null, embedUrl: null, joinUrl: null, recordingUrl: "#", schedule: null, nextCall: "2026-02-26T19:00:00Z", hostName: "TRRLN Leadership Team", duration: "41 min", weekNumber: 9, notes: null, isActive: false },
 ];
+
+/* ── ICS helper ────────────────────────────────────────────────────────── */
+
+function generateICS(entry: ConferenceEntry) {
+  const start = entry.nextCall ? new Date(entry.nextCall) : new Date();
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    `PRODID:-//${FIRM_SHORT}//Partner Portal//EN`,
+    "BEGIN:VEVENT",
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    `SUMMARY:${entry.title}`,
+    `DESCRIPTION:${entry.description || `Weekly ${FIRM_SHORT} partner call`}`,
+    entry.joinUrl ? `URL:${entry.joinUrl}` : "",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean).join("\r\n");
+
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "trrln-weekly-call.ics";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ── Format next-call date for display ─────────────────────────────────── */
+
+function formatCallDate(dateStr: string | null): { date: string; time: string } {
+  if (!dateStr) return { date: "TBD", time: "" };
+  const d = new Date(dateStr);
+  const date = d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+  return { date, time };
+}
+
+/* ── Page ──────────────────────────────────────────────────────────────── */
 
 export default function ConferencePage() {
   const device = useDevice();
+  const [loading, setLoading] = useState(true);
+  const [activeSchedule, setActiveSchedule] = useState<ConferenceEntry | null>(null);
+  const [pastRecordings, setPastRecordings] = useState<ConferenceEntry[]>([]);
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
+  const [videoModal, setVideoModal] = useState<{ isOpen: boolean; url: string; title: string }>({
+    isOpen: false, url: "", title: "",
+  });
+
+  useEffect(() => {
+    fetch("/api/conference")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        setActiveSchedule(data.activeSchedule || DEMO_ACTIVE);
+        setPastRecordings(data.pastRecordings?.length ? data.pastRecordings : DEMO_RECORDINGS);
+      })
+      .catch(() => {
+        setActiveSchedule(DEMO_ACTIVE);
+        setPastRecordings(DEMO_RECORDINGS);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const toggleNotes = (id: string) => {
+    setExpandedNotes((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const openVideo = (url: string, title: string) => setVideoModal({ isOpen: true, url, title });
+  const closeVideo = () => setVideoModal({ isOpen: false, url: "", title: "" });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="font-body text-sm text-white/40">Loading conference data...</div>
+      </div>
+    );
+  }
+
+  const active = activeSchedule || DEMO_ACTIVE;
+  const callInfo = formatCallDate(active.nextCall);
 
   return (
     <div>
@@ -42,18 +157,24 @@ export default function ConferencePage() {
           </div>
         </div>
         <div className={`font-display ${device.isMobile ? "text-xl" : "text-2xl"} font-bold text-white mb-2`}>
-          {NEXT_CALL.title}
+          {active.title}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4">
-          <span className="font-body text-[13px] text-white/60">📅 {NEXT_CALL.date}</span>
-          <span className="font-body text-[13px] text-white/60">⏰ {NEXT_CALL.time}</span>
-          <span className="font-body text-[13px] text-white/60">👤 {NEXT_CALL.host}</span>
+          <span className="font-body text-[13px] text-white/60">📅 {callInfo.date}</span>
+          {callInfo.time && <span className="font-body text-[13px] text-white/60">⏰ {callInfo.time}</span>}
+          {active.hostName && <span className="font-body text-[13px] text-white/60">👤 {active.hostName}</span>}
         </div>
         <div className={`flex ${device.isMobile ? "flex-col" : ""} gap-3`}>
-          <button className="btn-gold text-[13px] px-6 py-3 flex items-center justify-center gap-2">
+          <button
+            onClick={() => active.joinUrl && window.open(active.joinUrl, "_blank")}
+            className="btn-gold text-[13px] px-6 py-3 flex items-center justify-center gap-2"
+          >
             📹 Join Call
           </button>
-          <button className="font-body text-[12px] text-white/50 border border-white/10 rounded-lg px-5 py-3 hover:text-white/70 hover:border-white/20 transition-colors text-center">
+          <button
+            onClick={() => generateICS(active)}
+            className="font-body text-[12px] text-white/50 border border-white/10 rounded-lg px-5 py-3 hover:text-white/70 hover:border-white/20 transition-colors text-center"
+          >
             Add to Calendar
           </button>
         </div>
@@ -63,9 +184,13 @@ export default function ConferencePage() {
       <div className={`card ${device.cardPadding} mb-6`}>
         <div className="font-body font-semibold text-sm mb-3">Call Schedule</div>
         <div className="font-body text-[13px] text-white/50 leading-relaxed">
-          Every <strong className="text-white/70">Thursday at 2:00 PM ET</strong> — Our weekly partner call covers product updates,
-          training topics, success stories from top partners, and an open Q&A session. All partners are welcome.
-          Calls typically last 45–60 minutes.
+          {active.schedule || (
+            <>
+              Every <strong className="text-white/70">Thursday at 2:00 PM ET</strong> — Our weekly partner call covers product updates,
+              training topics, success stories from top partners, and an open Q&A session. All partners are welcome.
+              Calls typically last 45–60 minutes.
+            </>
+          )}
         </div>
       </div>
 
@@ -74,23 +199,67 @@ export default function ConferencePage() {
         <div className="px-4 sm:px-6 py-4 border-b border-white/[0.06]">
           <div className="font-body font-semibold text-sm">Past Recordings</div>
         </div>
-        {PAST_RECORDINGS.map((rec, i) => (
-          <div
-            key={i}
-            className="px-4 sm:px-6 py-4 border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.02] transition-colors flex items-center justify-between gap-3"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="font-body text-[13px] text-white/80 truncate">{rec.title}</div>
-              <div className="font-body text-[11px] text-white/30 mt-0.5">
-                {rec.date} · {rec.duration}
+        {pastRecordings.map((rec) => (
+          <div key={rec.id} className="border-b border-white/[0.04] last:border-b-0">
+            <div className="px-4 sm:px-6 py-4 hover:bg-white/[0.02] transition-colors flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="font-body text-[13px] text-white/80 truncate">
+                  {rec.weekNumber ? `Week ${rec.weekNumber} — ` : ""}{rec.title}
+                </div>
+                <div className="font-body text-[11px] text-white/30 mt-0.5">
+                  {fmtDate(rec.nextCall)} · {rec.duration || "—"}{rec.hostName ? ` · ${rec.hostName}` : ""}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {rec.notes && (
+                  <button
+                    onClick={() => toggleNotes(rec.id)}
+                    className="font-body text-[11px] text-white/40 border border-white/10 rounded-lg px-2.5 py-1.5 hover:bg-white/[0.04] transition-colors"
+                    title="Toggle notes"
+                  >
+                    {expandedNotes.has(rec.id) ? "▲ Notes" : "▼ Notes"}
+                  </button>
+                )}
+                {(rec.embedUrl || rec.recordingUrl) && (
+                  <button
+                    onClick={() => {
+                      if (rec.embedUrl) {
+                        openVideo(rec.embedUrl, rec.title);
+                      } else if (rec.recordingUrl) {
+                        window.open(rec.recordingUrl, "_blank");
+                      }
+                    }}
+                    className="font-body text-[11px] text-brand-gold/70 border border-brand-gold/20 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors"
+                  >
+                    ▶ Watch
+                  </button>
+                )}
               </div>
             </div>
-            <button className="font-body text-[11px] text-brand-gold/70 border border-brand-gold/20 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors shrink-0">
-              ▶ Watch
-            </button>
+            {/* Expandable notes */}
+            {rec.notes && expandedNotes.has(rec.id) && (
+              <div className="px-4 sm:px-6 pb-4 border-t border-white/[0.04]">
+                <div className="font-body text-[12px] text-white/50 leading-relaxed whitespace-pre-line pt-3">
+                  {rec.notes}
+                </div>
+              </div>
+            )}
           </div>
         ))}
+        {pastRecordings.length === 0 && (
+          <div className="px-4 sm:px-6 py-8 text-center">
+            <div className="font-body text-[13px] text-white/30">No past recordings available yet.</div>
+          </div>
+        )}
       </div>
+
+      {/* Video modal for inline playback */}
+      <VideoModal
+        isOpen={videoModal.isOpen}
+        onClose={closeVideo}
+        videoUrl={videoModal.url}
+        title={videoModal.title}
+      />
     </div>
   );
 }
