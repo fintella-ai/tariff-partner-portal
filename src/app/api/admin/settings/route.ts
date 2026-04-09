@@ -71,6 +71,11 @@ export async function PUT(req: NextRequest) {
         ? body.hiddenNavItems
         : JSON.stringify(body.hiddenNavItems);
     }
+    if (body.navOrder !== undefined) {
+      data.navOrder = typeof body.navOrder === "string"
+        ? body.navOrder
+        : JSON.stringify(body.navOrder);
+    }
 
     // Home page content
     if (body.announcements !== undefined) {

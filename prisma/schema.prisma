@@ -262,8 +262,9 @@ model PortalSettings {
   l2Rate      Float @default(0.05)
   l3Rate      Float @default(0)
   l3Enabled   Boolean @default(false)
-  // Navigation visibility (JSON string of hidden nav IDs)
+  // Navigation visibility + order (JSON strings)
   hiddenNavItems String @default("[]")
+  navOrder       String @default("[]")  // ordered array of nav IDs
   // Home page content (JSON strings)
   announcements  String @default("[]")
   upcomingEvents String @default("[]")

@@ -70,6 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [firmShort, setFirmShort] = useState(DEFAULT_FIRM_SHORT);
   const [firmSlogan, setFirmSlogan] = useState(DEFAULT_FIRM_SLOGAN);
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
+  const [navOrder, setNavOrder] = useState<string[]>([]);
 
   // Fetch portal settings
   useEffect(() => {
@@ -79,6 +80,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (settings.firmShort) setFirmShort(settings.firmShort);
         if (settings.firmSlogan) setFirmSlogan(settings.firmSlogan);
         try { setHiddenNavItems(JSON.parse(settings.hiddenNavItems || "[]")); } catch {}
+        try {
+          const order = JSON.parse(settings.navOrder || "[]");
+          if (order.length > 0) setNavOrder(order);
+        } catch {}
       })
       .catch(() => {});
   }, []);
@@ -123,7 +128,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Nav */}
       <div className="flex flex-col gap-0.5">
-        {MAIN_NAV.filter((item) => !hiddenNavItems.includes(item.id)).map((item) => (
+        {(navOrder.length > 0
+          ? navOrder.map((id) => MAIN_NAV.find((n) => n.id === id)).filter(Boolean) as typeof MAIN_NAV
+          : MAIN_NAV
+        ).filter((item) => !hiddenNavItems.includes(item.id)).map((item) => (
           <NavButton
             key={item.id}
             item={item}

@@ -95,6 +95,8 @@ export default function SettingsPage() {
 
   // Navigation
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
+  const [navOrder, setNavOrder] = useState<string[]>(ALL_NAV_ITEMS.map((n) => n.id));
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   // Home page content
   const [announcements, setAnnouncements] = useState<Announcement[]>(DEFAULT_ANNOUNCEMENTS);
@@ -123,6 +125,10 @@ export default function SettingsPage() {
       setL3Enabled(settings.l3Enabled);
 
       try { setHiddenNavItems(JSON.parse(settings.hiddenNavItems || "[]")); } catch { setHiddenNavItems([]); }
+      try {
+        const order = JSON.parse(settings.navOrder || "[]");
+        if (order.length > 0) setNavOrder(order);
+      } catch {}
       try {
         const ann = JSON.parse(settings.announcements || "[]");
         if (ann.length > 0) setAnnouncements(ann);
@@ -158,6 +164,7 @@ export default function SettingsPage() {
         l3Rate: parseFloat(l3Rate) / 100,
         l3Enabled,
         hiddenNavItems: JSON.stringify(hiddenNavItems),
+        navOrder: JSON.stringify(navOrder),
         announcements: JSON.stringify(announcements),
         upcomingEvents: JSON.stringify(upcomingEvents),
         referralOpportunities: JSON.stringify(referralOpps),
@@ -186,6 +193,39 @@ export default function SettingsPage() {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
+
+  // ── Nav drag reorder ──────────────────────────────────────────────────
+
+  const handleDragStart = (idx: number) => {
+    setDragIdx(idx);
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === idx) return;
+    const newOrder = [...navOrder];
+    const [moved] = newOrder.splice(dragIdx, 1);
+    newOrder.splice(idx, 0, moved);
+    setNavOrder(newOrder);
+    setDragIdx(idx);
+  };
+
+  const handleDragEnd = () => {
+    setDragIdx(null);
+  };
+
+  const moveNav = (idx: number, dir: -1 | 1) => {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= navOrder.length) return;
+    const newOrder = [...navOrder];
+    [newOrder[idx], newOrder[newIdx]] = [newOrder[newIdx], newOrder[idx]];
+    setNavOrder(newOrder);
+  };
+
+  // Resolve nav items in order
+  const orderedNavItems = navOrder
+    .map((id) => ALL_NAV_ITEMS.find((n) => n.id === id))
+    .filter(Boolean) as typeof ALL_NAV_ITEMS;
 
   // ── Announcement CRUD ─────────────────────────────────────────────────
 
@@ -314,25 +354,59 @@ export default function SettingsPage() {
       {tab === "navigation" && (
         <div className="card p-5 sm:p-6">
           <div className="font-body font-semibold text-sm mb-1">Partner Navigation</div>
-          <p className="font-body text-[12px] text-white/40 mb-5">Toggle which pages are visible to partners in the sidebar.</p>
+          <p className="font-body text-[12px] text-white/40 mb-5">Drag to reorder. Toggle visibility on/off.</p>
           <div className="space-y-2">
-            {ALL_NAV_ITEMS.map((item) => {
+            {orderedNavItems.map((item, idx) => {
               const isVisible = !hiddenNavItems.includes(item.id);
+              const isDragging = dragIdx === idx;
               return (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/[0.06] rounded-lg hover:bg-white/[0.04] transition-colors"
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  className={`flex items-center justify-between p-3 border rounded-lg transition-all cursor-grab active:cursor-grabbing ${
+                    isDragging
+                      ? "bg-brand-gold/10 border-brand-gold/30 scale-[1.02] shadow-lg"
+                      : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]"
+                  } ${!isVisible ? "opacity-50" : ""}`}
                 >
                   <div className="flex items-center gap-3">
+                    {/* Drag handle */}
+                    <div className="flex flex-col gap-[2px] shrink-0 cursor-grab">
+                      <div className="w-4 h-[2px] bg-white/20 rounded" />
+                      <div className="w-4 h-[2px] bg-white/20 rounded" />
+                      <div className="w-4 h-[2px] bg-white/20 rounded" />
+                    </div>
+                    <span className="font-body text-[12px] text-white/30 w-5 text-center">{idx + 1}</span>
                     <span className="text-lg">{item.icon}</span>
                     <span className="font-body text-sm text-white/80">{item.label}</span>
                   </div>
-                  <button
-                    onClick={() => toggleNavItem(item.id)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isVisible ? "bg-green-500" : "bg-white/10"}`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isVisible ? "translate-x-6" : "translate-x-1"}`} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {/* Move up/down buttons (for mobile/accessibility) */}
+                    <button
+                      onClick={() => moveNav(idx, -1)}
+                      disabled={idx === 0}
+                      className="w-7 h-7 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-white/40 disabled:opacity-20 transition-colors text-[11px]"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      onClick={() => moveNav(idx, 1)}
+                      disabled={idx === orderedNavItems.length - 1}
+                      className="w-7 h-7 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-white/40 disabled:opacity-20 transition-colors text-[11px]"
+                    >
+                      ▼
+                    </button>
+                    {/* Visibility toggle */}
+                    <button
+                      onClick={() => toggleNavItem(item.id)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isVisible ? "bg-green-500" : "bg-white/10"}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isVisible ? "translate-x-6" : "translate-x-1"}`} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
