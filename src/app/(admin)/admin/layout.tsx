@@ -6,6 +6,7 @@ import { FIRM_SHORT } from "@/lib/constants";
 
 const ADMIN_NAV_ITEMS = [
   { id: "partners", href: "/admin/partners", icon: "\u{1F465}", label: "Partners" },
+  { id: "deals", href: "/admin/deals", icon: "\u{1F4BC}", label: "Deals" },
   { id: "commissions", href: "/admin/commissions", icon: "\u{1F4B0}", label: "Commissions" },
   { id: "communications", href: "/admin/communications", icon: "\u{1F4E7}", label: "Communications" },
   { id: "training", href: "/admin/training", icon: "\u{1F393}", label: "Training" },
