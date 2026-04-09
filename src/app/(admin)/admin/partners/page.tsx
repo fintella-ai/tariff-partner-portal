@@ -1,354 +1,211 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { fmt$, fmtDate } from "@/lib/format";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { fmtDate } from "@/lib/format";
 
-interface Partner {
+type Partner = {
   id: string;
+  partnerCode: string;
+  email: string;
   firstName: string;
   lastName: string;
-  email: string;
-  partnerCode: string;
-  status: "Active" | "Pending" | "Blocked";
+  phone: string | null;
+  status: string;
+  referredByPartnerCode: string | null;
+  l1Rate: number | null;
+  l2Rate: number | null;
+  notes: string | null;
   signupDate: string;
-  totalDeals: number;
-  totalL1Commission: number;
-  totalL2Commission: number;
-  downlineCount: number;
-}
-
-const DEMO_PARTNERS: Partner[] = [
-  {
-    id: "100001",
-    firstName: "Sarah",
-    lastName: "Mitchell",
-    email: "sarah.mitchell@lawfirm.com",
-    partnerCode: "TRRLN-SM2024",
-    status: "Active",
-    signupDate: "2025-09-12",
-    totalDeals: 34,
-    totalL1Commission: 42500,
-    totalL2Commission: 8750,
-    downlineCount: 5,
-  },
-  {
-    id: "100002",
-    firstName: "James",
-    lastName: "Robertson",
-    email: "j.robertson@tradelaw.io",
-    partnerCode: "TRRLN-JR2024",
-    status: "Active",
-    signupDate: "2025-10-03",
-    totalDeals: 21,
-    totalL1Commission: 26200,
-    totalL2Commission: 3100,
-    downlineCount: 2,
-  },
-  {
-    id: "100003",
-    firstName: "Diana",
-    lastName: "Chen",
-    email: "dchen@importrelief.com",
-    partnerCode: "TRRLN-DC2025",
-    status: "Pending",
-    signupDate: "2026-01-18",
-    totalDeals: 0,
-    totalL1Commission: 0,
-    totalL2Commission: 0,
-    downlineCount: 0,
-  },
-  {
-    id: "100004",
-    firstName: "Marcus",
-    lastName: "Williams",
-    email: "marcus.w@tariffcounsel.com",
-    partnerCode: "TRRLN-MW2024",
-    status: "Blocked",
-    signupDate: "2025-08-05",
-    totalDeals: 7,
-    totalL1Commission: 8400,
-    totalL2Commission: 0,
-    downlineCount: 1,
-  },
-  {
-    id: "100005",
-    firstName: "Priya",
-    lastName: "Nair",
-    email: "priya@dutyrecovery.co",
-    partnerCode: "TRRLN-PN2025",
-    status: "Active",
-    signupDate: "2026-02-10",
-    totalDeals: 12,
-    totalL1Commission: 15600,
-    totalL2Commission: 2200,
-    downlineCount: 3,
-  },
-];
-
-const statusColor: Record<Partner["status"], string> = {
-  Active: "bg-green-500/20 text-green-400",
-  Pending: "bg-yellow-500/20 text-yellow-400",
-  Blocked: "bg-red-500/20 text-red-400",
 };
 
-export default function PartnerManagementPage() {
-  const [partners, setPartners] = useState<Partner[]>(DEMO_PARTNERS);
-  const [search, setSearch] = useState("");
-  const [filtered, setFiltered] = useState<Partner[]>(DEMO_PARTNERS);
+const statusBadge: Record<string, string> = {
+  active: "bg-green-500/10 text-green-400 border border-green-500/20",
+  pending: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
+  inactive: "bg-white/10 text-white/50 border border-white/10",
+  blocked: "bg-red-500/10 text-red-400 border border-red-500/20",
+};
 
-  useEffect(() => {
-    const q = search.toLowerCase().trim();
-    if (!q) {
-      setFiltered(partners);
+export default function AdminPartnersPage() {
+  const router = useRouter();
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+
+  // Add form
+  const [formFirst, setFormFirst] = useState("");
+  const [formLast, setFormLast] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formCode, setFormCode] = useState("");
+  const [formReferrer, setFormReferrer] = useState("");
+  const [formError, setFormError] = useState("");
+
+  const fetchPartners = useCallback(async () => {
+    try {
+      const url = search ? `/api/admin/partners?search=${encodeURIComponent(search)}` : "/api/admin/partners";
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setPartners(data.partners || []);
+      }
+    } catch {} finally {
+      setLoading(false);
+    }
+  }, [search]);
+
+  useEffect(() => { fetchPartners(); }, [fetchPartners]);
+
+  const handleAdd = async () => {
+    setFormError("");
+    if (!formFirst.trim() || !formLast.trim() || !formEmail.trim()) {
+      setFormError("First name, last name, and email are required.");
       return;
     }
-    setFiltered(
-      partners.filter(
-        (p) =>
-          `${p.firstName} ${p.lastName}`.toLowerCase().includes(q) ||
-          p.email.toLowerCase().includes(q) ||
-          p.partnerCode.toLowerCase().includes(q),
-      ),
-    );
-  }, [search, partners]);
-
-  const stats = {
-    total: partners.length,
-    active: partners.filter((p) => p.status === "Active").length,
-    pending: partners.filter((p) => p.status === "Pending").length,
-    blocked: partners.filter((p) => p.status === "Blocked").length,
+    try {
+      const res = await fetch("/api/admin/partners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: formFirst.trim(),
+          lastName: formLast.trim(),
+          email: formEmail.trim(),
+          phone: formPhone.trim() || null,
+          partnerCode: formCode.trim() || undefined,
+          referredByPartnerCode: formReferrer.trim() || null,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setFormError(err.error || "Failed to create partner");
+        return;
+      }
+      setShowForm(false);
+      setFormFirst(""); setFormLast(""); setFormEmail(""); setFormPhone(""); setFormCode(""); setFormReferrer("");
+      fetchPartners();
+    } catch {
+      setFormError("Connection error");
+    }
   };
 
-  function toggleBlock(id: string) {
-    setPartners((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, status: p.status === "Blocked" ? "Active" : "Blocked" as Partner["status"] }
-          : p,
-      ),
-    );
-  }
+  const total = partners.length;
+  const active = partners.filter((p) => p.status === "active").length;
+  const pending = partners.filter((p) => p.status === "pending").length;
+  const blocked = partners.filter((p) => p.status === "blocked").length;
 
-  function hubspotUrl(id: string) {
-    return `https://app.hubspot.com/contacts/PORTAL_ID/contact/${id}`;
-  }
+  const inputClass = "w-full bg-white/5 border border-white/[0.12] rounded-lg px-4 py-2.5 text-white font-body text-sm outline-none focus:border-brand-gold/40 transition-colors placeholder:text-white/30";
 
   return (
     <div>
-      <h2 className="font-display text-xl sm:text-2xl font-bold mb-1">
-        Partner Management
-      </h2>
-      <p className="font-body text-sm text-white/40 mb-6">
-        Manage partners, review activity, and control account status.
-      </p>
-
-      {/* Search */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Search by name, email, or partner code…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 font-body text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-brand-gold/60 transition"
-        />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div>
+          <h2 className="font-display text-xl font-bold">Partner Management</h2>
+          <p className="font-body text-[13px] text-white/40 mt-1">View, add, and manage partners.</p>
+        </div>
+        <button onClick={() => setShowForm(!showForm)} className="btn-gold text-[12px] px-4 py-2.5 self-start">
+          + Add Partner
+        </button>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Total Partners", value: stats.total, accent: "text-white" },
-          { label: "Active", value: stats.active, accent: "text-green-400" },
-          { label: "Pending", value: stats.pending, accent: "text-yellow-400" },
-          { label: "Blocked", value: stats.blocked, accent: "text-red-400" },
+          { label: "Total Partners", value: total, color: "text-white" },
+          { label: "Active", value: active, color: "text-green-400" },
+          { label: "Pending", value: pending, color: "text-yellow-400" },
+          { label: "Blocked", value: blocked, color: "text-red-400" },
         ].map((s) => (
           <div key={s.label} className="card p-4">
-            <p className="font-body text-xs text-white/40 mb-1">{s.label}</p>
-            <p className={`font-display text-2xl font-bold ${s.accent}`}>
-              {s.value}
-            </p>
+            <div className="font-body text-[11px] text-white/30 uppercase tracking-wider mb-1">{s.label}</div>
+            <div className={`font-display text-2xl font-bold ${s.color}`}>{s.value}</div>
           </div>
         ))}
       </div>
 
-      {/* Desktop table */}
-      <div className="hidden lg:block card overflow-x-auto">
-        <table className="w-full text-left font-body text-sm">
-          <thead>
-            <tr className="border-b border-white/10 text-white/50 text-xs uppercase tracking-wider">
-              <th className="px-4 py-3">Partner</th>
-              <th className="px-4 py-3">Code</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Deals</th>
-              <th className="px-4 py-3 text-right">L1 Earned</th>
-              <th className="px-4 py-3 text-right">L2 Earned</th>
-              <th className="px-4 py-3 text-right">Downline</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((p) => (
-              <tr
+      {/* Add Partner Form */}
+      {showForm && (
+        <div className="card p-5 mb-6">
+          <div className="font-body font-semibold text-sm mb-4">Add New Partner</div>
+          {formError && <div className="mb-3 p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg font-body text-[12px] text-red-400">{formError}</div>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <input className={inputClass} value={formFirst} onChange={(e) => setFormFirst(e.target.value)} placeholder="First Name *" />
+            <input className={inputClass} value={formLast} onChange={(e) => setFormLast(e.target.value)} placeholder="Last Name *" />
+            <input className={inputClass} value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="Email *" type="email" />
+            <input className={inputClass} value={formPhone} onChange={(e) => setFormPhone(e.target.value)} placeholder="Phone" />
+            <input className={inputClass} value={formCode} onChange={(e) => setFormCode(e.target.value)} placeholder="Partner Code (auto-generated)" />
+            <input className={inputClass} value={formReferrer} onChange={(e) => setFormReferrer(e.target.value)} placeholder="Referred By (partner code)" />
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button onClick={handleAdd} className="btn-gold text-[12px] px-5 py-2.5">Create Partner</button>
+            <button onClick={() => setShowForm(false)} className="font-body text-[12px] text-white/40 border border-white/10 rounded-lg px-5 py-2.5 hover:text-white/60 transition-colors">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="mb-4">
+        <input className={inputClass} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, email, or partner code..." />
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="font-body text-sm text-white/40">Loading partners...</div>
+        </div>
+      ) : (
+        <>
+          {/* Desktop Table */}
+          <div className="card hidden sm:block">
+            <div className="grid grid-cols-[1.5fr_1fr_1.2fr_0.8fr_0.8fr_0.6fr] gap-3 px-5 py-3 border-b border-white/[0.06]">
+              {["Partner", "Code", "Email", "Status", "Joined", ""].map((h) => (
+                <div key={h} className="font-body text-[11px] text-white/30 uppercase tracking-wider">{h}</div>
+              ))}
+            </div>
+            {partners.map((p) => (
+              <div
                 key={p.id}
-                className="border-b border-white/5 hover:bg-white/[0.03] transition"
+                className="grid grid-cols-[1.5fr_1fr_1.2fr_0.8fr_0.8fr_0.6fr] gap-3 px-5 py-3.5 border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.02] transition-colors items-center cursor-pointer"
+                onClick={() => router.push(`/admin/partners/${p.id}`)}
               >
-                <td className="px-4 py-3">
-                  <div className="font-medium text-white">
-                    {p.firstName} {p.lastName}
-                  </div>
-                  <div className="text-xs text-white/40">{p.email}</div>
-                </td>
-                <td className="px-4 py-3 text-white/70 font-mono text-xs">
-                  {p.partnerCode}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor[p.status]}`}
-                  >
+                <div className="font-body text-[13px] text-white/80 font-medium">{p.firstName} {p.lastName}</div>
+                <div className="font-mono text-[12px] text-white/50">{p.partnerCode}</div>
+                <div className="font-body text-[12px] text-white/50 truncate">{p.email}</div>
+                <div>
+                  <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[p.status] || statusBadge.active}`}>
                     {p.status}
                   </span>
-                </td>
-                <td className="px-4 py-3 text-right text-white/70">
-                  {p.totalDeals}
-                </td>
-                <td className="px-4 py-3 text-right text-brand-gold font-medium">
-                  {fmt$(p.totalL1Commission)}
-                </td>
-                <td className="px-4 py-3 text-right text-white/70">
-                  {fmt$(p.totalL2Commission)}
-                </td>
-                <td className="px-4 py-3 text-right text-white/70">
-                  {p.downlineCount}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <a
-                      href={hubspotUrl(p.id)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 rounded-md text-xs font-medium bg-brand-gold/20 text-brand-gold hover:bg-brand-gold/30 transition"
-                    >
-                      View
-                    </a>
-                    <button
-                      onClick={() => toggleBlock(p.id)}
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                        p.status === "Blocked"
-                          ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                          : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                      }`}
-                    >
-                      {p.status === "Blocked" ? "Unblock" : "Block"}
-                    </button>
-                    <a
-                      href={hubspotUrl(p.id)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Open in HubSpot"
-                      className="text-white/30 hover:text-brand-gold transition"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                        />
-                      </svg>
-                    </a>
-                  </div>
-                </td>
-              </tr>
+                </div>
+                <div className="font-body text-[12px] text-white/40">{fmtDate(p.signupDate)}</div>
+                <div className="text-right">
+                  <span className="font-body text-[11px] text-brand-gold/60 hover:text-brand-gold transition-colors">View →</span>
+                </div>
+              </div>
             ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={8}
-                  className="px-4 py-12 text-center text-white/30"
-                >
-                  No partners match your search.
-                </td>
-              </tr>
+            {partners.length === 0 && (
+              <div className="px-5 py-10 text-center font-body text-[13px] text-white/30">No partners found.</div>
             )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile cards */}
-      <div className="lg:hidden space-y-4">
-        {filtered.map((p) => (
-          <div key={p.id} className="card p-4 space-y-3">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-medium text-white">
-                  {p.firstName} {p.lastName}
-                </p>
-                <p className="text-xs text-white/40">{p.email}</p>
-                <p className="text-xs text-white/50 font-mono mt-0.5">
-                  {p.partnerCode}
-                </p>
-              </div>
-              <span
-                className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor[p.status]}`}
-              >
-                {p.status}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-xs text-white/40">Deals</p>
-                <p className="text-white/70">{p.totalDeals}</p>
-              </div>
-              <div>
-                <p className="text-xs text-white/40">Downline</p>
-                <p className="text-white/70">{p.downlineCount}</p>
-              </div>
-              <div>
-                <p className="text-xs text-white/40">L1 Earned</p>
-                <p className="text-brand-gold font-medium">
-                  {fmt$(p.totalL1Commission)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-white/40">L2 Earned</p>
-                <p className="text-white/70">{fmt$(p.totalL2Commission)}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-1 border-t border-white/5">
-              <a
-                href={hubspotUrl(p.id)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 text-center px-3 py-2 rounded-md text-xs font-medium bg-brand-gold/20 text-brand-gold hover:bg-brand-gold/30 transition"
-              >
-                View in HubSpot
-              </a>
-              <button
-                onClick={() => toggleBlock(p.id)}
-                className={`flex-1 text-center px-3 py-2 rounded-md text-xs font-medium transition ${
-                  p.status === "Blocked"
-                    ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                    : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                }`}
-              >
-                {p.status === "Blocked" ? "Unblock" : "Block"}
-              </button>
-            </div>
           </div>
-        ))}
-        {filtered.length === 0 && (
-          <div className="card p-12 text-center text-white/30 font-body text-sm">
-            No partners match your search.
+
+          {/* Mobile Cards */}
+          <div className="sm:hidden space-y-3">
+            {partners.map((p) => (
+              <div key={p.id} className="card p-4 cursor-pointer hover:bg-white/[0.04] transition-colors" onClick={() => router.push(`/admin/partners/${p.id}`)}>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <div className="font-body text-[13px] font-medium text-white">{p.firstName} {p.lastName}</div>
+                    <div className="font-mono text-[11px] text-white/40 mt-0.5">{p.partnerCode}</div>
+                  </div>
+                  <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[p.status] || statusBadge.active}`}>
+                    {p.status}
+                  </span>
+                </div>
+                <div className="font-body text-[11px] text-white/40 mb-1">{p.email}</div>
+                <div className="font-body text-[11px] text-white/30">Joined {fmtDate(p.signupDate)}</div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

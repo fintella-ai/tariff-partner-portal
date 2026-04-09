@@ -11,7 +11,8 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:seed-training": "npx ts-node --compiler-options {\"module\":\"commonjs\"} scripts/seed-training.ts",
-    "db:seed-conference": "npx ts-node --compiler-options {\"module\":\"commonjs\"} scripts/seed-conference.ts"
+    "db:seed-conference": "npx ts-node --compiler-options {\"module\":\"commonjs\"} scripts/seed-conference.ts",
+    "db:seed-partners": "npx ts-node --compiler-options {\"module\":\"commonjs\"} scripts/seed-partners.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

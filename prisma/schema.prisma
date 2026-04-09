@@ -19,6 +19,31 @@ model User {
 
 }
 
+// ─── PARTNERS ───────────────────────────────────────────────────────────────
+model Partner {
+  id                    String   @id @default(cuid())
+  partnerCode           String   @unique
+  email                 String
+  firstName             String
+  lastName              String
+  phone                 String?
+  status                String   @default("active") // active, pending, inactive, blocked
+  referredByPartnerCode String?  // who recruited them
+  // Commission overrides (null = use global defaults)
+  l1Rate                Float?
+  l2Rate                Float?
+  l3Rate                Float?
+  l3Enabled             Boolean  @default(false)
+  // Metadata
+  notes                 String?  // admin notes
+  signupDate            DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([email])
+  @@index([referredByPartnerCode])
+}
+
 // ─── PARTNER COMMISSION OVERRIDES ────────────────────────────────────────────
 model PartnerOverride {
   id          String   @id @default(cuid())
