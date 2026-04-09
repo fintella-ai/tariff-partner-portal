@@ -1,6 +1,16 @@
 const { PrismaClient } = require("@prisma/client");
+const path = require("path");
 
-const prisma = new PrismaClient();
+// Ensure we connect to the same DB that prisma db push created
+const dbPath = path.join(__dirname, "..", "prisma", "dev.db");
+console.log("[seed] DB path:", dbPath);
+console.log("[seed] DB exists:", require("fs").existsSync(dbPath));
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: { url: "file:" + dbPath },
+  },
+});
 
 async function main() {
   console.log("Seeding database...\n");
