@@ -8,25 +8,14 @@ function initVercelDb() {
       const fs = require("fs");
       const path = require("path");
       const tmpDb = "/tmp/dev.db";
-      if (!fs.existsSync(tmpDb)) {
-        // Try multiple possible locations for the DB file
-        const candidates = [
-          path.join(process.cwd(), "prisma", "dev.db"),
-          path.join(__dirname, "..", "..", "prisma", "dev.db"),
-          path.join(__dirname, "..", "..", "..", "prisma", "dev.db"),
-          "/var/task/prisma/dev.db",
-          "/var/task/.next/server/prisma/dev.db",
-        ];
-        for (const src of candidates) {
-          if (fs.existsSync(src)) {
-            fs.copyFileSync(src, tmpDb);
-            console.log("[prisma] Copied DB from:", src);
-            break;
-          }
-        }
-        // If no DB found, create empty one via prisma push at runtime
-        if (!fs.existsSync(tmpDb)) {
-          console.log("[prisma] No DB found to copy, will create fresh");
+      // Always copy fresh DB from build to /tmp (overwrites stale cache)
+      const src = path.join(process.cwd(), "prisma", "dev.db");
+      if (fs.existsSync(src)) {
+        const srcSize = fs.statSync(src).size;
+        const tmpSize = fs.existsSync(tmpDb) ? fs.statSync(tmpDb).size : 0;
+        // Copy if /tmp doesn't exist or if build DB is different size (new deploy)
+        if (!fs.existsSync(tmpDb) || srcSize !== tmpSize) {
+          fs.copyFileSync(src, tmpDb);
         }
       }
     } catch {
