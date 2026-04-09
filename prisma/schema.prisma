@@ -304,19 +304,34 @@ model Deal {
   id                    String    @id @default(cuid())
   dealName              String
   partnerCode           String    // submitting partner
-  clientName            String?
+  // Client contact info
+  clientFirstName       String?
+  clientLastName        String?
+  clientName            String?   // legacy / computed display name
   clientEmail           String?
   clientPhone           String?
-  stage                 String    @default("new_lead") // new_lead, contacted, qualified, consultation_booked, engaged, closedwon, closedlost
+  clientTitle           String?   // business title (e.g. CEO, CFO)
+  // Service & business details
+  serviceOfInterest     String?   // "Tariff Refund Support", "ERC Support", "Kwong Penalty Abatement"
+  legalEntityName       String?   // Legal Entity / Business Name
+  businessCity          String?
+  businessState         String?
+  importsGoods          String?   // "Yes", "No"
+  importCountries       String?   // countries they import from
+  annualImportValue     String?   // dropdown value (e.g. "$1M - $5M")
+  importerOfRecord      String?   // who is listed as importer of record
+  affiliateNotes        String?   // affiliate notes from referral form
+  // Deal tracking
+  stage                 String    @default("new_lead")
   productType           String?   // "ieepa", "section301", "other"
   importedProducts      String?   // description of goods
   estimatedRefundAmount Float     @default(0)
-  firmFeeRate           Float?    // negotiated per deal (e.g. 0.20 = 20%)
+  firmFeeRate           Float?    // negotiated per deal
   firmFeeAmount         Float     @default(0)
   // Commissions
-  l1CommissionRate      Float?    // override for this deal (null = use partner/global default)
+  l1CommissionRate      Float?
   l1CommissionAmount    Float     @default(0)
-  l1CommissionStatus    String    @default("pending") // pending, due, approved, paid
+  l1CommissionStatus    String    @default("pending")
   l2CommissionAmount    Float     @default(0)
   l2CommissionStatus    String    @default("pending")
   // Notes

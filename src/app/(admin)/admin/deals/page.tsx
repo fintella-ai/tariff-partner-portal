@@ -23,10 +23,27 @@ type Deal = {
   dealName: string;
   partnerCode: string;
   partnerName: string;
+  // Client contact
+  clientFirstName: string | null;
+  clientLastName: string | null;
   clientName: string | null;
   clientEmail: string | null;
+  clientPhone: string | null;
+  clientTitle: string | null;
+  // Form submission data
+  serviceOfInterest: string | null;
+  legalEntityName: string | null;
+  businessCity: string | null;
+  businessState: string | null;
+  importsGoods: string | null;
+  importCountries: string | null;
+  annualImportValue: string | null;
+  importerOfRecord: string | null;
+  affiliateNotes: string | null;
+  // Deal tracking
   stage: string;
   productType: string | null;
+  importedProducts: string | null;
   estimatedRefundAmount: number;
   firmFeeRate: number | null;
   firmFeeAmount: number;
@@ -288,9 +305,43 @@ export default function AdminDealsPage() {
               <div className="font-body text-[12px] text-white/40 text-right">{fmtDate(deal.createdAt)}</div>
             </div>
 
-            {/* Expanded edit panel */}
+            {/* Expanded detail + edit panel */}
             {expandedId === deal.id && (
               <div className="px-5 py-4 bg-white/[0.02] border-b border-white/[0.06]">
+                {/* ── Form Submission Data ── */}
+                <div className="mb-4 pb-4 border-b border-white/[0.06]">
+                  <div className="font-body text-[11px] text-white/30 uppercase tracking-wider mb-3">Client Submission Details</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2.5">
+                    {[
+                      { label: "Contact Name", value: [deal.clientFirstName, deal.clientLastName].filter(Boolean).join(" ") || deal.clientName },
+                      { label: "Email", value: deal.clientEmail },
+                      { label: "Phone", value: deal.clientPhone },
+                      { label: "Business Title", value: deal.clientTitle },
+                      { label: "Service of Interest", value: deal.serviceOfInterest },
+                      { label: "Legal Entity", value: deal.legalEntityName },
+                      { label: "City", value: deal.businessCity },
+                      { label: "State", value: deal.businessState },
+                      { label: "Imports Goods to U.S.", value: deal.importsGoods },
+                      { label: "Import Countries", value: deal.importCountries },
+                      { label: "Annual Import Value", value: deal.annualImportValue },
+                      { label: "Importer of Record", value: deal.importerOfRecord },
+                    ].map((f) => (
+                      <div key={f.label}>
+                        <div className="font-body text-[10px] text-white/30 uppercase tracking-wider">{f.label}</div>
+                        <div className="font-body text-[13px] text-white/70 mt-0.5">{f.value || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {deal.affiliateNotes && (
+                    <div className="mt-3">
+                      <div className="font-body text-[10px] text-white/30 uppercase tracking-wider">Affiliate Notes</div>
+                      <div className="font-body text-[12px] text-white/50 mt-1 bg-white/[0.03] border border-white/[0.06] rounded-lg p-3 whitespace-pre-line">{deal.affiliateNotes}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Deal Management ── */}
+                <div className="font-body text-[11px] text-white/30 uppercase tracking-wider mb-3">Deal Management</div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
                   <div>
                     <label className="font-body text-[10px] text-white/40 uppercase tracking-wider block mb-1">Stage</label>
@@ -316,16 +367,17 @@ export default function AdminDealsPage() {
                       ))}
                     </select>
                   </div>
-                  <div className="flex flex-col">
-                    <label className="font-body text-[10px] text-white/40 uppercase tracking-wider block mb-1">Info</label>
-                    <div className="font-body text-[11px] text-white/40 space-y-0.5">
-                      <div>Fee Rate: {deal.firmFeeRate ? `${(deal.firmFeeRate * 100).toFixed(0)}%` : "—"}</div>
-                      <div>L2: {fmt$(deal.l2CommissionAmount)} · <StatusBadge status={deal.l2CommissionStatus} /></div>
+                  <div>
+                    <label className="font-body text-[10px] text-white/40 uppercase tracking-wider block mb-1">Financial</label>
+                    <div className="font-body text-[11px] text-white/40 space-y-0.5 mt-1">
+                      <div>Firm Fee Rate: {deal.firmFeeRate ? `${(deal.firmFeeRate * 100).toFixed(0)}%` : "—"}</div>
+                      <div>L2 Commission: {fmt$(deal.l2CommissionAmount)} · <StatusBadge status={deal.l2CommissionStatus} /></div>
+                      <div>Partner: {deal.partnerName} ({deal.partnerCode})</div>
                     </div>
                   </div>
                 </div>
                 <div className="mb-3">
-                  <label className="font-body text-[10px] text-white/40 uppercase tracking-wider block mb-1">Notes</label>
+                  <label className="font-body text-[10px] text-white/40 uppercase tracking-wider block mb-1">Admin Notes</label>
                   <textarea
                     className={`${inputClass} w-full resize-none`}
                     rows={2}
@@ -335,15 +387,9 @@ export default function AdminDealsPage() {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => handleUpdateDeal(deal.id)} className="btn-gold text-[11px] px-4 py-2">
-                    Save Changes
-                  </button>
-                  <button onClick={() => setExpandedId(null)} className="font-body text-[11px] text-white/40 border border-white/10 rounded-lg px-4 py-2 hover:text-white/60 transition-colors">
-                    Cancel
-                  </button>
-                  <button onClick={() => handleDeleteDeal(deal.id, deal.dealName)} className="font-body text-[11px] text-red-400/60 border border-red-400/20 rounded-lg px-4 py-2 hover:bg-red-400/10 transition-colors ml-auto">
-                    Delete
-                  </button>
+                  <button onClick={() => handleUpdateDeal(deal.id)} className="btn-gold text-[11px] px-4 py-2">Save Changes</button>
+                  <button onClick={() => setExpandedId(null)} className="font-body text-[11px] text-white/40 border border-white/10 rounded-lg px-4 py-2 hover:text-white/60 transition-colors">Cancel</button>
+                  <button onClick={() => handleDeleteDeal(deal.id, deal.dealName)} className="font-body text-[11px] text-red-400/60 border border-red-400/20 rounded-lg px-4 py-2 hover:bg-red-400/10 transition-colors ml-auto">Delete</button>
                 </div>
               </div>
             )}
@@ -385,6 +431,37 @@ export default function AdminDealsPage() {
 
             {expandedId === deal.id && (
               <div className="px-4 pb-4 pt-2 border-t border-white/[0.06]">
+                {/* Form submission data */}
+                <div className="mb-3 pb-3 border-b border-white/[0.06]">
+                  <div className="font-body text-[10px] text-white/30 uppercase tracking-wider mb-2">Submission Details</div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    {[
+                      { label: "Contact", value: [deal.clientFirstName, deal.clientLastName].filter(Boolean).join(" ") || deal.clientName },
+                      { label: "Email", value: deal.clientEmail },
+                      { label: "Phone", value: deal.clientPhone },
+                      { label: "Title", value: deal.clientTitle },
+                      { label: "Service", value: deal.serviceOfInterest },
+                      { label: "Business", value: deal.legalEntityName },
+                      { label: "Location", value: [deal.businessCity, deal.businessState].filter(Boolean).join(", ") },
+                      { label: "Imports", value: deal.importsGoods },
+                      { label: "Countries", value: deal.importCountries },
+                      { label: "Import Value", value: deal.annualImportValue },
+                      { label: "Importer", value: deal.importerOfRecord },
+                    ].map((f) => (
+                      <div key={f.label}>
+                        <div className="font-body text-[9px] text-white/25 uppercase">{f.label}</div>
+                        <div className="font-body text-[12px] text-white/60">{f.value || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {deal.affiliateNotes && (
+                    <div className="mt-2">
+                      <div className="font-body text-[9px] text-white/25 uppercase">Affiliate Notes</div>
+                      <div className="font-body text-[11px] text-white/50 mt-0.5 whitespace-pre-line">{deal.affiliateNotes}</div>
+                    </div>
+                  )}
+                </div>
+                {/* Edit controls */}
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   <div>
                     <label className="font-body text-[10px] text-white/40 uppercase block mb-1">Stage</label>
