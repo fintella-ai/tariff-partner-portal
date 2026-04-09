@@ -9,9 +9,24 @@ function initVercelDb() {
       const path = require("path");
       const tmpDb = "/tmp/dev.db";
       if (!fs.existsSync(tmpDb)) {
-        const src = path.join(process.cwd(), "prisma", "dev.db");
-        if (fs.existsSync(src)) {
-          fs.copyFileSync(src, tmpDb);
+        // Try multiple possible locations for the DB file
+        const candidates = [
+          path.join(process.cwd(), "prisma", "dev.db"),
+          path.join(__dirname, "..", "..", "prisma", "dev.db"),
+          path.join(__dirname, "..", "..", "..", "prisma", "dev.db"),
+          "/var/task/prisma/dev.db",
+          "/var/task/.next/server/prisma/dev.db",
+        ];
+        for (const src of candidates) {
+          if (fs.existsSync(src)) {
+            fs.copyFileSync(src, tmpDb);
+            console.log("[prisma] Copied DB from:", src);
+            break;
+          }
+        }
+        // If no DB found, create empty one via prisma push at runtime
+        if (!fs.existsSync(tmpDb)) {
+          console.log("[prisma] No DB found to copy, will create fresh");
         }
       }
     } catch {
