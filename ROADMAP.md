@@ -158,10 +158,10 @@ Stack: Next.js 14, Tailwind CSS, Prisma/SQLite, NextAuth, TypeScript.
 - [ ] Escalation to human support
 - [ ] Chat history persistence
 
-### Phase 18 — Deployment & Production 🔲
+### Phase 18 — Deployment & Production ✅ (initial) / 🔲 (hardening)
+- [x] Vercel deployment configuration (vercel.json, .env.example)
+- [x] Build command: prisma generate && next build
 - [ ] PostgreSQL migration (from SQLite)
-- [ ] Vercel/Railway deployment
-- [ ] Environment variable configuration
 - [ ] Custom domain setup
 - [ ] SSL/security hardening
 - [ ] Performance optimization (caching, lazy loading)
