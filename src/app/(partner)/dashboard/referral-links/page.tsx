@@ -16,7 +16,7 @@ export default function ReferralLinksPage() {
       title: "Client Referral Link",
       description:
         "Send this link to importers who may qualify for a tariff refund. When they submit through your link, the deal is tracked to your account.",
-      url: `https://trrln.com/?ref=${partnerCode}`,
+      url: `https://referral.frostlawaz.com/l/ANNEXATIONPR/?REFERRALCODE=${partnerCode}`,
       color: "#c4a050",
       borderColor: "border-[#c4a050]/30",
       bgColor: "bg-[#c4a050]/5",

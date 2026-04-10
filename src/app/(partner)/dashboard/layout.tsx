@@ -15,6 +15,7 @@ const MAIN_NAV = [
   { id: "deals", href: "/dashboard/deals", icon: "\u{1F4BC}", label: "My Deals", shortLabel: "Deals" },
   { id: "downline", href: "/dashboard/downline", icon: "\u{1F465}", label: "Downline", shortLabel: "Team" },
   { id: "commissions", href: "/dashboard/commissions", icon: "\u{1F4B0}", label: "Commissions", shortLabel: "Earn" },
+  { id: "submit-client", href: "/dashboard/submit-client", icon: "\u{1F4E5}", label: "Submit Client", shortLabel: "Client" },
   { id: "submit-lead", href: "/dashboard/submit-lead", icon: "\u{1F4DD}", label: "Submit Lead", shortLabel: "Lead" },
   { id: "referral-links", href: "/dashboard/referral-links", icon: "\u{1F517}", label: "Referral Links", shortLabel: "Links" },
   { id: "documents", href: "/dashboard/documents", icon: "\u{1F4C4}", label: "Documents", shortLabel: "Docs" },
@@ -71,7 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const user = session?.user as any;
   const partnerCode = user?.partnerCode || "DEMO";
 
-  const clientRefUrl = `https://trrln.com/?ref=${partnerCode}`;
+  const clientRefUrl = `https://referral.frostlawaz.com/l/ANNEXATIONPR/?REFERRALCODE=${partnerCode}`;
   const partnerRefUrl = `https://trrln.com/partner?ref=${partnerCode}`;
 
   function copyAndNotify(url: string, label: string) {
