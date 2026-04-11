@@ -38,6 +38,10 @@ function ImpersonateContent() {
           return;
         }
 
+        // Flag this session as admin impersonation
+        sessionStorage.setItem("adminSudo", "true");
+        sessionStorage.setItem("adminSudoPartner", partnerCode);
+
         // Redirect to partner dashboard
         window.location.href = "/dashboard/home";
       } catch {
