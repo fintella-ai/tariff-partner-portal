@@ -2,6 +2,42 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+/**
+ * Compress an image file to a smaller base64 data URL.
+ * Resizes to maxDim and compresses as JPEG/WebP.
+ */
+function compressImage(file: File, maxDim: number, quality: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, w, h);
+        // Try WebP first, fall back to JPEG
+        let dataUrl = canvas.toDataURL("image/webp", quality);
+        if (!dataUrl.startsWith("data:image/webp")) {
+          dataUrl = canvas.toDataURL("image/jpeg", quality);
+        }
+        resolve(dataUrl);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 // ─── NAV ITEMS (must match partner layout) ──────────────────────────────────
 
 const ALL_NAV_ITEMS = [
@@ -181,8 +217,13 @@ export default function SettingsPage() {
       if (res.ok) {
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to save: ${err.error || res.statusText}`);
       }
-    } catch {} finally {
+    } catch (e: any) {
+      alert(`Save error: ${e.message || "Network error"}`);
+    } finally {
       setSaving(false);
     }
   };
@@ -359,7 +400,7 @@ export default function SettingsPage() {
               {/* Logo Upload */}
               <div>
                 <label className={labelClass}>Company Logo</label>
-                <p className="font-body text-[11px] theme-text-muted mb-3">Displayed in the partner portal sidebar. Recommended: PNG or SVG, max 200KB.</p>
+                <p className="font-body text-[11px] theme-text-muted mb-3">Displayed in the partner portal sidebar. PNG, JPEG, SVG, or WebP. Images are auto-compressed.</p>
                 <div className="flex items-center gap-4 mb-3">
                   {logoUrl ? (
                     <div className="w-16 h-16 rounded-lg border flex items-center justify-center overflow-hidden p-1" style={{ borderColor: "var(--app-border)", background: "var(--app-card-bg)" }}>
@@ -377,13 +418,20 @@ export default function SettingsPage() {
                         type="file"
                         accept="image/png,image/jpeg,image/svg+xml,image/webp"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          if (file.size > 200 * 1024) { alert("File too large. Max 200KB."); return; }
-                          const reader = new FileReader();
-                          reader.onload = () => setLogoUrl(reader.result as string);
-                          reader.readAsDataURL(file);
+                          try {
+                            // SVGs are small, use as-is; raster images get compressed
+                            if (file.type === "image/svg+xml") {
+                              const reader = new FileReader();
+                              reader.onload = () => setLogoUrl(reader.result as string);
+                              reader.readAsDataURL(file);
+                            } else {
+                              const compressed = await compressImage(file, 400, 0.8);
+                              setLogoUrl(compressed);
+                            }
+                          } catch { alert("Failed to process image."); }
                         }}
                       />
                     </label>
@@ -403,7 +451,7 @@ export default function SettingsPage() {
               {/* Favicon Upload */}
               <div>
                 <label className={labelClass}>Favicon</label>
-                <p className="font-body text-[11px] theme-text-muted mb-3">Displayed in browser tab. Recommended: square PNG or ICO, max 100KB.</p>
+                <p className="font-body text-[11px] theme-text-muted mb-3">Displayed in browser tab. Square PNG, ICO, or SVG. Images are auto-compressed.</p>
                 <div className="flex items-center gap-4 mb-3">
                   {faviconUrl ? (
                     <div className="w-16 h-16 rounded-lg border flex items-center justify-center overflow-hidden p-2" style={{ borderColor: "var(--app-border)", background: "var(--app-card-bg)" }}>
@@ -421,13 +469,19 @@ export default function SettingsPage() {
                         type="file"
                         accept="image/png,image/x-icon,image/svg+xml,image/webp"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          if (file.size > 100 * 1024) { alert("File too large. Max 100KB."); return; }
-                          const reader = new FileReader();
-                          reader.onload = () => setFaviconUrl(reader.result as string);
-                          reader.readAsDataURL(file);
+                          try {
+                            if (file.type === "image/svg+xml" || file.type === "image/x-icon") {
+                              const reader = new FileReader();
+                              reader.onload = () => setFaviconUrl(reader.result as string);
+                              reader.readAsDataURL(file);
+                            } else {
+                              const compressed = await compressImage(file, 128, 0.85);
+                              setFaviconUrl(compressed);
+                            }
+                          } catch { alert("Failed to process image."); }
                         }}
                       />
                     </label>

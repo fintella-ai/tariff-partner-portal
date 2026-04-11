@@ -105,7 +105,8 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json({ settings });
-  } catch {
-    return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
+  } catch (err: any) {
+    console.error("[Settings PUT] Error:", err);
+    return NextResponse.json({ error: err.message || "Failed to update settings" }, { status: 500 });
   }
 }
