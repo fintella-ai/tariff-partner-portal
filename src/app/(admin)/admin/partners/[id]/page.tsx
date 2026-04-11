@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { fmtDate } from "@/lib/format";
 import CountryCodeSelect, { parseMobilePhone, buildMobilePhone } from "@/components/ui/CountryCodeSelect";
 import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
@@ -62,6 +63,8 @@ const statusBadge: Record<string, string> = {
 };
 
 export default function PartnerDetailPage() {
+  const { data: session } = useSession();
+  const isSuperAdmin = (session?.user as any)?.role === "super_admin";
   const { id } = useParams();
   const router = useRouter();
   const [partner, setPartner] = useState<Partner | null>(null);
@@ -182,8 +185,8 @@ export default function PartnerDetailPage() {
   };
 
   const handleResetCode = async () => {
-    if (!confirm(`Are you sure you want to reset the partner code for ${partner?.firstName} ${partner?.lastName}?\n\nCurrent code: ${partner?.partnerCode}\n\nThis action cannot be undone. The partner will need the new code to log in.`)) return;
-    if (!confirm(`FINAL CONFIRMATION: This will permanently change the login code for ${partner?.firstName} ${partner?.lastName}. Continue?`)) return;
+    if (!confirm(`Generate a new partner code for ${partner?.firstName} ${partner?.lastName}?\n\nCurrent code: ${partner?.partnerCode}\n\nThis action cannot be undone. A new unique code will be generated.`)) return;
+    if (!confirm(`FINAL CONFIRMATION: This will permanently replace the partner code for ${partner?.firstName} ${partner?.lastName}. Continue?`)) return;
     try {
       const res = await fetch(`/api/admin/partners/${id}`, {
         method: "PUT",
@@ -343,9 +346,11 @@ export default function PartnerDetailPage() {
             <div className="font-mono text-[14px] text-[var(--app-text)] mt-0.5">{partner.partnerCode}</div>
             <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-0.5">Legacy login method (email + code)</p>
           </div>
+          {isSuperAdmin && (
           <button onClick={handleResetCode} className="font-body text-[12px] text-yellow-400/80 border border-yellow-400/20 rounded-lg px-4 py-2 hover:bg-yellow-400/10 transition-colors">
-            Reset Code
+            Generate New Code
           </button>
+          )}
         </div>
 
         {/* Set Password */}
