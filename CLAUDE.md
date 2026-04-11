@@ -154,6 +154,12 @@ npm run db:studio    # Open Prisma Studio
 - Pin/unpin feature on both partner and deal admin notes
 - Partner code generation restricted to super_admin only ("Generate New Code")
 - Partner code history preserved (PartnerCodeHistory model — old codes kept for audit)
+- L2/L3 signup redesign: no SignWell agreements sent, simple success page with login link
+- L1 responsible for uploading signed agreements for downline partners
+- L1 downline page: "Upload Agreement" button for pending partners
+- Admin approve flow: L1-uploaded agreements go to "under_review" → admin approves → partner active
+- Agreement gates accept both "signed" (L1/SignWell) and "approved" (L2/L3/admin review)
+- Commissions: 25% total paid to L1 only, L1 pays downline using portal reporting
 
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)
