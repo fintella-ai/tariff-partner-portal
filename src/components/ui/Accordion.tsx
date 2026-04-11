@@ -37,7 +37,7 @@ interface AccordionProps {
  * @example
  * ```tsx
  * const faqItems: AccordionItem[] = [
- *   { id: "1", title: "What is TRRLN?", content: "TRRLN is..." },
+ *   { id: "1", title: "What is TRLN?", content: "TRLN is..." },
  *   { id: "2", title: "How do I sign up?", content: "Visit..." },
  * ];
  *

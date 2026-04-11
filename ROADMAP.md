@@ -1,7 +1,7 @@
-# TRRLN Partner Portal — Master Roadmap
+# TRLN Partner Portal — Master Roadmap
 
 ## Project Overview
-Partner portal for Tax Refund, Recovery, & Litigation Network (TRRLN).
+Partner portal for Tariff Refund & Litigation Network (TRLN).
 Dark theme, mobile-first, device-aware responsive design.
 Stack: Next.js 14, Tailwind CSS, Prisma/SQLite, NextAuth, TypeScript.
 

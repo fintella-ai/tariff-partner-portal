@@ -26,7 +26,7 @@ type ConferenceEntry = {
 // ─── DEMO FALLBACK ────────────────────────────────────────────────────────
 
 const DEMO_ENTRIES: ConferenceEntry[] = [
-  { id: "d1", title: "Weekly Partner Training & Q&A", description: "Product updates, training topics, success stories, and live Q&A.", embedUrl: null, joinUrl: "https://zoom.us/j/1234567890", recordingUrl: null, schedule: "Every Thursday at 2:00 PM ET", nextCall: "2026-03-26T18:00:00Z", hostName: "TRRLN Leadership Team", duration: null, weekNumber: 13, notes: null, isActive: true, createdAt: "2026-03-20", updatedAt: "2026-03-20" },
+  { id: "d1", title: "Weekly Partner Training & Q&A", description: "Product updates, training topics, success stories, and live Q&A.", embedUrl: null, joinUrl: "https://zoom.us/j/1234567890", recordingUrl: null, schedule: "Every Thursday at 2:00 PM ET", nextCall: "2026-03-26T18:00:00Z", hostName: "TRLN Leadership Team", duration: null, weekNumber: 13, notes: null, isActive: true, createdAt: "2026-03-20", updatedAt: "2026-03-20" },
   { id: "d2", title: "Section 301 Update & New Partner Tools", description: null, embedUrl: "https://youtube.com/embed/example", joinUrl: null, recordingUrl: null, schedule: null, nextCall: "2026-03-19T18:00:00Z", hostName: "Sarah Mitchell", duration: "52 min", weekNumber: 12, notes: "Key topics covered.", isActive: false, createdAt: "2026-03-19", updatedAt: "2026-03-19" },
 ];
 
@@ -251,7 +251,7 @@ export default function AdminConferencePage() {
                 value={formHostName}
                 onChange={(e) => setFormHostName(e.target.value)}
                 className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors"
-                placeholder="TRRLN Leadership Team"
+                placeholder="TRLN Leadership Team"
               />
             </div>
             {/* Week Number */}

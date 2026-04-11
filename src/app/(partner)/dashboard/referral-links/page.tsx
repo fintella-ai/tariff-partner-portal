@@ -28,7 +28,7 @@ export default function ReferralLinksPage() {
       title: "Partner Recruitment Link",
       description:
         "Share this with CPAs, trade advisors, and attorneys who want to earn commissions by referring their own clients. They join your downline.",
-      url: `https://trrln.com/partner?ref=${partnerCode}`,
+      url: `https://trln.com/partner?ref=${partnerCode}`,
       color: "#a78bfa",
       borderColor: "border-[#a78bfa]/30",
       bgColor: "bg-[#a78bfa]/5",

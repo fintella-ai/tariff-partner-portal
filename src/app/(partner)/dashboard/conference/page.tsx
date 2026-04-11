@@ -35,7 +35,7 @@ const DEMO_ACTIVE: ConferenceEntry = {
   recordingUrl: null,
   schedule: "Every Thursday at 2:00 PM ET — 45-60 minutes",
   nextCall: new Date().toISOString(),
-  hostName: "TRRLN Leadership Team",
+  hostName: "TRLN Leadership Team",
   duration: null,
   weekNumber: null,
   notes: null,
@@ -46,7 +46,7 @@ const DEMO_RECORDINGS: ConferenceEntry[] = [
   { id: "d1", title: "Section 301 Update & New Partner Tools", description: null, embedUrl: null, joinUrl: null, recordingUrl: "#", schedule: null, nextCall: "2026-03-19T18:00:00Z", hostName: "Sarah Mitchell", duration: "52 min", weekNumber: 12, notes: null, isActive: false },
   { id: "d2", title: "Commission Deep Dive & Top Partner Q&A", description: null, embedUrl: null, joinUrl: null, recordingUrl: "#", schedule: null, nextCall: "2026-03-12T18:00:00Z", hostName: "John Orlando", duration: "47 min", weekNumber: 11, notes: null, isActive: false },
   { id: "d3", title: "IEEPA Changes & Client Outreach Strategies", description: null, embedUrl: null, joinUrl: null, recordingUrl: "#", schedule: null, nextCall: "2026-03-05T19:00:00Z", hostName: "Sarah Mitchell", duration: "58 min", weekNumber: 10, notes: null, isActive: false },
-  { id: "d4", title: "Onboarding Best Practices for New Partners", description: null, embedUrl: null, joinUrl: null, recordingUrl: "#", schedule: null, nextCall: "2026-02-26T19:00:00Z", hostName: "TRRLN Leadership Team", duration: "41 min", weekNumber: 9, notes: null, isActive: false },
+  { id: "d4", title: "Onboarding Best Practices for New Partners", description: null, embedUrl: null, joinUrl: null, recordingUrl: "#", schedule: null, nextCall: "2026-02-26T19:00:00Z", hostName: "TRLN Leadership Team", duration: "41 min", weekNumber: 9, notes: null, isActive: false },
 ];
 
 /* ── ICS helper ────────────────────────────────────────────────────────── */
@@ -73,7 +73,7 @@ function generateICS(entry: ConferenceEntry) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "trrln-weekly-call.ics";
+  a.download = "trln-weekly-call.ics";
   a.click();
   URL.revokeObjectURL(url);
 }

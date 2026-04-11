@@ -65,7 +65,7 @@ type ProgressStats = {
 // ─── DEMO FALLBACK DATA ────────────────────────────────────────────────────
 
 const DEMO_MODULES: TrainingModule[] = [
-  { id: "dm-1", title: "Welcome to TRRLN", description: "Introduction to the Tariff Relief & Recovery Legal Network and how the partner program works.", category: "onboarding", content: null, videoUrl: "https://example.com/videos/welcome", duration: "12 min", sortOrder: 1, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dm-1", title: "Welcome to TRLN", description: "Introduction to the Tariff Relief & Recovery Legal Network and how the partner program works.", category: "onboarding", content: null, videoUrl: "https://example.com/videos/welcome", duration: "12 min", sortOrder: 1, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
   { id: "dm-2", title: "Understanding Tariff Relief", description: "Deep dive into tariff relief programs, eligibility criteria, and the legal framework.", category: "product", content: null, videoUrl: "https://example.com/videos/tariff-relief", duration: "18 min", sortOrder: 2, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
   { id: "dm-3", title: "Partner Portal Walkthrough", description: "How to navigate the partner portal, submit leads, track deals, and monitor commissions.", category: "tools", content: null, videoUrl: "https://example.com/videos/portal-walkthrough", duration: "15 min", sortOrder: 3, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
   { id: "dm-4", title: "Lead Qualification Process", description: "Learn how to identify and qualify potential clients for tariff relief services.", category: "sales", content: null, videoUrl: "https://example.com/videos/lead-qualification", duration: "20 min", sortOrder: 4, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
@@ -76,7 +76,7 @@ const DEMO_MODULES: TrainingModule[] = [
 ];
 
 const DEMO_RESOURCES: TrainingResource[] = [
-  { id: "dr-1", title: "Partner Quick-Start Guide", description: "One-page overview to get started as a TRRLN partner.", fileUrl: "/docs/quick-start.pdf", fileType: "pdf", fileSize: "1.2 MB", moduleId: null, sortOrder: 1, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dr-1", title: "Partner Quick-Start Guide", description: "One-page overview to get started as a TRLN partner.", fileUrl: "/docs/quick-start.pdf", fileType: "pdf", fileSize: "1.2 MB", moduleId: null, sortOrder: 1, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
   { id: "dr-2", title: "Lead Qualification Checklist", description: "Checklist for qualifying tariff relief leads.", fileUrl: "/docs/lead-checklist.pdf", fileType: "checklist", fileSize: "340 KB", moduleId: null, sortOrder: 2, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
   { id: "dr-3", title: "Commission Rate Card", description: "Current commission rates and tier thresholds.", fileUrl: "/docs/rate-card.pdf", fileType: "pdf", fileSize: "280 KB", moduleId: null, sortOrder: 3, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
   { id: "dr-4", title: "Client Intake Template", description: "Template for gathering initial client information.", fileUrl: "/docs/intake-template.docx", fileType: "template", fileSize: "95 KB", moduleId: null, sortOrder: 4, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
@@ -102,7 +102,7 @@ const DEMO_PROGRESS: ProgressStats = {
   avgCompletion: 58,
   fullyCompleted: 8,
   moduleStats: [
-    { moduleId: "dm-1", moduleTitle: "Welcome to TRRLN", started: 24, completed: 22, totalPartners: 24, completionPercentage: 92 },
+    { moduleId: "dm-1", moduleTitle: "Welcome to TRLN", started: 24, completed: 22, totalPartners: 24, completionPercentage: 92 },
     { moduleId: "dm-2", moduleTitle: "Understanding Tariff Relief", started: 20, completed: 18, totalPartners: 24, completionPercentage: 75 },
     { moduleId: "dm-3", moduleTitle: "Partner Portal Walkthrough", started: 19, completed: 17, totalPartners: 24, completionPercentage: 71 },
     { moduleId: "dm-4", moduleTitle: "Lead Qualification Process", started: 16, completed: 14, totalPartners: 24, completionPercentage: 58 },

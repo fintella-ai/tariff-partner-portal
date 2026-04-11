@@ -90,7 +90,7 @@ async function main() {
       joinUrl: "https://zoom.us/j/1234567890",
       schedule: "Every Thursday at 2:00 PM ET — 45-60 minutes",
       nextCall: new Date("2026-03-26T18:00:00.000Z"), // 2pm ET = 6pm UTC
-      hostName: "TRRLN Leadership Team",
+      hostName: "TRLN Leadership Team",
       weekNumber: 13,
       isActive: true,
     },
@@ -132,12 +132,12 @@ async function main() {
     {
       id: "cs-week-9",
       title: "Onboarding Best Practices for New Partners",
-      hostName: "TRRLN Leadership Team",
+      hostName: "TRLN Leadership Team",
       weekNumber: 9,
       nextCall: new Date("2026-02-26T19:00:00.000Z"),
       duration: "41 min",
       recordingUrl: "https://zoom.us/rec/share/example-week-9",
-      notes: "**Key Topics:**\n- First 7 days as a TRRLN partner — what to do\n- Portal walkthrough for new partners\n- Common mistakes to avoid when submitting leads\n\n**Action Items:**\n- Complete all Onboarding training modules\n- Submit your W-9 and partnership agreement",
+      notes: "**Key Topics:**\n- First 7 days as a TRLN partner — what to do\n- Portal walkthrough for new partners\n- Common mistakes to avoid when submitting leads\n\n**Action Items:**\n- Complete all Onboarding training modules\n- Submit your W-9 and partnership agreement",
     },
     {
       id: "cs-week-8",
@@ -162,7 +162,7 @@ async function main() {
     {
       id: "cs-week-6",
       title: "Product Knowledge Deep Dive — IEEPA & Section 301",
-      hostName: "TRRLN Leadership Team",
+      hostName: "TRLN Leadership Team",
       weekNumber: 6,
       nextCall: new Date("2026-02-05T19:00:00.000Z"),
       duration: "49 min",
@@ -472,12 +472,12 @@ function generateICS(entry: ConferenceEntry) {
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//TRRLN//Partner Portal//EN",
+    "PRODID:-//TRLN//Partner Portal//EN",
     "BEGIN:VEVENT",
     `DTSTART:${fmt(start)}`,
     `DTEND:${fmt(end)}`,
     `SUMMARY:${entry.title}`,
-    `DESCRIPTION:${entry.description || "Weekly TRRLN partner call"}`,
+    `DESCRIPTION:${entry.description || "Weekly TRLN partner call"}`,
     entry.joinUrl ? `URL:${entry.joinUrl}` : "",
     "END:VEVENT",
     "END:VCALENDAR",
@@ -487,7 +487,7 @@ function generateICS(entry: ConferenceEntry) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "trrln-weekly-call.ics";
+  a.download = "trln-weekly-call.ics";
   a.click();
   URL.revokeObjectURL(url);
 }

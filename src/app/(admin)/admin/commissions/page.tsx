@@ -16,7 +16,7 @@ const DEFAULT_RATES = { l1: 0.2, l2: 0.05, l3: 0 };
 
 const DEMO_OVERRIDES: CommissionOverride[] = [
   {
-    partnerCode: "TRRLN-SM2024",
+    partnerCode: "TRLN-SM2024",
     partnerName: "Sarah Mitchell",
     l1Rate: 0.25,
     l2Rate: 0.07,
@@ -24,7 +24,7 @@ const DEMO_OVERRIDES: CommissionOverride[] = [
     l3Enabled: true,
   },
   {
-    partnerCode: "TRRLN-JR2024",
+    partnerCode: "TRLN-JR2024",
     partnerName: "James Robertson",
     l1Rate: 0.22,
     l2Rate: 0.05,
@@ -32,7 +32,7 @@ const DEMO_OVERRIDES: CommissionOverride[] = [
     l3Enabled: false,
   },
   {
-    partnerCode: "TRRLN-PN2025",
+    partnerCode: "TRLN-PN2025",
     partnerName: "Priya Nair",
     l1Rate: 0.2,
     l2Rate: 0.06,
@@ -145,7 +145,7 @@ export default function CommissionManagementPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, partnerCode: e.target.value }))
                   }
-                  placeholder="TRRLN-XX0000"
+                  placeholder="TRLN-XX0000"
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 font-body text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-brand-gold/60 transition"
                 />
               </div>

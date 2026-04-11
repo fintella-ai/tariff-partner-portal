@@ -280,8 +280,8 @@ model ConferenceSchedule {
 model PortalSettings {
   id        String @id @default("global") // singleton — always "global"
   // Branding
-  firmName  String @default("Tax Refund, Recovery, & Litigation Network")
-  firmShort String @default("TRRLN")
+  firmName  String @default("Tariff Refund & Litigation Network")
+  firmShort String @default("TRLN")
   firmSlogan String @default("Fighting for what's owed, reclaiming what's fair.")
   firmPhone String @default("(410) 497-5947")
   supportEmail String @default("")

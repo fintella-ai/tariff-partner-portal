@@ -341,7 +341,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className={labelClass}>Support Email</label>
-              <input className={inputClass} value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} placeholder="support@trrln.com" />
+              <input className={inputClass} value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} placeholder="support@trln.com" />
             </div>
           </div>
         </div>

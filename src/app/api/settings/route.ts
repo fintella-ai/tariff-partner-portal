@@ -25,8 +25,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       settings: {
         id: "global",
-        firmName: "Tax Refund, Recovery, & Litigation Network",
-        firmShort: "TRRLN",
+        firmName: "Tariff Refund & Litigation Network",
+        firmShort: "TRLN",
         firmSlogan: "Fighting for what's owed, reclaiming what's fair.",
         firmPhone: "(410) 497-5947",
         supportEmail: "",

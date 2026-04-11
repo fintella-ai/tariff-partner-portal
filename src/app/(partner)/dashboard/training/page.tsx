@@ -56,7 +56,7 @@ const FAQ_CATEGORIES = ["All", "General", "Commissions", "Leads", "Technical"];
 /* -------------------------------------------------------------------------- */
 
 const DEMO_MODULES: Module[] = [
-  { id: "m1", title: "Welcome to TRRLN — Getting Started", description: "Overview of the partner program, how commissions work, and your first steps.", category: "Onboarding", duration: "12 min", videoUrl: null, content: "This introductory module walks you through the TRRLN partner program from end to end. You will learn how the commission tiers work (L1, L2, L3), what resources are available in the partner portal, and the exact steps to submit your first lead. By the end, you will have a clear roadmap for getting your first client signed up.", completed: true, completedAt: "2025-12-01T10:00:00Z" },
+  { id: "m1", title: "Welcome to TRLN — Getting Started", description: "Overview of the partner program, how commissions work, and your first steps.", category: "Onboarding", duration: "12 min", videoUrl: null, content: "This introductory module walks you through the TRLN partner program from end to end. You will learn how the commission tiers work (L1, L2, L3), what resources are available in the partner portal, and the exact steps to submit your first lead. By the end, you will have a clear roadmap for getting your first client signed up.", completed: true, completedAt: "2025-12-01T10:00:00Z" },
   { id: "m2", title: "Understanding IEEPA Tariff Recovery", description: "Deep dive into the IEEPA tariff recovery process and how clients qualify for refunds.", category: "Product Knowledge", duration: "18 min", videoUrl: null, content: "Learn the legal and procedural basis for IEEPA tariff recovery claims. We cover which tariff codes qualify, the documentation importers need to provide, and the typical timeline from filing to refund. This module includes real-world examples of successful recoveries.", completed: true, completedAt: "2025-12-02T14:30:00Z" },
   { id: "m3", title: "How to Submit a Lead", description: "Step-by-step walkthrough of the lead submission process and what happens after.", category: "Onboarding", duration: "8 min", videoUrl: null, content: "Follow along as we walk through the lead submission form field by field. You will see exactly what information is required, what is optional, and how to set expectations with your client about next steps. We also cover the lead status lifecycle so you always know where things stand.", completed: false, completedAt: null },
   { id: "m4", title: "Identifying Qualified Importers", description: "Learn how to spot importers who may qualify for tariff refunds in your network.", category: "Sales", duration: "15 min", videoUrl: null, content: "Not every importer qualifies for tariff recovery. This module teaches you the key qualification criteria: minimum import volume, applicable tariff codes, documentation readiness, and common disqualifiers. Includes a quick-assessment framework you can use during initial conversations.", completed: false, completedAt: null },
@@ -67,7 +67,7 @@ const DEMO_MODULES: Module[] = [
 ];
 
 const DEMO_RESOURCES: Resource[] = [
-  { id: "tr-quickstart", title: "IEEPA Tariff Recovery — Partner Quick Start Guide", description: "Everything you need to know to get started as a TRRLN partner.", fileUrl: "#", fileType: "pdf", fileSize: "2.4 MB" },
+  { id: "tr-quickstart", title: "IEEPA Tariff Recovery — Partner Quick Start Guide", description: "Everything you need to know to get started as a TRLN partner.", fileUrl: "#", fileType: "pdf", fileSize: "2.4 MB" },
   { id: "tr-checklist", title: "Qualified Importer Checklist", description: "Use this checklist to quickly assess if a potential client qualifies.", fileUrl: "#", fileType: "checklist", fileSize: "340 KB" },
   { id: "tr-ratecard", title: "Commission Rate Card", description: "Overview of L1, L2, and L3 commission rates and payment schedules.", fileUrl: "#", fileType: "pdf", fileSize: "180 KB" },
   { id: "tr-script", title: "Client Conversation Script", description: "Talking points for your first conversation with a potential client.", fileUrl: "#", fileType: "guide", fileSize: "520 KB" },
@@ -75,7 +75,7 @@ const DEMO_RESOURCES: Resource[] = [
 ];
 
 const DEMO_FAQS: FAQItem[] = [
-  { id: "faq-1", question: "What is the TRRLN partner program?", answer: "TRRLN (Tariff Recovery Referral & Lead Network) is a partner program that allows CPAs, attorneys, trade advisors, and other professionals to earn commissions by referring importers who qualify for tariff recovery services. Partners earn on direct referrals (L1) and on referrals from their recruited downline partners (L2 and L3).", category: "General" },
+  { id: "faq-1", question: "What is the TRLN partner program?", answer: "TRLN (Tariff Recovery Referral & Lead Network) is a partner program that allows CPAs, attorneys, trade advisors, and other professionals to earn commissions by referring importers who qualify for tariff recovery services. Partners earn on direct referrals (L1) and on referrals from their recruited downline partners (L2 and L3).", category: "General" },
   { id: "faq-2", question: "How do I submit a lead?", answer: "Navigate to the Leads section of your partner portal and click 'Submit New Lead.' Fill in the importer's company name, contact information, and estimated annual import volume. You will receive a confirmation email and can track the lead's status in real time from your dashboard.", category: "Leads" },
   { id: "faq-3", question: "What are the commission rates?", answer: "L1 (direct referral) commissions range from 8-12% of the recovery fee depending on deal volume. L2 (first-level downline) commissions are 3-5%, and L3 (second-level downline) commissions are 1-2%. Exact rates are detailed on the Commission Rate Card available in the Resources section.", category: "Commissions" },
   { id: "faq-4", question: "When do I get paid?", answer: "Commissions are paid within 30 days of the client's recovery fee being collected. You will receive an email notification when a commission is processed, and payments are deposited directly to the bank account on file. You can view pending and completed payouts in the Commissions tab.", category: "Commissions" },
@@ -83,7 +83,7 @@ const DEMO_FAQS: FAQItem[] = [
   { id: "faq-6", question: "How do I track my leads and deals?", answer: "Your partner portal dashboard shows all submitted leads, their current status, and associated deal values. Use the Deals section for detailed information on each opportunity, including stage progression, estimated recovery amounts, and expected commission payouts.", category: "Technical" },
   { id: "faq-7", question: "Can I recruit other partners into my network?", answer: "Yes. You can invite CPAs, attorneys, customs brokers, and other professionals to join as partners under your referral link. When they submit leads, you earn L2 commissions on their deals. If they recruit partners of their own, you earn L3 commissions on those deals as well.", category: "General" },
   { id: "faq-8", question: "What documents does the client need to provide?", answer: "Clients typically need to provide: customs entry summaries (CF 7501), commercial invoices, bills of lading, and a power of attorney form. The exact requirements depend on the tariff recovery type. Our team guides the client through document collection after a lead is converted to a deal.", category: "Leads" },
-  { id: "faq-9", question: "How do I reset my portal password?", answer: "Click 'Forgot Password' on the login page and enter your registered email address. You will receive a password reset link within a few minutes. If you do not receive the email, check your spam folder or contact support at support@trrln.com.", category: "Technical" },
+  { id: "faq-9", question: "How do I reset my portal password?", answer: "Click 'Forgot Password' on the login page and enter your registered email address. You will receive a password reset link within a few minutes. If you do not receive the email, check your spam folder or contact support at support@trln.com.", category: "Technical" },
   { id: "faq-10", question: "Is there a minimum payout threshold?", answer: "There is no minimum payout threshold. All earned commissions are paid out on the standard 30-day schedule regardless of amount. However, commissions under $10 may be rolled into the next payment cycle at the partner's discretion.", category: "Commissions" },
 ];
 
@@ -289,7 +289,7 @@ export default function TrainingPage() {
         Partner Training
       </h2>
       <p className="font-body text-[13px] text-white/40 mb-6">
-        Complete these modules to master the TRRLN partner program and maximize your earnings.
+        Complete these modules to master the TRLN partner program and maximize your earnings.
       </p>
 
       {/* ------------------------------------------------------------------ */}

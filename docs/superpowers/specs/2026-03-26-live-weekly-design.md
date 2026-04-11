@@ -1,7 +1,7 @@
 # Phase 12 — Live Weekly (Conference) Page Design
 
 ## Context
-The TRRLN partner portal has a "Live Weekly Call!" page at `/dashboard/conference` with hardcoded demo data. The Prisma `ConferenceSchedule` model exists but is unused. This phase wires the page to the database, adds recording playback and meeting notes, and provides admin management.
+The TRLN partner portal has a "Live Weekly Call!" page at `/dashboard/conference` with hardcoded demo data. The Prisma `ConferenceSchedule` model exists but is unused. This phase wires the page to the database, adds recording playback and meeting notes, and provides admin management.
 
 ## Requirements
 - Display the next upcoming call with a live join button (Zoom/Google Meet)

@@ -109,9 +109,9 @@ const demoTemplates: Template[] = [
     id: "TPL-001",
     name: "Welcome New Partner",
     category: "Onboarding",
-    subject: "Welcome to TRRLN Partner Program!",
+    subject: "Welcome to TRLN Partner Program!",
     preview:
-      "Thank you for joining the TRRLN Partner Program. We are excited to have you on board and look forward to a successful partnership...",
+      "Thank you for joining the TRLN Partner Program. We are excited to have you on board and look forward to a successful partnership...",
   },
   {
     id: "TPL-002",
@@ -133,9 +133,9 @@ const demoTemplates: Template[] = [
     id: "TPL-004",
     name: "Monthly Partner Newsletter",
     category: "Company Updates",
-    subject: "TRRLN Monthly Update — {month}",
+    subject: "TRLN Monthly Update — {month}",
     preview:
-      "Here is your monthly update from TRRLN. This month we have some exciting news including new features, upcoming events, and program updates...",
+      "Here is your monthly update from TRLN. This month we have some exciting news including new features, upcoming events, and program updates...",
   },
 ];
 

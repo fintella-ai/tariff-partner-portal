@@ -92,7 +92,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const partnerCode = user?.partnerCode || "DEMO";
 
   const clientRefUrl = `https://frostlawaz.com/referral?RR_WCID=5D5FFDC6-E177-4FF9-99BD-7CFECDB92D54&RR_WCID_TTL=396&REFERRALCODE=${partnerCode}&utm_campaign=Tariff+Refunds`;
-  const partnerRefUrl = `https://trrln.com/partner?ref=${partnerCode}`;
+  const partnerRefUrl = `https://trln.com/partner?ref=${partnerCode}`;
 
   function copyAndNotify(url: string, label: string) {
     navigator.clipboard.writeText(url);

@@ -3,7 +3,7 @@ import SessionProvider from "@/components/layout/SessionProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tax Refund, Recovery, & Litigation Network — Partner Portal",
+  title: "Tariff Refund & Litigation Network — Partner Portal",
   description: "Fighting for what's owed, reclaiming what's fair.",
 };
 

@@ -8,17 +8,17 @@ async function main() {
   const modules = [
     {
       id: "tm-welcome",
-      title: "Welcome to TRRLN — Getting Started",
+      title: "Welcome to TRLN — Getting Started",
       description:
-        "A comprehensive introduction to the TRRLN partner program, covering how commissions work, what to expect, and the first steps to take after activation.",
+        "A comprehensive introduction to the TRLN partner program, covering how commissions work, what to expect, and the first steps to take after activation.",
       category: "onboarding",
       duration: "12 min",
       sortOrder: 1,
       published: true,
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-      content: `**Welcome to the TRRLN Partner Network**
+      content: `**Welcome to the TRLN Partner Network**
 
-Thank you for joining the TRRLN partner program. As a partner, you play a critical role in connecting U.S. importers with tariff recovery services that can return significant capital to their businesses. This module walks you through the fundamentals of the program so you can hit the ground running.
+Thank you for joining the TRLN partner program. As a partner, you play a critical role in connecting U.S. importers with tariff recovery services that can return significant capital to their businesses. This module walks you through the fundamentals of the program so you can hit the ground running.
 
 Your partner portal is your home base. From here you can submit leads, track deal progress, view commission statements, and access all training materials. Every lead you submit enters our pipeline and is worked by our internal team — your job is to make the introduction, and we handle the rest.
 
@@ -40,7 +40,7 @@ Your partner portal is your home base. From here you can submit leads, track dea
       videoUrl: "https://www.youtube.com/embed/9bZkp7q19f0",
       content: `**What is IEEPA Tariff Recovery?**
 
-The International Emergency Economic Powers Act (IEEPA) grants the President broad authority to impose tariffs in response to national emergencies. Many U.S. importers have paid substantial duties under IEEPA-authorized tariffs that may be eligible for partial or full recovery. TRRLN specializes in identifying these recovery opportunities and filing the necessary claims on behalf of importers.
+The International Emergency Economic Powers Act (IEEPA) grants the President broad authority to impose tariffs in response to national emergencies. Many U.S. importers have paid substantial duties under IEEPA-authorized tariffs that may be eligible for partial or full recovery. TRLN specializes in identifying these recovery opportunities and filing the necessary claims on behalf of importers.
 
 The recovery process begins with a thorough analysis of the importer's customs entry data. Our team reviews HTS codes, duty rates paid, and applicable exclusions to determine the total recoverable amount. Once qualified, we prepare and submit the formal claim to U.S. Customs and Border Protection (CBP) on the client's behalf.
 
@@ -63,7 +63,7 @@ The recovery process begins with a thorough analysis of the importer's customs e
       videoUrl: "https://www.youtube.com/embed/LXb3EKWsInQ",
       content: `**Submitting Your First Lead**
 
-Submitting a lead through the TRRLN partner portal is straightforward. Navigate to the "Submit Lead" page from the sidebar, fill in the required contact and company information, and click submit. Your partner code is automatically attached to every submission, ensuring proper attribution for commissions.
+Submitting a lead through the TRLN partner portal is straightforward. Navigate to the "Submit Lead" page from the sidebar, fill in the required contact and company information, and click submit. Your partner code is automatically attached to every submission, ensuring proper attribution for commissions.
 
 When filling out the lead form, provide as much detail as possible. The company name, contact name, email, and phone number are required fields. If you know the approximate annual import volume or the HTS codes involved, include those in the notes — it helps our team prioritize and qualify the lead faster.
 
@@ -109,7 +109,7 @@ Start by looking at your existing network. CPAs, trade compliance consultants, f
       videoUrl: "https://www.youtube.com/embed/2Vv-BfVoq4g",
       content: `**Growing Your Partner Network**
 
-One of the most powerful features of the TRRLN partner program is the ability to build a downline network. When you recruit another partner, every lead they submit generates an L2 commission for you. If that partner recruits someone who submits a lead, you earn an L3 commission. This creates a scalable, passive income stream on top of your direct L1 commissions.
+One of the most powerful features of the TRLN partner program is the ability to build a downline network. When you recruit another partner, every lead they submit generates an L2 commission for you. If that partner recruits someone who submits a lead, you earn an L3 commission. This creates a scalable, passive income stream on top of your direct L1 commissions.
 
 The best downline recruits are professionals who already interact with importers in their day-to-day work. CPAs and accountants see import duties on financial statements. Trade compliance consultants and customs brokers handle entry filings directly. Attorneys specializing in international trade or business law advise importers on regulatory matters. Each of these professionals can generate a steady flow of qualified leads.
 
@@ -132,7 +132,7 @@ The best downline recruits are professionals who already interact with importers
       videoUrl: "https://www.youtube.com/embed/M7lc1UVf-VE",
       content: `**Your Partner Portal — A Complete Guide**
 
-The TRRLN partner portal is your central hub for managing your partnership. The dashboard gives you an at-a-glance view of your active leads, deal pipeline, and commission earnings. From the sidebar, you can navigate to lead submission, deal tracking, commission statements, training modules, and downloadable resources.
+The TRLN partner portal is your central hub for managing your partnership. The dashboard gives you an at-a-glance view of your active leads, deal pipeline, and commission earnings. From the sidebar, you can navigate to lead submission, deal tracking, commission statements, training modules, and downloadable resources.
 
 The Deals page shows every lead you have submitted along with its current status in the pipeline. You can filter by status, date range, or search by company name. The Commissions page breaks down your earnings by tier (L1, L2, L3) and shows both pending and paid amounts. Statements are generated monthly and can be downloaded as PDFs for your records.
 
@@ -176,9 +176,9 @@ Unlike IEEPA tariffs, Section 301 duties were imposed through a different legal 
       sortOrder: 8,
       published: true,
       videoUrl: "https://www.youtube.com/embed/RgKAFK5djSk",
-      content: `**How Commissions Work at TRRLN**
+      content: `**How Commissions Work at TRLN**
 
-The TRRLN commission structure is designed to reward both direct lead generation and network building. L1 commissions are earned on leads you submit directly. L2 commissions are earned on leads submitted by partners in your direct downline. L3 commissions are earned on leads submitted by partners recruited by your downline — giving you three tiers of earning potential.
+The TRLN commission structure is designed to reward both direct lead generation and network building. L1 commissions are earned on leads you submit directly. L2 commissions are earned on leads submitted by partners in your direct downline. L3 commissions are earned on leads submitted by partners recruited by your downline — giving you three tiers of earning potential.
 
 Commission amounts are calculated as a percentage of the recovery fee collected from each successful deal. L1 rates are the highest, reflecting your direct effort in sourcing the lead. L2 and L3 rates are lower but accumulate passively as your network grows. Commissions are paid monthly, with statements available in the portal by the 5th of each month for the prior month's activity.
 
@@ -217,7 +217,7 @@ Commission amounts are calculated as a percentage of the recovery fee collected 
       id: "tr-quickstart",
       title: "IEEPA Tariff Recovery — Partner Quick Start Guide",
       description:
-        "Everything you need to get started as a TRRLN partner in one downloadable guide. Covers program overview, lead submission, and commission basics.",
+        "Everything you need to get started as a TRLN partner in one downloadable guide. Covers program overview, lead submission, and commission basics.",
       fileType: "pdf",
       fileSize: "2.4 MB",
       fileUrl: "/downloads/quick-start-guide.pdf",
@@ -312,7 +312,7 @@ Commission amounts are calculated as a percentage of the recovery fee collected 
       id: "faq-3",
       question: "What is an IEEPA tariff refund?",
       answer:
-        "An IEEPA tariff refund is a recovery of duties paid by U.S. importers on goods subject to tariffs imposed under the International Emergency Economic Powers Act. TRRLN files claims with U.S. Customs on behalf of qualified importers to recover these overpaid duties.",
+        "An IEEPA tariff refund is a recovery of duties paid by U.S. importers on goods subject to tariffs imposed under the International Emergency Economic Powers Act. TRLN files claims with U.S. Customs on behalf of qualified importers to recover these overpaid duties.",
       category: "general",
       sortOrder: 3,
       published: true,
@@ -366,7 +366,7 @@ Commission amounts are calculated as a percentage of the recovery fee collected 
       id: "faq-9",
       question: "How do I contact support?",
       answer:
-        "You can reach the TRRLN partner support team by emailing support@trrln.com, using the live chat in the bottom-right corner of the portal, or joining the weekly partner call held every Thursday at 2 PM ET.",
+        "You can reach the TRLN partner support team by emailing support@trln.com, using the live chat in the bottom-right corner of the portal, or joining the weekly partner call held every Thursday at 2 PM ET.",
       category: "technical",
       sortOrder: 9,
       published: true,
