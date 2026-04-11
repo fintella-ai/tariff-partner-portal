@@ -27,7 +27,7 @@ function SignupContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ partnerCode: string; message: string } | null>(null);
+  const [success, setSuccess] = useState<{ partnerCode: string; message: string; embeddedSigningUrl: string | null } | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -64,7 +64,7 @@ function SignupContent() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Signup failed"); return; }
-      setSuccess({ partnerCode: data.partnerCode, message: data.message });
+      setSuccess({ partnerCode: data.partnerCode, message: data.message, embeddedSigningUrl: data.embeddedSigningUrl || null });
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -173,21 +173,63 @@ function SignupContent() {
         )}
 
         {success && (
-          <div className="card p-6 text-center">
-            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-500/10 border border-green-500/25 flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+          <div className="w-full max-w-[900px] mx-auto">
+            {/* Partner code info */}
+            <div className="card p-5 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-lg font-bold mb-1">Welcome to {FIRM_SHORT}!</h2>
+                  <p className="font-body text-[13px] theme-text-muted">Your account has been created. Please sign your partnership agreement below to activate your account.</p>
+                </div>
+                <div className="text-center sm:text-right shrink-0">
+                  <div className="font-body text-[10px] theme-text-muted uppercase tracking-wider">Your Partner Code</div>
+                  <div className="font-mono text-lg font-bold text-brand-gold tracking-[2px]">{success.partnerCode}</div>
+                </div>
+              </div>
             </div>
-            <h2 className="font-display text-lg font-bold mb-2">Welcome to {FIRM_SHORT}!</h2>
-            <p className="font-body text-[13px] theme-text-secondary mb-4 leading-relaxed">{success.message}</p>
-            <div className="card p-3 mb-4" style={{ background: "var(--app-input-bg)" }}>
-              <div className="font-body text-[11px] theme-text-muted uppercase tracking-wider mb-1">Your Partner Code</div>
-              <div className="font-mono text-lg font-bold text-brand-gold tracking-[2px]">{success.partnerCode}</div>
+
+            {/* Embedded signing iframe */}
+            {success.embeddedSigningUrl ? (
+              <div className="card overflow-hidden mb-4">
+                <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid var(--app-border)" }}>
+                  <div className="font-body text-[12px] theme-text-muted flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+                    Sign your partnership agreement below
+                  </div>
+                  <div className="font-body text-[11px] theme-text-faint">
+                    Also sent to your email
+                  </div>
+                </div>
+                <div className="bg-white" style={{ height: "75vh", minHeight: 500 }}>
+                  <iframe
+                    src={success.embeddedSigningUrl}
+                    className="w-full h-full border-0"
+                    title="Partnership Agreement Signing"
+                    allow="camera; microphone"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="card p-6 text-center mb-4">
+                <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-500/10 border border-green-500/25 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="font-body text-[13px] theme-text-secondary mb-2 leading-relaxed">
+                  Your partnership agreement has been sent to your email. Please check your inbox and sign to activate your account.
+                </p>
+              </div>
+            )}
+
+            <div className="text-center">
+              <a href="/login" className="btn-gold inline-block px-8 py-3 text-[13px]">
+                Log In to Your Portal
+              </a>
+              <p className="font-body text-[11px] theme-text-muted mt-3">
+                Use your email and partner code <strong className="text-brand-gold">{success.partnerCode}</strong> to log in after signing.
+              </p>
             </div>
-            <a href="/login" className="btn-gold inline-block px-8 py-3 text-[13px]">
-              Log In to Your Portal
-            </a>
           </div>
         )}
       </div>
