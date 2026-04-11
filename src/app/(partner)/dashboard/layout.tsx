@@ -39,22 +39,25 @@ function NavButton({
   item,
   isActive,
   onClick,
+  collapsed = false,
 }: {
   item: { id: string; href: string; icon: string; label: string };
   isActive: boolean;
   onClick: () => void;
+  collapsed?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg font-body text-[13px] transition-all min-h-[44px] ${
+      title={collapsed ? item.label : undefined}
+      className={`flex items-center ${collapsed ? "justify-center" : "gap-3"} w-full text-left ${collapsed ? "px-2" : "px-4"} py-3 rounded-lg font-body text-[13px] transition-all min-h-[44px] ${
         isActive
           ? "bg-brand-gold/10 text-[var(--app-gold-text)]"
-          : "text-white/60 hover:bg-white/5 hover:text-white"
+          : "theme-text-secondary hover:bg-brand-gold/5"
       }`}
     >
       <span className="text-base leading-none">{item.icon}</span>
-      <span>{item.label}</span>
+      {!collapsed && <span>{item.label}</span>}
     </button>
   );
 }
@@ -65,6 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const device = useDevice();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [firmShort, setFirmShort] = useState(DEFAULT_FIRM_SHORT);
@@ -118,11 +122,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   // ─── SIDEBAR CONTENT ────────────────────────────────────────────────────
-  const sidebarContent = (
+  function renderSidebar(isCollapsed: boolean) {
+    return (
     <div className="flex flex-col h-full">
       {/* Brand */}
-      <div className="pl-2 mb-6">
-        {logoUrl ? (
+      <div className={`${isCollapsed ? "px-1 text-center" : "pl-2"} mb-6`}>
+        {isCollapsed ? (
+          <div className="font-display text-xs font-bold text-brand-gold">
+            {logoUrl ? <img src={logoUrl} alt={firmShort} className="max-h-8 mx-auto object-contain" /> : firmShort.charAt(0)}
+          </div>
+        ) : logoUrl ? (
           <div className="mb-2">
             <img src={logoUrl} alt={firmShort} className="max-h-10 max-w-[180px] object-contain" />
           </div>
@@ -131,9 +140,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {firmShort}
           </div>
         )}
-        <div className="font-body text-[10px] theme-text-muted mt-1 italic leading-tight">
-          {firmSlogan}
-        </div>
+        {!isCollapsed && (
+          <div className="font-body text-[10px] theme-text-muted mt-1 italic leading-tight">
+            {firmSlogan}
+          </div>
+        )}
       </div>
 
       {/* Main Nav */}
@@ -147,6 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             item={item}
             isActive={isActive(item.href)}
             onClick={() => navigate(item.href)}
+            collapsed={isCollapsed}
           />
         ))}
       </div>
@@ -154,40 +166,62 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Spacer */}
       <div className="flex-1 min-h-[24px]" />
 
+      {/* Collapse toggle (desktop only) */}
+      {device.isDesktop && (
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-body text-[11px] theme-text-muted hover:bg-brand-gold/5 transition-colors mb-2"
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <svg className={`w-4 h-4 transition-transform ${isCollapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          {!isCollapsed && <span>Collapse</span>}
+        </button>
+      )}
+
       {/* User Info + Account Settings + Sign Out */}
-      <div className="px-2 pt-3 border-t border-white/[0.06] text-center">
-        <div className="font-body text-xs text-white/50 mb-0.5">
-          {user?.name || "Partner"}
-        </div>
-        <div className="font-body text-[11px] text-white/30 tracking-[1px] mb-3">
-          {partnerCode}
-        </div>
+      <div className="px-2 pt-3 text-center" style={{ borderTop: "1px solid var(--app-border)" }}>
+        {!isCollapsed && (
+          <>
+            <div className="font-body text-xs theme-text-secondary mb-0.5">
+              {user?.name || "Partner"}
+            </div>
+            <div className="font-body text-[11px] theme-text-muted tracking-[1px] mb-3">
+              {partnerCode}
+            </div>
+          </>
+        )}
         <button
           onClick={() => navigate("/dashboard/settings")}
+          title={isCollapsed ? "Account Settings" : undefined}
           className={`w-full font-body text-[11px] border rounded px-3 py-2 mb-2 transition-colors ${
             isActive("/dashboard/settings")
               ? "text-brand-gold border-brand-gold/30 bg-brand-gold/10"
-              : "text-white/40 border-white/10 hover:text-white/60 hover:border-white/20"
+              : "theme-text-muted hover:opacity-80"
           }`}
+          style={{ borderColor: isActive("/dashboard/settings") ? undefined : "var(--app-border)" }}
         >
-          Account Settings
+          {isCollapsed ? "\u2699\uFE0F" : "Account Settings"}
         </button>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full font-body text-[11px] text-white/40 border border-white/10 rounded px-3 py-2 hover:text-white/60 hover:border-white/20 transition-colors"
+          className="w-full font-body text-[11px] theme-text-muted rounded px-3 py-2 transition-colors hover:opacity-80"
+          style={{ border: "1px solid var(--app-border)" }}
         >
-          Sign Out
+          {isCollapsed ? "Exit" : "Sign Out"}
         </button>
       </div>
     </div>
-  );
+    );
+  }
 
   return (
     <div className="flex min-h-screen" style={{ paddingBottom: device.isMobile ? 72 : 0 }}>
       {/* ── DESKTOP SIDEBAR ── */}
       {device.isDesktop && (
-        <div className="w-[250px] theme-sidebar border-r p-4 flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto">
-          {sidebarContent}
+        <div className={`${sidebarCollapsed ? "w-[68px]" : "w-[250px]"} theme-sidebar border-r p-4 flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto transition-all duration-200`}>
+          {renderSidebar(sidebarCollapsed)}
         </div>
       )}
 
@@ -202,7 +236,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className="fixed left-0 top-0 bottom-0 w-[280px] max-w-[85vw] theme-sidebar border-r z-[999] overflow-y-auto p-5"
             style={{ animation: "slideIn .25s ease" }}
           >
-            {sidebarContent}
+            {/* Close button */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg theme-text-muted hover:bg-brand-gold/10 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            {renderSidebar(false)}
           </div>
         </>
       )}
