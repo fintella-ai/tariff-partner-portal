@@ -10,7 +10,7 @@ export default function ReferralLinksPage() {
   const device = useDevice();
   const partnerCode = (session?.user as any)?.partnerCode || "DEMO";
 
-  const clientRefUrl = `https://referral.frostlawaz.com/l/ANNEXATIONPR/?REFERRALCODE=${partnerCode}`;
+  const clientRefUrl = `https://referral.frostlawaz.com/l/ANNEXATIONPR/?utm_content=${partnerCode}`;
 
   const links = [
     {
@@ -28,7 +28,7 @@ export default function ReferralLinksPage() {
       title: "Partner Recruitment Link",
       description:
         "Share this with CPAs, trade advisors, and attorneys who want to earn commissions by referring their own clients. They join your downline.",
-      url: `https://trln.com/partner?ref=${partnerCode}`,
+      url: `https://trln.com/partner?utm_content=${partnerCode}`,
       color: "#a78bfa",
       borderColor: "border-[#a78bfa]/30",
       bgColor: "bg-[#a78bfa]/5",

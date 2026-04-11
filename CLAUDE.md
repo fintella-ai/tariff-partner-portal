@@ -86,7 +86,7 @@ The partner portal embeds a Frost Law referral form via iframe. Since we don't o
   - `city`/`state` → `businessCity`/`businessState`
   - `imports_goods` → `importsGoods`, `import_countries` → `importCountries`
   - `annual_import_value` → `annualImportValue`, `importer_of_record` → `importerOfRecord`
-  - `referral_code`/`REFERRALCODE` → `partnerCode` (tracks submitting partner)
+  - `utm_content` → `partnerCode` (tracks submitting partner)
 - Creates Deal with `stage: "new_lead"`, `dealName` from `legal_entity_name` or client name
 - Flexible field mapping (accepts snake_case, camelCase, or form field names)
 - Returns `{ received: true, dealId }` on success

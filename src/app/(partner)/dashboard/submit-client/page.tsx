@@ -31,7 +31,7 @@ export default function SubmitClientPage() {
   }, []);
 
   // Build the referral URL with the partner's code
-  const referralUrl = `${BASE_REFERRAL_URL}?REFERRALCODE=${partnerCode}`;
+  const referralUrl = `${BASE_REFERRAL_URL}?utm_content=${partnerCode}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralUrl);

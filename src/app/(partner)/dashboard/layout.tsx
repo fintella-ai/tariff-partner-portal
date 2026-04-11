@@ -91,8 +91,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const user = session?.user as any;
   const partnerCode = user?.partnerCode || "DEMO";
 
-  const clientRefUrl = `https://referral.frostlawaz.com/l/ANNEXATIONPR/?REFERRALCODE=${partnerCode}`;
-  const partnerRefUrl = `https://trln.com/partner?ref=${partnerCode}`;
+  const clientRefUrl = `https://referral.frostlawaz.com/l/ANNEXATIONPR/?utm_content=${partnerCode}`;
+  const partnerRefUrl = `https://trln.com/partner?utm_content=${partnerCode}`;
 
   function copyAndNotify(url: string, label: string) {
     navigator.clipboard.writeText(url);
