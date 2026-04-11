@@ -10,7 +10,7 @@ export default function ReferralLinksPage() {
   const device = useDevice();
   const partnerCode = (session?.user as any)?.partnerCode || "DEMO";
 
-  const clientRefUrl = `https://frostlawaz.com/referral?RR_WCID=5D5FFDC6-E177-4FF9-99BD-7CFECDB92D54&RR_WCID_TTL=396&REFERRALCODE=${partnerCode}&utm_campaign=Tariff+Refunds`;
+  const clientRefUrl = `https://referral.frostlawaz.com/l/ANNEXATIONPR/?REFERRALCODE=${partnerCode}`;
 
   const links = [
     {

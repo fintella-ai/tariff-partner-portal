@@ -6,12 +6,7 @@ import { useRouter } from "next/navigation";
 import { useDevice } from "@/lib/useDevice";
 import { FIRM_SHORT } from "@/lib/constants";
 
-const BASE_REFERRAL_URL = "https://frostlawaz.com/referral";
-const DEFAULT_PARAMS = {
-  RR_WCID: "5D5FFDC6-E177-4FF9-99BD-7CFECDB92D54",
-  RR_WCID_TTL: "396",
-  utm_campaign: "Tariff+Refunds",
-};
+const BASE_REFERRAL_URL = "https://referral.frostlawaz.com/l/ANNEXATIONPR/";
 
 export default function SubmitClientPage() {
   const { data: session } = useSession();
@@ -36,11 +31,7 @@ export default function SubmitClientPage() {
   }, []);
 
   // Build the referral URL with the partner's code
-  const params = new URLSearchParams({
-    ...DEFAULT_PARAMS,
-    REFERRALCODE: partnerCode,
-  });
-  const referralUrl = `${BASE_REFERRAL_URL}?${params.toString()}`;
+  const referralUrl = `${BASE_REFERRAL_URL}?REFERRALCODE=${partnerCode}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralUrl);
