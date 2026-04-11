@@ -272,6 +272,20 @@ model TrainingResource {
   updatedAt   DateTime @updatedAt
 }
 
+// ─── IMPERSONATION TOKENS ───────────────────────────────────────────────────
+model ImpersonationToken {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  partnerCode String
+  email       String
+  name        String
+  used        Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([token])
+}
+
 // ─── FREQUENTLY ASKED QUESTIONS ──────────────────────────────────────────────
 model FAQ {
   id          String   @id @default(cuid())
