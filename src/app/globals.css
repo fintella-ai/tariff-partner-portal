@@ -4,9 +4,65 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
+/* ── Theme Variables ─────────────────────────────────────────────────── */
+:root {
+  /* Light mode (default) */
+  --app-bg: #f5f6fa;
+  --app-bg-secondary: #ffffff;
+  --app-text: #1a1a2e;
+  --app-text-secondary: #555;
+  --app-text-muted: #888;
+  --app-text-faint: #bbb;
+  --app-border: #e5e7eb;
+  --app-border-subtle: #f0f0f0;
+  --app-card-bg: #ffffff;
+  --app-card-border: #e5e7eb;
+  --app-input-bg: #f8f9fa;
+  --app-input-border: #d1d5db;
+  --app-input-text: #1a1a2e;
+  --app-input-placeholder: #9ca3af;
+  --app-sidebar-bg: #ffffff;
+  --app-sidebar-border: rgba(196, 160, 80, 0.15);
+  --app-hover: rgba(0, 0, 0, 0.03);
+  --app-overlay: rgba(0, 0, 0, 0.4);
+  --app-gold: #c4a050;
+  --app-gold-text: #9a7b30;
+  --app-code-bg: #f0f0f5;
+  --app-scrollbar: rgba(196, 160, 80, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-bg: #080d1c;
+    --app-bg-secondary: #0a1025;
+    --app-text: rgba(255, 255, 255, 0.9);
+    --app-text-secondary: rgba(255, 255, 255, 0.6);
+    --app-text-muted: rgba(255, 255, 255, 0.4);
+    --app-text-faint: rgba(255, 255, 255, 0.2);
+    --app-border: rgba(255, 255, 255, 0.08);
+    --app-border-subtle: rgba(255, 255, 255, 0.04);
+    --app-card-bg: rgba(255, 255, 255, 0.02);
+    --app-card-border: rgba(255, 255, 255, 0.07);
+    --app-input-bg: rgba(255, 255, 255, 0.05);
+    --app-input-border: rgba(255, 255, 255, 0.12);
+    --app-input-text: #ffffff;
+    --app-input-placeholder: rgba(255, 255, 255, 0.3);
+    --app-sidebar-bg: rgba(0, 0, 0, 0.3);
+    --app-sidebar-border: rgba(196, 160, 80, 0.1);
+    --app-hover: rgba(255, 255, 255, 0.02);
+    --app-overlay: rgba(0, 0, 0, 0.6);
+    --app-gold: #c4a050;
+    --app-gold-text: #c4a050;
+    --app-code-bg: rgba(255, 255, 255, 0.1);
+    --app-scrollbar: rgba(196, 160, 80, 0.2);
+  }
+}
+
 @layer base {
   body {
-    @apply bg-brand-dark text-white font-body;
+    background: var(--app-bg);
+    color: var(--app-text);
+    font-family: "DM Sans", sans-serif;
   }
 }
 
@@ -21,7 +77,8 @@
   }
 
   .btn-gold {
-    @apply bg-gradient-to-br from-brand-gold to-[#e8c060] text-brand-dark font-body font-bold text-sm tracking-wider uppercase px-8 py-4 rounded-md cursor-pointer transition-all duration-300 border-none;
+    @apply bg-gradient-to-br from-brand-gold to-[#e8c060] font-body font-bold text-sm tracking-wider uppercase px-8 py-4 rounded-md cursor-pointer transition-all duration-300 border-none;
+    color: #080d1c;
   }
   .btn-gold:hover {
     @apply -translate-y-0.5;
@@ -35,14 +92,43 @@
   }
 
   .stat-card {
-    @apply p-5 border border-brand-gold/10 rounded-xl bg-brand-gold/[0.025] transition-all duration-300;
+    @apply p-5 rounded-xl transition-all duration-300;
+    border: 1px solid rgba(196, 160, 80, 0.1);
+    background: rgba(196, 160, 80, 0.025);
   }
   .stat-card:hover {
-    @apply border-brand-gold/30 bg-brand-gold/[0.05];
+    border-color: rgba(196, 160, 80, 0.3);
+    background: rgba(196, 160, 80, 0.05);
   }
 
   .card {
-    @apply bg-white/[0.02] border border-white/[0.07] rounded-xl overflow-hidden;
+    background: var(--app-card-bg);
+    border: 1px solid var(--app-card-border);
+    @apply rounded-xl overflow-hidden;
+  }
+
+  /* Theme-aware text classes */
+  .theme-text { color: var(--app-text); }
+  .theme-text-secondary { color: var(--app-text-secondary); }
+  .theme-text-muted { color: var(--app-text-muted); }
+  .theme-text-faint { color: var(--app-text-faint); }
+  .theme-bg { background: var(--app-bg); }
+  .theme-bg-secondary { background: var(--app-bg-secondary); }
+  .theme-card { background: var(--app-card-bg); border-color: var(--app-card-border); }
+  .theme-border { border-color: var(--app-border); }
+  .theme-border-subtle { border-color: var(--app-border-subtle); }
+  .theme-input {
+    background: var(--app-input-bg);
+    border-color: var(--app-input-border);
+    color: var(--app-input-text);
+  }
+  .theme-input::placeholder {
+    color: var(--app-input-placeholder);
+  }
+  .theme-hover:hover { background: var(--app-hover); }
+  .theme-sidebar {
+    background: var(--app-sidebar-bg);
+    border-color: var(--app-sidebar-border);
   }
 }
 
@@ -70,7 +156,7 @@
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-thumb { background: rgba(196, 160, 80, 0.2); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: var(--app-scrollbar); border-radius: 2px; }
 
 /* Spinner */
 .spinner {

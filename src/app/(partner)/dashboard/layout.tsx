@@ -49,7 +49,7 @@ function NavButton({
       onClick={onClick}
       className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg font-body text-[13px] transition-all min-h-[44px] ${
         isActive
-          ? "bg-brand-gold/10 text-brand-gold"
+          ? "bg-brand-gold/10 text-[var(--app-gold-text)]"
           : "text-white/60 hover:bg-white/5 hover:text-white"
       }`}
     >
@@ -176,7 +176,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen" style={{ paddingBottom: device.isMobile ? 72 : 0 }}>
       {/* ── DESKTOP SIDEBAR ── */}
       {device.isDesktop && (
-        <div className="w-[250px] bg-black/30 border-r border-brand-gold/10 p-4 flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto">
+        <div className="w-[250px] theme-sidebar border-r p-4 flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto">
           {sidebarContent}
         </div>
       )}
@@ -189,7 +189,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={() => setSidebarOpen(false)}
           />
           <div
-            className="fixed left-0 top-0 bottom-0 w-[280px] max-w-[85vw] bg-[#060a18] border-r border-brand-gold/15 z-[999] overflow-y-auto p-5"
+            className="fixed left-0 top-0 bottom-0 w-[280px] max-w-[85vw] theme-sidebar border-r z-[999] overflow-y-auto p-5"
             style={{ animation: "slideIn .25s ease" }}
           >
             {sidebarContent}
@@ -210,8 +210,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── MOBILE BOTTOM NAV ── */}
       {device.isMobile && (
         <div
-          className="fixed bottom-0 left-0 right-0 bg-brand-dark/[0.97] border-t border-brand-gold/15 flex z-[900] backdrop-blur-xl"
-          style={{ paddingBottom: device.os === "ios" ? "env(safe-area-inset-bottom, 0)" : 0 }}
+          className="fixed bottom-0 left-0 right-0 border-t flex z-[900] backdrop-blur-xl"
+          style={{ background: "var(--app-bg-secondary)", borderColor: "var(--app-sidebar-border)", paddingBottom: device.os === "ios" ? "env(safe-area-inset-bottom, 0)" : 0 }}
         >
           {MOBILE_BAR.map((item) => (
             <button
