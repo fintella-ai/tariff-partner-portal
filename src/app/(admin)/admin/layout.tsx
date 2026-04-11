@@ -16,6 +16,7 @@ const ADMIN_NAV_ITEMS = [
   { id: "documents", href: "/admin/documents", icon: "\u{1F4C4}", label: "Documents" },
   { id: "support", href: "/admin/support", icon: "\u{1F3AB}", label: "Support" },
   { id: "payouts", href: "/admin/payouts", icon: "\u{1F4B3}", label: "Payouts" },
+  { id: "revenue", href: "/admin/revenue", icon: "\u{1F4B5}", label: "Revenue" },
   { id: "reports", href: "/admin/reports", icon: "\u{1F4CA}", label: "Reports" },
   { id: "settings", href: "/admin/settings", icon: "\u2699\uFE0F", label: "Settings" },
 ];
