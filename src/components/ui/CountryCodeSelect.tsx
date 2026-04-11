@@ -97,7 +97,7 @@ export default function CountryCodeSelect({ selectedCode, onChange }: Props) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 bg-white/5 border border-white/[0.12] rounded-lg px-2.5 py-3 text-white font-body text-sm hover:border-brand-gold/40 transition-colors h-full min-w-[85px] sm:min-w-[100px]"
+        className="flex items-center gap-1.5 bg-white/5 border border-white/[0.12] rounded-lg px-2.5 py-3 text-white font-body text-sm hover:border-brand-gold/40 transition-colors min-h-[44px] h-full min-w-[85px] sm:min-w-[100px]"
       >
         <span className="text-base leading-none">{selected.flag}</span>
         <span className="text-white/70">{selected.dial}</span>

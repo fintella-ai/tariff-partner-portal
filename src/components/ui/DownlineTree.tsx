@@ -52,7 +52,7 @@ function TreeNode({ partner, depth, isMobile }: { partner: TreePartner; depth: n
         </div>
 
         {/* Name */}
-        <div className={`font-body ${isMobile ? "text-[11px]" : "text-[12px]"} font-semibold text-white/80 leading-tight`}>
+        <div className={`font-body ${isMobile ? "text-[11px]" : "text-[12px]"} font-semibold text-white/80 leading-tight truncate min-w-0`}>
           {partner.firstName} {partner.lastName}
         </div>
 

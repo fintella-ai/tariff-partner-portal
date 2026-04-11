@@ -365,7 +365,7 @@ export default function PartnerDetailPage() {
               <input className={`${inputClass} flex-1`} type="number" min="0" max="100" value={l3Rate} onChange={(e) => setL3Rate(e.target.value)} placeholder="0" disabled={!l3Enabled} />
               <button
                 onClick={() => setL3Enabled(!l3Enabled)}
-                className={`relative inline-flex h-10 w-14 items-center rounded-lg shrink-0 transition-colors ${l3Enabled ? "bg-green-500" : "bg-white/10"}`}
+                className={`relative inline-flex h-11 w-14 items-center rounded-lg shrink-0 transition-colors ${l3Enabled ? "bg-green-500" : "bg-white/10"}`}
               >
                 <span className={`inline-block h-6 w-6 transform rounded-md bg-white transition-transform ${l3Enabled ? "translate-x-7" : "translate-x-1"}`} />
               </button>

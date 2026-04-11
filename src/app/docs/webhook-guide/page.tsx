@@ -141,7 +141,7 @@ export default function WebhookGuidePage() {
     <>
       <style dangerouslySetInnerHTML={{ __html: themeCSS }} />
       <div style={{ minHeight: "100vh", background: "var(--doc-bg)", color: "var(--doc-text)", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif", lineHeight: 1.65 }}>
-        <div style={{ maxWidth: 860, margin: "0 auto", padding: "40px 20px 60px" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(20px, 5vw, 40px) clamp(12px, 4vw, 20px) 60px" }}>
 
           {/* Header */}
           <div style={{ marginBottom: 40 }}>

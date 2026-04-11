@@ -144,7 +144,7 @@ export default function SubmitClientPage() {
             Open in new tab ↗
           </a>
         </div>
-        <div className="bg-white" style={{ height: device.isMobile ? "calc(100vh - 220px)" : "75vh" }}>
+        <div className="bg-white" style={{ height: device.isMobile ? "calc(100vh - 220px)" : "75vh", minHeight: 400 }}>
           <iframe
             src={referralUrl}
             className="w-full h-full border-0"
