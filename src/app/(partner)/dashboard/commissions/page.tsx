@@ -133,7 +133,7 @@ export default function CommissionsPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-5">
         <div className="spinner" />
-        <div className="font-body text-sm text-white/50">Loading commissions...</div>
+        <div className="font-body text-sm text-[var(--app-text-secondary)]">Loading commissions...</div>
       </div>
     );
   }
@@ -143,13 +143,13 @@ export default function CommissionsPage() {
       <h2 className={`font-display ${device.isMobile ? "text-lg" : "text-[22px]"} font-bold mb-1.5`}>
         Commission Summary
       </h2>
-      <p className="font-body text-[13px] text-white/40 mb-6">
+      <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-6">
         All amounts based on {FIRM_SHORT}&apos;s {(DEFAULT_FIRM_FEE_RATE * 100).toFixed(0)}% fee on collected refunds.
-        Commissions are only paid on <strong className="text-white/60">Closed Won</strong> deals.
+        Commissions are only paid on <strong className="text-[var(--app-text-secondary)]">Closed Won</strong> deals.
       </p>
 
       {/* ═══ TOTALS BANNER ═══ */}
-      <div className={`${device.cardPadding} ${device.borderRadius} border border-white/10 bg-white/[0.03] mb-6`}>
+      <div className={`${device.cardPadding} ${device.borderRadius} border border-[var(--app-border)] bg-[var(--app-card-bg)] mb-6`}>
         <div className={`flex ${device.isMobile ? "flex-col gap-5" : "items-center justify-center gap-0"} text-center`}>
           {/* L1 Total */}
           <div className={`${device.isMobile ? "" : "flex-1"} py-2`}>
@@ -163,8 +163,8 @@ export default function CommissionsPage() {
 
           {/* L2 Total */}
           {hasDownline && (
-            <div className={`${device.isMobile ? "" : "flex-1 border-l border-white/[0.08]"} py-2`}>
-              {device.isMobile && <div className="border-t border-white/[0.06] -mt-2 mb-3" />}
+            <div className={`${device.isMobile ? "" : "flex-1 border-l border-[var(--app-border)]"} py-2`}>
+              {device.isMobile && <div className="border-t border-[var(--app-border)] -mt-2 mb-3" />}
               <div className="font-body text-[9px] tracking-[1.5px] uppercase text-purple-400/60 mb-1.5">L2 Total</div>
               <div className="font-display text-2xl sm:text-3xl font-bold text-purple-400 mb-2">{fmt$(totalL2Earned)}</div>
               <div className="flex justify-center gap-4">
@@ -176,8 +176,8 @@ export default function CommissionsPage() {
 
           {/* L3 Total */}
           {hasL3 && (
-            <div className={`${device.isMobile ? "" : "flex-1 border-l border-white/[0.08]"} py-2`}>
-              {device.isMobile && <div className="border-t border-white/[0.06] -mt-2 mb-3" />}
+            <div className={`${device.isMobile ? "" : "flex-1 border-l border-[var(--app-border)]"} py-2`}>
+              {device.isMobile && <div className="border-t border-[var(--app-border)] -mt-2 mb-3" />}
               <div className="font-body text-[9px] tracking-[1.5px] uppercase text-cyan-400/60 mb-1.5">L3 Total</div>
               <div className="font-display text-2xl sm:text-3xl font-bold text-cyan-400 mb-2">{fmt$(totalL3Earned)}</div>
               <div className="flex justify-center gap-4">
@@ -188,10 +188,10 @@ export default function CommissionsPage() {
           )}
 
           {/* Grand Total */}
-          <div className={`${device.isMobile ? "" : "flex-1 border-l border-white/[0.08]"} py-2`}>
-            {device.isMobile && <div className="border-t border-white/[0.06] -mt-2 mb-3" />}
-            <div className="font-body text-[9px] tracking-[1.5px] uppercase text-white/50 mb-1.5">Total Earned</div>
-            <div className="font-display text-2xl sm:text-3xl font-bold text-white mb-2">{fmt$(grandTotalEarned)}</div>
+          <div className={`${device.isMobile ? "" : "flex-1 border-l border-[var(--app-border)]"} py-2`}>
+            {device.isMobile && <div className="border-t border-[var(--app-border)] -mt-2 mb-3" />}
+            <div className="font-body text-[9px] tracking-[1.5px] uppercase text-[var(--app-text-secondary)] mb-1.5">Total Earned</div>
+            <div className="font-display text-2xl sm:text-3xl font-bold text-[var(--app-text)] mb-2">{fmt$(grandTotalEarned)}</div>
             <div className="flex justify-center gap-4">
               <span className="font-body text-xs sm:text-sm font-semibold text-green-400">{fmt$(grandTotalPaid)} <span className="font-normal text-green-400/70">Paid</span></span>
               <span className="font-body text-xs sm:text-sm font-semibold text-yellow-400">{fmt$(grandTotalPending)} <span className="font-normal text-yellow-400/70">Pending</span></span>
@@ -210,7 +210,7 @@ export default function CommissionsPage() {
           <div className={`font-display ${device.isMobile ? "text-3xl" : "text-[40px]"} font-bold text-brand-gold mb-0.5`}>
             {fmt$(totalL1Earned)}
           </div>
-          <div className="font-body text-xs text-white/50 mb-4">
+          <div className="font-body text-xs text-[var(--app-text-secondary)] mb-4">
             Across {directDeals.length} deal{directDeals.length !== 1 ? "s" : ""}
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -234,7 +234,7 @@ export default function CommissionsPage() {
             <div className={`font-display ${device.isMobile ? "text-3xl" : "text-[40px]"} font-bold text-purple-400 mb-0.5`}>
               {fmt$(totalL2Earned)}
             </div>
-            <div className="font-body text-xs text-white/50 mb-4">
+            <div className="font-body text-xs text-[var(--app-text-secondary)] mb-4">
               Across {downlineDeals.length} downline deal{downlineDeals.length !== 1 ? "s" : ""}
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -259,9 +259,9 @@ export default function CommissionsPage() {
             <div className={`font-display ${device.isMobile ? "text-3xl" : "text-[40px]"} font-bold text-cyan-400 mb-0.5`}>
               {fmt$(0)}
             </div>
-            <div className="font-body text-xs text-white/50 mb-4">No L3 deals yet</div>
-            <div className="p-3 sm:p-4 bg-white/[0.03] border border-white/[0.06] rounded-lg text-center">
-              <div className="font-body text-[12px] text-white/40">L3 earnings appear when your downline&apos;s recruits close deals.</div>
+            <div className="font-body text-xs text-[var(--app-text-secondary)] mb-4">No L3 deals yet</div>
+            <div className="p-3 sm:p-4 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg text-center">
+              <div className="font-body text-[12px] text-[var(--app-text-muted)]">L3 earnings appear when your downline&apos;s recruits close deals.</div>
             </div>
           </div>
         )}
@@ -271,12 +271,12 @@ export default function CommissionsPage() {
       {hasAnyProjected && (
         <div className={`${device.cardPadding} ${device.borderRadius} border border-blue-500/15 bg-blue-500/[0.03] mb-6`}>
           <div className="flex items-center gap-2 mb-3">
-            <div className="font-body text-sm font-semibold text-white">Projected Earnings</div>
+            <div className="font-body text-sm font-semibold text-[var(--app-text)]">Projected Earnings</div>
             <span className="font-body text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full px-2.5 py-0.5 tracking-wider uppercase">
               Not yet payable
             </span>
           </div>
-          <p className="font-body text-[12px] text-white/40 mb-4">
+          <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-4">
             Based on pipeline deals that have not yet reached Closed Won. These amounts are estimates and will only be payable once deals close.
           </p>
           <div className={`grid ${device.isMobile ? "grid-cols-1 gap-3" : hasL3 ? "grid-cols-4" : hasDownline ? "grid-cols-3" : "grid-cols-2"} ${device.isMobile ? "" : "gap-4"}`}>
@@ -284,7 +284,7 @@ export default function CommissionsPage() {
             <div className="p-3 sm:p-4 bg-brand-gold/[0.06] border border-brand-gold/15 rounded-lg text-center">
               <div className="font-body text-[9px] tracking-[1.5px] uppercase text-brand-gold/60 mb-1">Projected L1</div>
               <div className="font-display text-lg sm:text-xl font-bold text-brand-gold">{fmt$(projectedL1)}</div>
-              <div className="font-body text-[10px] text-white/30 mt-1">{pipelineDirectDeals.length} pipeline deal{pipelineDirectDeals.length !== 1 ? "s" : ""}</div>
+              <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">{pipelineDirectDeals.length} pipeline deal{pipelineDirectDeals.length !== 1 ? "s" : ""}</div>
             </div>
 
             {/* Projected L2 */}
@@ -292,7 +292,7 @@ export default function CommissionsPage() {
               <div className="p-3 sm:p-4 bg-purple-500/[0.06] border border-purple-500/15 rounded-lg text-center">
                 <div className="font-body text-[9px] tracking-[1.5px] uppercase text-purple-400/60 mb-1">Projected L2</div>
                 <div className="font-display text-lg sm:text-xl font-bold text-purple-400">{fmt$(projectedL2)}</div>
-                <div className="font-body text-[10px] text-white/30 mt-1">{pipelineDownlineDeals.length} downline deal{pipelineDownlineDeals.length !== 1 ? "s" : ""}</div>
+                <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">{pipelineDownlineDeals.length} downline deal{pipelineDownlineDeals.length !== 1 ? "s" : ""}</div>
               </div>
             )}
 
@@ -301,7 +301,7 @@ export default function CommissionsPage() {
               <div className="p-3 sm:p-4 bg-cyan-500/[0.06] border border-cyan-500/15 rounded-lg text-center">
                 <div className="font-body text-[9px] tracking-[1.5px] uppercase text-cyan-400/60 mb-1">Projected L3</div>
                 <div className="font-display text-lg sm:text-xl font-bold text-cyan-400">{fmt$(projectedL3)}</div>
-                <div className="font-body text-[10px] text-white/30 mt-1">0 L3 deals</div>
+                <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">0 L3 deals</div>
               </div>
             )}
 
@@ -309,34 +309,34 @@ export default function CommissionsPage() {
             <div className="p-3 sm:p-4 bg-blue-500/[0.06] border border-blue-500/15 rounded-lg text-center">
               <div className="font-body text-[9px] tracking-[1.5px] uppercase text-blue-400/60 mb-1">Total Projected</div>
               <div className="font-display text-lg sm:text-xl font-bold text-blue-400">{fmt$(totalProjected)}</div>
-              <div className="font-body text-[10px] text-white/30 mt-1">All levels combined</div>
+              <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">All levels combined</div>
             </div>
           </div>
         </div>
       )}
 
       {/* ═══ HOW COMMISSIONS WORK ═══ */}
-      <div className={`${device.cardPadding} ${device.borderRadius} border border-white/[0.07] bg-white/[0.02] mb-6`}>
+      <div className={`${device.cardPadding} ${device.borderRadius} border border-[var(--app-border)] bg-[var(--app-card-bg)] mb-6`}>
         <div className="font-body font-semibold text-sm mb-4">How Commissions Work</div>
         <div className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-3"} gap-3`}>
           {[
-            { label: "Client Refund", formula: "e.g. $100,000", color: "text-white/60" },
-            { label: `${FIRM_SHORT} Fee (${(DEFAULT_FIRM_FEE_RATE * 100).toFixed(0)}%)`, formula: "= $20,000", color: "text-white/60" },
+            { label: "Client Refund", formula: "e.g. $100,000", color: "text-[var(--app-text-secondary)]" },
+            { label: `${FIRM_SHORT} Fee (${(DEFAULT_FIRM_FEE_RATE * 100).toFixed(0)}%)`, formula: "= $20,000", color: "text-[var(--app-text-secondary)]" },
             { label: `Your L1 Cut (${(rates.l1Rate * 100).toFixed(0)}% of fee)`, formula: `= ${fmt$(100000 * DEFAULT_FIRM_FEE_RATE * rates.l1Rate)}`, color: "text-brand-gold" },
           ].map((r) => (
-            <div key={r.label} className="p-3 sm:p-4 border border-white/[0.06] rounded-lg text-center">
-              <div className="font-body text-[10px] text-white/40 mb-1.5 tracking-wider">{r.label}</div>
+            <div key={r.label} className="p-3 sm:p-4 border border-[var(--app-border)] rounded-lg text-center">
+              <div className="font-body text-[10px] text-[var(--app-text-muted)] mb-1.5 tracking-wider">{r.label}</div>
               <div className={`font-display text-base sm:text-lg font-bold ${r.color}`}>{r.formula}</div>
             </div>
           ))}
         </div>
         {hasDownline && (
-          <div className="mt-3 p-3 bg-purple-500/[0.05] border border-purple-500/15 rounded-lg font-body text-[12px] text-white/50 text-center">
+          <div className="mt-3 p-3 bg-purple-500/[0.05] border border-purple-500/15 rounded-lg font-body text-[12px] text-[var(--app-text-secondary)] text-center">
             L2 (Downline) = {(rates.l2Rate * 100).toFixed(0)}% of {FIRM_SHORT}&apos;s fee — e.g. {fmt$(100000 * DEFAULT_FIRM_FEE_RATE * rates.l2Rate)} on a $100K refund
           </div>
         )}
         {hasL3 && (
-          <div className="mt-2 p-3 bg-cyan-500/[0.05] border border-cyan-500/15 rounded-lg font-body text-[12px] text-white/50 text-center">
+          <div className="mt-2 p-3 bg-cyan-500/[0.05] border border-cyan-500/15 rounded-lg font-body text-[12px] text-[var(--app-text-secondary)] text-center">
             L3 (2nd-Level Downline) = {(rates.l3Rate * 100).toFixed(0)}% of {FIRM_SHORT}&apos;s fee
           </div>
         )}
@@ -344,7 +344,7 @@ export default function CommissionsPage() {
 
       {/* ═══ COMMISSION HISTORY ═══ */}
       <div className="card">
-        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-white/[0.06] flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[var(--app-border)] flex items-center justify-between">
           <div className="font-body font-semibold text-sm sm:text-[15px]">Commission History</div>
           <button className="font-body text-[11px] tracking-[1px] uppercase text-brand-gold/70 border border-brand-gold/20 rounded px-3 py-1.5 hover:bg-brand-gold/10 transition-colors">
             Export CSV
@@ -359,18 +359,18 @@ export default function CommissionsPage() {
               <div>
                 {directDeals.map((deal) => {
                   return (
-                    <div key={deal.id} className="px-4 py-3.5 border-b border-white/[0.04] last:border-b-0">
+                    <div key={deal.id} className="px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0">
                       <div className="flex justify-between items-center mb-1">
-                        <div className="font-body text-[13px] text-white/80 truncate flex-1 mr-3">{deal.dealName}</div>
+                        <div className="font-body text-[13px] text-[var(--app-text)] truncate flex-1 mr-3">{deal.dealName}</div>
                         <StatusBadge status={deal.l1CommissionStatus} />
                       </div>
-                      <div className="font-body text-[11px] text-white/30 mb-1">{fmtDate(deal.createdAt)}</div>
+                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-1">{fmtDate(deal.createdAt)}</div>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <span className="font-body text-[10px] text-brand-gold font-semibold bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5">L1</span>
-                          <span className="font-body text-[11px] text-white/30">Direct</span>
-                          <span className="font-body text-[10px] text-white/20">·</span>
-                          <span className="font-body text-[11px] text-white/25 italic">—</span>
+                          <span className="font-body text-[11px] text-[var(--app-text-muted)]">Direct</span>
+                          <span className="font-body text-[10px] text-[var(--app-text-faint)]">·</span>
+                          <span className="font-body text-[11px] text-[var(--app-text-faint)] italic">—</span>
                         </div>
                         <div className="font-display text-sm font-semibold text-brand-gold">{fmt$(deal.l1CommissionAmount)}</div>
                       </div>
@@ -379,16 +379,16 @@ export default function CommissionsPage() {
                 })}
                 {downlineDeals.map((deal) => {
                   return (
-                    <div key={deal.id} className="px-4 py-3.5 border-b border-white/[0.04] last:border-b-0">
+                    <div key={deal.id} className="px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0">
                       <div className="flex justify-between items-center mb-1">
-                        <div className="font-body text-[13px] text-white/80 truncate flex-1 mr-3">{deal.dealName}</div>
+                        <div className="font-body text-[13px] text-[var(--app-text)] truncate flex-1 mr-3">{deal.dealName}</div>
                         <StatusBadge status={deal.l2CommissionStatus} />
                       </div>
-                      <div className="font-body text-[11px] text-white/30 mb-1">{fmtDate(deal.createdAt)}</div>
+                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-1">{fmtDate(deal.createdAt)}</div>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <span className="font-body text-[10px] text-purple-400 font-semibold bg-purple-500/10 border border-purple-500/20 rounded px-1.5 py-0.5">L2</span>
-                          <span className="font-body text-[11px] text-white/40 truncate max-w-[120px]">{getPartnerName(deal.partnerCode).name}</span>
+                          <span className="font-body text-[11px] text-[var(--app-text-muted)] truncate max-w-[120px]">{getPartnerName(deal.partnerCode).name}</span>
                         </div>
                         <div className="font-display text-sm font-semibold text-purple-400">{fmt$(deal.l2CommissionAmount)}</div>
                       </div>
@@ -399,23 +399,23 @@ export default function CommissionsPage() {
             ) : (
               /* Desktop table: Deal | Date | Tier | Referral Partner | Commission % | Amount | Status */
               <div>
-                <div className="grid grid-cols-[1.8fr_0.8fr_0.5fr_1fr_0.7fr_0.8fr_0.7fr] gap-3 px-6 py-3 border-b border-white/[0.06]">
-                  <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">Deal</div>
-                  <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">Date</div>
-                  <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">Tier</div>
-                  <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">Referral Partner</div>
-                  <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35 text-right">Comm. %</div>
-                  <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35 text-right">Amount</div>
-                  <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35 text-right">Status</div>
+                <div className="grid grid-cols-[1.8fr_0.8fr_0.5fr_1fr_0.7fr_0.8fr_0.7fr] gap-3 px-6 py-3 border-b border-[var(--app-border)]">
+                  <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Deal</div>
+                  <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Date</div>
+                  <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Tier</div>
+                  <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Referral Partner</div>
+                  <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">Comm. %</div>
+                  <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">Amount</div>
+                  <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">Status</div>
                 </div>
                 {directDeals.map((deal) => {
                   return (
-                    <div key={deal.id} className="grid grid-cols-[1.8fr_0.8fr_0.5fr_1fr_0.7fr_0.8fr_0.7fr] gap-3 px-6 py-3.5 border-b border-white/[0.04] last:border-b-0 items-center hover:bg-white/[0.02] transition-colors">
-                      <div className="font-body text-[13px] text-white/80 truncate">{deal.dealName}</div>
-                      <div className="font-body text-[12px] text-white/40">{fmtDate(deal.createdAt)}</div>
+                    <div key={deal.id} className="grid grid-cols-[1.8fr_0.8fr_0.5fr_1fr_0.7fr_0.8fr_0.7fr] gap-3 px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors">
+                      <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
+                      <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</div>
                       <div><span className="font-body text-[10px] text-brand-gold font-semibold bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5">L1</span></div>
-                      <div className="font-body text-[12px] text-white/30 italic">— (Direct)</div>
-                      <div className="font-body text-[12px] text-white/40 text-right">—</div>
+                      <div className="font-body text-[12px] text-[var(--app-text-muted)] italic">— (Direct)</div>
+                      <div className="font-body text-[12px] text-[var(--app-text-muted)] text-right">—</div>
                       <div className="font-display text-[14px] font-semibold text-brand-gold text-right">{fmt$(deal.l1CommissionAmount)}</div>
                       <div className="text-right"><StatusBadge status={deal.l1CommissionStatus} /></div>
                     </div>
@@ -423,15 +423,15 @@ export default function CommissionsPage() {
                 })}
                 {downlineDeals.map((deal) => {
                   return (
-                    <div key={deal.id} className="grid grid-cols-[1.8fr_0.8fr_0.5fr_1fr_0.7fr_0.8fr_0.7fr] gap-3 px-6 py-3.5 border-b border-white/[0.04] last:border-b-0 items-center hover:bg-white/[0.02] transition-colors">
-                      <div className="font-body text-[13px] text-white/80 truncate">{deal.dealName}</div>
-                      <div className="font-body text-[12px] text-white/40">{fmtDate(deal.createdAt)}</div>
+                    <div key={deal.id} className="grid grid-cols-[1.8fr_0.8fr_0.5fr_1fr_0.7fr_0.8fr_0.7fr] gap-3 px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors">
+                      <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
+                      <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</div>
                       <div><span className="font-body text-[10px] text-purple-400 font-semibold bg-purple-500/10 border border-purple-500/20 rounded px-1.5 py-0.5">L2</span></div>
                       <div className="text-center">
-                        <div className="font-body text-[12px] text-white/60">{getPartnerName(deal.partnerCode).name}</div>
-                        <div className="font-body text-[9px] text-white/25 tracking-wider">{deal.partnerCode}</div>
+                        <div className="font-body text-[12px] text-[var(--app-text-secondary)]">{getPartnerName(deal.partnerCode).name}</div>
+                        <div className="font-body text-[9px] text-[var(--app-text-faint)] tracking-wider">{deal.partnerCode}</div>
                       </div>
-                      <div className="font-body text-[12px] text-white/40 text-right">—</div>
+                      <div className="font-body text-[12px] text-[var(--app-text-muted)] text-right">—</div>
                       <div className="font-display text-[14px] font-semibold text-purple-400 text-right">{fmt$(deal.l2CommissionAmount)}</div>
                       <div className="text-right"><StatusBadge status={deal.l2CommissionStatus} /></div>
                     </div>
@@ -442,7 +442,7 @@ export default function CommissionsPage() {
           </div>
         ) : (
           /* Ledger-based history when DB entries exist */
-          <div className="p-6 text-center font-body text-sm text-white/35">
+          <div className="p-6 text-center font-body text-sm text-[var(--app-text-muted)]">
             Commission ledger entries will appear here once payouts are processed.
           </div>
         )}

@@ -173,7 +173,7 @@ export default function AdminConferencePage() {
   const withNotes = entries.filter((e) => e.notes).length;
 
   const stats = [
-    { label: "Total Entries", value: totalEntries, color: "text-white" },
+    { label: "Total Entries", value: totalEntries, color: "text-[var(--app-text)]" },
     { label: "Active / Upcoming", value: activeCount, color: "text-green-400" },
     { label: "Past Recordings", value: pastCount, color: "text-blue-400" },
     { label: "With Notes", value: withNotes, color: "text-amber-400" },
@@ -184,7 +184,7 @@ export default function AdminConferencePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="font-body text-sm text-white/40">Loading conference data...</div>
+        <div className="font-body text-sm text-[var(--app-text-muted)]">Loading conference data...</div>
       </div>
     );
   }
@@ -195,7 +195,7 @@ export default function AdminConferencePage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="font-display text-xl font-bold">Live Weekly Management</h2>
-          <p className="font-body text-[13px] text-white/40 mt-1">
+          <p className="font-body text-[13px] text-[var(--app-text-muted)] mt-1">
             Manage weekly call schedule, recordings, and meeting notes.
           </p>
         </div>
@@ -208,7 +208,7 @@ export default function AdminConferencePage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {stats.map((s) => (
           <div key={s.label} className="card p-4 sm:p-5">
-            <div className="font-body text-[11px] text-white/30 uppercase tracking-wider mb-1">{s.label}</div>
+            <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">{s.label}</div>
             <div className={`font-display text-2xl font-bold ${s.color}`}>{s.value}</div>
           </div>
         ))}
@@ -223,135 +223,135 @@ export default function AdminConferencePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Title */}
             <div className="sm:col-span-2">
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Title *</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Title *</label>
               <input
                 type="text"
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
                 placeholder="Weekly Partner Training & Q&A"
               />
             </div>
             {/* Description */}
             <div className="sm:col-span-2">
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Description</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Description</label>
               <textarea
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
                 rows={2}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors resize-none"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors resize-none"
                 placeholder="Brief description of this entry"
               />
             </div>
             {/* Host Name */}
             <div>
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Host Name</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Host Name</label>
               <input
                 type="text"
                 value={formHostName}
                 onChange={(e) => setFormHostName(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
                 placeholder="TRLN Leadership Team"
               />
             </div>
             {/* Week Number */}
             <div>
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Week Number</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Week Number</label>
               <input
                 type="number"
                 value={formWeekNumber}
                 onChange={(e) => setFormWeekNumber(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
                 placeholder="13"
               />
             </div>
             {/* Join URL */}
             <div>
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Join URL (Zoom/Meet)</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Join URL (Zoom/Meet)</label>
               <input
                 type="text"
                 value={formJoinUrl}
                 onChange={(e) => setFormJoinUrl(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
                 placeholder="https://zoom.us/j/..."
               />
             </div>
             {/* Embed URL */}
             <div>
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Embed URL (YouTube/Vimeo)</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Embed URL (YouTube/Vimeo)</label>
               <input
                 type="text"
                 value={formEmbedUrl}
                 onChange={(e) => setFormEmbedUrl(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
                 placeholder="https://www.youtube.com/embed/..."
               />
             </div>
             {/* Recording URL */}
             <div>
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Recording URL (External)</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Recording URL (External)</label>
               <input
                 type="text"
                 value={formRecordingUrl}
                 onChange={(e) => setFormRecordingUrl(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
                 placeholder="https://zoom.us/rec/share/..."
               />
             </div>
             {/* Schedule */}
             <div>
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Schedule</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Schedule</label>
               <input
                 type="text"
                 value={formSchedule}
                 onChange={(e) => setFormSchedule(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
                 placeholder="Every Thursday at 2:00 PM ET"
               />
             </div>
             {/* Next Call Date */}
             <div>
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Call Date</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Call Date</label>
               <input
                 type="datetime-local"
                 value={formNextCall}
                 onChange={(e) => setFormNextCall(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
               />
             </div>
             {/* Duration */}
             <div>
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Duration</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Duration</label>
               <input
                 type="text"
                 value={formDuration}
                 onChange={(e) => setFormDuration(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
                 placeholder="52 min"
               />
             </div>
             {/* Notes */}
             <div className="sm:col-span-2">
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider block mb-1">Notes (Markdown)</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Notes (Markdown)</label>
               <textarea
                 value={formNotes}
                 onChange={(e) => setFormNotes(e.target.value)}
                 rows={6}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2.5 font-body text-[13px] text-white/80 focus:border-brand-gold/40 focus:outline-none transition-colors resize-none"
+                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors resize-none"
                 placeholder="**Key Topics:**&#10;- Topic 1&#10;- Topic 2&#10;&#10;**Action Items:**&#10;- Item 1"
               />
             </div>
             {/* Active toggle */}
             <div className="sm:col-span-2 flex items-center gap-3">
-              <label className="font-body text-[11px] text-white/40 uppercase tracking-wider">Active</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider">Active</label>
               <button
                 type="button"
                 onClick={() => setFormIsActive(!formIsActive)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formIsActive ? "bg-green-500" : "bg-white/10"}`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formIsActive ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formIsActive ? "translate-x-6" : "translate-x-1"}`} />
               </button>
-              <span className="font-body text-[12px] text-white/50">{formIsActive ? "Active (upcoming)" : "Inactive (past recording)"}</span>
+              <span className="font-body text-[12px] text-[var(--app-text-secondary)]">{formIsActive ? "Active (upcoming)" : "Inactive (past recording)"}</span>
             </div>
           </div>
           {/* Form actions */}
@@ -359,7 +359,7 @@ export default function AdminConferencePage() {
             <button onClick={handleSave} className="btn-gold text-[12px] px-5 py-2.5">
               {editingItem ? "Save Changes" : "Create Entry"}
             </button>
-            <button onClick={resetForm} className="font-body text-[12px] text-white/40 border border-white/10 rounded-lg px-5 py-2.5 hover:text-white/60 transition-colors">
+            <button onClick={resetForm} className="font-body text-[12px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded-lg px-5 py-2.5 hover:text-[var(--app-text-secondary)] transition-colors">
               Cancel
             </button>
           </div>
@@ -369,22 +369,22 @@ export default function AdminConferencePage() {
       {/* ═══ TABLE (desktop) ═══ */}
       <div className="card hidden sm:block">
         {/* Table header */}
-        <div className="grid grid-cols-[60px_1fr_140px_100px_80px_70px_70px_80px_120px] gap-2 px-5 py-3 border-b border-white/[0.06]">
+        <div className="grid grid-cols-[60px_1fr_140px_100px_80px_70px_70px_80px_120px] gap-2 px-5 py-3 border-b border-[var(--app-border)]">
           {["Wk #", "Title", "Host", "Date", "Duration", "Rec?", "Notes?", "Status", "Actions"].map((h) => (
-            <div key={h} className="font-body text-[11px] text-white/30 uppercase tracking-wider">{h}</div>
+            <div key={h} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider">{h}</div>
           ))}
         </div>
         {/* Table rows */}
         {entries.map((entry) => (
           <div
             key={entry.id}
-            className="grid grid-cols-[60px_1fr_140px_100px_80px_70px_70px_80px_120px] gap-2 px-5 py-3 border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.02] transition-colors items-center"
+            className="grid grid-cols-[60px_1fr_140px_100px_80px_70px_70px_80px_120px] gap-2 px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors items-center"
           >
-            <div className="font-body text-[13px] text-white/60">{entry.weekNumber || "—"}</div>
-            <div className="font-body text-[13px] text-white/80 truncate">{entry.title}</div>
-            <div className="font-body text-[12px] text-white/50 truncate">{entry.hostName || "—"}</div>
-            <div className="font-body text-[12px] text-white/50">{fmtDate(entry.nextCall)}</div>
-            <div className="font-body text-[12px] text-white/50">{entry.duration || "—"}</div>
+            <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{entry.weekNumber || "—"}</div>
+            <div className="font-body text-[13px] text-[var(--app-text)] truncate">{entry.title}</div>
+            <div className="font-body text-[12px] text-[var(--app-text-secondary)] truncate">{entry.hostName || "—"}</div>
+            <div className="font-body text-[12px] text-[var(--app-text-secondary)]">{fmtDate(entry.nextCall)}</div>
+            <div className="font-body text-[12px] text-[var(--app-text-secondary)]">{entry.duration || "—"}</div>
             <div className="font-body text-[12px]">{entry.embedUrl || entry.recordingUrl ? "✓" : "—"}</div>
             <div className="font-body text-[12px]">{entry.notes ? "✓" : "—"}</div>
             <div>
@@ -401,7 +401,7 @@ export default function AdminConferencePage() {
               </button>
               <button
                 onClick={() => handleToggleActive(entry)}
-                className="font-body text-[10px] text-white/40 border border-white/10 rounded px-2 py-1 hover:bg-white/[0.04] transition-colors"
+                className="font-body text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded px-2 py-1 hover:bg-[var(--app-card-bg)] transition-colors"
               >
                 {entry.isActive ? "Archive" : "Activate"}
               </button>
@@ -416,7 +416,7 @@ export default function AdminConferencePage() {
         ))}
         {entries.length === 0 && (
           <div className="px-5 py-10 text-center">
-            <div className="font-body text-[13px] text-white/30">No conference entries yet.</div>
+            <div className="font-body text-[13px] text-[var(--app-text-muted)]">No conference entries yet.</div>
           </div>
         )}
       </div>
@@ -427,10 +427,10 @@ export default function AdminConferencePage() {
           <div key={entry.id} className="card p-4">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex-1 min-w-0">
-                <div className="font-body text-[13px] text-white/80 font-medium truncate">
+                <div className="font-body text-[13px] text-[var(--app-text)] font-medium truncate">
                   {entry.weekNumber ? `Wk ${entry.weekNumber} — ` : ""}{entry.title}
                 </div>
-                <div className="font-body text-[11px] text-white/30 mt-0.5">
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
                   {fmtDate(entry.nextCall)} · {entry.duration || "—"}{entry.hostName ? ` · ${entry.hostName}` : ""}
                 </div>
               </div>
@@ -438,7 +438,7 @@ export default function AdminConferencePage() {
                 {entry.isActive ? "Active" : "Past"}
               </span>
             </div>
-            <div className="flex flex-wrap gap-2 text-[11px] text-white/30 mb-3">
+            <div className="flex flex-wrap gap-2 text-[11px] text-[var(--app-text-muted)] mb-3">
               <span>Rec: {entry.embedUrl || entry.recordingUrl ? "✓" : "—"}</span>
               <span>Notes: {entry.notes ? "✓" : "—"}</span>
             </div>
@@ -451,7 +451,7 @@ export default function AdminConferencePage() {
               </button>
               <button
                 onClick={() => handleToggleActive(entry)}
-                className="font-body text-[11px] text-white/40 border border-white/10 rounded-lg px-3 py-1.5 hover:bg-white/[0.04] transition-colors"
+                className="font-body text-[11px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded-lg px-3 py-1.5 hover:bg-[var(--app-card-bg)] transition-colors"
               >
                 {entry.isActive ? "Archive" : "Activate"}
               </button>

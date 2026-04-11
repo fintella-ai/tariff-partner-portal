@@ -13,7 +13,7 @@ const AGREEMENT_STATUS_CONFIG: Record<
   AgreementStatus,
   { label: string; bg: string; text: string; dot: string }
 > = {
-  not_sent:  { label: "Not Sent",           bg: "bg-white/10",        text: "text-white/60",   dot: "bg-white/40" },
+  not_sent:  { label: "Not Sent",           bg: "bg-[var(--app-input-bg)]",        text: "text-[var(--app-text-secondary)]",   dot: "bg-[var(--app-text-muted)]" },
   pending:   { label: "Pending Signature",  bg: "bg-yellow-500/15",   text: "text-yellow-400", dot: "bg-yellow-400" },
   signed:    { label: "Signed",             bg: "bg-green-500/15",    text: "text-green-400",  dot: "bg-green-400" },
   amended:   { label: "Amendment Pending",  bg: "bg-orange-500/15",   text: "text-orange-400", dot: "bg-orange-400" },
@@ -131,7 +131,7 @@ export default function DocumentsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="font-body text-sm text-white/40">Loading documents...</div>
+        <div className="font-body text-sm text-[var(--app-text-muted)]">Loading documents...</div>
       </div>
     );
   }
@@ -139,7 +139,7 @@ export default function DocumentsPage() {
   return (
     <div>
       <h2 className="font-display text-xl sm:text-2xl font-bold mb-2">Documents</h2>
-      <p className="font-body text-sm text-white/40 mb-6">
+      <p className="font-body text-sm text-[var(--app-text-muted)] mb-6">
         Access and manage your partnership documents.
       </p>
 
@@ -167,7 +167,7 @@ export default function DocumentsPage() {
                 <p className="font-display text-sm font-semibold text-green-400 mb-1">
                   Partnership Agreement Signed
                 </p>
-                <p className="font-body text-xs text-white/50">
+                <p className="font-body text-xs text-[var(--app-text-secondary)]">
                   Signed on {fmtDate(agreementData?.signedDate)} &middot; Version {agreementData?.version || 1}
                 </p>
               </div>
@@ -175,7 +175,7 @@ export default function DocumentsPage() {
             {agreementData?.documentUrl && (
               <button
                 onClick={() => window.open(agreementData.documentUrl!, "_blank")}
-                className="w-full sm:w-auto mt-3 text-[12px] font-medium tracking-wide uppercase text-white/60 border border-white/[0.12] rounded-lg px-4 py-2.5 hover:border-white/25 hover:text-white/80 transition-colors text-center"
+                className="w-full sm:w-auto mt-3 text-[12px] font-medium tracking-wide uppercase text-[var(--app-text-secondary)] border border-[var(--app-input-border)] rounded-lg px-4 py-2.5 hover:border-[var(--app-border)] hover:text-[var(--app-text)] transition-colors text-center"
               >
                 View Agreement
               </button>
@@ -193,7 +193,7 @@ export default function DocumentsPage() {
                 <p className="font-display text-sm font-semibold text-yellow-400 mb-1">
                   Agreement Sent — Awaiting Your Signature
                 </p>
-                <p className="font-body text-xs text-white/50 leading-relaxed">
+                <p className="font-body text-xs text-[var(--app-text-secondary)] leading-relaxed">
                   Sent on {fmtDate(agreementData?.sentDate)}.
                   {agreementData?.embeddedSigningUrl
                     ? " Click below to review and sign right here."
@@ -222,7 +222,7 @@ export default function DocumentsPage() {
                 <p className="font-display text-sm font-semibold text-yellow-400 mb-1">
                   Partnership Agreement Required
                 </p>
-                <p className="font-body text-xs text-white/50 leading-relaxed">
+                <p className="font-body text-xs text-[var(--app-text-secondary)] leading-relaxed">
                   You must sign your partnership agreement before submitting deals to {FIRM_SHORT}.
                 </p>
               </div>
@@ -241,7 +241,7 @@ export default function DocumentsPage() {
       {/* ── Required Documents ─────────────────────────────────────────────── */}
       <div className={`card ${device.cardPadding} ${device.borderRadius} mb-6`}>
         <h3 className="font-display text-base sm:text-lg font-bold mb-1">Required Documents</h3>
-        <p className="font-body text-xs text-white/40 mb-5">
+        <p className="font-body text-xs text-[var(--app-text-muted)] mb-5">
           Documents are only required if you have earned commissions.
         </p>
 
@@ -252,17 +252,17 @@ export default function DocumentsPage() {
               return (
                 <div
                   key={doc.name}
-                  className="p-4 bg-white/[0.03] border border-white/[0.08] rounded-lg"
+                  className="p-4 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg"
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="shrink-0 w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center">
-                      <svg className="w-4.5 h-4.5 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <div className="shrink-0 w-9 h-9 rounded-lg bg-[var(--app-card-bg)] flex items-center justify-center">
+                      <svg className="w-4.5 h-4.5 text-[var(--app-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-medium text-white truncate">{doc.name}</p>
-                      <p className="font-body text-[11px] text-white/35">
+                      <p className="font-body text-sm font-medium text-[var(--app-text)] truncate">{doc.name}</p>
+                      <p className="font-body text-[11px] text-[var(--app-text-muted)]">
                         {doc.date ? fmtDate(doc.date) : "No date"}
                       </p>
                     </div>
@@ -273,7 +273,7 @@ export default function DocumentsPage() {
                     >
                       {dCfg.label}
                     </span>
-                    <button className="text-[12px] font-medium tracking-wide uppercase text-white/60 border border-white/[0.12] rounded-lg px-3.5 py-1.5 hover:border-white/25 hover:text-white/80 transition-colors">
+                    <button className="text-[12px] font-medium tracking-wide uppercase text-[var(--app-text-secondary)] border border-[var(--app-input-border)] rounded-lg px-3.5 py-1.5 hover:border-[var(--app-border)] hover:text-[var(--app-text)] transition-colors">
                       {doc.status === "required" || doc.status === "expired" ? "Upload" : "View"}
                     </button>
                   </div>
@@ -282,38 +282,38 @@ export default function DocumentsPage() {
             })}
           </div>
         ) : (
-          <div className="border border-white/[0.08] rounded-lg overflow-hidden">
-            <div className="grid grid-cols-[1fr_140px_140px_100px] gap-4 px-4 py-2.5 bg-white/[0.03] border-b border-white/[0.08]">
-              <span className="font-body text-[11px] tracking-[1px] uppercase text-white/40">Document</span>
-              <span className="font-body text-[11px] tracking-[1px] uppercase text-white/40">Status</span>
-              <span className="font-body text-[11px] tracking-[1px] uppercase text-white/40">Date</span>
-              <span className="font-body text-[11px] tracking-[1px] uppercase text-white/40 text-right">Action</span>
+          <div className="border border-[var(--app-border)] rounded-lg overflow-hidden">
+            <div className="grid grid-cols-[1fr_140px_140px_100px] gap-4 px-4 py-2.5 bg-[var(--app-card-bg)] border-b border-[var(--app-border)]">
+              <span className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Document</span>
+              <span className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Status</span>
+              <span className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Date</span>
+              <span className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">Action</span>
             </div>
             {requiredDocs.map((doc) => {
               const dCfg = DOC_STATUS_CONFIG[doc.status];
               return (
                 <div
                   key={doc.name}
-                  className="grid grid-cols-[1fr_140px_140px_100px] gap-4 px-4 py-3 items-center border-b border-white/[0.06] last:border-b-0 hover:bg-white/[0.02] transition-colors"
+                  className="grid grid-cols-[1fr_140px_140px_100px] gap-4 px-4 py-3 items-center border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="shrink-0 w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center">
-                      <svg className="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <div className="shrink-0 w-8 h-8 rounded-lg bg-[var(--app-card-bg)] flex items-center justify-center">
+                      <svg className="w-4 h-4 text-[var(--app-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                       </svg>
                     </div>
-                    <span className="font-body text-sm text-white">{doc.name}</span>
+                    <span className="font-body text-sm text-[var(--app-text)]">{doc.name}</span>
                   </div>
                   <span
                     className={`inline-flex items-center w-fit px-2.5 py-1 rounded-full text-[11px] font-medium tracking-wide uppercase ${dCfg.bg} ${dCfg.text}`}
                   >
                     {dCfg.label}
                   </span>
-                  <span className="font-body text-sm text-white/50">
+                  <span className="font-body text-sm text-[var(--app-text-secondary)]">
                     {doc.date ? fmtDate(doc.date) : "—"}
                   </span>
                   <div className="text-right">
-                    <button className="text-[12px] font-medium tracking-wide uppercase text-white/60 border border-white/[0.12] rounded-lg px-3.5 py-1.5 hover:border-white/25 hover:text-white/80 transition-colors">
+                    <button className="text-[12px] font-medium tracking-wide uppercase text-[var(--app-text-secondary)] border border-[var(--app-input-border)] rounded-lg px-3.5 py-1.5 hover:border-[var(--app-border)] hover:text-[var(--app-text)] transition-colors">
                       {doc.status === "required" || doc.status === "expired" ? "Upload" : "View"}
                     </button>
                   </div>
@@ -326,16 +326,16 @@ export default function DocumentsPage() {
 
       {/* ── Upload Area ────────────────────────────────────────────────────── */}
       <div className={`card ${device.cardPadding} ${device.borderRadius}`}>
-        <div className="border-2 border-dashed border-white/[0.12] rounded-lg p-8 sm:p-12 text-center hover:border-white/20 transition-colors cursor-pointer">
-          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-white/[0.06] flex items-center justify-center">
-            <svg className="w-6 h-6 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="border-2 border-dashed border-[var(--app-input-border)] rounded-lg p-8 sm:p-12 text-center hover:border-[var(--app-border)] transition-colors cursor-pointer">
+          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-[var(--app-card-bg)] flex items-center justify-center">
+            <svg className="w-6 h-6 text-[var(--app-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
             </svg>
           </div>
-          <p className="font-body text-sm text-white/60 mb-2">
+          <p className="font-body text-sm text-[var(--app-text-secondary)] mb-2">
             Drag &amp; drop files here or click to upload
           </p>
-          <p className="font-body text-[11px] text-white/30">
+          <p className="font-body text-[11px] text-[var(--app-text-muted)]">
             Accepted formats: PDF, JPG, PNG up to 10MB
           </p>
         </div>
@@ -350,14 +350,14 @@ export default function DocumentsPage() {
             onClick={() => setShowSigningModal(false)}
           />
           {/* Modal */}
-          <div className="relative w-full max-w-4xl mx-2 sm:mx-4 h-[95vh] sm:h-[85vh] flex flex-col bg-brand-dark border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-4xl mx-2 sm:mx-4 h-[95vh] sm:h-[85vh] flex flex-col bg-[var(--app-bg)] border border-[var(--app-border)] rounded-xl shadow-2xl overflow-hidden">
             {/* Modal header */}
-            <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/[0.08] shrink-0">
+            <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[var(--app-border)] shrink-0">
               <div className="min-w-0 flex-1 mr-3">
                 <h3 className="font-display text-sm font-bold truncate">
                   Sign Partnership Agreement
                 </h3>
-                <p className="font-body text-[11px] text-white/40 mt-0.5 hidden sm:block">
+                <p className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 hidden sm:block">
                   Review and sign your {FIRM_SHORT} partnership agreement below
                 </p>
               </div>
@@ -370,9 +370,9 @@ export default function DocumentsPage() {
                 </button>
                 <button
                   onClick={() => setShowSigningModal(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--app-card-bg)] hover:bg-[var(--app-hover)] transition-colors"
                 >
-                  <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-4 h-4 text-[var(--app-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -388,14 +388,14 @@ export default function DocumentsPage() {
                   allow="camera; microphone"
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full bg-brand-dark">
+                <div className="flex flex-col items-center justify-center h-full bg-[var(--app-bg)]">
                   <div className="w-16 h-16 rounded-full bg-brand-gold/10 border border-brand-gold/25 flex items-center justify-center mb-4">
                     <svg className="w-8 h-8 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                     </svg>
                   </div>
                   <p className="font-display text-sm font-semibold mb-2">Demo Mode</p>
-                  <p className="font-body text-xs text-white/50 text-center max-w-sm leading-relaxed">
+                  <p className="font-body text-xs text-[var(--app-text-secondary)] text-center max-w-sm leading-relaxed">
                     In demo mode, the signing document is not available for embedded viewing.
                     When SignWell is configured with a real API key, the agreement will load
                     right here for you to review and sign without leaving the portal.

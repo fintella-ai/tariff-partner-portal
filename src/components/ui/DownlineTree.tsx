@@ -11,7 +11,7 @@ export type TreePartner = {
 
 function PersonSilhouette({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" className="text-white/20">
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" className="text-[var(--app-text-faint)]">
       <circle cx="20" cy="14" r="7" fill="currentColor" />
       <ellipse cx="20" cy="32" rx="12" ry="8" fill="currentColor" />
     </svg>
@@ -46,26 +46,26 @@ function TreeNode({ partner, depth, isMobile }: { partner: TreePartner; depth: n
 
         {/* Silhouette */}
         <div className="flex justify-center mb-1.5 mt-1">
-          <div className={`${isMobile ? "w-8 h-8" : "w-10 h-10"} rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden`}>
+          <div className={`${isMobile ? "w-8 h-8" : "w-10 h-10"} rounded-full bg-[var(--app-input-bg)] border border-[var(--app-border)] flex items-center justify-center overflow-hidden`}>
             <PersonSilhouette size={isMobile ? 24 : 28} />
           </div>
         </div>
 
         {/* Name */}
-        <div className={`font-body ${isMobile ? "text-[11px]" : "text-[12px]"} font-semibold text-white/80 leading-tight truncate min-w-0`}>
+        <div className={`font-body ${isMobile ? "text-[11px]" : "text-[12px]"} font-semibold text-[var(--app-text)] leading-tight truncate min-w-0`}>
           {partner.firstName} {partner.lastName}
         </div>
 
         {/* Code + status */}
         <div className="flex items-center justify-center gap-1.5 mt-1">
           <span className={`w-1.5 h-1.5 rounded-full ${statusDot[partner.status] || statusDot.active}`} />
-          <span className={`font-mono ${isMobile ? "text-[9px]" : "text-[10px]"} text-white/35`}>{partner.partnerCode}</span>
+          <span className={`font-mono ${isMobile ? "text-[9px]" : "text-[10px]"} text-[var(--app-text-muted)]`}>{partner.partnerCode}</span>
         </div>
       </div>
 
       {/* Connector line down */}
       {hasChildren && (
-        <div className="w-px h-5 bg-white/10" />
+        <div className="w-px h-5 bg-[var(--app-input-bg)]" />
       )}
 
       {/* Children */}
@@ -73,7 +73,7 @@ function TreeNode({ partner, depth, isMobile }: { partner: TreePartner; depth: n
         <div className="relative">
           {/* Horizontal connector bar */}
           {partner.children.length > 1 && (
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px bg-white/10"
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px bg-[var(--app-input-bg)]"
               style={{
                 width: `calc(100% - ${isMobile ? "120px" : "150px"})`,
               }}
@@ -84,7 +84,7 @@ function TreeNode({ partner, depth, isMobile }: { partner: TreePartner; depth: n
             {partner.children.map((child) => (
               <div key={child.id} className="flex flex-col items-center">
                 {/* Vertical connector from horizontal bar to child */}
-                <div className="w-px h-5 bg-white/10" />
+                <div className="w-px h-5 bg-[var(--app-input-bg)]" />
                 <TreeNode partner={child} depth={depth + 1} isMobile={isMobile} />
               </div>
             ))}
@@ -105,7 +105,7 @@ export default function DownlineTree({ root, isMobile = false }: Props) {
     return (
       <div className="text-center py-10">
         <PersonSilhouette size={40} />
-        <div className="font-body text-[13px] text-white/30 mt-3">No downline partners to display.</div>
+        <div className="font-body text-[13px] text-[var(--app-text-muted)] mt-3">No downline partners to display.</div>
       </div>
     );
   }

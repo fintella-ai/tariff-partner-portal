@@ -87,16 +87,16 @@ export default function Accordion({
           <div
             key={item.id}
             role="listitem"
-            className="bg-white/[0.02] border border-white/[0.06] rounded-xl mb-2"
+            className="bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-xl mb-2"
           >
             {/* Header — clickable toggle */}
             <button
               onClick={() => toggle(item.id)}
-              className="w-full flex items-center justify-between px-4 sm:px-5 py-4 hover:bg-white/[0.02] rounded-xl transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-4 sm:px-5 py-4 hover:bg-[var(--app-card-bg)] rounded-xl transition-colors cursor-pointer"
               aria-expanded={isOpen}
               aria-controls={`accordion-content-${item.id}`}
             >
-              <span className="font-body text-sm font-medium text-white text-left">
+              <span className="font-body text-sm font-medium text-[var(--app-text)] text-left">
                 {item.title}
               </span>
 
@@ -108,7 +108,7 @@ export default function Accordion({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
-                className={`shrink-0 ml-3 text-white/40 transition-transform duration-200 ${
+                className={`shrink-0 ml-3 text-[var(--app-text-muted)] transition-transform duration-200 ${
                   isOpen ? "rotate-180" : ""
                 }`}
               >
@@ -124,8 +124,8 @@ export default function Accordion({
               role="region"
               aria-labelledby={`accordion-header-${item.id}`}
             >
-              <div className="border-t border-white/[0.06] px-4 sm:px-5 pb-4 pt-3">
-                <p className="font-body text-[13px] text-white/50 leading-relaxed">
+              <div className="border-t border-[var(--app-border)] px-4 sm:px-5 pb-4 pt-3">
+                <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed">
                   {item.content}
                 </p>
               </div>

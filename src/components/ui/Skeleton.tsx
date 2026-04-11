@@ -8,7 +8,7 @@
 function SkeletonBase({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-lg bg-white/[0.06] ${className}`}
+      className={`animate-pulse rounded-lg bg-[var(--app-card-bg)] ${className}`}
     />
   );
 }
@@ -31,7 +31,7 @@ export function SkeletonStatCard() {
 /** Table row skeleton */
 export function SkeletonTableRow({ cols = 5 }: { cols?: number }) {
   return (
-    <div className={`grid gap-4 px-4 sm:px-6 py-4 border-b border-white/[0.04]`} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+    <div className={`grid gap-4 px-4 sm:px-6 py-4 border-b border-[var(--app-border)]`} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
       {Array.from({ length: cols }).map((_, i) => (
         <SkeletonLine key={i} width={i === 0 ? "w-3/4" : "w-1/2"} height="h-3" />
       ))}
@@ -73,7 +73,7 @@ export function SkeletonPageLoader({ statCards = 4, tableRows = 5, tableCols = 5
 
       {/* Table */}
       <div className="card">
-        <div className="px-4 sm:px-6 py-4 border-b border-white/[0.06]">
+        <div className="px-4 sm:px-6 py-4 border-b border-[var(--app-border)]">
           <SkeletonLine width="w-32" height="h-4" />
         </div>
         {Array.from({ length: tableRows }).map((_, i) => (

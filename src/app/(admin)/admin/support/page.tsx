@@ -82,7 +82,7 @@ const tabs = ["All", "Open", "In Progress", "Resolved"] as const;
 type Tab = (typeof tabs)[number];
 
 const priorityBadge: Record<Ticket["priority"], string> = {
-  low: "bg-white/10 text-white/50",
+  low: "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)]",
   normal: "bg-blue-500/20 text-blue-400",
   high: "bg-orange-500/20 text-orange-400",
   urgent: "bg-red-500/20 text-red-400",
@@ -92,7 +92,7 @@ const statusBadge: Record<Ticket["status"], string> = {
   open: "bg-blue-500/20 text-blue-400",
   in_progress: "bg-yellow-500/20 text-yellow-400",
   resolved: "bg-green-500/20 text-green-400",
-  closed: "bg-white/10 text-white/50",
+  closed: "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)]",
 };
 
 const statusLabel: Record<Ticket["status"], string> = {
@@ -130,7 +130,7 @@ export default function SupportTicketsPage() {
       <h2 className="font-display text-xl sm:text-2xl font-bold mb-2">
         Support Tickets
       </h2>
-      <p className="font-body text-sm text-white/40 mb-6">
+      <p className="font-body text-sm text-[var(--app-text-muted)] mb-6">
         Manage and respond to partner support tickets.
       </p>
 
@@ -143,7 +143,7 @@ export default function SupportTicketsPage() {
           { label: "Resolved", value: resolved },
         ].map((s) => (
           <div key={s.label} className="card px-4 py-3">
-            <div className="font-body text-xs text-white/40 mb-1">
+            <div className="font-body text-xs text-[var(--app-text-muted)] mb-1">
               {s.label}
             </div>
             <div className="font-display text-xl font-bold text-brand-gold">
@@ -162,7 +162,7 @@ export default function SupportTicketsPage() {
             className={`font-body text-sm px-4 py-1.5 rounded-full whitespace-nowrap transition ${
               tab === t
                 ? "bg-brand-gold/20 text-brand-gold"
-                : "bg-white/5 text-white/50 hover:text-white/70"
+                : "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)]"
             }`}
           >
             {t}
@@ -174,7 +174,7 @@ export default function SupportTicketsPage() {
       <div className="hidden md:block card overflow-x-auto">
         <table className="w-full text-left font-body text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-white/40 text-xs uppercase tracking-wider">
+            <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
               <th className="px-4 py-3">Subject</th>
               <th className="px-4 py-3">Partner</th>
               <th className="px-4 py-3">Category</th>
@@ -188,19 +188,19 @@ export default function SupportTicketsPage() {
             {filtered.map((t) => (
               <tr
                 key={t.id}
-                className="border-b border-white/5 hover:bg-white/[0.02] transition"
+                className="border-b border-[var(--app-border-subtle)] hover:bg-[var(--app-card-bg)] transition"
               >
                 <td className="px-4 py-3">
-                  <div className="font-medium text-white">{t.subject}</div>
-                  <div className="text-xs text-white/35">
+                  <div className="font-medium text-[var(--app-text)]">{t.subject}</div>
+                  <div className="text-xs text-[var(--app-text-muted)]">
                     {t.id} &middot; {t.messages} messages
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="text-white/80">{t.partnerName}</div>
-                  <div className="text-xs text-white/35">{t.partnerCode}</div>
+                  <div className="text-[var(--app-text)]">{t.partnerName}</div>
+                  <div className="text-xs text-[var(--app-text-muted)]">{t.partnerCode}</div>
                 </td>
-                <td className="px-4 py-3 text-white/60">{t.category}</td>
+                <td className="px-4 py-3 text-[var(--app-text-secondary)]">{t.category}</td>
                 <td className="px-4 py-3">
                   <span
                     className={`inline-block text-xs px-2 py-0.5 rounded-full capitalize ${priorityBadge[t.priority]}`}
@@ -215,7 +215,7 @@ export default function SupportTicketsPage() {
                     {statusLabel[t.status]}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-white/50">
+                <td className="px-4 py-3 text-[var(--app-text-secondary)]">
                   {fmtDate(t.lastReply)}
                 </td>
                 <td className="px-4 py-3">
@@ -240,10 +240,10 @@ export default function SupportTicketsPage() {
           <div key={t.id} className="card p-4">
             <div className="flex items-start justify-between mb-2">
               <div>
-                <div className="font-body text-sm font-medium text-white">
+                <div className="font-body text-sm font-medium text-[var(--app-text)]">
                   {t.subject}
                 </div>
-                <div className="font-body text-xs text-white/35 mt-0.5">
+                <div className="font-body text-xs text-[var(--app-text-muted)] mt-0.5">
                   {t.id} &middot; {t.messages} messages
                 </div>
               </div>
@@ -253,7 +253,7 @@ export default function SupportTicketsPage() {
                 {t.priority}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-white/50 mb-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--app-text-secondary)] mb-3">
               <span>{t.partnerName}</span>
               <span>&middot;</span>
               <span>{t.category}</span>

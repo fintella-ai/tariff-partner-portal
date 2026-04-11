@@ -81,7 +81,7 @@ export default function CommissionManagementPage() {
       <h2 className="font-display text-xl sm:text-2xl font-bold mb-1">
         Commission Management
       </h2>
-      <p className="font-body text-sm text-white/40 mb-6">
+      <p className="font-body text-sm text-[var(--app-text-muted)] mb-6">
         Configure default commission rates and partner-specific overrides.
       </p>
 
@@ -98,16 +98,16 @@ export default function CommissionManagementPage() {
           ].map((r) => (
             <div
               key={r.label}
-              className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-3"
+              className="flex items-center justify-between rounded-lg bg-[var(--app-input-bg)] px-4 py-3"
             >
               <div>
-                <p className="font-body text-xs text-white/40">{r.label}</p>
+                <p className="font-body text-xs text-[var(--app-text-muted)]">{r.label}</p>
                 <p className="font-display text-lg font-bold text-brand-gold">
                   {pct(r.rate)}
                 </p>
               </div>
               <button
-                className="px-3 py-1.5 rounded-md text-xs font-medium bg-white/5 text-white/50 hover:bg-white/10 transition cursor-not-allowed"
+                className="px-3 py-1.5 rounded-md text-xs font-medium bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition cursor-not-allowed"
                 title="Editing default rates coming soon"
               >
                 Edit
@@ -133,10 +133,10 @@ export default function CommissionManagementPage() {
 
         {/* Inline add form */}
         {showForm && (
-          <div className="mb-6 p-4 rounded-lg bg-white/5 border border-white/10 space-y-4">
+          <div className="mb-6 p-4 rounded-lg bg-[var(--app-input-bg)] border border-[var(--app-border)] space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-body text-xs text-white/40 mb-1">
+                <label className="block font-body text-xs text-[var(--app-text-muted)] mb-1">
                   Partner Code
                 </label>
                 <input
@@ -146,11 +146,11 @@ export default function CommissionManagementPage() {
                     setForm((f) => ({ ...f, partnerCode: e.target.value }))
                   }
                   placeholder="TRLN-XX0000"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 font-body text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-brand-gold/60 transition"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2 font-body text-sm text-[var(--app-text)] placeholder:text-[var(--app-text-muted)] focus:outline-none focus:border-brand-gold/60 transition"
                 />
               </div>
               <div>
-                <label className="block font-body text-xs text-white/40 mb-1">
+                <label className="block font-body text-xs text-[var(--app-text-muted)] mb-1">
                   Partner Name
                 </label>
                 <input
@@ -160,13 +160,13 @@ export default function CommissionManagementPage() {
                     setForm((f) => ({ ...f, partnerName: e.target.value }))
                   }
                   placeholder="Full name"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 font-body text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-brand-gold/60 transition"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2 font-body text-sm text-[var(--app-text)] placeholder:text-[var(--app-text-muted)] focus:outline-none focus:border-brand-gold/60 transition"
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 items-end">
               <div>
-                <label className="block font-body text-xs text-white/40 mb-1">
+                <label className="block font-body text-xs text-[var(--app-text-muted)] mb-1">
                   L1 Rate %
                 </label>
                 <input
@@ -177,11 +177,11 @@ export default function CommissionManagementPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, l1Rate: e.target.value }))
                   }
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 font-body text-sm text-white focus:outline-none focus:border-brand-gold/60 transition"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2 font-body text-sm text-[var(--app-text)] focus:outline-none focus:border-brand-gold/60 transition"
                 />
               </div>
               <div>
-                <label className="block font-body text-xs text-white/40 mb-1">
+                <label className="block font-body text-xs text-[var(--app-text-muted)] mb-1">
                   L2 Rate %
                 </label>
                 <input
@@ -192,11 +192,11 @@ export default function CommissionManagementPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, l2Rate: e.target.value }))
                   }
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 font-body text-sm text-white focus:outline-none focus:border-brand-gold/60 transition"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2 font-body text-sm text-[var(--app-text)] focus:outline-none focus:border-brand-gold/60 transition"
                 />
               </div>
               <div>
-                <label className="block font-body text-xs text-white/40 mb-1">
+                <label className="block font-body text-xs text-[var(--app-text-muted)] mb-1">
                   L3 Rate %
                 </label>
                 <input
@@ -207,7 +207,7 @@ export default function CommissionManagementPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, l3Rate: e.target.value }))
                   }
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 font-body text-sm text-white focus:outline-none focus:border-brand-gold/60 transition"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2 font-body text-sm text-[var(--app-text)] focus:outline-none focus:border-brand-gold/60 transition"
                 />
               </div>
               <div className="flex items-center gap-2 pb-2">
@@ -218,11 +218,11 @@ export default function CommissionManagementPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, l3Enabled: e.target.checked }))
                   }
-                  className="rounded border-white/20 bg-white/5 text-brand-gold focus:ring-brand-gold/50"
+                  className="rounded border-[var(--app-border)] bg-[var(--app-input-bg)] text-brand-gold focus:ring-brand-gold/50"
                 />
                 <label
                   htmlFor="l3-enabled"
-                  className="font-body text-xs text-white/60"
+                  className="font-body text-xs text-[var(--app-text-secondary)]"
                 >
                   L3 Enabled
                 </label>
@@ -243,7 +243,7 @@ export default function CommissionManagementPage() {
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left font-body text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-white/50 text-xs uppercase tracking-wider">
+              <tr className="border-b border-[var(--app-border)] text-[var(--app-text-secondary)] text-xs uppercase tracking-wider">
                 <th className="px-4 py-3">Partner</th>
                 <th className="px-4 py-3">Code</th>
                 <th className="px-4 py-3 text-right">L1 Rate</th>
@@ -257,19 +257,19 @@ export default function CommissionManagementPage() {
               {overrides.map((o) => (
                 <tr
                   key={o.partnerCode}
-                  className="border-b border-white/5 hover:bg-white/[0.03] transition"
+                  className="border-b border-[var(--app-border-subtle)] hover:bg-[var(--app-card-bg)] transition"
                 >
-                  <td className="px-4 py-3 text-white">{o.partnerName}</td>
-                  <td className="px-4 py-3 text-white/70 font-mono text-xs">
+                  <td className="px-4 py-3 text-[var(--app-text)]">{o.partnerName}</td>
+                  <td className="px-4 py-3 text-[var(--app-text-secondary)] font-mono text-xs">
                     {o.partnerCode}
                   </td>
                   <td className="px-4 py-3 text-right text-brand-gold font-medium">
                     {pct(o.l1Rate)}
                   </td>
-                  <td className="px-4 py-3 text-right text-white/70">
+                  <td className="px-4 py-3 text-right text-[var(--app-text-secondary)]">
                     {pct(o.l2Rate)}
                   </td>
-                  <td className="px-4 py-3 text-right text-white/70">
+                  <td className="px-4 py-3 text-right text-[var(--app-text-secondary)]">
                     {pct(o.l3Rate)}
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -278,14 +278,14 @@ export default function CommissionManagementPage() {
                         Yes
                       </span>
                     ) : (
-                      <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-white/10 text-white/40">
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-[var(--app-input-bg)] text-[var(--app-text-muted)]">
                         No
                       </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="px-3 py-1.5 rounded-md text-xs font-medium bg-white/5 text-white/50 hover:bg-white/10 transition cursor-not-allowed">
+                      <button className="px-3 py-1.5 rounded-md text-xs font-medium bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition cursor-not-allowed">
                         Edit
                       </button>
                       <button
@@ -302,7 +302,7 @@ export default function CommissionManagementPage() {
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-4 py-12 text-center text-white/30"
+                    className="px-4 py-12 text-center text-[var(--app-text-muted)]"
                   >
                     No partner overrides configured.
                   </td>
@@ -317,12 +317,12 @@ export default function CommissionManagementPage() {
           {overrides.map((o) => (
             <div
               key={o.partnerCode}
-              className="rounded-lg bg-white/5 p-4 space-y-3"
+              className="rounded-lg bg-[var(--app-input-bg)] p-4 space-y-3"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-medium text-white">{o.partnerName}</p>
-                  <p className="text-xs text-white/50 font-mono mt-0.5">
+                  <p className="font-medium text-[var(--app-text)]">{o.partnerName}</p>
+                  <p className="text-xs text-[var(--app-text-secondary)] font-mono mt-0.5">
                     {o.partnerCode}
                   </p>
                 </div>
@@ -331,7 +331,7 @@ export default function CommissionManagementPage() {
                     L3 On
                   </span>
                 ) : (
-                  <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-white/10 text-white/40">
+                  <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-[var(--app-input-bg)] text-[var(--app-text-muted)]">
                     L3 Off
                   </span>
                 )}
@@ -339,21 +339,21 @@ export default function CommissionManagementPage() {
 
               <div className="grid grid-cols-3 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-white/40">L1 Rate</p>
+                  <p className="text-xs text-[var(--app-text-muted)]">L1 Rate</p>
                   <p className="text-brand-gold font-medium">{pct(o.l1Rate)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-white/40">L2 Rate</p>
-                  <p className="text-white/70">{pct(o.l2Rate)}</p>
+                  <p className="text-xs text-[var(--app-text-muted)]">L2 Rate</p>
+                  <p className="text-[var(--app-text-secondary)]">{pct(o.l2Rate)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-white/40">L3 Rate</p>
-                  <p className="text-white/70">{pct(o.l3Rate)}</p>
+                  <p className="text-xs text-[var(--app-text-muted)]">L3 Rate</p>
+                  <p className="text-[var(--app-text-secondary)]">{pct(o.l3Rate)}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-1 border-t border-white/5">
-                <button className="flex-1 text-center px-3 py-2 rounded-md text-xs font-medium bg-white/5 text-white/50 hover:bg-white/10 transition cursor-not-allowed">
+              <div className="flex items-center gap-2 pt-1 border-t border-[var(--app-border-subtle)]">
+                <button className="flex-1 text-center px-3 py-2 rounded-md text-xs font-medium bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition cursor-not-allowed">
                   Edit
                 </button>
                 <button
@@ -366,7 +366,7 @@ export default function CommissionManagementPage() {
             </div>
           ))}
           {overrides.length === 0 && (
-            <div className="py-12 text-center text-white/30 font-body text-sm">
+            <div className="py-12 text-center text-[var(--app-text-muted)] font-body text-sm">
               No partner overrides configured.
             </div>
           )}

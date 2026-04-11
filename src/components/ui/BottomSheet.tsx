@@ -87,7 +87,7 @@ export default function BottomSheet({
       {/* Sheet */}
       <div
         ref={sheetRef}
-        className="absolute bottom-0 left-0 right-0 bg-brand-dark border-t border-white/10 rounded-t-2xl overflow-hidden flex flex-col"
+        className="absolute bottom-0 left-0 right-0 bg-[var(--app-bg)] border-t border-[var(--app-border)] rounded-t-2xl overflow-hidden flex flex-col"
         style={{
           height: `${sheetHeight}vh`,
           transform: dragOffset > 0 ? `translateY(${dragOffset}px)` : undefined,
@@ -101,12 +101,12 @@ export default function BottomSheet({
           onTouchMove={handleDragMove}
           onTouchEnd={handleDragEnd}
         >
-          <div className="w-10 h-1 rounded-full bg-white/20" />
+          <div className="w-10 h-1 rounded-full bg-[var(--app-input-bg)]" />
         </div>
 
         {/* Title */}
         {title && (
-          <div className="px-5 pb-3 border-b border-white/[0.06] shrink-0">
+          <div className="px-5 pb-3 border-b border-[var(--app-border)] shrink-0">
             <h3 className="font-display text-base font-bold">{title}</h3>
           </div>
         )}

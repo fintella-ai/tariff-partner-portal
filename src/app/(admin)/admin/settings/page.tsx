@@ -313,13 +313,13 @@ export default function SettingsPage() {
 
   // ── Styling ───────────────────────────────────────────────────────────
 
-  const inputClass = "w-full bg-white/5 border border-white/[0.12] rounded-lg px-4 py-3 text-white font-body text-sm outline-none focus:border-brand-gold/40 transition-colors placeholder:text-white/30";
-  const labelClass = "font-body text-[11px] tracking-[1px] uppercase text-white/50 mb-1.5 block";
+  const inputClass = "w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-4 py-3 text-[var(--app-text)] font-body text-sm outline-none focus:border-brand-gold/40 transition-colors placeholder:text-[var(--app-text-muted)]";
+  const labelClass = "font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-secondary)] mb-1.5 block";
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="font-body text-sm text-white/40">Loading settings...</div>
+        <div className="font-body text-sm text-[var(--app-text-muted)]">Loading settings...</div>
       </div>
     );
   }
@@ -329,7 +329,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="font-display text-[22px] font-bold mb-1">Settings</h2>
-          <p className="font-body text-[13px] text-white/40">Configure the partner portal branding, layout, content, and commission rates.</p>
+          <p className="font-body text-[13px] text-[var(--app-text-muted)]">Configure the partner portal branding, layout, content, and commission rates.</p>
         </div>
         <button
           onClick={handleSave}
@@ -355,7 +355,7 @@ export default function SettingsPage() {
             className={`font-body text-sm px-4 py-1.5 rounded-full whitespace-nowrap transition ${
               tab === t.id
                 ? "bg-brand-gold/20 text-brand-gold"
-                : "bg-white/5 text-white/50 hover:text-white/70"
+                : "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)]"
             }`}
           >
             {t.label}
@@ -506,7 +506,7 @@ export default function SettingsPage() {
       {tab === "navigation" && (
         <div className="card p-5 sm:p-6">
           <div className="font-body font-semibold text-sm mb-1">Partner Navigation</div>
-          <p className="font-body text-[12px] text-white/40 mb-5">Drag to reorder. Toggle visibility on/off.</p>
+          <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-5">Drag to reorder. Toggle visibility on/off.</p>
           <div className="space-y-2">
             {orderedNavItems.map((item, idx) => {
               const isVisible = !hiddenNavItems.includes(item.id);
@@ -521,40 +521,40 @@ export default function SettingsPage() {
                   className={`flex items-center justify-between p-3 border rounded-lg transition-all cursor-grab active:cursor-grabbing ${
                     isDragging
                       ? "bg-brand-gold/10 border-brand-gold/30 scale-[1.02] shadow-lg"
-                      : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]"
+                      : "bg-[var(--app-card-bg)] border-[var(--app-border)] hover:bg-[var(--app-card-bg)]"
                   } ${!isVisible ? "opacity-50" : ""}`}
                 >
                   <div className="flex items-center gap-3">
                     {/* Drag handle */}
                     <div className="flex flex-col gap-[2px] shrink-0 cursor-grab">
-                      <div className="w-4 h-[2px] bg-white/20 rounded" />
-                      <div className="w-4 h-[2px] bg-white/20 rounded" />
-                      <div className="w-4 h-[2px] bg-white/20 rounded" />
+                      <div className="w-4 h-[2px] bg-[var(--app-input-bg)] rounded" />
+                      <div className="w-4 h-[2px] bg-[var(--app-input-bg)] rounded" />
+                      <div className="w-4 h-[2px] bg-[var(--app-input-bg)] rounded" />
                     </div>
-                    <span className="font-body text-[12px] text-white/30 w-5 text-center">{idx + 1}</span>
+                    <span className="font-body text-[12px] text-[var(--app-text-muted)] w-5 text-center">{idx + 1}</span>
                     <span className="text-lg">{item.icon}</span>
-                    <span className="font-body text-sm text-white/80">{item.label}</span>
+                    <span className="font-body text-sm text-[var(--app-text)]">{item.label}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {/* Move up/down buttons (for mobile/accessibility) */}
                     <button
                       onClick={() => moveNav(idx, -1)}
                       disabled={idx === 0}
-                      className="w-7 h-7 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-white/40 disabled:opacity-20 transition-colors text-[11px]"
+                      className="w-7 h-7 flex items-center justify-center rounded bg-[var(--app-card-bg)] hover:bg-[var(--app-card-bg)] text-[var(--app-text-muted)] disabled:opacity-20 transition-colors text-[11px]"
                     >
                       ▲
                     </button>
                     <button
                       onClick={() => moveNav(idx, 1)}
                       disabled={idx === orderedNavItems.length - 1}
-                      className="w-7 h-7 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-white/40 disabled:opacity-20 transition-colors text-[11px]"
+                      className="w-7 h-7 flex items-center justify-center rounded bg-[var(--app-card-bg)] hover:bg-[var(--app-card-bg)] text-[var(--app-text-muted)] disabled:opacity-20 transition-colors text-[11px]"
                     >
                       ▼
                     </button>
                     {/* Visibility toggle */}
                     <button
                       onClick={() => toggleNavItem(item.id)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isVisible ? "bg-green-500" : "bg-white/10"}`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isVisible ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
                     >
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isVisible ? "translate-x-6" : "translate-x-1"}`} />
                     </button>
@@ -574,11 +574,11 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-body font-semibold text-sm">Leaderboard</div>
-                <p className="font-body text-[12px] text-white/40 mt-0.5">Show partner leaderboard on the Home page</p>
+                <p className="font-body text-[12px] text-[var(--app-text-muted)] mt-0.5">Show partner leaderboard on the Home page</p>
               </div>
               <button
                 onClick={() => setLeaderboardEnabled(!leaderboardEnabled)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${leaderboardEnabled ? "bg-green-500" : "bg-white/10"}`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${leaderboardEnabled ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${leaderboardEnabled ? "translate-x-6" : "translate-x-1"}`} />
               </button>
@@ -594,7 +594,7 @@ export default function SettingsPage() {
               </button>
             </div>
             {announcements.map((ann, idx) => (
-              <div key={idx} className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-lg mb-3 last:mb-0">
+              <div key={idx} className="p-4 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg mb-3 last:mb-0">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <input className={inputClass} value={ann.title} onChange={(e) => updateAnnouncement(idx, "title", e.target.value)} placeholder="Title" />
@@ -623,7 +623,7 @@ export default function SettingsPage() {
               </button>
             </div>
             {upcomingEvents.map((ev, idx) => (
-              <div key={idx} className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-lg mb-3 last:mb-0">
+              <div key={idx} className="p-4 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg mb-3 last:mb-0">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <input className={inputClass} value={ev.icon} onChange={(e) => updateEvent(idx, "icon", e.target.value)} placeholder="Icon (emoji)" />
@@ -649,7 +649,7 @@ export default function SettingsPage() {
               </button>
             </div>
             {referralOpps.map((opp, idx) => (
-              <div key={idx} className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-lg mb-3 last:mb-0">
+              <div key={idx} className="p-4 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg mb-3 last:mb-0">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input className={inputClass} value={opp.title} onChange={(e) => updateReferralOpp(idx, "title", e.target.value)} placeholder="Title" />
@@ -660,7 +660,7 @@ export default function SettingsPage() {
                 <textarea className={`${inputClass} resize-none`} rows={2} value={opp.description} onChange={(e) => updateReferralOpp(idx, "description", e.target.value)} placeholder="Description" />
                 <label className="flex items-center gap-2 mt-3 cursor-pointer">
                   <input type="checkbox" checked={opp.highlighted} onChange={(e) => updateReferralOpp(idx, "highlighted", e.target.checked)} className="accent-brand-gold" />
-                  <span className="font-body text-[12px] text-white/50">Highlighted (featured card)</span>
+                  <span className="font-body text-[12px] text-[var(--app-text-secondary)]">Highlighted (featured card)</span>
                 </label>
               </div>
             ))}
@@ -672,8 +672,8 @@ export default function SettingsPage() {
       {tab === "commissions" && (
         <div className="card p-5 sm:p-6">
           <div className="font-body font-semibold text-sm mb-1">Default Commission Rates</div>
-          <p className="font-body text-[12px] text-white/40 mb-2">These are the default rates for all partners. Override per-partner in Partners &rarr; View Partner.</p>
-          <p className="font-body text-[11px] text-white/30 mb-5 bg-white/[0.03] border border-white/[0.06] rounded-lg p-3">
+          <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-2">These are the default rates for all partners. Override per-partner in Partners &rarr; View Partner.</p>
+          <p className="font-body text-[11px] text-[var(--app-text-muted)] mb-5 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg p-3">
             The firm fee rate is negotiated per deal and set at the deal level — it is not a global default.
             Commission percentages below are calculated as a percentage of the firm fee on each deal.
           </p>
@@ -681,12 +681,12 @@ export default function SettingsPage() {
             <div>
               <label className={labelClass}>L1 Commission Rate (%)</label>
               <input className={inputClass} type="number" min="0" max="100" value={l1Rate} onChange={(e) => setL1Rate(e.target.value)} />
-              <p className="font-body text-[10px] text-white/30 mt-1">Direct referral commission (% of firm fee)</p>
+              <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">Direct referral commission (% of firm fee)</p>
             </div>
             <div>
               <label className={labelClass}>L2 Commission Rate (%)</label>
               <input className={inputClass} type="number" min="0" max="100" value={l2Rate} onChange={(e) => setL2Rate(e.target.value)} />
-              <p className="font-body text-[10px] text-white/30 mt-1">Downline commission (% of firm fee)</p>
+              <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">Downline commission (% of firm fee)</p>
             </div>
             <div>
               <label className={labelClass}>L3 Commission Rate (%)</label>
@@ -694,12 +694,12 @@ export default function SettingsPage() {
                 <input className={`${inputClass} flex-1`} type="number" min="0" max="100" value={l3Rate} onChange={(e) => setL3Rate(e.target.value)} disabled={!l3Enabled} />
                 <button
                   onClick={() => setL3Enabled(!l3Enabled)}
-                  className={`relative inline-flex h-10 w-16 items-center rounded-lg shrink-0 transition-colors ${l3Enabled ? "bg-green-500" : "bg-white/10"}`}
+                  className={`relative inline-flex h-10 w-16 items-center rounded-lg shrink-0 transition-colors ${l3Enabled ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
                 >
                   <span className={`inline-block h-6 w-6 transform rounded-md bg-white transition-transform ${l3Enabled ? "translate-x-8" : "translate-x-2"}`} />
                 </button>
               </div>
-              <p className="font-body text-[10px] text-white/30 mt-1">Third-level downline (disabled by default)</p>
+              <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">Third-level downline (disabled by default)</p>
             </div>
           </div>
         </div>

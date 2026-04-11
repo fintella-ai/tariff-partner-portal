@@ -503,7 +503,7 @@ export default function AdminTrainingPage() {
       <h2 className="font-display text-[22px] font-bold mb-1.5">
         Training Management
       </h2>
-      <p className="font-body text-[13px] text-white/40 mb-6">
+      <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-6">
         Manage training modules, resources, FAQs, and monitor partner progress.
       </p>
 
@@ -519,7 +519,7 @@ export default function AdminTrainingPage() {
             className={`font-body text-sm px-4 py-1.5 rounded-full whitespace-nowrap transition ${
               view === tab.id
                 ? "bg-brand-gold/20 text-brand-gold"
-                : "bg-white/5 text-white/50 hover:text-white/70"
+                : "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)]"
             }`}
           >
             {tab.label}
@@ -530,7 +530,7 @@ export default function AdminTrainingPage() {
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <div className="font-body text-sm text-white/40">Loading...</div>
+          <div className="font-body text-sm text-[var(--app-text-muted)]">Loading...</div>
         </div>
       )}
 
@@ -546,7 +546,7 @@ export default function AdminTrainingPage() {
               { label: "Categories", value: moduleStats.categories },
             ].map((s) => (
               <div key={s.label} className="card p-4 sm:p-5">
-                <div className="font-body text-[11px] text-white/40 uppercase tracking-wider mb-1">
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">
                   {s.label}
                 </div>
                 <div className="font-display text-xl font-bold text-brand-gold">
@@ -577,26 +577,26 @@ export default function AdminTrainingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Title */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Title
                   </label>
                   <input
                     type="text"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                     placeholder="Module title"
                   />
                 </div>
                 {/* Category */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Category
                   </label>
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   >
                     {MODULE_CATEGORIES.map((c) => (
                       <option key={c} value={c} className="bg-[#1a1a2e]">
@@ -607,50 +607,50 @@ export default function AdminTrainingPage() {
                 </div>
                 {/* Video URL */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Video URL
                   </label>
                   <input
                     type="text"
                     value={formVideoUrl}
                     onChange={(e) => setFormVideoUrl(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                     placeholder="https://..."
                   />
                 </div>
                 {/* Duration */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Duration
                   </label>
                   <input
                     type="text"
                     value={formDuration}
                     onChange={(e) => setFormDuration(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                     placeholder="e.g., 12 min"
                   />
                 </div>
                 {/* Sort Order */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Sort Order
                   </label>
                   <input
                     type="number"
                     value={formSortOrder}
                     onChange={(e) => setFormSortOrder(parseInt(e.target.value) || 0)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   />
                 </div>
                 {/* Published */}
                 <div className="flex items-center gap-3 pt-6">
-                  <label className="font-body text-[13px] text-white/60">Published</label>
+                  <label className="font-body text-[13px] text-[var(--app-text-secondary)]">Published</label>
                   <button
                     type="button"
                     onClick={() => setFormPublished(!formPublished)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      formPublished ? "bg-brand-gold" : "bg-white/10"
+                      formPublished ? "bg-brand-gold" : "bg-[var(--app-input-bg)]"
                     }`}
                   >
                     <span
@@ -663,27 +663,27 @@ export default function AdminTrainingPage() {
               </div>
               {/* Description */}
               <div className="mt-4">
-                <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                   Description
                 </label>
                 <textarea
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   rows={2}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none resize-none"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none resize-none"
                   placeholder="Brief description of the module"
                 />
               </div>
               {/* Content */}
               <div className="mt-4">
-                <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                   Content (Markdown)
                 </label>
                 <textarea
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
                   rows={4}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none resize-none"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none resize-none"
                   placeholder="Module content in markdown..."
                 />
               </div>
@@ -697,7 +697,7 @@ export default function AdminTrainingPage() {
                 </button>
                 <button
                   onClick={resetForm}
-                  className="font-body text-sm px-5 py-2 rounded-lg border border-white/10 text-white/50 hover:text-white/70 hover:border-white/20 transition"
+                  className="font-body text-sm px-5 py-2 rounded-lg border border-[var(--app-border)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)] hover:border-[var(--app-border)] transition"
                 >
                   Cancel
                 </button>
@@ -709,23 +709,23 @@ export default function AdminTrainingPage() {
           <div className="hidden md:block card overflow-x-auto">
             <table className="w-full text-left font-body text-sm">
               <thead>
-                <tr className="border-b border-white/[0.04]">
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                <tr className="border-b border-[var(--app-border)]">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Title
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Category
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Duration
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Published
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Sort
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Actions
                   </th>
                 </tr>
@@ -734,12 +734,12 @@ export default function AdminTrainingPage() {
                 {modules.map((mod) => (
                   <tr
                     key={mod.id}
-                    className="border-b border-white/[0.04] hover:bg-white/[0.02] transition"
+                    className="border-b border-[var(--app-border)] hover:bg-[var(--app-card-bg)] transition"
                   >
                     <td className="px-4 sm:px-6 py-3">
-                      <div className="font-medium text-white">{mod.title}</div>
+                      <div className="font-medium text-[var(--app-text)]">{mod.title}</div>
                       {mod.description && (
-                        <div className="text-xs text-white/35 mt-0.5 line-clamp-1">
+                        <div className="text-xs text-[var(--app-text-muted)] mt-0.5 line-clamp-1">
                           {mod.description}
                         </div>
                       )}
@@ -747,13 +747,13 @@ export default function AdminTrainingPage() {
                     <td className="px-4 sm:px-6 py-3">
                       <span
                         className={`inline-block text-[11px] px-2 py-0.5 rounded-full capitalize ${
-                          categoryBadge[mod.category] || "bg-white/10 text-white/50"
+                          categoryBadge[mod.category] || "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)]"
                         }`}
                       >
                         {mod.category}
                       </span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 text-white/50">
+                    <td className="px-4 sm:px-6 py-3 text-[var(--app-text-secondary)]">
                       {mod.duration || "—"}
                     </td>
                     <td className="px-4 sm:px-6 py-3">
@@ -767,7 +767,7 @@ export default function AdminTrainingPage() {
                         {mod.published ? "Published" : "Draft"}
                       </span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 text-white/50">
+                    <td className="px-4 sm:px-6 py-3 text-[var(--app-text-secondary)]">
                       {mod.sortOrder}
                     </td>
                     <td className="px-4 sm:px-6 py-3">
@@ -780,7 +780,7 @@ export default function AdminTrainingPage() {
                         </button>
                         <button
                           onClick={() => togglePublish(mod)}
-                          className="text-xs text-white/40 hover:text-white/70 transition"
+                          className="text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition"
                         >
                           {mod.published ? "Unpublish" : "Publish"}
                         </button>
@@ -798,7 +798,7 @@ export default function AdminTrainingPage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-4 sm:px-6 py-8 text-center text-white/30 text-sm"
+                      className="px-4 sm:px-6 py-8 text-center text-[var(--app-text-muted)] text-sm"
                     >
                       No modules found. Click &ldquo;Add Module&rdquo; to create one.
                     </td>
@@ -814,24 +814,24 @@ export default function AdminTrainingPage() {
               <div key={mod.id} className="card p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <div className="font-body text-sm font-medium text-white">
+                    <div className="font-body text-sm font-medium text-[var(--app-text)]">
                       {mod.title}
                     </div>
                     {mod.description && (
-                      <div className="font-body text-xs text-white/35 mt-0.5 line-clamp-2">
+                      <div className="font-body text-xs text-[var(--app-text-muted)] mt-0.5 line-clamp-2">
                         {mod.description}
                       </div>
                     )}
                   </div>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full capitalize shrink-0 ml-2 ${
-                      categoryBadge[mod.category] || "bg-white/10 text-white/50"
+                      categoryBadge[mod.category] || "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)]"
                     }`}
                   >
                     {mod.category}
                   </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-white/50 mb-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--app-text-secondary)] mb-3">
                   {mod.duration && <span>{mod.duration}</span>}
                   <span>&middot;</span>
                   <span>Sort: {mod.sortOrder}</span>
@@ -855,7 +855,7 @@ export default function AdminTrainingPage() {
                   </button>
                   <button
                     onClick={() => togglePublish(mod)}
-                    className="text-xs text-white/40 hover:text-white/70 transition"
+                    className="text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition"
                   >
                     {mod.published ? "Unpublish" : "Publish"}
                   </button>
@@ -883,7 +883,7 @@ export default function AdminTrainingPage() {
               { label: "Fully Completed", value: progressStats.fullyCompleted },
             ].map((s) => (
               <div key={s.label} className="card p-4 sm:p-5">
-                <div className="font-body text-[11px] text-white/40 uppercase tracking-wider mb-1">
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">
                   {s.label}
                 </div>
                 <div className="font-display text-xl font-bold text-brand-gold">
@@ -904,10 +904,10 @@ export default function AdminTrainingPage() {
                 .map((stat) => (
                   <div key={stat.moduleId}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="font-body text-[13px] text-white/80">
+                      <span className="font-body text-[13px] text-[var(--app-text)]">
                         {stat.moduleTitle}
                       </span>
-                      <span className="font-body text-[12px] text-white/50">
+                      <span className="font-body text-[12px] text-[var(--app-text-secondary)]">
                         {stat.completed}/{stat.totalPartners} completed ({stat.completionPercentage}%)
                       </span>
                     </div>
@@ -920,7 +920,7 @@ export default function AdminTrainingPage() {
                   </div>
                 ))}
               {progressStats.moduleStats.length === 0 && (
-                <div className="text-center text-white/30 text-sm py-8">
+                <div className="text-center text-[var(--app-text-muted)] text-sm py-8">
                   No training progress data available yet.
                 </div>
               )}
@@ -940,7 +940,7 @@ export default function AdminTrainingPage() {
               { label: "File Types", value: resourceStats.fileTypes },
             ].map((s) => (
               <div key={s.label} className="card p-4 sm:p-5">
-                <div className="font-body text-[11px] text-white/40 uppercase tracking-wider mb-1">
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">
                   {s.label}
                 </div>
                 <div className="font-display text-xl font-bold text-brand-gold">
@@ -971,26 +971,26 @@ export default function AdminTrainingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Title */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Title
                   </label>
                   <input
                     type="text"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                     placeholder="Resource title"
                   />
                 </div>
                 {/* File Type */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     File Type
                   </label>
                   <select
                     value={formFileType}
                     onChange={(e) => setFormFileType(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   >
                     {RESOURCE_FILE_TYPES.map((t) => (
                       <option key={t} value={t} className="bg-[#1a1a2e]">
@@ -1001,39 +1001,39 @@ export default function AdminTrainingPage() {
                 </div>
                 {/* File URL */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     File URL
                   </label>
                   <input
                     type="text"
                     value={formFileUrl}
                     onChange={(e) => setFormFileUrl(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                     placeholder="/docs/file.pdf"
                   />
                 </div>
                 {/* File Size */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     File Size
                   </label>
                   <input
                     type="text"
                     value={formFileSize}
                     onChange={(e) => setFormFileSize(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                     placeholder="e.g., 1.2 MB"
                   />
                 </div>
                 {/* Module (optional) */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Module (optional)
                   </label>
                   <select
                     value={formModuleId}
                     onChange={(e) => setFormModuleId(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   >
                     <option value="" className="bg-[#1a1a2e]">
                       None (General Resource)
@@ -1047,38 +1047,38 @@ export default function AdminTrainingPage() {
                 </div>
                 {/* Sort Order */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Sort Order
                   </label>
                   <input
                     type="number"
                     value={formSortOrder}
                     onChange={(e) => setFormSortOrder(parseInt(e.target.value) || 0)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   />
                 </div>
               </div>
               {/* Description */}
               <div className="mt-4">
-                <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                   Description
                 </label>
                 <textarea
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   rows={2}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none resize-none"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none resize-none"
                   placeholder="Brief description of the resource"
                 />
               </div>
               {/* Published Toggle */}
               <div className="flex items-center gap-3 mt-4">
-                <label className="font-body text-[13px] text-white/60">Published</label>
+                <label className="font-body text-[13px] text-[var(--app-text-secondary)]">Published</label>
                 <button
                   type="button"
                   onClick={() => setFormPublished(!formPublished)}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    formPublished ? "bg-brand-gold" : "bg-white/10"
+                    formPublished ? "bg-brand-gold" : "bg-[var(--app-input-bg)]"
                   }`}
                 >
                   <span
@@ -1098,7 +1098,7 @@ export default function AdminTrainingPage() {
                 </button>
                 <button
                   onClick={resetForm}
-                  className="font-body text-sm px-5 py-2 rounded-lg border border-white/10 text-white/50 hover:text-white/70 hover:border-white/20 transition"
+                  className="font-body text-sm px-5 py-2 rounded-lg border border-[var(--app-border)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)] hover:border-[var(--app-border)] transition"
                 >
                   Cancel
                 </button>
@@ -1110,20 +1110,20 @@ export default function AdminTrainingPage() {
           <div className="hidden md:block card overflow-x-auto">
             <table className="w-full text-left font-body text-sm">
               <thead>
-                <tr className="border-b border-white/[0.04]">
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                <tr className="border-b border-[var(--app-border)]">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Title
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Type
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     File Size
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Published
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Actions
                   </th>
                 </tr>
@@ -1132,12 +1132,12 @@ export default function AdminTrainingPage() {
                 {resources.map((res) => (
                   <tr
                     key={res.id}
-                    className="border-b border-white/[0.04] hover:bg-white/[0.02] transition"
+                    className="border-b border-[var(--app-border)] hover:bg-[var(--app-card-bg)] transition"
                   >
                     <td className="px-4 sm:px-6 py-3">
-                      <div className="font-medium text-white">{res.title}</div>
+                      <div className="font-medium text-[var(--app-text)]">{res.title}</div>
                       {res.description && (
-                        <div className="text-xs text-white/35 mt-0.5 line-clamp-1">
+                        <div className="text-xs text-[var(--app-text-muted)] mt-0.5 line-clamp-1">
                           {res.description}
                         </div>
                       )}
@@ -1145,13 +1145,13 @@ export default function AdminTrainingPage() {
                     <td className="px-4 sm:px-6 py-3">
                       <span
                         className={`inline-block text-[11px] px-2 py-0.5 rounded-full capitalize ${
-                          categoryBadge[res.fileType] || "bg-white/10 text-white/50"
+                          categoryBadge[res.fileType] || "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)]"
                         }`}
                       >
                         {res.fileType}
                       </span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 text-white/50">
+                    <td className="px-4 sm:px-6 py-3 text-[var(--app-text-secondary)]">
                       {res.fileSize || "—"}
                     </td>
                     <td className="px-4 sm:px-6 py-3">
@@ -1175,7 +1175,7 @@ export default function AdminTrainingPage() {
                         </button>
                         <button
                           onClick={() => togglePublish(res)}
-                          className="text-xs text-white/40 hover:text-white/70 transition"
+                          className="text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition"
                         >
                           {res.published ? "Unpublish" : "Publish"}
                         </button>
@@ -1193,7 +1193,7 @@ export default function AdminTrainingPage() {
                   <tr>
                     <td
                       colSpan={5}
-                      className="px-4 sm:px-6 py-8 text-center text-white/30 text-sm"
+                      className="px-4 sm:px-6 py-8 text-center text-[var(--app-text-muted)] text-sm"
                     >
                       No resources found. Click &ldquo;Add Resource&rdquo; to create one.
                     </td>
@@ -1209,24 +1209,24 @@ export default function AdminTrainingPage() {
               <div key={res.id} className="card p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <div className="font-body text-sm font-medium text-white">
+                    <div className="font-body text-sm font-medium text-[var(--app-text)]">
                       {res.title}
                     </div>
                     {res.description && (
-                      <div className="font-body text-xs text-white/35 mt-0.5 line-clamp-2">
+                      <div className="font-body text-xs text-[var(--app-text-muted)] mt-0.5 line-clamp-2">
                         {res.description}
                       </div>
                     )}
                   </div>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full capitalize shrink-0 ml-2 ${
-                      categoryBadge[res.fileType] || "bg-white/10 text-white/50"
+                      categoryBadge[res.fileType] || "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)]"
                     }`}
                   >
                     {res.fileType}
                   </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-white/50 mb-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--app-text-secondary)] mb-3">
                   {res.fileSize && <span>{res.fileSize}</span>}
                   <span>&middot;</span>
                   <span
@@ -1248,7 +1248,7 @@ export default function AdminTrainingPage() {
                   </button>
                   <button
                     onClick={() => togglePublish(res)}
-                    className="text-xs text-white/40 hover:text-white/70 transition"
+                    className="text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition"
                   >
                     {res.published ? "Unpublish" : "Publish"}
                   </button>
@@ -1276,7 +1276,7 @@ export default function AdminTrainingPage() {
               { label: "Categories", value: faqStats.categories },
             ].map((s) => (
               <div key={s.label} className="card p-4 sm:p-5">
-                <div className="font-body text-[11px] text-white/40 uppercase tracking-wider mb-1">
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">
                   {s.label}
                 </div>
                 <div className="font-display text-xl font-bold text-brand-gold">
@@ -1311,26 +1311,26 @@ export default function AdminTrainingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Question */}
                 <div className="sm:col-span-2">
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Question
                   </label>
                   <input
                     type="text"
                     value={formQuestion}
                     onChange={(e) => setFormQuestion(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                     placeholder="Enter the question"
                   />
                 </div>
                 {/* Category */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Category
                   </label>
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   >
                     {FAQ_CATEGORIES.map((c) => (
                       <option key={c} value={c} className="bg-[#1a1a2e]">
@@ -1341,38 +1341,38 @@ export default function AdminTrainingPage() {
                 </div>
                 {/* Sort Order */}
                 <div>
-                  <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                  <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                     Sort Order
                   </label>
                   <input
                     type="number"
                     value={formSortOrder}
                     onChange={(e) => setFormSortOrder(parseInt(e.target.value) || 0)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   />
                 </div>
               </div>
               {/* Answer */}
               <div className="mt-4">
-                <label className="block font-body text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
+                <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
                   Answer (Markdown supported)
                 </label>
                 <textarea
                   value={formAnswer}
                   onChange={(e) => setFormAnswer(e.target.value)}
                   rows={4}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[13px] focus:border-brand-gold/50 focus:outline-none resize-none"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none resize-none"
                   placeholder="Enter the answer..."
                 />
               </div>
               {/* Published Toggle */}
               <div className="flex items-center gap-3 mt-4">
-                <label className="font-body text-[13px] text-white/60">Published</label>
+                <label className="font-body text-[13px] text-[var(--app-text-secondary)]">Published</label>
                 <button
                   type="button"
                   onClick={() => setFormPublished(!formPublished)}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    formPublished ? "bg-brand-gold" : "bg-white/10"
+                    formPublished ? "bg-brand-gold" : "bg-[var(--app-input-bg)]"
                   }`}
                 >
                   <span
@@ -1392,7 +1392,7 @@ export default function AdminTrainingPage() {
                 </button>
                 <button
                   onClick={resetForm}
-                  className="font-body text-sm px-5 py-2 rounded-lg border border-white/10 text-white/50 hover:text-white/70 hover:border-white/20 transition"
+                  className="font-body text-sm px-5 py-2 rounded-lg border border-[var(--app-border)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)] hover:border-[var(--app-border)] transition"
                 >
                   Cancel
                 </button>
@@ -1404,20 +1404,20 @@ export default function AdminTrainingPage() {
           <div className="hidden md:block card overflow-x-auto">
             <table className="w-full text-left font-body text-sm">
               <thead>
-                <tr className="border-b border-white/[0.04]">
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                <tr className="border-b border-[var(--app-border)]">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Question
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Category
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Published
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Sort
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-white/30 uppercase tracking-wider font-medium">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium">
                     Actions
                   </th>
                 </tr>
@@ -1426,20 +1426,20 @@ export default function AdminTrainingPage() {
                 {faqs.map((faq) => (
                   <tr
                     key={faq.id}
-                    className="border-b border-white/[0.04] hover:bg-white/[0.02] transition"
+                    className="border-b border-[var(--app-border)] hover:bg-[var(--app-card-bg)] transition"
                   >
                     <td className="px-4 sm:px-6 py-3 max-w-xs">
-                      <div className="font-medium text-white truncate">
+                      <div className="font-medium text-[var(--app-text)] truncate">
                         {faq.question}
                       </div>
-                      <div className="text-xs text-white/35 mt-0.5 line-clamp-1">
+                      <div className="text-xs text-[var(--app-text-muted)] mt-0.5 line-clamp-1">
                         {faq.answer}
                       </div>
                     </td>
                     <td className="px-4 sm:px-6 py-3">
                       <span
                         className={`inline-block text-[11px] px-2 py-0.5 rounded-full capitalize ${
-                          categoryBadge[faq.category] || "bg-white/10 text-white/50"
+                          categoryBadge[faq.category] || "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)]"
                         }`}
                       >
                         {faq.category}
@@ -1456,7 +1456,7 @@ export default function AdminTrainingPage() {
                         {faq.published ? "Published" : "Draft"}
                       </span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 text-white/50">
+                    <td className="px-4 sm:px-6 py-3 text-[var(--app-text-secondary)]">
                       {faq.sortOrder}
                     </td>
                     <td className="px-4 sm:px-6 py-3">
@@ -1469,7 +1469,7 @@ export default function AdminTrainingPage() {
                         </button>
                         <button
                           onClick={() => togglePublish(faq)}
-                          className="text-xs text-white/40 hover:text-white/70 transition"
+                          className="text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition"
                         >
                           {faq.published ? "Unpublish" : "Publish"}
                         </button>
@@ -1487,7 +1487,7 @@ export default function AdminTrainingPage() {
                   <tr>
                     <td
                       colSpan={5}
-                      className="px-4 sm:px-6 py-8 text-center text-white/30 text-sm"
+                      className="px-4 sm:px-6 py-8 text-center text-[var(--app-text-muted)] text-sm"
                     >
                       No FAQs found. Click &ldquo;Add FAQ&rdquo; to create one.
                     </td>
@@ -1503,22 +1503,22 @@ export default function AdminTrainingPage() {
               <div key={faq.id} className="card p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1 min-w-0">
-                    <div className="font-body text-sm font-medium text-white line-clamp-2">
+                    <div className="font-body text-sm font-medium text-[var(--app-text)] line-clamp-2">
                       {faq.question}
                     </div>
-                    <div className="font-body text-xs text-white/35 mt-0.5 line-clamp-2">
+                    <div className="font-body text-xs text-[var(--app-text-muted)] mt-0.5 line-clamp-2">
                       {faq.answer}
                     </div>
                   </div>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full capitalize shrink-0 ml-2 ${
-                      categoryBadge[faq.category] || "bg-white/10 text-white/50"
+                      categoryBadge[faq.category] || "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)]"
                     }`}
                   >
                     {faq.category}
                   </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-white/50 mb-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--app-text-secondary)] mb-3">
                   <span>Sort: {faq.sortOrder}</span>
                   <span>&middot;</span>
                   <span
@@ -1540,7 +1540,7 @@ export default function AdminTrainingPage() {
                   </button>
                   <button
                     onClick={() => togglePublish(faq)}
-                    className="text-xs text-white/40 hover:text-white/70 transition"
+                    className="text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition"
                   >
                     {faq.published ? "Unpublish" : "Publish"}
                   </button>

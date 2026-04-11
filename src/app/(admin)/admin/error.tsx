@@ -16,7 +16,7 @@ export default function AdminError({
       </div>
       <div>
         <h3 className="font-display text-lg font-bold mb-1">Something went wrong</h3>
-        <p className="font-body text-sm text-white/50 max-w-sm">
+        <p className="font-body text-sm text-[var(--app-text-secondary)] max-w-sm">
           An error occurred while loading this page. Please try again.
         </p>
       </div>

@@ -115,15 +115,15 @@ export default function AccountSettingsPage() {
   }
 
   const inputClass =
-    "w-full bg-white/5 border border-white/[0.12] rounded-lg px-4 py-3 text-white font-body text-sm outline-none focus:border-brand-gold/40 transition-colors placeholder:text-white/30";
+    "w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-4 py-3 text-[var(--app-text)] font-body text-sm outline-none focus:border-brand-gold/40 transition-colors placeholder:text-[var(--app-text-muted)]";
 
   const labelClass =
-    "font-body text-[11px] tracking-[1px] uppercase text-white/50 mb-2 block";
+    "font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-secondary)] mb-2 block";
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="font-body text-sm text-white/40">Loading settings...</div>
+        <div className="font-body text-sm text-[var(--app-text-muted)]">Loading settings...</div>
       </div>
     );
   }
@@ -133,7 +133,7 @@ export default function AccountSettingsPage() {
       <h2 className={`font-display ${device.isMobile ? "text-lg" : "text-[22px]"} font-bold mb-1.5`}>
         Account Settings
       </h2>
-      <p className="font-body text-[13px] text-white/40 mb-5">
+      <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-5">
         Manage your personal information and contact details.
       </p>
 
@@ -153,7 +153,7 @@ export default function AccountSettingsPage() {
 
         {/* ── Personal Information ── */}
         <div className="mb-6">
-          <div className="font-body text-[12px] font-semibold text-white/70 tracking-wider uppercase mb-4">
+          <div className="font-body text-[12px] font-semibold text-[var(--app-text-secondary)] tracking-wider uppercase mb-4">
             Personal Information
           </div>
 
@@ -183,7 +183,7 @@ export default function AccountSettingsPage() {
           <div className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2"} gap-4`}>
             <div>
               <label htmlFor="companyName" className={labelClass}>
-                Company Name <span className="text-white/30 normal-case">(if applicable)</span>
+                Company Name <span className="text-[var(--app-text-muted)] normal-case">(if applicable)</span>
               </label>
               <input
                 id="companyName" name="companyName" type="text"
@@ -205,11 +205,11 @@ export default function AccountSettingsPage() {
           </div>
         </div>
 
-        <div className="border-t border-white/[0.06] my-6" />
+        <div className="border-t border-[var(--app-border)] my-6" />
 
         {/* ── Contact Information ── */}
         <div className="mb-6">
-          <div className="font-body text-[12px] font-semibold text-white/70 tracking-wider uppercase mb-4">
+          <div className="font-body text-[12px] font-semibold text-[var(--app-text-secondary)] tracking-wider uppercase mb-4">
             Contact Information
           </div>
 
@@ -237,7 +237,7 @@ export default function AccountSettingsPage() {
             </div>
             <div>
               <label htmlFor="mobileNumber" className={labelClass}>
-                Mobile Phone <span className="text-white/30 normal-case">(SMS)</span>
+                Mobile Phone <span className="text-[var(--app-text-muted)] normal-case">(SMS)</span>
               </label>
               <div className="flex gap-2">
                 <CountryCodeSelect
@@ -255,11 +255,11 @@ export default function AccountSettingsPage() {
           </div>
         </div>
 
-        <div className="border-t border-white/[0.06] my-6" />
+        <div className="border-t border-[var(--app-border)] my-6" />
 
         {/* ── Address ── */}
         <div className="mb-6">
-          <div className="font-body text-[12px] font-semibold text-white/70 tracking-wider uppercase mb-4">
+          <div className="font-body text-[12px] font-semibold text-[var(--app-text-secondary)] tracking-wider uppercase mb-4">
             Street Address
           </div>
 

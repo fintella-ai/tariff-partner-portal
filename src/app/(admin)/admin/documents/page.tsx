@@ -125,7 +125,7 @@ export default function DocumentTrackingPage() {
           <h2 className="font-display text-xl sm:text-2xl font-bold mb-1">
             Document Tracking
           </h2>
-          <p className="font-body text-sm text-white/40">
+          <p className="font-body text-sm text-[var(--app-text-muted)]">
             Track and manage partner documents.
           </p>
         </div>
@@ -143,7 +143,7 @@ export default function DocumentTrackingPage() {
           { label: "Approved", value: approved },
         ].map((s) => (
           <div key={s.label} className="card px-4 py-3">
-            <div className="font-body text-xs text-white/40 mb-1">
+            <div className="font-body text-xs text-[var(--app-text-muted)] mb-1">
               {s.label}
             </div>
             <div className="font-display text-xl font-bold text-brand-gold">
@@ -158,14 +158,14 @@ export default function DocumentTrackingPage() {
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="font-body font-semibold text-sm">Partnership Agreements (SignWell)</div>
-            <div className="font-body text-[11px] text-white/35 mt-0.5">Send or resend agreements for e-signing</div>
+            <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">Send or resend agreements for e-signing</div>
           </div>
-          <span className="font-body text-[10px] text-white/30 border border-white/10 rounded px-2 py-1 uppercase tracking-wider">
+          <span className="font-body text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded px-2 py-1 uppercase tracking-wider">
             {process.env.NEXT_PUBLIC_SIGNWELL_CONFIGURED === "true" ? "Live" : "Demo Mode"}
           </span>
         </div>
-        <div className="font-body text-[12px] text-white/40 bg-white/[0.03] border border-white/[0.06] rounded-lg p-3">
-          To send a partnership agreement, go to <strong className="text-white/60">Partners &rarr; View Partner &rarr; Documents</strong> section, or use the admin API endpoint <code className="text-brand-gold/60 bg-brand-gold/10 px-1 rounded text-[11px]">POST /api/admin/agreement/[partnerCode]</code>.
+        <div className="font-body text-[12px] text-[var(--app-text-muted)] bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg p-3">
+          To send a partnership agreement, go to <strong className="text-[var(--app-text-secondary)]">Partners &rarr; View Partner &rarr; Documents</strong> section, or use the admin API endpoint <code className="text-brand-gold/60 bg-brand-gold/10 px-1 rounded text-[11px]">POST /api/admin/agreement/[partnerCode]</code>.
           {" "}Webhook callbacks from SignWell automatically update agreement status when signed.
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function DocumentTrackingPage() {
             className={`font-body text-sm px-4 py-1.5 rounded-full whitespace-nowrap transition ${
               tab === t
                 ? "bg-brand-gold/20 text-brand-gold"
-                : "bg-white/5 text-white/50 hover:text-white/70"
+                : "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)]"
             }`}
           >
             {t}
@@ -191,7 +191,7 @@ export default function DocumentTrackingPage() {
       <div className="hidden md:block card overflow-x-auto">
         <table className="w-full text-left font-body text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-white/40 text-xs uppercase tracking-wider">
+            <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
               <th className="px-4 py-3">Partner</th>
               <th className="px-4 py-3">Document Type</th>
               <th className="px-4 py-3">Status</th>
@@ -204,13 +204,13 @@ export default function DocumentTrackingPage() {
             {filtered.map((d) => (
               <tr
                 key={d.id}
-                className="border-b border-white/5 hover:bg-white/[0.02] transition"
+                className="border-b border-[var(--app-border-subtle)] hover:bg-[var(--app-card-bg)] transition"
               >
                 <td className="px-4 py-3">
-                  <div className="text-white/80">{d.partnerName}</div>
-                  <div className="text-xs text-white/35">{d.partnerCode}</div>
+                  <div className="text-[var(--app-text)]">{d.partnerName}</div>
+                  <div className="text-xs text-[var(--app-text-muted)]">{d.partnerCode}</div>
                 </td>
-                <td className="px-4 py-3 text-white/60">{d.docType}</td>
+                <td className="px-4 py-3 text-[var(--app-text-secondary)]">{d.docType}</td>
                 <td className="px-4 py-3">
                   <span
                     className={`inline-block text-xs px-2 py-0.5 rounded-full ${statusBadge[d.status]}`}
@@ -218,14 +218,14 @@ export default function DocumentTrackingPage() {
                     {statusLabel[d.status]}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-white/50">
+                <td className="px-4 py-3 text-[var(--app-text-secondary)]">
                   {fmtDate(d.uploadDate)}
                 </td>
                 <td className="px-4 py-3">
                   {d.hasIncome ? (
                     <span className="text-green-400 text-xs">Yes</span>
                   ) : (
-                    <span className="text-white/30 text-xs">No</span>
+                    <span className="text-[var(--app-text-muted)] text-xs">No</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -239,7 +239,7 @@ export default function DocumentTrackingPage() {
                         Send Request
                       </button>
                     ) : (
-                      <span className="text-xs text-white/25">
+                      <span className="text-xs text-[var(--app-text-faint)]">
                         No action needed
                       </span>
                     )}
@@ -257,10 +257,10 @@ export default function DocumentTrackingPage() {
           <div key={d.id} className="card p-4">
             <div className="flex items-start justify-between mb-2">
               <div>
-                <div className="font-body text-sm font-medium text-white">
+                <div className="font-body text-sm font-medium text-[var(--app-text)]">
                   {d.partnerName}
                 </div>
-                <div className="font-body text-xs text-white/35 mt-0.5">
+                <div className="font-body text-xs text-[var(--app-text-muted)] mt-0.5">
                   {d.partnerCode}
                 </div>
               </div>
@@ -270,7 +270,7 @@ export default function DocumentTrackingPage() {
                 {statusLabel[d.status]}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-white/50 mb-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--app-text-secondary)] mb-3">
               <span>{d.docType}</span>
               <span>&middot;</span>
               <span>{fmtDate(d.uploadDate)}</span>
@@ -287,7 +287,7 @@ export default function DocumentTrackingPage() {
                   Send Request
                 </button>
               ) : (
-                <span className="text-xs text-white/25">No action needed</span>
+                <span className="text-xs text-[var(--app-text-faint)]">No action needed</span>
               )}
             </div>
           </div>

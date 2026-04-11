@@ -126,21 +126,21 @@ export default function VideoModal({
       <div
         className={
           isMobile
-            ? "relative w-[95vw] h-[90vh] bg-[#0c1228] border border-white/10 rounded-2xl flex flex-col overflow-hidden"
-            : "relative w-full max-w-4xl mx-4 bg-[#0c1228] border border-white/10 rounded-2xl flex flex-col overflow-hidden"
+            ? "relative w-[95vw] h-[90vh] bg-[var(--app-bg-secondary)] border border-[var(--app-border)] rounded-2xl flex flex-col overflow-hidden"
+            : "relative w-full max-w-4xl mx-4 bg-[var(--app-bg-secondary)] border border-[var(--app-border)] rounded-2xl flex flex-col overflow-hidden"
         }
         onClick={(e) => e.stopPropagation()}
       >
         {/* Title bar */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3">
-          <span className="font-body text-sm font-semibold text-white truncate">
+          <span className="font-body text-sm font-semibold text-[var(--app-text)] truncate">
             {title}
           </span>
 
           {/* Close button */}
           <button
             onClick={onClose}
-            className="text-white/60 hover:text-white transition-colors cursor-pointer p-1"
+            className="text-[var(--app-text-secondary)] hover:text-[var(--app-text)] transition-colors cursor-pointer p-1"
             aria-label="Close video modal"
           >
             <svg

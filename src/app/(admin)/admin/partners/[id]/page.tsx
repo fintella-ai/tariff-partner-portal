@@ -54,7 +54,7 @@ const statusOptions = ["active", "pending", "inactive", "blocked"];
 const statusBadge: Record<string, string> = {
   active: "bg-green-500/10 text-green-400 border border-green-500/20",
   pending: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
-  inactive: "bg-white/10 text-white/50 border border-white/10",
+  inactive: "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] border border-[var(--app-border)]",
   blocked: "bg-red-500/10 text-red-400 border border-red-500/20",
 };
 
@@ -199,13 +199,13 @@ export default function PartnerDetailPage() {
     } catch {}
   };
 
-  const inputClass = "w-full bg-white/5 border border-white/[0.12] rounded-lg px-4 py-2.5 text-white font-body text-sm outline-none focus:border-brand-gold/40 transition-colors placeholder:text-white/30";
-  const labelClass = "font-body text-[11px] tracking-[1px] uppercase text-white/50 mb-1.5 block";
+  const inputClass = "w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-4 py-2.5 text-[var(--app-text)] font-body text-sm outline-none focus:border-brand-gold/40 transition-colors placeholder:text-[var(--app-text-muted)]";
+  const labelClass = "font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-secondary)] mb-1.5 block";
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="font-body text-sm text-white/40">Loading partner...</div>
+        <div className="font-body text-sm text-[var(--app-text-muted)]">Loading partner...</div>
       </div>
     );
   }
@@ -213,7 +213,7 @@ export default function PartnerDetailPage() {
   if (!partner) {
     return (
       <div className="text-center py-20">
-        <div className="font-body text-sm text-white/40">Partner not found.</div>
+        <div className="font-body text-sm text-[var(--app-text-muted)]">Partner not found.</div>
         <button onClick={() => router.push("/admin/partners")} className="mt-4 font-body text-sm text-brand-gold hover:underline">← Back to Partners</button>
       </div>
     );
@@ -224,10 +224,10 @@ export default function PartnerDetailPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <button onClick={() => router.push("/admin/partners")} className="font-body text-[12px] text-white/40 hover:text-white/60 mb-2 block">← Back to Partners</button>
+          <button onClick={() => router.push("/admin/partners")} className="font-body text-[12px] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] mb-2 block">← Back to Partners</button>
           <h2 className="font-display text-xl font-bold">{partner.firstName} {partner.lastName}</h2>
           <div className="flex items-center gap-3 mt-1">
-            <span className="font-mono text-[13px] text-white/50">{partner.partnerCode}</span>
+            <span className="font-mono text-[13px] text-[var(--app-text-secondary)]">{partner.partnerCode}</span>
             <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[partner.status] || statusBadge.active}`}>
               {partner.status}
             </span>
@@ -291,7 +291,7 @@ export default function PartnerDetailPage() {
             <label className={labelClass}>Status</label>
             <select className={inputClass} value={status} onChange={(e) => setStatus(e.target.value)}>
               {statusOptions.map((s) => (
-                <option key={s} value={s} className="bg-brand-dark">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                <option key={s} value={s} className="bg-[var(--app-bg)]">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
               ))}
             </select>
           </div>
@@ -307,8 +307,8 @@ export default function PartnerDetailPage() {
         <div className="flex items-center justify-between">
           <div>
             <div className="font-body font-semibold text-sm">Partner Code</div>
-            <p className="font-body text-[12px] text-white/40 mt-0.5">
-              Current code: <span className="font-mono text-white/60">{partner.partnerCode}</span> — Used to log in.
+            <p className="font-body text-[12px] text-[var(--app-text-muted)] mt-0.5">
+              Current code: <span className="font-mono text-[var(--app-text-secondary)]">{partner.partnerCode}</span> — Used to log in.
             </p>
           </div>
           <button onClick={handleResetCode} className="font-body text-[12px] text-yellow-400/80 border border-yellow-400/20 rounded-lg px-4 py-2 hover:bg-yellow-400/10 transition-colors">
@@ -349,7 +349,7 @@ export default function PartnerDetailPage() {
       {/* ─── COMMISSION OVERRIDES ─────────────────────────────────── */}
       <div className="card p-5 sm:p-6 mb-6">
         <div className="font-body font-semibold text-sm mb-1">Commission Rates</div>
-        <p className="font-body text-[12px] text-white/40 mb-4">Leave blank to use global default rates. Enter a value to override for this partner.</p>
+        <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-4">Leave blank to use global default rates. Enter a value to override for this partner.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className={labelClass}>L1 Rate (%)</label>
@@ -365,7 +365,7 @@ export default function PartnerDetailPage() {
               <input className={`${inputClass} flex-1`} type="number" min="0" max="100" value={l3Rate} onChange={(e) => setL3Rate(e.target.value)} placeholder="0" disabled={!l3Enabled} />
               <button
                 onClick={() => setL3Enabled(!l3Enabled)}
-                className={`relative inline-flex h-11 w-14 items-center rounded-lg shrink-0 transition-colors ${l3Enabled ? "bg-green-500" : "bg-white/10"}`}
+                className={`relative inline-flex h-11 w-14 items-center rounded-lg shrink-0 transition-colors ${l3Enabled ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
               >
                 <span className={`inline-block h-6 w-6 transform rounded-md bg-white transition-transform ${l3Enabled ? "translate-x-7" : "translate-x-1"}`} />
               </button>
@@ -388,14 +388,14 @@ export default function PartnerDetailPage() {
 
       {/* ─── DOWNLINE ─────────────────────────────────────────────── */}
       <div className="card mb-6">
-        <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between flex-wrap gap-2">
+        <div className="px-5 py-4 border-b border-[var(--app-border)] flex items-center justify-between flex-wrap gap-2">
           <div className="font-body font-semibold text-sm">Downline Partners ({downline.length})</div>
           {downline.length > 0 && (
-            <div className="flex bg-white/5 rounded-lg p-0.5">
+            <div className="flex bg-[var(--app-input-bg)] rounded-lg p-0.5">
               <button
                 onClick={() => setDownlineView("list")}
                 className={`font-body text-[11px] px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
-                  downlineView === "list" ? "bg-brand-gold/15 text-brand-gold" : "text-white/40 hover:text-white/60"
+                  downlineView === "list" ? "bg-brand-gold/15 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
                 }`}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -406,7 +406,7 @@ export default function PartnerDetailPage() {
               <button
                 onClick={() => setDownlineView("tree")}
                 className={`font-body text-[11px] px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
-                  downlineView === "tree" ? "bg-brand-gold/15 text-brand-gold" : "text-white/40 hover:text-white/60"
+                  downlineView === "tree" ? "bg-brand-gold/15 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
                 }`}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -418,7 +418,7 @@ export default function PartnerDetailPage() {
           )}
         </div>
         {downline.length === 0 ? (
-          <div className="px-5 py-8 text-center font-body text-[13px] text-white/30">No downline partners.</div>
+          <div className="px-5 py-8 text-center font-body text-[13px] text-[var(--app-text-muted)]">No downline partners.</div>
         ) : downlineView === "tree" ? (
           (() => {
             const rootPartner: TreePartner = {
@@ -452,12 +452,12 @@ export default function PartnerDetailPage() {
             {downline.map((d) => (
               <div
                 key={d.id}
-                className="px-5 py-3 border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.02] transition-colors cursor-pointer flex items-center justify-between"
+                className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer flex items-center justify-between"
                 onClick={() => router.push(`/admin/partners/${d.id}`)}
               >
                 <div>
-                  <div className="font-body text-[13px] text-white/80">{d.firstName} {d.lastName}</div>
-                  <div className="font-mono text-[11px] text-white/30">{d.partnerCode}</div>
+                  <div className="font-body text-[13px] text-[var(--app-text)]">{d.firstName} {d.lastName}</div>
+                  <div className="font-mono text-[11px] text-[var(--app-text-muted)]">{d.partnerCode}</div>
                 </div>
                 <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[d.status] || statusBadge.active}`}>
                   {d.status}
@@ -470,7 +470,7 @@ export default function PartnerDetailPage() {
 
       {/* ─── DOCUMENTS & AGREEMENT ─────────────────────────────── */}
       <div className="card mb-6">
-        <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[var(--app-border)] flex items-center justify-between">
           <div className="font-body font-semibold text-sm">Documents & Agreement</div>
           <div className="flex gap-2">
             <button
@@ -515,11 +515,11 @@ export default function PartnerDetailPage() {
         </div>
 
         {/* Agreement status */}
-        <div className="px-5 py-3 border-b border-white/[0.04]">
+        <div className="px-5 py-3 border-b border-[var(--app-border)]">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-body text-[13px] text-white/70">Partnership Agreement</div>
-              <div className="font-body text-[11px] text-white/35 mt-0.5">
+              <div className="font-body text-[13px] text-[var(--app-text-secondary)]">Partnership Agreement</div>
+              <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
                 {agreement
                   ? `Version ${agreement.version} — ${agreement.signedDate ? `Signed ${fmtDate(agreement.signedDate)}` : `Sent ${fmtDate(agreement.sentDate)}`}`
                   : "No agreement on file"}
@@ -532,7 +532,7 @@ export default function PartnerDetailPage() {
                   ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
                   : agreement?.status === "amended"
                     ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                    : "bg-white/10 text-white/40 border border-white/10"
+                    : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]"
             }`}>
               {agreement?.status || "none"}
             </span>
@@ -540,11 +540,11 @@ export default function PartnerDetailPage() {
         </div>
 
         {/* W9 status */}
-        <div className="px-5 py-3 border-b border-white/[0.04]">
+        <div className="px-5 py-3 border-b border-[var(--app-border)]">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-body text-[13px] text-white/70">W-9 (1099 Tax Filing)</div>
-              <div className="font-body text-[11px] text-white/35 mt-0.5">
+              <div className="font-body text-[13px] text-[var(--app-text-secondary)]">W-9 (1099 Tax Filing)</div>
+              <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
                 {(() => {
                   const w9 = documents.find((d) => d.docType === "w9");
                   return w9 ? `Uploaded ${fmtDate(w9.createdAt)}` : "Required for year-end 1099 reporting";
@@ -571,14 +571,14 @@ export default function PartnerDetailPage() {
 
         {/* Uploaded documents */}
         {documents.length === 0 ? (
-          <div className="px-5 py-8 text-center font-body text-[13px] text-white/30">No documents uploaded.</div>
+          <div className="px-5 py-8 text-center font-body text-[13px] text-[var(--app-text-muted)]">No documents uploaded.</div>
         ) : (
           <div>
             {documents.map((d) => (
-              <div key={d.id} className="px-5 py-3 border-b border-white/[0.04] last:border-b-0 flex items-center justify-between">
+              <div key={d.id} className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 flex items-center justify-between">
                 <div>
-                  <div className="font-body text-[13px] text-white/80">{d.fileName}</div>
-                  <div className="font-body text-[11px] text-white/35 mt-0.5">
+                  <div className="font-body text-[13px] text-[var(--app-text)]">{d.fileName}</div>
+                  <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
                     {d.docType.toUpperCase()} &middot; {fmtDate(d.createdAt)}
                   </div>
                 </div>

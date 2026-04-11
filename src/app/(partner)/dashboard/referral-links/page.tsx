@@ -40,7 +40,7 @@ export default function ReferralLinksPage() {
       <h2 className="font-display text-xl sm:text-2xl font-bold mb-2">
         Referral Links
       </h2>
-      <p className="font-body text-sm text-white/40 mb-6">
+      <p className="font-body text-sm text-[var(--app-text-muted)] mb-6">
         Share these links to earn commissions on every deal and recruit partners
         to your downline.
       </p>
@@ -55,13 +55,13 @@ export default function ReferralLinksPage() {
             {/* Header */}
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl">{link.icon}</span>
-              <div className="font-body font-semibold text-[15px] text-white">
+              <div className="font-body font-semibold text-[15px] text-[var(--app-text)]">
                 {link.title}
               </div>
             </div>
 
             {/* Description */}
-            <div className="font-body text-[12px] text-white/40 leading-relaxed mb-4">
+            <div className="font-body text-[12px] text-[var(--app-text-muted)] leading-relaxed mb-4">
               {link.description}
             </div>
 
@@ -72,7 +72,7 @@ export default function ReferralLinksPage() {
               } gap-3`}
             >
               <div
-                className={`flex-1 ${link.bgColor} border ${link.borderColor} rounded-lg px-4 py-3 font-mono text-[13px] text-white/70 truncate select-all min-w-0`}
+                className={`flex-1 ${link.bgColor} border ${link.borderColor} rounded-lg px-4 py-3 font-mono text-[13px] text-[var(--app-text-secondary)] truncate select-all min-w-0`}
               >
                 {link.url}
               </div>
@@ -84,15 +84,15 @@ export default function ReferralLinksPage() {
 
       {/* Bottom info bar */}
       <div className="mt-6 card px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="font-body text-[12px] text-white/35">
+        <div className="font-body text-[12px] text-[var(--app-text-muted)]">
           Your partner code:{" "}
           <span className="text-brand-gold font-semibold tracking-wider">
             {partnerCode}
           </span>
         </div>
-        <div className="font-body text-[12px] text-white/35">
+        <div className="font-body text-[12px] text-[var(--app-text-muted)]">
           {FIRM_SHORT} Support:{" "}
-          <span className="text-white/50">{FIRM_PHONE}</span>
+          <span className="text-[var(--app-text-secondary)]">{FIRM_PHONE}</span>
         </div>
       </div>
     </div>

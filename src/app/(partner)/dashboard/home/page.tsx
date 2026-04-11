@@ -112,7 +112,7 @@ function rankBadgeCls(rank: number) {
   if (rank === 1) return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
   if (rank === 2) return "bg-gray-400/15 text-gray-300 border-gray-400/20";
   if (rank === 3) return "bg-orange-500/15 text-orange-400 border-orange-500/20";
-  return "bg-white/5 text-white/40 border-white/10";
+  return "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border-[var(--app-border)]";
 }
 
 function formatDateHeading() {
@@ -138,15 +138,15 @@ export default function HomePage() {
     <div>
       {/* ══════════════════ WELCOME HEADER ══════════════════ */}
       <div className="mb-6 sm:mb-8 animate-fade-up">
-        <h1 className={`font-display ${device.headingSize} font-bold text-white mb-1`}>
+        <h1 className={`font-display ${device.headingSize} font-bold text-[var(--app-text)] mb-1`}>
           Welcome Back, {firstName}
         </h1>
-        <p className="font-body text-[13px] text-white/40">{formatDateHeading()}</p>
+        <p className="font-body text-[13px] text-[var(--app-text-muted)]">{formatDateHeading()}</p>
       </div>
 
       {/* ══════════════════ SECTION 1: ANNOUNCEMENTS ══════════════════ */}
       <div className="mb-6 sm:mb-8 animate-fade-up">
-        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-white/40 mb-4">
+        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4">
           Announcements
         </h2>
         <div className="flex flex-col gap-3">
@@ -159,7 +159,7 @@ export default function HomePage() {
               >
                 <div className="px-4 sm:px-6 py-4 sm:py-5">
                   <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="font-body text-sm font-semibold text-white leading-snug">
+                    <div className="font-body text-sm font-semibold text-[var(--app-text)] leading-snug">
                       {a.title}
                     </div>
                     <span
@@ -168,10 +168,10 @@ export default function HomePage() {
                       {a.badge}
                     </span>
                   </div>
-                  <p className="font-body text-[13px] text-white/50 leading-relaxed mb-2">
+                  <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-2">
                     {a.body}
                   </p>
-                  <div className="font-body text-[11px] text-white/25">{a.date}</div>
+                  <div className="font-body text-[11px] text-[var(--app-text-faint)]">{a.date}</div>
                 </div>
               </div>
             );
@@ -181,10 +181,10 @@ export default function HomePage() {
 
       {/* ══════════════════ SECTION 2: LEADERBOARD ══════════════════ */}
       <div className="mb-6 sm:mb-8 animate-fade-up">
-        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-white/40 mb-1">
+        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-1">
           Partner Leaderboard &mdash; March 2026
         </h2>
-        <p className="font-body text-[11px] text-white/30 mb-4">
+        <p className="font-body text-[11px] text-[var(--app-text-muted)] mb-4">
           Top performers this month (names hidden for privacy)
         </p>
 
@@ -195,7 +195,7 @@ export default function HomePage() {
               {LEADERBOARD.map((p) => (
                 <div
                   key={p.rank}
-                  className={`px-4 py-4 border-b border-white/[0.04] last:border-b-0 ${rankBg(p.rank)} ${p.rank <= 3 ? "border" : ""}`}
+                  className={`px-4 py-4 border-b border-[var(--app-border)] last:border-b-0 ${rankBg(p.rank)} ${p.rank <= 3 ? "border" : ""}`}
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <div
@@ -203,12 +203,12 @@ export default function HomePage() {
                     >
                       {p.rank}
                     </div>
-                    <div className="font-body text-[13px] font-medium text-white/80">
+                    <div className="font-body text-[13px] font-medium text-[var(--app-text)]">
                       {p.name}
                     </div>
                   </div>
                   <div className="flex items-center justify-between pl-11">
-                    <div className="font-body text-[11px] text-white/40">
+                    <div className="font-body text-[11px] text-[var(--app-text-muted)]">
                       {p.deals} deals closed
                     </div>
                     <div className="font-display text-sm font-semibold text-brand-gold">
@@ -222,17 +222,17 @@ export default function HomePage() {
             /* ── Desktop: table layout ── */
             <div>
               {/* Header */}
-              <div className="grid grid-cols-[50px_1fr_120px_140px] gap-4 px-6 py-3 border-b border-white/[0.06]">
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
+              <div className="grid grid-cols-[50px_1fr_120px_140px] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">
                   Rank
                 </div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">
                   Partner
                 </div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35 text-center">
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">
                   Deals Closed
                 </div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35 text-right">
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">
                   Total Revenue
                 </div>
               </div>
@@ -240,7 +240,7 @@ export default function HomePage() {
               {LEADERBOARD.map((p) => (
                 <div
                   key={p.rank}
-                  className={`grid grid-cols-[50px_1fr_120px_140px] gap-4 px-6 py-3.5 border-b border-white/[0.04] last:border-b-0 items-center hover:bg-white/[0.02] transition-colors ${rankBg(p.rank)}`}
+                  className={`grid grid-cols-[50px_1fr_120px_140px] gap-4 px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors ${rankBg(p.rank)}`}
                 >
                   <div>
                     <div
@@ -249,8 +249,8 @@ export default function HomePage() {
                       {p.rank}
                     </div>
                   </div>
-                  <div className="font-body text-[13px] text-white/70">{p.name}</div>
-                  <div className="font-body text-[13px] text-white/60 text-center">
+                  <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{p.name}</div>
+                  <div className="font-body text-[13px] text-[var(--app-text-secondary)] text-center">
                     {p.deals}
                   </div>
                   <div className="font-display text-[14px] font-semibold text-brand-gold text-right">
@@ -262,11 +262,11 @@ export default function HomePage() {
           )}
 
           {/* Your Rank callout */}
-          <div className="px-4 sm:px-6 py-4 border-t border-white/[0.06] bg-brand-gold/[0.04]">
+          <div className="px-4 sm:px-6 py-4 border-t border-[var(--app-border)] bg-brand-gold/[0.04]">
             <div className="flex items-center gap-2">
-              <span className="font-body text-[13px] text-white/50">Your Rank:</span>
+              <span className="font-body text-[13px] text-[var(--app-text-secondary)]">Your Rank:</span>
               <span className="font-display text-lg font-bold text-brand-gold">#4</span>
-              <span className="font-body text-[11px] text-white/30 ml-1">
+              <span className="font-body text-[11px] text-[var(--app-text-muted)] ml-1">
                 &mdash; Keep it up!
               </span>
             </div>
@@ -276,7 +276,7 @@ export default function HomePage() {
 
       {/* ══════════════════ SECTION 3: UPCOMING EVENTS ══════════════════ */}
       <div className="mb-6 sm:mb-8 animate-fade-up">
-        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-white/40 mb-4">
+        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4">
           Upcoming Events
         </h2>
         <div
@@ -285,13 +285,13 @@ export default function HomePage() {
           {UPCOMING_EVENTS.map((e, i) => (
             <div key={i} className={`card ${device.cardPadding} flex flex-col`}>
               <div className="text-3xl mb-3">{e.icon}</div>
-              <div className="font-body text-sm font-semibold text-white mb-1.5">
+              <div className="font-body text-sm font-semibold text-[var(--app-text)] mb-1.5">
                 {e.title}
               </div>
-              <p className="font-body text-[13px] text-white/50 leading-relaxed mb-3 flex-1">
+              <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-3 flex-1">
                 {e.body}
               </p>
-              <div className="font-body text-[11px] text-white/25 mb-4">{e.date}</div>
+              <div className="font-body text-[11px] text-[var(--app-text-faint)] mb-4">{e.date}</div>
               <button className="w-full font-body text-[11px] tracking-[1px] uppercase text-brand-gold border border-brand-gold/30 rounded-lg px-4 py-2.5 hover:bg-brand-gold/10 transition-colors">
                 {e.cta}
               </button>
@@ -302,10 +302,10 @@ export default function HomePage() {
 
       {/* ══════════════════ SECTION 4: REFERRAL OPPORTUNITIES ══════════════════ */}
       <div className="animate-fade-up">
-        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-white/40 mb-1">
+        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-1">
           Expand Your Earnings
         </h2>
-        <p className="font-body text-[11px] text-white/30 mb-4">
+        <p className="font-body text-[11px] text-[var(--app-text-muted)] mb-4">
           Additional referral opportunities to grow your income with {FIRM_SHORT}
         </p>
         <div
@@ -317,17 +317,17 @@ export default function HomePage() {
               className={`${device.cardPadding} ${device.borderRadius} border flex flex-col ${
                 r.primary
                   ? "border-brand-gold/25 bg-brand-gold/[0.04]"
-                  : "border-white/[0.06] bg-white/[0.02]"
+                  : "border-[var(--app-border)] bg-[var(--app-card-bg)]"
               }`}
             >
               <div
                 className={`font-body text-sm font-semibold mb-2 ${
-                  r.primary ? "text-brand-gold" : "text-white"
+                  r.primary ? "text-brand-gold" : "text-[var(--app-text)]"
                 }`}
               >
                 {r.title}
               </div>
-              <p className="font-body text-[13px] text-white/50 leading-relaxed mb-4 flex-1">
+              <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-4 flex-1">
                 {r.body}
               </p>
               <button

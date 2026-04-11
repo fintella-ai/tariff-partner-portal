@@ -288,7 +288,7 @@ export default function TrainingPage() {
       <h2 className={`font-display ${device.isMobile ? "text-lg" : "text-[22px]"} font-bold mb-1.5`}>
         Partner Training
       </h2>
-      <p className="font-body text-[13px] text-white/40 mb-6">
+      <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-6">
         Complete these modules to master the TRLN partner program and maximize your earnings.
       </p>
 
@@ -307,7 +307,7 @@ export default function TrainingPage() {
             className={`font-body text-[12px] tracking-wider uppercase px-5 py-2.5 rounded-lg border transition-colors whitespace-nowrap ${
               activeSection === tab.key
                 ? "bg-brand-gold/10 border-brand-gold/30 text-brand-gold"
-                : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
+                : "border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] hover:border-[var(--app-border)]"
             }`}
           >
             {tab.label}
@@ -320,7 +320,7 @@ export default function TrainingPage() {
       {/* ------------------------------------------------------------------ */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <div className="font-body text-sm text-white/30">Loading training content...</div>
+          <div className="font-body text-sm text-[var(--app-text-muted)]">Loading training content...</div>
         </div>
       )}
 
@@ -332,16 +332,16 @@ export default function TrainingPage() {
           {/* Progress Bar */}
           <div className={`card ${device.cardPadding} mb-6`}>
             <div className="flex justify-between items-center mb-2">
-              <div className="font-body text-sm font-semibold text-white">Your Progress</div>
+              <div className="font-body text-sm font-semibold text-[var(--app-text)]">Your Progress</div>
               <div className="font-body text-sm text-brand-gold font-semibold">{progress}%</div>
             </div>
-            <div className="w-full h-2.5 bg-white/[0.06] rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-[var(--app-card-bg)] rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-brand-gold to-[#e8c060] rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <div className="font-body text-[11px] text-white/30 mt-2">
+            <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-2">
               {completedCount} of {modules.length} modules completed
             </div>
           </div>
@@ -355,7 +355,7 @@ export default function TrainingPage() {
                 className={`font-body text-[11px] tracking-wider uppercase px-4 py-2 rounded-lg border transition-colors whitespace-nowrap ${
                   activeCategory === cat
                     ? "bg-brand-gold/10 border-brand-gold/30 text-brand-gold"
-                    : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
+                    : "border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] hover:border-[var(--app-border)]"
                 }`}
               >
                 {cat}
@@ -380,7 +380,7 @@ export default function TrainingPage() {
                       className={`w-6 h-6 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center transition-colors ${
                         m.completed
                           ? "bg-green-500/20 border-green-500/40 text-green-400"
-                          : "border-white/20 hover:border-brand-gold/40"
+                          : "border-[var(--app-border)] hover:border-brand-gold/40"
                       }`}
                     >
                       {m.completed && <span className="text-xs">{"\u2713"}</span>}
@@ -390,24 +390,24 @@ export default function TrainingPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div
                           className={`font-body text-sm font-medium ${
-                            m.completed ? "text-white/50 line-through" : "text-white"
+                            m.completed ? "text-[var(--app-text-secondary)] line-through" : "text-[var(--app-text)]"
                           }`}
                         >
                           {m.title}
                         </div>
-                        <span className="font-body text-[10px] text-white/25 shrink-0 bg-white/5 border border-white/[0.06] rounded px-2 py-0.5">
+                        <span className="font-body text-[10px] text-[var(--app-text-faint)] shrink-0 bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-2 py-0.5">
                           {m.category}
                         </span>
                       </div>
 
-                      <p className="font-body text-[12px] text-white/40 mt-1 leading-relaxed">
+                      <p className="font-body text-[12px] text-[var(--app-text-muted)] mt-1 leading-relaxed">
                         {m.description}
                       </p>
 
                       {/* Action row: duration, video, expand toggle */}
                       <div className="flex items-center gap-3 mt-2.5">
                         {m.duration && (
-                          <span className="font-body text-[10px] text-white/25">
+                          <span className="font-body text-[10px] text-[var(--app-text-faint)]">
                             {"\u23F1"} {m.duration}
                           </span>
                         )}
@@ -422,7 +422,7 @@ export default function TrainingPage() {
                         )}
 
                         {!m.videoUrl && (
-                          <span className="font-body text-[11px] text-white/20">
+                          <span className="font-body text-[11px] text-[var(--app-text-faint)]">
                             {"\u25B6"} Video coming soon
                           </span>
                         )}
@@ -430,7 +430,7 @@ export default function TrainingPage() {
                         {m.content && (
                           <button
                             onClick={() => toggleExpand(m.id)}
-                            className="font-body text-[11px] text-white/30 hover:text-white/50 transition-colors ml-auto flex items-center gap-1"
+                            className="font-body text-[11px] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition-colors ml-auto flex items-center gap-1"
                           >
                             {isExpanded ? "Hide Details" : "Details"}
                             <svg
@@ -450,8 +450,8 @@ export default function TrainingPage() {
 
                       {/* Expanded content */}
                       {isExpanded && m.content && (
-                        <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                          <p className="font-body text-[12px] text-white/40 leading-relaxed whitespace-pre-line">
+                        <div className="mt-3 pt-3 border-t border-[var(--app-border)]">
+                          <p className="font-body text-[12px] text-[var(--app-text-muted)] leading-relaxed whitespace-pre-line">
                             {m.content}
                           </p>
                         </div>
@@ -477,15 +477,15 @@ export default function TrainingPage() {
                 <span className="text-2xl shrink-0 mt-0.5">{fileTypeIcon(r.fileType)}</span>
 
                 <div className="flex-1 min-w-0">
-                  <div className="font-body text-sm font-medium text-white">{r.title}</div>
+                  <div className="font-body text-sm font-medium text-[var(--app-text)]">{r.title}</div>
                   {r.description && (
-                    <p className="font-body text-[12px] text-white/40 mt-1">{r.description}</p>
+                    <p className="font-body text-[12px] text-[var(--app-text-muted)] mt-1">{r.description}</p>
                   )}
 
                   {/* Bottom row: file size + download button */}
                   <div className="flex items-center justify-between mt-3">
                     {r.fileSize && (
-                      <span className="text-[10px] text-white/25 bg-white/5 rounded px-2 py-0.5">
+                      <span className="text-[10px] text-[var(--app-text-faint)] bg-[var(--app-input-bg)] rounded px-2 py-0.5">
                         {r.fileSize}
                       </span>
                     )}
@@ -519,7 +519,7 @@ export default function TrainingPage() {
                 className={`font-body text-[11px] tracking-wider uppercase px-4 py-2 rounded-lg border transition-colors whitespace-nowrap ${
                   activeFaqCategory === cat
                     ? "bg-brand-gold/10 border-brand-gold/30 text-brand-gold"
-                    : "border-white/10 text-white/40 hover:text-white/60 hover:border-white/20"
+                    : "border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] hover:border-[var(--app-border)]"
                 }`}
               >
                 {cat}

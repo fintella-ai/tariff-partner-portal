@@ -277,7 +277,7 @@ export default function CommunicationsPage() {
               className={`font-body text-sm px-4 py-1.5 rounded-full whitespace-nowrap transition ${
                 inboxFilter === f
                   ? "bg-brand-gold/20 text-brand-gold"
-                  : "bg-white/5 text-white/50 hover:text-white/70"
+                  : "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)]"
               }`}
             >
               {f}
@@ -289,7 +289,7 @@ export default function CommunicationsPage() {
         <div className="hidden md:block card overflow-x-auto">
           <table className="w-full text-left font-body text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-white/40 text-xs uppercase tracking-wider">
+              <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
                 <th className="px-4 py-3">Sender</th>
                 <th className="px-4 py-3">Subject</th>
                 <th className="px-4 py-3">Date</th>
@@ -301,25 +301,25 @@ export default function CommunicationsPage() {
               {filteredEmails.map((e) => (
                 <tr
                   key={e.id}
-                  className={`border-b border-white/5 hover:bg-white/[.03] transition ${
+                  className={`border-b border-[var(--app-border-subtle)] hover:bg-[var(--app-hover)] transition ${
                     !e.read ? "border-l-2 border-l-brand-gold" : ""
                   }`}
                 >
                   <td className="px-4 py-3">
-                    <div className={`font-medium ${!e.read ? "text-white" : "text-white/70"}`}>
+                    <div className={`font-medium ${!e.read ? "text-[var(--app-text)]" : "text-[var(--app-text-secondary)]"}`}>
                       {e.fromName}
                     </div>
-                    <div className="text-xs text-white/30">{e.fromEmail}</div>
+                    <div className="text-xs text-[var(--app-text-muted)]">{e.fromEmail}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className={`font-medium ${!e.read ? "text-white" : "text-white/70"}`}>
+                    <div className={`font-medium ${!e.read ? "text-[var(--app-text)]" : "text-[var(--app-text-secondary)]"}`}>
                       {e.subject}
                     </div>
-                    <div className="text-xs text-white/30 truncate max-w-[320px]">
+                    <div className="text-xs text-[var(--app-text-muted)] truncate max-w-[320px]">
                       {e.preview}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-white/50 whitespace-nowrap">
+                  <td className="px-4 py-3 text-[var(--app-text-secondary)] whitespace-nowrap">
                     {fmtDate(e.date)}
                   </td>
                   <td className="px-4 py-3">
@@ -334,7 +334,7 @@ export default function CommunicationsPage() {
                       </span>
                     )}
                     {e.read && !e.replied && (
-                      <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/40">
+                      <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[var(--app-input-bg)] text-[var(--app-text-muted)]">
                         Read
                       </span>
                     )}
@@ -343,7 +343,7 @@ export default function CommunicationsPage() {
                     <button className="text-xs px-3 py-1 rounded bg-brand-gold/20 text-brand-gold hover:bg-brand-gold/30 transition mr-1">
                       Reply
                     </button>
-                    <button className="text-xs px-3 py-1 rounded bg-white/5 text-white/50 hover:text-white/70 transition">
+                    <button className="text-xs px-3 py-1 rounded bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)] transition">
                       View
                     </button>
                   </td>
@@ -352,7 +352,7 @@ export default function CommunicationsPage() {
             </tbody>
           </table>
           {filteredEmails.length === 0 && (
-            <p className="text-center text-white/30 font-body text-sm py-8">
+            <p className="text-center text-[var(--app-text-muted)] font-body text-sm py-8">
               No emails match this filter.
             </p>
           )}
@@ -367,19 +367,19 @@ export default function CommunicationsPage() {
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <div className={`font-body text-sm font-medium ${!e.read ? "text-white" : "text-white/70"}`}>
+                  <div className={`font-body text-sm font-medium ${!e.read ? "text-[var(--app-text)]" : "text-[var(--app-text-secondary)]"}`}>
                     {e.fromName}
                   </div>
-                  <div className="font-body text-xs text-white/30">{e.fromEmail}</div>
+                  <div className="font-body text-xs text-[var(--app-text-muted)]">{e.fromEmail}</div>
                 </div>
-                <span className="font-body text-xs text-white/40 whitespace-nowrap">
+                <span className="font-body text-xs text-[var(--app-text-muted)] whitespace-nowrap">
                   {fmtDate(e.date)}
                 </span>
               </div>
-              <div className={`font-body text-sm font-medium mb-1 ${!e.read ? "text-white" : "text-white/70"}`}>
+              <div className={`font-body text-sm font-medium mb-1 ${!e.read ? "text-[var(--app-text)]" : "text-[var(--app-text-secondary)]"}`}>
                 {e.subject}
               </div>
-              <p className="font-body text-xs text-white/30 line-clamp-2 mb-3">
+              <p className="font-body text-xs text-[var(--app-text-muted)] line-clamp-2 mb-3">
                 {e.preview}
               </p>
               <div className="flex items-center justify-between">
@@ -395,7 +395,7 @@ export default function CommunicationsPage() {
                     </span>
                   )}
                   {e.read && !e.replied && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/40">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--app-input-bg)] text-[var(--app-text-muted)]">
                       Read
                     </span>
                   )}
@@ -404,7 +404,7 @@ export default function CommunicationsPage() {
                   <button className="text-xs px-3 py-1 rounded bg-brand-gold/20 text-brand-gold hover:bg-brand-gold/30 transition">
                     Reply
                   </button>
-                  <button className="text-xs px-3 py-1 rounded bg-white/5 text-white/50 hover:text-white/70 transition">
+                  <button className="text-xs px-3 py-1 rounded bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)] transition">
                     View
                   </button>
                 </div>
@@ -412,7 +412,7 @@ export default function CommunicationsPage() {
             </div>
           ))}
           {filteredEmails.length === 0 && (
-            <p className="text-center text-white/30 font-body text-sm py-8">
+            <p className="text-center text-[var(--app-text-muted)] font-body text-sm py-8">
               No emails match this filter.
             </p>
           )}
@@ -429,13 +429,13 @@ export default function CommunicationsPage() {
         <div className="flex flex-col gap-4 font-body text-sm">
           {/* To */}
           <div>
-            <label className="block text-white/40 text-xs mb-1">To</label>
+            <label className="block text-[var(--app-text-muted)] text-xs mb-1">To</label>
             <input
               type="text"
               placeholder="Type partner name or email..."
               value={composeTo}
               onChange={(e) => setComposeTo(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-brand-gold/50"
+              className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50"
             />
           </div>
 
@@ -450,23 +450,23 @@ export default function CommunicationsPage() {
           {showCcBcc && (
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
-                <label className="block text-white/40 text-xs mb-1">CC</label>
+                <label className="block text-[var(--app-text-muted)] text-xs mb-1">CC</label>
                 <input
                   type="text"
                   placeholder="CC recipients..."
                   value={composeCc}
                   onChange={(e) => setComposeCc(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-brand-gold/50"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50"
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-white/40 text-xs mb-1">BCC</label>
+                <label className="block text-[var(--app-text-muted)] text-xs mb-1">BCC</label>
                 <input
                   type="text"
                   placeholder="BCC recipients..."
                   value={composeBcc}
                   onChange={(e) => setComposeBcc(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-brand-gold/50"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50"
                 />
               </div>
             </div>
@@ -474,33 +474,33 @@ export default function CommunicationsPage() {
 
           {/* Subject */}
           <div>
-            <label className="block text-white/40 text-xs mb-1">Subject</label>
+            <label className="block text-[var(--app-text-muted)] text-xs mb-1">Subject</label>
             <input
               type="text"
               placeholder="Email subject..."
               value={composeSubject}
               onChange={(e) => setComposeSubject(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-brand-gold/50"
+              className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50"
             />
           </div>
 
           {/* Body */}
           <div>
-            <label className="block text-white/40 text-xs mb-1">Body</label>
+            <label className="block text-[var(--app-text-muted)] text-xs mb-1">Body</label>
             <textarea
               placeholder="Write your message..."
               value={composeBody}
               onChange={(e) => setComposeBody(e.target.value)}
-              className="w-full min-h-[250px] bg-white/5 border border-white/10 rounded px-3 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-brand-gold/50 resize-y"
+              className="w-full min-h-[250px] bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50 resize-y"
             />
           </div>
 
           {/* Attachments */}
           <div>
-            <label className="block text-white/40 text-xs mb-1">Attachments</label>
-            <div className="w-full border-2 border-dashed border-white/10 rounded-lg px-4 py-6 text-center text-white/30 hover:border-brand-gold/30 transition cursor-pointer">
+            <label className="block text-[var(--app-text-muted)] text-xs mb-1">Attachments</label>
+            <div className="w-full border-2 border-dashed border-[var(--app-border)] rounded-lg px-4 py-6 text-center text-[var(--app-text-muted)] hover:border-brand-gold/30 transition cursor-pointer">
               <svg
-                className="mx-auto mb-2 w-8 h-8 text-white/20"
+                className="mx-auto mb-2 w-8 h-8 text-[var(--app-text-faint)]"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -524,7 +524,7 @@ export default function CommunicationsPage() {
               onChange={(e) => setAlsoSms(e.target.checked)}
               className="accent-brand-gold w-4 h-4"
             />
-            <span className="text-white/50 text-xs">
+            <span className="text-[var(--app-text-secondary)] text-xs">
               Also send SMS notification (if partner opted in)
             </span>
           </label>
@@ -534,7 +534,7 @@ export default function CommunicationsPage() {
             <button className="px-6 py-2 rounded font-medium bg-brand-gold text-black hover:bg-brand-gold/90 transition">
               Send Email
             </button>
-            <button className="px-6 py-2 rounded font-medium bg-white/5 text-white/50 hover:text-white/70 border border-white/10 transition">
+            <button className="px-6 py-2 rounded font-medium bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)] border border-[var(--app-border)] transition">
               Save as Draft
             </button>
           </div>
@@ -563,24 +563,24 @@ export default function CommunicationsPage() {
             <div className="flex flex-col gap-4 font-body text-sm">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
-                  <label className="block text-white/40 text-xs mb-1">Template Name</label>
+                  <label className="block text-[var(--app-text-muted)] text-xs mb-1">Template Name</label>
                   <input
                     type="text"
                     placeholder="e.g. Follow-up Reminder"
                     value={newTplName}
                     onChange={(e) => setNewTplName(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-brand-gold/50"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50"
                   />
                 </div>
                 <div className="sm:w-48">
-                  <label className="block text-white/40 text-xs mb-1">Category</label>
+                  <label className="block text-[var(--app-text-muted)] text-xs mb-1">Category</label>
                   <select
                     value={newTplCategory}
                     onChange={(e) => setNewTplCategory(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white focus:outline-none focus:border-brand-gold/50"
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] focus:outline-none focus:border-brand-gold/50"
                   >
                     {categoryOptions.map((c) => (
-                      <option key={c} value={c} className="bg-[#1a1a2e] text-white">
+                      <option key={c} value={c} className="bg-[#1a1a2e] text-[var(--app-text)]">
                         {c}
                       </option>
                     ))}
@@ -588,22 +588,22 @@ export default function CommunicationsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-white/40 text-xs mb-1">Subject Line</label>
+                <label className="block text-[var(--app-text-muted)] text-xs mb-1">Subject Line</label>
                 <input
                   type="text"
                   placeholder="Email subject..."
                   value={newTplSubject}
                   onChange={(e) => setNewTplSubject(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-brand-gold/50"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50"
                 />
               </div>
               <div>
-                <label className="block text-white/40 text-xs mb-1">Body</label>
+                <label className="block text-[var(--app-text-muted)] text-xs mb-1">Body</label>
                 <textarea
                   placeholder="Template body..."
                   value={newTplBody}
                   onChange={(e) => setNewTplBody(e.target.value)}
-                  className="w-full min-h-[150px] bg-white/5 border border-white/10 rounded px-3 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-brand-gold/50 resize-y"
+                  className="w-full min-h-[150px] bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50 resize-y"
                 />
               </div>
               <button className="self-start px-5 py-2 rounded font-medium bg-brand-gold text-black hover:bg-brand-gold/90 transition">
@@ -621,23 +621,23 @@ export default function CommunicationsPage() {
                 <h4 className="font-display text-sm font-bold">{t.name}</h4>
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full ${
-                    categoryBadge[t.category] || "bg-white/10 text-white/50"
+                    categoryBadge[t.category] || "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)]"
                   }`}
                 >
                   {t.category}
                 </span>
               </div>
-              <p className="font-body text-xs text-white/40 mb-1">
-                <span className="text-white/50">Subject:</span> {t.subject}
+              <p className="font-body text-xs text-[var(--app-text-muted)] mb-1">
+                <span className="text-[var(--app-text-secondary)]">Subject:</span> {t.subject}
               </p>
-              <p className="font-body text-xs text-white/30 line-clamp-2 mb-4">
+              <p className="font-body text-xs text-[var(--app-text-muted)] line-clamp-2 mb-4">
                 {t.preview}
               </p>
               <div className="flex gap-2">
                 <button className="text-xs px-3 py-1 rounded bg-brand-gold/20 text-brand-gold hover:bg-brand-gold/30 transition">
                   Use
                 </button>
-                <button className="text-xs px-3 py-1 rounded bg-white/5 text-white/50 hover:text-white/70 transition">
+                <button className="text-xs px-3 py-1 rounded bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)] transition">
                   Edit
                 </button>
                 <button className="text-xs px-3 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
@@ -657,7 +657,7 @@ export default function CommunicationsPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="font-display text-lg font-bold">Email &amp; SMS Automations</h3>
-            <p className="font-body text-xs text-white/40 mt-1">
+            <p className="font-body text-xs text-[var(--app-text-muted)] mt-1">
               Configure automated messages triggered by system events.
             </p>
           </div>
@@ -672,11 +672,11 @@ export default function CommunicationsPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex-1">
                   <h4 className="font-display text-sm font-bold mb-1">{a.name}</h4>
-                  <p className="font-body text-xs text-white/40">
-                    <span className="text-white/50">Trigger:</span> {a.trigger}
+                  <p className="font-body text-xs text-[var(--app-text-muted)]">
+                    <span className="text-[var(--app-text-secondary)]">Trigger:</span> {a.trigger}
                   </p>
-                  <p className="font-body text-xs text-white/40 mt-0.5">
-                    <span className="text-white/50">Action:</span> {a.action}
+                  <p className="font-body text-xs text-[var(--app-text-muted)] mt-0.5">
+                    <span className="text-[var(--app-text-secondary)]">Action:</span> {a.action}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -693,7 +693,7 @@ export default function CommunicationsPage() {
                   >
                     <div
                       className={`relative w-10 h-5 rounded-full transition-colors ${
-                        a.enabled ? "bg-green-500" : "bg-white/20"
+                        a.enabled ? "bg-green-500" : "bg-[var(--app-input-bg)]"
                       }`}
                     >
                       <div
@@ -704,13 +704,13 @@ export default function CommunicationsPage() {
                     </div>
                     <span
                       className={`font-body text-xs font-medium ${
-                        a.enabled ? "text-green-400" : "text-white/40"
+                        a.enabled ? "text-green-400" : "text-[var(--app-text-muted)]"
                       }`}
                     >
                       {a.enabled ? "Enabled" : "Disabled"}
                     </span>
                   </button>
-                  <button className="text-xs px-3 py-1 rounded bg-white/5 text-white/50 hover:text-white/70 transition">
+                  <button className="text-xs px-3 py-1 rounded bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)] transition">
                     Edit
                   </button>
                 </div>
@@ -728,7 +728,7 @@ export default function CommunicationsPage() {
     return (
       <>
         <h3 className="font-display text-lg font-bold mb-1">SMS Notifications</h3>
-        <p className="font-body text-xs text-white/40 mb-6">
+        <p className="font-body text-xs text-[var(--app-text-muted)] mb-6">
           Manage SMS messaging for opted-in partners.
         </p>
 
@@ -740,7 +740,7 @@ export default function CommunicationsPage() {
             { label: "Delivery Rate", value: "98%" },
           ].map((s) => (
             <div key={s.label} className="card px-4 py-3">
-              <div className="font-body text-xs text-white/40 mb-1">{s.label}</div>
+              <div className="font-body text-xs text-[var(--app-text-muted)] mb-1">{s.label}</div>
               <div className="font-display text-xl font-bold text-brand-gold">
                 {s.value}
               </div>
@@ -750,7 +750,7 @@ export default function CommunicationsPage() {
 
         {/* Opted-in partners */}
         <div className="card overflow-x-auto mb-6">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)]">
             <h4 className="font-display text-sm font-bold">Opted-In Partners</h4>
             <button className="text-xs px-3 py-1 rounded bg-brand-gold/20 text-brand-gold hover:bg-brand-gold/30 transition">
               Send Bulk SMS
@@ -760,7 +760,7 @@ export default function CommunicationsPage() {
           {/* Desktop table */}
           <table className="w-full text-left font-body text-sm hidden sm:table">
             <thead>
-              <tr className="border-b border-white/10 text-white/40 text-xs uppercase tracking-wider">
+              <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
                 <th className="px-4 py-3">Partner</th>
                 <th className="px-4 py-3">Phone</th>
                 <th className="px-4 py-3">Opt-In Date</th>
@@ -771,14 +771,14 @@ export default function CommunicationsPage() {
               {demoSmsPartners.map((p) => (
                 <tr
                   key={p.id}
-                  className="border-b border-white/5 hover:bg-white/[.03] transition"
+                  className="border-b border-[var(--app-border-subtle)] hover:bg-[var(--app-hover)] transition"
                 >
-                  <td className="px-4 py-3 text-white/80">{p.name}</td>
-                  <td className="px-4 py-3 text-white/50 font-mono text-xs">
+                  <td className="px-4 py-3 text-[var(--app-text)]">{p.name}</td>
+                  <td className="px-4 py-3 text-[var(--app-text-secondary)] font-mono text-xs">
                     {p.phone}
                   </td>
-                  <td className="px-4 py-3 text-white/50">{fmtDate(p.optInDate)}</td>
-                  <td className="px-4 py-3 text-white/50">{p.messagesSent}</td>
+                  <td className="px-4 py-3 text-[var(--app-text-secondary)]">{fmtDate(p.optInDate)}</td>
+                  <td className="px-4 py-3 text-[var(--app-text-secondary)]">{p.messagesSent}</td>
                 </tr>
               ))}
             </tbody>
@@ -787,16 +787,16 @@ export default function CommunicationsPage() {
           {/* Mobile cards */}
           <div className="sm:hidden flex flex-col">
             {demoSmsPartners.map((p) => (
-              <div key={p.id} className="px-4 py-3 border-b border-white/5">
+              <div key={p.id} className="px-4 py-3 border-b border-[var(--app-border-subtle)]">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-body text-sm text-white/80">{p.name}</span>
-                  <span className="font-mono text-xs text-white/40">{p.phone}</span>
+                  <span className="font-body text-sm text-[var(--app-text)]">{p.name}</span>
+                  <span className="font-mono text-xs text-[var(--app-text-muted)]">{p.phone}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-body text-xs text-white/40">
+                  <span className="font-body text-xs text-[var(--app-text-muted)]">
                     Opted in {fmtDate(p.optInDate)}
                   </span>
-                  <span className="font-body text-xs text-white/40">
+                  <span className="font-body text-xs text-[var(--app-text-muted)]">
                     {p.messagesSent} messages
                   </span>
                 </div>
@@ -810,21 +810,21 @@ export default function CommunicationsPage() {
           <h4 className="font-display text-sm font-bold mb-4">Compose SMS</h4>
           <div className="flex flex-col gap-4 font-body text-sm">
             <div>
-              <label className="block text-white/40 text-xs mb-1">To</label>
+              <label className="block text-[var(--app-text-muted)] text-xs mb-1">To</label>
               <input
                 type="text"
                 placeholder="Select a partner..."
                 value={smsTo}
                 onChange={(e) => setSmsTo(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-brand-gold/50"
+                className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50"
               />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-white/40 text-xs">Message</label>
+                <label className="text-[var(--app-text-muted)] text-xs">Message</label>
                 <span
                   className={`text-xs ${
-                    smsCharCount > 160 ? "text-red-400" : "text-white/30"
+                    smsCharCount > 160 ? "text-red-400" : "text-[var(--app-text-muted)]"
                   }`}
                 >
                   {smsCharCount}/160
@@ -835,7 +835,7 @@ export default function CommunicationsPage() {
                 value={smsMessage}
                 onChange={(e) => setSmsMessage(e.target.value)}
                 maxLength={160}
-                className="w-full min-h-[80px] bg-white/5 border border-white/10 rounded px-3 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-brand-gold/50 resize-y"
+                className="w-full min-h-[80px] bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50 resize-y"
               />
             </div>
             <button className="self-start px-5 py-2 rounded font-medium bg-brand-gold text-black hover:bg-brand-gold/90 transition">
@@ -844,7 +844,7 @@ export default function CommunicationsPage() {
           </div>
         </div>
 
-        <p className="font-body text-xs text-white/30 italic">
+        <p className="font-body text-xs text-[var(--app-text-muted)] italic">
           Partners must opt in to receive SMS notifications. Manage opt-in preferences in
           partner settings.
         </p>
@@ -861,7 +861,7 @@ export default function CommunicationsPage() {
       <h2 className="font-display text-xl sm:text-2xl font-bold mb-2">
         Communications Hub
       </h2>
-      <p className="font-body text-sm text-white/40 mb-6">
+      <p className="font-body text-sm text-[var(--app-text-muted)] mb-6">
         Manage partner emails, templates, automations, and SMS notifications.
       </p>
 
@@ -874,7 +874,7 @@ export default function CommunicationsPage() {
             className={`font-body text-sm px-4 py-1.5 rounded-full whitespace-nowrap transition ${
               activeTab === t
                 ? "bg-brand-gold/20 text-brand-gold"
-                : "bg-white/5 text-white/50 hover:text-white/70"
+                : "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)]"
             }`}
           >
             {t}

@@ -40,7 +40,7 @@ export default function SubmitClientPage() {
   if (agreementSigned === null) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="font-body text-sm text-white/40">Checking agreement status...</div>
+        <div className="font-body text-sm text-[var(--app-text-muted)]">Checking agreement status...</div>
       </div>
     );
   }
@@ -51,7 +51,7 @@ export default function SubmitClientPage() {
         <h2 className={`font-display ${device.isMobile ? "text-lg" : "text-[22px]"} font-bold mb-1.5`}>
           Submit a Client
         </h2>
-        <p className="font-body text-[13px] text-white/40 mb-4">
+        <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-4">
           Use the form below to submit a client referral. This submission is tracked to your partner account.
         </p>
 
@@ -79,7 +79,7 @@ export default function SubmitClientPage() {
             <h3 className="font-display text-lg sm:text-xl font-bold mb-2">
               Partnership Agreement Required
             </h3>
-            <p className="font-body text-sm text-white/50 mb-6 max-w-md mx-auto leading-relaxed">
+            <p className="font-body text-sm text-[var(--app-text-secondary)] mb-6 max-w-md mx-auto leading-relaxed">
               You must sign your partnership agreement before submitting clients.
               Please visit the Documents tab to complete your agreement.
             </p>
@@ -102,7 +102,7 @@ export default function SubmitClientPage() {
       <h2 className={`font-display ${device.isMobile ? "text-lg" : "text-[22px]"} font-bold mb-1.5`}>
         Submit a Client
       </h2>
-      <p className="font-body text-[13px] text-white/40 mb-4">
+      <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-4">
         Use the form below to submit a client referral. This submission is tracked to your partner account.
       </p>
 
@@ -115,8 +115,8 @@ export default function SubmitClientPage() {
             </span>
           </div>
           <div>
-            <div className="font-body text-[13px] text-white/80 font-medium">{partnerName}</div>
-            <div className="font-mono text-[11px] text-white/40">{partnerCode}</div>
+            <div className="font-body text-[13px] text-[var(--app-text)] font-medium">{partnerName}</div>
+            <div className="font-mono text-[11px] text-[var(--app-text-muted)]">{partnerCode}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -131,15 +131,15 @@ export default function SubmitClientPage() {
 
       {/* Embedded referral form */}
       <div className={`card overflow-hidden ${device.borderRadius}`}>
-        <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
-          <div className="font-body text-[12px] text-white/40">
+        <div className="px-4 py-3 border-b border-[var(--app-border)] flex items-center justify-between">
+          <div className="font-body text-[12px] text-[var(--app-text-muted)]">
             Client Submission Form — tracked to <span className="text-brand-gold font-semibold">{partnerCode}</span>
           </div>
           <a
             href={referralUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-body text-[11px] text-white/30 hover:text-white/50 transition-colors"
+            className="font-body text-[11px] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition-colors"
           >
             Open in new tab ↗
           </a>
@@ -156,7 +156,7 @@ export default function SubmitClientPage() {
       </div>
 
       {/* Info footer */}
-      <div className="mt-4 font-body text-[11px] text-white/25 text-center leading-relaxed">
+      <div className="mt-4 font-body text-[11px] text-[var(--app-text-faint)] text-center leading-relaxed">
         All submissions through this form are automatically tracked to your partner account ({partnerCode}).
         <br />
         Your downline partners have their own unique links. Contact {FIRM_SHORT} support with any questions.

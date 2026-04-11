@@ -56,18 +56,18 @@ export default function DownlinePage() {
     return (
       <div>
         <div className="animate-pulse mb-6">
-          <div className="h-6 w-36 bg-white/[0.06] rounded-lg mb-2" />
-          <div className="h-3 w-64 bg-white/[0.06] rounded-lg" />
+          <div className="h-6 w-36 bg-[var(--app-card-bg)] rounded-lg mb-2" />
+          <div className="h-3 w-64 bg-[var(--app-card-bg)] rounded-lg" />
         </div>
         <div className="card mb-6">
-          <div className="px-4 sm:px-6 py-4 border-b border-white/[0.06]">
-            <div className="h-4 w-28 bg-white/[0.06] rounded animate-pulse" />
+          <div className="px-4 sm:px-6 py-4 border-b border-[var(--app-border)]">
+            <div className="h-4 w-28 bg-[var(--app-card-bg)] rounded animate-pulse" />
           </div>
           {[1, 2, 3].map((i) => <SkeletonTableRow key={i} cols={5} />)}
         </div>
         <div className="card">
-          <div className="px-4 sm:px-6 py-4 border-b border-white/[0.06]">
-            <div className="h-4 w-28 bg-white/[0.06] rounded animate-pulse" />
+          <div className="px-4 sm:px-6 py-4 border-b border-[var(--app-border)]">
+            <div className="h-4 w-28 bg-[var(--app-card-bg)] rounded animate-pulse" />
           </div>
           {[1, 2].map((i) => <SkeletonTableRow key={i} cols={6} />)}
         </div>
@@ -81,23 +81,23 @@ export default function DownlinePage() {
       <h2 className="font-display text-xl sm:text-2xl font-bold mb-2">
         My Downline
       </h2>
-      <p className="font-body text-sm text-white/40 mb-6">
+      <p className="font-body text-sm text-[var(--app-text-muted)] mb-6">
         Partners you recruited and the deals they bring in. You earn L2
         commissions on their closed deals.
       </p>
 
       {/* ═══ YOUR PARTNERS ═══ */}
       <div className="card mb-6">
-        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-white/[0.06] flex items-center justify-between flex-wrap gap-2">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[var(--app-border)] flex items-center justify-between flex-wrap gap-2">
           <div className="font-body font-semibold text-sm sm:text-[15px]">
             Your Partners
           </div>
           {partners.length > 0 && (
-            <div className="flex bg-white/5 rounded-lg p-0.5">
+            <div className="flex bg-[var(--app-input-bg)] rounded-lg p-0.5">
               <button
                 onClick={() => setPartnerView("list")}
                 className={`font-body text-[11px] px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
-                  partnerView === "list" ? "bg-brand-gold/15 text-brand-gold" : "text-white/40 hover:text-white/60"
+                  partnerView === "list" ? "bg-brand-gold/15 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
                 }`}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -108,7 +108,7 @@ export default function DownlinePage() {
               <button
                 onClick={() => setPartnerView("tree")}
                 className={`font-body text-[11px] px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
-                  partnerView === "tree" ? "bg-brand-gold/15 text-brand-gold" : "text-white/40 hover:text-white/60"
+                  partnerView === "tree" ? "bg-brand-gold/15 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
                 }`}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -121,7 +121,7 @@ export default function DownlinePage() {
         </div>
 
         {partners.length === 0 ? (
-          <div className="p-12 text-center font-body text-sm text-white/35">
+          <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">
             No downline partners yet. Share your partner recruitment link to
             start building your team.
           </div>
@@ -164,29 +164,29 @@ export default function DownlinePage() {
               return (
                 <div
                   key={p.partnerCode}
-                  className="px-4 py-4 border-b border-white/5 last:border-b-0"
+                  className="px-4 py-4 border-b border-[var(--app-border-subtle)] last:border-b-0"
                 >
                   <div className="flex items-center gap-3 mb-3">
                     {/* Avatar */}
-                    <div className="w-9 h-9 rounded-full bg-white/[0.08] border border-white/10 flex items-center justify-center shrink-0">
-                      <span className="font-body text-[11px] font-semibold text-white/60 uppercase">
+                    <div className="w-9 h-9 rounded-full bg-[var(--app-card-bg)] border border-[var(--app-border)] flex items-center justify-center shrink-0">
+                      <span className="font-body text-[11px] font-semibold text-[var(--app-text-secondary)] uppercase">
                         {initials}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-body text-[13px] font-medium text-white truncate">
+                      <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">
                         {p.firstName} {p.lastName}
                       </div>
-                      <div className="font-body text-[11px] text-white/30 truncate">
+                      <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">
                         {p.email}
                       </div>
                     </div>
                     <StatusBadge status={p.status} />
                   </div>
-                  <div className="flex items-center justify-between font-body text-[11px] text-white/30">
+                  <div className="flex items-center justify-between font-body text-[11px] text-[var(--app-text-muted)]">
                     <span>
                       Code:{" "}
-                      <span className="text-white/50 font-mono">
+                      <span className="text-[var(--app-text-secondary)] font-mono">
                         {p.partnerCode}
                       </span>
                     </span>
@@ -200,20 +200,20 @@ export default function DownlinePage() {
           /* ── Desktop/Tablet: Table layout ── */
           <div>
             {/* Header */}
-            <div className="grid grid-cols-[2fr_1.5fr_1fr_0.8fr_1fr] gap-4 px-6 py-3 border-b border-white/[0.06]">
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
+            <div className="grid grid-cols-[2fr_1.5fr_1fr_0.8fr_1fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">
                 Partner
               </div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">
                 Email
               </div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">
                 Code
               </div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">
                 Status
               </div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35 text-right">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">
                 Joined
               </div>
             </div>
@@ -224,25 +224,25 @@ export default function DownlinePage() {
               return (
                 <div
                   key={p.partnerCode}
-                  className="grid grid-cols-[2fr_1.5fr_1fr_0.8fr_1fr] gap-4 px-6 py-4 border-b border-white/[0.04] last:border-b-0 items-center hover:bg-white/[0.02] transition-colors"
+                  className="grid grid-cols-[2fr_1.5fr_1fr_0.8fr_1fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors"
                 >
                   {/* Col 1: Name + avatar */}
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-white/[0.08] border border-white/10 flex items-center justify-center shrink-0">
-                      <span className="font-body text-[10px] font-semibold text-white/60 uppercase">
+                    <div className="w-8 h-8 rounded-full bg-[var(--app-card-bg)] border border-[var(--app-border)] flex items-center justify-center shrink-0">
+                      <span className="font-body text-[10px] font-semibold text-[var(--app-text-secondary)] uppercase">
                         {initials}
                       </span>
                     </div>
-                    <div className="font-body text-[13px] font-medium text-white truncate">
+                    <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">
                       {p.firstName} {p.lastName}
                     </div>
                   </div>
                   {/* Col 2: Email */}
-                  <div className="font-body text-[13px] text-white/50 truncate">
+                  <div className="font-body text-[13px] text-[var(--app-text-secondary)] truncate">
                     {p.email}
                   </div>
                   {/* Col 3: Code */}
-                  <div className="font-mono text-[12px] text-white/40">
+                  <div className="font-mono text-[12px] text-[var(--app-text-muted)]">
                     {p.partnerCode}
                   </div>
                   {/* Col 4: Status */}
@@ -250,7 +250,7 @@ export default function DownlinePage() {
                     <StatusBadge status={p.status} />
                   </div>
                   {/* Col 5: Joined */}
-                  <div className="font-body text-[13px] text-white/40 text-right">
+                  <div className="font-body text-[13px] text-[var(--app-text-muted)] text-right">
                     {fmtDate(p.signupDate)}
                   </div>
                 </div>
@@ -262,14 +262,14 @@ export default function DownlinePage() {
 
       {/* ═══ DOWNLINE DEALS ═══ */}
       <div className="card">
-        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-white/[0.06]">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[var(--app-border)]">
           <div className="font-body font-semibold text-sm sm:text-[15px]">
             Downline Deals
           </div>
         </div>
 
         {deals.length === 0 ? (
-          <div className="p-12 text-center font-body text-sm text-white/35">
+          <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">
             No downline deals yet. Once your partners refer clients, their deals
             will appear here.
           </div>
@@ -279,28 +279,28 @@ export default function DownlinePage() {
             {deals.map((p) => (
                 <div
                   key={p.dealName}
-                  className="px-4 py-4 border-b border-white/5 last:border-b-0"
+                  className="px-4 py-4 border-b border-[var(--app-border-subtle)] last:border-b-0"
                 >
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="font-body text-[13px] font-medium text-white leading-snug flex-1 min-w-0">
+                    <div className="font-body text-[13px] font-medium text-[var(--app-text)] leading-snug flex-1 min-w-0">
                       {p.dealName}
                     </div>
                     <StageBadge stage={p.stage} />
                   </div>
-                  <div className="font-body text-[11px] text-white/30 mb-3">
+                  <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-3">
                     Via {resolvePartnerName(p)} · {fmtDate(p.createdAt)}
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <div className="font-body text-[9px] text-white/30 tracking-wider uppercase mb-0.5">
+                      <div className="font-body text-[9px] text-[var(--app-text-muted)] tracking-wider uppercase mb-0.5">
                         Est. Refund
                       </div>
-                      <div className="font-body text-[13px] text-white/80">
+                      <div className="font-body text-[13px] text-[var(--app-text)]">
                         {fmt$(p.estimatedRefundAmount)}
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="font-body text-[9px] text-white/30 tracking-wider uppercase mb-0.5">
+                      <div className="font-body text-[9px] text-[var(--app-text-muted)] tracking-wider uppercase mb-0.5">
                         L2 Rate
                       </div>
                       <div className="font-body text-[13px] text-purple-400 font-semibold">
@@ -308,7 +308,7 @@ export default function DownlinePage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-body text-[9px] text-white/30 tracking-wider uppercase mb-0.5">
+                      <div className="font-body text-[9px] text-[var(--app-text-muted)] tracking-wider uppercase mb-0.5">
                         L2 Commission
                       </div>
                       <div className="font-display text-sm font-semibold text-brand-gold">
@@ -326,23 +326,23 @@ export default function DownlinePage() {
           /* ── Desktop/Tablet: Grid table ── */
           <div>
             {/* Header */}
-            <div className="grid grid-cols-[2fr_1fr_1fr_0.6fr_1fr_0.7fr] gap-4 px-6 py-3 border-b border-white/[0.06]">
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
+            <div className="grid grid-cols-[2fr_1fr_1fr_0.6fr_1fr_0.7fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">
                 Client / Deal
               </div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">
                 Stage
               </div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">
                 Est. Refund
               </div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35 text-center">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">
                 L2 %
               </div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">
                 L2 Commission
               </div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-white/35 text-right">
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">
                 Status
               </div>
             </div>
@@ -350,14 +350,14 @@ export default function DownlinePage() {
             {deals.map((p) => (
                 <div
                   key={p.dealName}
-                  className="grid grid-cols-[2fr_1fr_1fr_0.6fr_1fr_0.7fr] gap-4 px-6 py-4 border-b border-white/[0.04] last:border-b-0 items-center hover:bg-white/[0.02] transition-colors"
+                  className="grid grid-cols-[2fr_1fr_1fr_0.6fr_1fr_0.7fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors"
                 >
                   {/* Col 1: Deal name + partner name */}
                   <div>
-                    <div className="font-body text-[13px] font-medium text-white truncate">
+                    <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">
                       {p.dealName}
                     </div>
-                    <div className="font-body text-[11px] text-white/30 mt-0.5 truncate">
+                    <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
                       Via {resolvePartnerName(p)} · {fmtDate(p.createdAt)}
                     </div>
                   </div>
@@ -366,7 +366,7 @@ export default function DownlinePage() {
                     <StageBadge stage={p.stage} />
                   </div>
                   {/* Col 3: Est. Refund */}
-                  <div className="font-body text-[13px] text-white/80">
+                  <div className="font-body text-[13px] text-[var(--app-text)]">
                     {fmt$(p.estimatedRefundAmount)}
                   </div>
                   {/* Col 4: L2 % */}

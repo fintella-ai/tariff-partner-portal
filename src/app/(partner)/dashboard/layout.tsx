@@ -254,7 +254,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {device.isTablet && !sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="fixed top-4 left-4 z-[901] bg-brand-dark/90 border border-brand-gold/20 rounded-lg w-11 h-11 flex items-center justify-center cursor-pointer text-brand-gold text-xl backdrop-blur-lg"
+          className="fixed top-4 left-4 z-[901] bg-[var(--app-bg)]/90 border border-brand-gold/20 rounded-lg w-11 h-11 flex items-center justify-center cursor-pointer text-brand-gold text-xl backdrop-blur-lg"
         >
           ☰
         </button>
@@ -271,7 +271,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               key={item.id}
               onClick={() => navigate(item.href)}
               className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 px-1 font-body text-[10px] transition-colors ${
-                isActive(item.href) ? "text-brand-gold" : "text-white/45"
+                isActive(item.href) ? "text-brand-gold" : "text-[var(--app-text-muted)]"
               }`}
             >
               <span className="text-xl leading-none">{item.icon}</span>
@@ -299,14 +299,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className={`font-body text-lg font-bold border rounded px-3 py-1.5 tracking-wider min-h-[32px] transition-colors ${
                     isActive("/dashboard/support")
                       ? "text-brand-gold border-brand-gold/30 bg-brand-gold/10"
-                      : "text-white/40 border-white/10 hover:text-white/60"
+                      : "text-[var(--app-text-muted)] border-[var(--app-border)] hover:text-[var(--app-text-secondary)]"
                   }`}
                 >
                   🎫 Support
                 </button>
                 <button
                   onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="font-body text-[10px] text-white/40 border border-white/10 rounded px-3 py-1.5 tracking-wider min-h-[32px]"
+                  className="font-body text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded px-3 py-1.5 tracking-wider min-h-[32px]"
                 >
                   Sign Out
                 </button>
@@ -342,21 +342,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex justify-between items-start">
             <div>
-              <div className="font-body text-[11px] text-white/40 tracking-[1px] uppercase mb-1">
+              <div className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1">
                 Welcome back
               </div>
               <h1 className={`font-display ${device.headingSize} font-bold mb-1`}>
                 {user?.name || "Partner"}
               </h1>
               <div className="flex gap-2 sm:gap-4 items-center flex-wrap">
-                <span className="font-body text-[11px] text-white/40 tracking-[1px]">
+                <span className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px]">
                   Code: <strong className="text-brand-gold">{partnerCode}</strong>
                 </span>
                 <span className="font-body text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 rounded-full px-2.5 py-0.5">
                   Active
                 </span>
                 {!device.isMobile && (
-                  <span className="font-body text-[10px] text-white/25">
+                  <span className="font-body text-[10px] text-[var(--app-text-faint)]">
                     {device.os !== "unknown" && `${device.os.toUpperCase()}`}
                     {device.width > 0 && ` · ${device.width}×${device.height}`}
                   </span>
@@ -391,7 +391,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className={`font-body text-lg font-bold tracking-[1px] border rounded-lg px-5 py-2.5 transition-colors flex items-center gap-2 ${
                     isActive("/dashboard/support")
                       ? "text-brand-gold border-brand-gold/30 bg-brand-gold/10"
-                      : "text-white/50 border-white/10 hover:text-white/70 hover:border-white/20"
+                      : "text-[var(--app-text-secondary)] border-[var(--app-border)] hover:text-[var(--app-text-secondary)] hover:border-[var(--app-border)]"
                   }`}
                 >
                   🎫 Support
@@ -420,38 +420,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── CHAT PANEL ── */}
       {chatOpen && (
         <div
-          className={`fixed z-[951] bg-[#0c1228] border border-brand-gold/20 shadow-2xl shadow-black/40 flex flex-col ${
+          className={`fixed z-[951] bg-[var(--app-bg-secondary)] border border-brand-gold/20 shadow-2xl shadow-black/40 flex flex-col ${
             device.isMobile
               ? "inset-0 rounded-none"
               : "bottom-24 right-6 w-[380px] h-[520px] rounded-2xl"
           }`}
         >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--app-border)]">
             <div>
-              <div className="font-body text-sm font-semibold text-white">Support Chat</div>
+              <div className="font-body text-sm font-semibold text-[var(--app-text)]">Support Chat</div>
               <div className="font-body text-[11px] text-brand-gold/70">AI Assistant</div>
             </div>
             <button
               onClick={() => setChatOpen(false)}
-              className="text-white/40 hover:text-white text-lg w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors"
+              className="text-[var(--app-text-muted)] hover:text-[var(--app-text)] text-lg w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--app-input-bg)] transition-colors"
             >
               ✕
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
             <div className="bg-brand-gold/10 border border-brand-gold/15 rounded-xl rounded-tl-sm px-4 py-3 max-w-[85%]">
-              <div className="font-body text-[13px] text-white/80 leading-relaxed">
+              <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed">
                 Hi! I&apos;m your {firmShort} support assistant. How can I help you today?
               </div>
-              <div className="font-body text-[10px] text-white/30 mt-1.5">Just now</div>
+              <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-1.5">Just now</div>
             </div>
           </div>
-          <div className="p-4 border-t border-white/[0.08]">
+          <div className="p-4 border-t border-[var(--app-border)]">
             <div className="flex gap-2">
               <input
                 type="text"
                 placeholder="Type your question..."
-                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-body text-[13px] outline-none focus:border-brand-gold/30 transition-colors placeholder:text-white/30"
+                className="flex-1 bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-[var(--app-text)] font-body text-[13px] outline-none focus:border-brand-gold/30 transition-colors placeholder:text-[var(--app-text-muted)]"
               />
               <button className="bg-brand-gold/20 text-brand-gold border border-brand-gold/30 rounded-xl px-4 font-body text-sm font-semibold hover:bg-brand-gold/30 transition-colors">
                 Send

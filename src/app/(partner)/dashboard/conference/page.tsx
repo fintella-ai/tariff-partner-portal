@@ -128,7 +128,7 @@ export default function ConferencePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="font-body text-sm text-white/40">Loading conference data...</div>
+        <div className="font-body text-sm text-[var(--app-text-muted)]">Loading conference data...</div>
       </div>
     );
   }
@@ -141,7 +141,7 @@ export default function ConferencePage() {
       <h2 className={`font-display ${device.isMobile ? "text-lg" : "text-[22px]"} font-bold mb-1.5`}>
         Live Weekly Call!
       </h2>
-      <p className="font-body text-[13px] text-white/40 mb-6">
+      <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-6">
         Join our weekly team call for product updates, training, success stories, and live Q&A.
       </p>
 
@@ -156,13 +156,13 @@ export default function ConferencePage() {
             Next Live Call
           </div>
         </div>
-        <div className={`font-display ${device.isMobile ? "text-xl" : "text-2xl"} font-bold text-white mb-2`}>
+        <div className={`font-display ${device.isMobile ? "text-xl" : "text-2xl"} font-bold text-[var(--app-text)] mb-2`}>
           {active.title}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4">
-          <span className="font-body text-[13px] text-white/60">📅 {callInfo.date}</span>
-          {callInfo.time && <span className="font-body text-[13px] text-white/60">⏰ {callInfo.time}</span>}
-          {active.hostName && <span className="font-body text-[13px] text-white/60">👤 {active.hostName}</span>}
+          <span className="font-body text-[13px] text-[var(--app-text-secondary)]">📅 {callInfo.date}</span>
+          {callInfo.time && <span className="font-body text-[13px] text-[var(--app-text-secondary)]">⏰ {callInfo.time}</span>}
+          {active.hostName && <span className="font-body text-[13px] text-[var(--app-text-secondary)]">👤 {active.hostName}</span>}
         </div>
         <div className={`flex ${device.isMobile ? "flex-col" : ""} gap-3`}>
           <button
@@ -173,7 +173,7 @@ export default function ConferencePage() {
           </button>
           <button
             onClick={() => generateICS(active)}
-            className="font-body text-[12px] text-white/50 border border-white/10 rounded-lg px-5 py-3 hover:text-white/70 hover:border-white/20 transition-colors text-center"
+            className="font-body text-[12px] text-[var(--app-text-secondary)] border border-[var(--app-border)] rounded-lg px-5 py-3 hover:text-[var(--app-text-secondary)] hover:border-[var(--app-border)] transition-colors text-center"
           >
             Add to Calendar
           </button>
@@ -183,10 +183,10 @@ export default function ConferencePage() {
       {/* ═══ CALL SCHEDULE ═══ */}
       <div className={`card ${device.cardPadding} mb-6`}>
         <div className="font-body font-semibold text-sm mb-3">Call Schedule</div>
-        <div className="font-body text-[13px] text-white/50 leading-relaxed">
+        <div className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed">
           {active.schedule || (
             <>
-              Every <strong className="text-white/70">Thursday at 2:00 PM ET</strong> — Our weekly partner call covers product updates,
+              Every <strong className="text-[var(--app-text-secondary)]">Thursday at 2:00 PM ET</strong> — Our weekly partner call covers product updates,
               training topics, success stories from top partners, and an open Q&A session. All partners are welcome.
               Calls typically last 45–60 minutes.
             </>
@@ -196,17 +196,17 @@ export default function ConferencePage() {
 
       {/* ═══ PAST RECORDINGS ═══ */}
       <div className="card">
-        <div className="px-4 sm:px-6 py-4 border-b border-white/[0.06]">
+        <div className="px-4 sm:px-6 py-4 border-b border-[var(--app-border)]">
           <div className="font-body font-semibold text-sm">Past Recordings</div>
         </div>
         {pastRecordings.map((rec) => (
-          <div key={rec.id} className="border-b border-white/[0.04] last:border-b-0">
-            <div className="px-4 sm:px-6 py-4 hover:bg-white/[0.02] transition-colors flex items-center justify-between gap-3">
+          <div key={rec.id} className="border-b border-[var(--app-border)] last:border-b-0">
+            <div className="px-4 sm:px-6 py-4 hover:bg-[var(--app-card-bg)] transition-colors flex items-center justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <div className="font-body text-[13px] text-white/80 truncate">
+                <div className="font-body text-[13px] text-[var(--app-text)] truncate">
                   {rec.weekNumber ? `Week ${rec.weekNumber} — ` : ""}{rec.title}
                 </div>
-                <div className="font-body text-[11px] text-white/30 mt-0.5">
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
                   {fmtDate(rec.nextCall)} · {rec.duration || "—"}{rec.hostName ? ` · ${rec.hostName}` : ""}
                 </div>
               </div>
@@ -214,7 +214,7 @@ export default function ConferencePage() {
                 {rec.notes && (
                   <button
                     onClick={() => toggleNotes(rec.id)}
-                    className="font-body text-[11px] text-white/40 border border-white/10 rounded-lg px-2.5 py-1.5 hover:bg-white/[0.04] transition-colors"
+                    className="font-body text-[11px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded-lg px-2.5 py-1.5 hover:bg-[var(--app-card-bg)] transition-colors"
                     title="Toggle notes"
                   >
                     {expandedNotes.has(rec.id) ? "▲ Notes" : "▼ Notes"}
@@ -238,8 +238,8 @@ export default function ConferencePage() {
             </div>
             {/* Expandable notes */}
             {rec.notes && expandedNotes.has(rec.id) && (
-              <div className="px-4 sm:px-6 pb-4 border-t border-white/[0.04]">
-                <div className="font-body text-[12px] text-white/50 leading-relaxed whitespace-pre-line pt-3">
+              <div className="px-4 sm:px-6 pb-4 border-t border-[var(--app-border)]">
+                <div className="font-body text-[12px] text-[var(--app-text-secondary)] leading-relaxed whitespace-pre-line pt-3">
                   {rec.notes}
                 </div>
               </div>
@@ -248,7 +248,7 @@ export default function ConferencePage() {
         ))}
         {pastRecordings.length === 0 && (
           <div className="px-4 sm:px-6 py-8 text-center">
-            <div className="font-body text-[13px] text-white/30">No past recordings available yet.</div>
+            <div className="font-body text-[13px] text-[var(--app-text-muted)]">No past recordings available yet.</div>
           </div>
         )}
       </div>

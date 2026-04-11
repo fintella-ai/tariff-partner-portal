@@ -140,12 +140,12 @@ export default function PayoutManagementPage() {
           <h2 className="font-display text-xl sm:text-2xl font-bold mb-1">
             Payout Management
           </h2>
-          <p className="font-body text-sm text-white/40">
+          <p className="font-body text-sm text-[var(--app-text-muted)]">
             Process and track partner payouts.
           </p>
         </div>
         <div className="flex gap-2 self-start">
-          <button className="font-body text-sm px-4 py-2 rounded-lg bg-white/5 text-white/60 hover:text-white/80 transition">
+          <button className="font-body text-sm px-4 py-2 rounded-lg bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text)] transition">
             Export CSV
           </button>
           {tab === "Due" && (
@@ -165,7 +165,7 @@ export default function PayoutManagementPage() {
           { label: "Partners to Pay", value: partnersToPay },
         ].map((s) => (
           <div key={s.label} className="card px-4 py-3">
-            <div className="font-body text-xs text-white/40 mb-1">
+            <div className="font-body text-xs text-[var(--app-text-muted)] mb-1">
               {s.label}
             </div>
             <div className="font-display text-xl font-bold text-brand-gold">
@@ -184,7 +184,7 @@ export default function PayoutManagementPage() {
             className={`font-body text-sm px-4 py-1.5 rounded-full whitespace-nowrap transition ${
               tab === t
                 ? "bg-brand-gold/20 text-brand-gold"
-                : "bg-white/5 text-white/50 hover:text-white/70"
+                : "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)]"
             }`}
           >
             {t}
@@ -196,7 +196,7 @@ export default function PayoutManagementPage() {
       <div className="hidden md:block card overflow-x-auto">
         <table className="w-full text-left font-body text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-white/40 text-xs uppercase tracking-wider">
+            <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
               <th className="px-4 py-3">Partner</th>
               <th className="px-4 py-3">Deal</th>
               <th className="px-4 py-3">Tier</th>
@@ -210,13 +210,13 @@ export default function PayoutManagementPage() {
             {filtered.map((p) => (
               <tr
                 key={p.id}
-                className="border-b border-white/5 hover:bg-white/[0.02] transition"
+                className="border-b border-[var(--app-border-subtle)] hover:bg-[var(--app-card-bg)] transition"
               >
                 <td className="px-4 py-3">
-                  <div className="text-white/80">{p.partnerName}</div>
-                  <div className="text-xs text-white/35">{p.partnerCode}</div>
+                  <div className="text-[var(--app-text)]">{p.partnerName}</div>
+                  <div className="text-xs text-[var(--app-text-muted)]">{p.partnerCode}</div>
                 </td>
-                <td className="px-4 py-3 text-white/60">{p.dealName}</td>
+                <td className="px-4 py-3 text-[var(--app-text-secondary)]">{p.dealName}</td>
                 <td className="px-4 py-3">
                   <span
                     className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${tierBadge[p.tier]}`}
@@ -224,10 +224,10 @@ export default function PayoutManagementPage() {
                     {p.tier}
                   </span>
                 </td>
-                <td className="px-4 py-3 font-medium text-white">
+                <td className="px-4 py-3 font-medium text-[var(--app-text)]">
                   {fmt$(p.amount)}
                 </td>
-                <td className="px-4 py-3 text-white/50">
+                <td className="px-4 py-3 text-[var(--app-text-secondary)]">
                   {fmtMonth(p.periodMonth)}
                 </td>
                 <td className="px-4 py-3">
@@ -243,7 +243,7 @@ export default function PayoutManagementPage() {
                       Approve
                     </button>
                   ) : p.status === "pending" ? (
-                    <span className="text-xs text-white/25">Awaiting deal</span>
+                    <span className="text-xs text-[var(--app-text-faint)]">Awaiting deal</span>
                   ) : (
                     <button className="text-xs text-brand-gold hover:underline">
                       View Receipt
@@ -262,10 +262,10 @@ export default function PayoutManagementPage() {
           <div key={p.id} className="card p-4">
             <div className="flex items-start justify-between mb-2">
               <div>
-                <div className="font-body text-sm font-medium text-white">
+                <div className="font-body text-sm font-medium text-[var(--app-text)]">
                   {p.partnerName}
                 </div>
-                <div className="font-body text-xs text-white/35 mt-0.5">
+                <div className="font-body text-xs text-[var(--app-text-muted)] mt-0.5">
                   {p.partnerCode}
                 </div>
               </div>
@@ -275,15 +275,15 @@ export default function PayoutManagementPage() {
                 {p.tier}
               </span>
             </div>
-            <div className="font-body text-xs text-white/50 mb-1">
+            <div className="font-body text-xs text-[var(--app-text-secondary)] mb-1">
               {p.dealName}
             </div>
             <div className="flex items-center justify-between mt-3">
               <div>
-                <div className="font-display text-lg font-bold text-white">
+                <div className="font-display text-lg font-bold text-[var(--app-text)]">
                   {fmt$(p.amount)}
                 </div>
-                <div className="text-xs text-white/35">
+                <div className="text-xs text-[var(--app-text-muted)]">
                   {fmtMonth(p.periodMonth)}
                 </div>
               </div>
