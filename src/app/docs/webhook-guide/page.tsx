@@ -144,19 +144,58 @@ export default function WebhookGuidePage() {
         <div style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(20px, 5vw, 40px) clamp(12px, 4vw, 20px) 60px" }}>
 
           {/* Header */}
-          <div style={{ marginBottom: 40 }}>
+          <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 24, fontWeight: 700, color: "var(--doc-gold)", letterSpacing: 2, marginBottom: 2 }}>TRLN</div>
-            <div style={{ fontSize: 13, color: "var(--doc-text-muted)", marginBottom: 32 }}>Tariff Refund &amp; Litigation Network</div>
+            <div style={{ fontSize: 13, color: "var(--doc-text-muted)", marginBottom: 24 }}>Tariff Refund &amp; Litigation Network</div>
             <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--doc-text)", margin: "0 0 8px" }}>Referral Webhook Integration Guide</h1>
             <div style={{ height: 2, width: 80, background: "var(--doc-gold)", borderRadius: 2 }} />
           </div>
 
-          {/* Endpoint Details */}
-          <Section title="Endpoint Details">
-            <div style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden" }}>
+          {/* Navigation Menu */}
+          <nav style={{ marginBottom: 40, background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, color: "var(--doc-text-muted)", marginBottom: 12 }}>Quick Navigation</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {[
+                { href: "#overview", label: "Overview" },
+                { href: "#deal-creation", label: "Deal Creation (POST)" },
+                { href: "#store-deal-id", label: "Store Deal ID" },
+                { href: "#update-deal", label: "Updating a Deal (PATCH)" },
+                { href: "#closing-deal", label: "Closing a Deal" },
+                { href: "#health-check", label: "Health Check" },
+              ].map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  style={{ fontSize: 13, color: "var(--doc-gold)", background: "var(--doc-step-bg)", border: "1px solid var(--doc-step-border)", borderRadius: 8, padding: "8px 16px", textDecoration: "none", fontWeight: 500, transition: "opacity 0.2s" }}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </nav>
+
+          {/* ═══ OVERVIEW — HOW PARTNER TRACKING WORKS ═══ */}
+          <div id="overview" style={{ scrollMarginTop: 20 }}>
+          <Section title="Overview — How Partner Tracking Works">
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {STEPS.map((text, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--doc-step-bg)", border: "1px solid var(--doc-step-border)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--doc-gold)" }}>{i + 1}</span>
+                  </div>
+                  <div style={{ fontSize: 14, color: "var(--doc-text-secondary)", paddingTop: 3 }}>{text}</div>
+                </div>
+              ))}
+            </div>
+            <InfoBox>
+              If <Code>utm_content</Code> is not present in the payload, the deal is still created and stored as &quot;UNATTRIBUTED&quot; so no leads are lost.
+            </InfoBox>
+
+            {/* Endpoint summary */}
+            <div style={{ marginTop: 20, background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden" }}>
               {[
                 ["Webhook URL", "https://trln.partners/api/webhook/referral"],
-                ["Method", "POST"],
+                ["Methods", "POST (create) · PATCH (update)"],
                 ["Content-Type", "application/json"],
                 ["Security Header", "x-webhook-secret: [provided separately]"],
               ].map(([label, value], i) => (
@@ -167,12 +206,14 @@ export default function WebhookGuidePage() {
               ))}
             </div>
             <InfoBox>
-              The security header is required on all requests. The secret token will be provided separately via secure channel. Requests without a valid token will receive a <Code>401 Unauthorized</Code> response.
+              The security header is required on all requests. The secret token will be provided separately via secure channel.
             </InfoBox>
           </Section>
+          </div>
 
-          {/* Accepted Fields */}
-          <Section title="Accepted Fields">
+          {/* ═══ DEAL CREATION (POST) ═══ */}
+          <div id="deal-creation" style={{ scrollMarginTop: 20 }}>
+          <Section title="Deal Creation (POST)">
             <p style={{ fontSize: 14, color: "var(--doc-text-muted)", marginBottom: 20 }}>
               All fields should be sent as a flat JSON object in the POST body. Field names are flexible — the endpoint accepts multiple naming conventions (snake_case, camelCase, or form labels).
             </p>
@@ -219,8 +260,8 @@ export default function WebhookGuidePage() {
             </div>
           </Section>
 
-          {/* Responses */}
-          <Section title="Responses">
+          {/* POST Responses */}
+          <Section title="POST Responses">
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <ResponseBlock color="var(--doc-green)" label="201 Created" body={`{\n  "received": true,\n  "dealId": "clx1234...",\n  "dealName": "Acme Imports LLC",\n  "partnerCode": "PTNABC123"\n}`} />
               <ResponseBlock color="var(--doc-yellow)" label="400 Validation Error" body={`{\n  "error": "At least one of: name, email, or company is required"\n}`} />
@@ -228,33 +269,10 @@ export default function WebhookGuidePage() {
             </div>
           </Section>
 
-          {/* Partner Tracking */}
-          <Section title="How Partner Tracking Works">
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {STEPS.map((text, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--doc-step-bg)", border: "1px solid var(--doc-step-border)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--doc-gold)" }}>{i + 1}</span>
-                  </div>
-                  <div style={{ fontSize: 14, color: "var(--doc-text-secondary)", paddingTop: 3 }}>{text}</div>
-                </div>
-              ))}
-            </div>
-            <InfoBox>
-              If <Code>utm_content</Code> is not present in the payload, the deal is still created and stored as &quot;UNATTRIBUTED&quot; so no leads are lost.
-            </InfoBox>
-          </Section>
+          </div>
 
-          {/* Health Check */}
-          <Section title="Health Check">
-            <p style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 12 }}>To verify the endpoint is live, send a <Code>GET</Code> request to the same URL:</p>
-            <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "12px 20px", fontSize: 13, color: "var(--doc-pre-text)", overflowX: "auto", margin: 0 }}>
-              GET https://trln.partners/api/webhook/referral
-            </pre>
-            <p style={{ fontSize: 13, color: "var(--doc-text-muted)", marginTop: 8 }}>Returns a JSON object with field documentation and endpoint status.</p>
-          </Section>
-
-          {/* ── IMPORTANT: STORING DEAL ID ── */}
+          {/* ═══ STORE DEAL ID ═══ */}
+          <div id="store-deal-id" style={{ scrollMarginTop: 20 }}>
           <Section title="Important: Store the Deal ID">
             <InfoBox>
               When you create a deal via <Code>POST</Code>, the response includes a <Code>dealId</Code>. <strong style={{ color: "var(--doc-gold)" }}>You must store this ID</strong> in your HubSpot deal record. It is required to send future updates (stage changes, amounts, etc.) to our system.
@@ -281,7 +299,10 @@ export default function WebhookGuidePage() {
             </div>
           </Section>
 
-          {/* ── DEAL UPDATE ENDPOINT ── */}
+          </div>
+
+          {/* ═══ UPDATING A DEAL (PATCH) ═══ */}
+          <div id="update-deal" style={{ scrollMarginTop: 20 }}>
           <Section title="Updating a Deal (PATCH)">
             <div style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
               {[
@@ -364,6 +385,7 @@ export default function WebhookGuidePage() {
           </Section>
 
           {/* ── CLOSED LOST EXAMPLE ── */}
+          <div id="closing-deal" style={{ scrollMarginTop: 20 }}>
           <Section title="Closing a Deal">
             <p style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 16 }}>When a deal reaches its final stage, send a PATCH with the stage. The close date is recorded automatically.</p>
 
@@ -393,6 +415,20 @@ export default function WebhookGuidePage() {
               </div>
             </div>
           </Section>
+
+          </div>
+          </div>
+
+          {/* ═══ HEALTH CHECK ═══ */}
+          <div id="health-check" style={{ scrollMarginTop: 20 }}>
+          <Section title="Health Check">
+            <p style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 12 }}>To verify the endpoint is live, send a <Code>GET</Code> request to the same URL:</p>
+            <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "12px 20px", fontSize: 13, color: "var(--doc-pre-text)", overflowX: "auto", margin: 0 }}>
+              GET https://trln.partners/api/webhook/referral
+            </pre>
+            <p style={{ fontSize: 13, color: "var(--doc-text-muted)", marginTop: 8 }}>Returns a JSON object with field documentation and endpoint status.</p>
+          </Section>
+          </div>
 
           {/* Footer */}
           <div style={{ borderTop: "1px solid var(--doc-border)", paddingTop: 20, marginTop: 48, display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--doc-text-faint)" }}>
