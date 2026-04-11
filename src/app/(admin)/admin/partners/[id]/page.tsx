@@ -740,38 +740,29 @@ export default function PartnerDetailPage() {
           <div className="px-5 py-8 text-center font-body text-[13px] text-[var(--app-text-muted)]">No documents uploaded.</div>
         ) : (
           <div>
+            {/* Column headers */}
+            <div className="hidden sm:grid grid-cols-[1.5fr_0.8fr_0.6fr_0.8fr] gap-3 px-5 py-2.5 border-b border-[var(--app-border)]">
+              <div className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">Document Name</div>
+              <div className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">Document Type</div>
+              <div className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">Status</div>
+              <div className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted text-right">Actions</div>
+            </div>
             {documents.map((d) => (
-              <div key={d.id} className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 flex items-center justify-between gap-2">
-                <div className="flex-1 min-w-0">
+              <div key={d.id} className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 sm:grid sm:grid-cols-[1.5fr_0.8fr_0.6fr_0.8fr] sm:gap-3 sm:items-center flex flex-col sm:flex-row gap-2">
+                <div className="min-w-0">
                   <div className="font-body text-[13px] text-[var(--app-text)] truncate">{d.fileName}</div>
-                  <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
-                    {d.docType.toUpperCase()} &middot; {fmtDate(d.createdAt)}
+                  <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 sm:hidden">
+                    {d.docType === "agreement" ? "Agreement" : d.docType === "w9" ? "Tax Document (W9)" : d.docType.toUpperCase()} &middot; {fmtDate(d.createdAt)}
                   </div>
+                  <div className="hidden sm:block font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">{fmtDate(d.createdAt)}</div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {/* View / Download */}
-                  {d.fileUrl && (
-                    <>
-                      <button
-                        onClick={() => {
-                          const w = window.open();
-                          if (w) { w.document.write(`<img src="${d.fileUrl}" style="max-width:100%;height:auto;" />`); w.document.title = d.fileName; }
-                        }}
-                        className="font-body text-[10px] text-brand-gold/60 hover:text-brand-gold transition-colors"
-                        title="View document"
-                      >
-                        View
-                      </button>
-                      <a
-                        href={d.fileUrl}
-                        download={d.fileName}
-                        className="font-body text-[10px] text-blue-400/60 hover:text-blue-400 transition-colors"
-                        title="Download document"
-                      >
-                        Download
-                      </a>
-                    </>
-                  )}
+                <div className="hidden sm:block">
+                  <span className="font-body text-[12px] text-[var(--app-text-secondary)]">
+                    {d.docType === "agreement" ? "Agreement" : d.docType === "w9" ? "Tax Document (W9)" : d.docType.toUpperCase()}
+                  </span>
+                </div>
+                {/* Status column */}
+                <div>
                   <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${
                     d.status === "approved"
                       ? "bg-green-500/10 text-green-400 border border-green-500/20"
@@ -785,6 +776,25 @@ export default function PartnerDetailPage() {
                   }`}>
                     {d.status.replace("_", " ")}
                   </span>
+                </div>
+                {/* Actions column */}
+                <div className="flex items-center gap-2 justify-end">
+                  {d.fileUrl && (
+                    <>
+                      <button
+                        onClick={() => {
+                          const w = window.open();
+                          if (w) { w.document.write(`<iframe src="${d.fileUrl}" style="width:100%;height:100vh;border:none;"></iframe>`); w.document.title = d.fileName; }
+                        }}
+                        className="font-body text-[10px] text-brand-gold/60 hover:text-brand-gold transition-colors"
+                      >
+                        View
+                      </button>
+                      <a href={d.fileUrl} download={d.fileName} className="font-body text-[10px] text-blue-400/60 hover:text-blue-400 transition-colors">
+                        Download
+                      </a>
+                    </>
+                  )}
                   {d.status !== "voided" && (
                     <button
                       onClick={async () => {
