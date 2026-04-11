@@ -180,6 +180,7 @@ function SignupContent() {
                 <div>
                   <h2 className="font-display text-lg font-bold mb-1">Welcome to {FIRM_SHORT}!</h2>
                   <p className="font-body text-[13px] theme-text-muted">Your account has been created. Please sign your partnership agreement below to activate your account.</p>
+                  <p className="font-body text-[11px] theme-text-faint mt-1">A copy has also been sent to your email if you prefer to complete it later.</p>
                 </div>
                 <div className="text-center sm:text-right shrink-0">
                   <div className="font-body text-[10px] theme-text-muted uppercase tracking-wider">Your Partner Code</div>
