@@ -32,7 +32,11 @@ model Partner {
   tin                   String?  // TIN in ##-####### format
   status                String   @default("active") // active, pending, inactive, blocked
   referredByPartnerCode String?  // who recruited them
-  // Commission overrides (null = use global defaults)
+  // Commission tier system
+  tier                  String   @default("l1")  // "l1", "l2", "l3"
+  commissionRate        Float    @default(0.25)   // rate this partner earns on their direct deals (% of firm fee)
+  recruitedViaInvite    String?  // token from RecruitmentInvite that created this partner
+  // Legacy commission overrides (retained for backward compat)
   l1Rate                Float?
   l2Rate                Float?
   l3Rate                Float?
@@ -103,6 +107,23 @@ model Document {
   updatedAt   DateTime @updatedAt
 }
 
+// ─── RECRUITMENT INVITES ─────────────────────────────────────────────────────
+model RecruitmentInvite {
+  id              String    @id @default(cuid())
+  token           String    @unique       // URL-safe random token for the signup link
+  inviterCode     String                  // partnerCode of the inviting partner
+  targetTier      String                  // "l2" or "l3"
+  commissionRate  Float                   // 0.10, 0.15, or 0.20
+  status          String    @default("active") // active, used, expired
+  usedByPartnerCode String?               // filled when someone signs up with this invite
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([token])
+  @@index([inviterCode])
+}
+
 // ─── PARTNERSHIP AGREEMENTS ──────────────────────────────────────────────────
 model PartnershipAgreement {
   id                    String   @id @default(cuid())
@@ -110,6 +131,8 @@ model PartnershipAgreement {
   version               Int      @default(1)
   signwellDocumentId    String?
   embeddedSigningUrl    String?  // SignWell embedded signing URL for in-portal signing
+  templateRate          Float?   // the commission rate this agreement is for (0.25, 0.20, 0.15, 0.10)
+  templateId            String?  // SignWell template ID used for this agreement
   status                String   @default("not_sent") // not_sent, pending, signed, amended
   sentDate              DateTime?
   signedDate            DateTime?
@@ -288,12 +311,18 @@ model PortalSettings {
   // Branding images (stored as base64 data URLs)
   logoUrl      String @default("")  // company logo (displayed in sidebar)
   faviconUrl   String @default("")  // favicon (displayed in browser tab)
-  // Commission Rates (stored as decimals: 0.20 = 20%)
-  firmFeeRate Float @default(0.20)
-  l1Rate      Float @default(0.20)
-  l2Rate      Float @default(0.05)
-  l3Rate      Float @default(0)
-  l3Enabled   Boolean @default(false)
+  // Commission Rates (stored as decimals: 0.25 = 25%)
+  firmFeeRate        Float   @default(0.20)
+  maxCommissionRate  Float   @default(0.25) // L1 rate / total cap (25%)
+  l1Rate             Float   @default(0.25) // L1 direct deal rate
+  l2Rate             Float   @default(0.05) // legacy default
+  l3Rate             Float   @default(0)    // legacy default
+  l3Enabled          Boolean @default(false)
+  // Agreement templates (SignWell template IDs per rate)
+  agreementTemplate25 String @default("") // 25% agreement template
+  agreementTemplate20 String @default("") // 20% agreement template
+  agreementTemplate15 String @default("") // 15% agreement template
+  agreementTemplate10 String @default("") // 10% agreement template
   // Navigation visibility + order (JSON strings)
   hiddenNavItems String @default("[]")
   navOrder       String @default("[]")  // ordered array of nav IDs

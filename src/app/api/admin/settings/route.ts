@@ -59,6 +59,11 @@ export async function PUT(req: NextRequest) {
     if (body.supportEmail !== undefined) data.supportEmail = body.supportEmail;
     if (body.logoUrl !== undefined) data.logoUrl = body.logoUrl;
     if (body.faviconUrl !== undefined) data.faviconUrl = body.faviconUrl;
+    if (body.agreementTemplate25 !== undefined) data.agreementTemplate25 = body.agreementTemplate25;
+    if (body.agreementTemplate20 !== undefined) data.agreementTemplate20 = body.agreementTemplate20;
+    if (body.agreementTemplate15 !== undefined) data.agreementTemplate15 = body.agreementTemplate15;
+    if (body.agreementTemplate10 !== undefined) data.agreementTemplate10 = body.agreementTemplate10;
+    if (body.maxCommissionRate !== undefined) data.maxCommissionRate = parseFloat(body.maxCommissionRate);
 
     // Commission Rates
     if (body.firmFeeRate !== undefined) data.firmFeeRate = parseFloat(body.firmFeeRate);

@@ -5,8 +5,8 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
 
-  // Public docs — accessible to anyone, no redirects
-  if (pathname.startsWith("/docs/")) {
+  // Public pages — accessible to anyone, no redirects
+  if (pathname.startsWith("/docs/") || pathname.startsWith("/signup")) {
     return NextResponse.next();
   }
 

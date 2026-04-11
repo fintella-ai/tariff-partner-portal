@@ -6,11 +6,17 @@ export const FIRM_PHONE = "(410) 497-5947";
 
 // ─── COMMISSION DEFAULTS ─────────────────────────────────────────────────────
 // Firm fee rate is per-deal (negotiated between firm and client).
-// This example rate is only used for display/demo calculations.
 export const DEFAULT_FIRM_FEE_RATE = 0.20;
-export const DEFAULT_L1_RATE = 0.20; // 20% of firm fee
-export const DEFAULT_L2_RATE = 0.05; // 5% of firm fee
-export const DEFAULT_L3_RATE = 0; // off by default
+
+// Waterfall commission system: total partner payout capped at MAX_COMMISSION_RATE of firm fee
+export const MAX_COMMISSION_RATE = 0.25;        // L1 direct deal rate (25% of firm fee)
+export const ALLOWED_L2_RATES = [0.10, 0.15, 0.20]; // L1 chooses for their L2 recruits
+export const ALLOWED_L3_RATES = [0.10, 0.15];       // L2 chooses for their L3 recruits
+
+// Legacy defaults (kept for backward compatibility)
+export const DEFAULT_L1_RATE = 0.25; // 25% of firm fee
+export const DEFAULT_L2_RATE = 0.05; // legacy
+export const DEFAULT_L3_RATE = 0;    // off by default
 
 // ─── DEAL STAGES ─────────────────────────────────────────────────────────────
 export const STAGE_LABELS: Record<string, { label: string; color: string }> = {

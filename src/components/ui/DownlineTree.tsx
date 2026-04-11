@@ -6,6 +6,7 @@ export type TreePartner = {
   firstName: string;
   lastName: string;
   status: string;
+  commissionRate?: number; // e.g. 0.25, 0.20, 0.15, 0.10
   children: TreePartner[];
 };
 
@@ -55,6 +56,15 @@ function TreeNode({ partner, depth, isMobile }: { partner: TreePartner; depth: n
         <div className={`font-body ${isMobile ? "text-[11px]" : "text-[12px]"} font-semibold text-[var(--app-text)] leading-tight truncate min-w-0`}>
           {partner.firstName} {partner.lastName}
         </div>
+
+        {/* Rate badge */}
+        {partner.commissionRate !== undefined && (
+          <div className="mt-1">
+            <span className={`font-body ${isMobile ? "text-[9px]" : "text-[10px]"} font-semibold text-brand-gold bg-brand-gold/10 rounded-full px-1.5 py-0.5`}>
+              {Math.round(partner.commissionRate * 100)}%
+            </span>
+          </div>
+        )}
 
         {/* Code + status */}
         <div className="flex items-center justify-center gap-1.5 mt-1">

@@ -78,13 +78,14 @@ interface ReferralOpp {
   highlighted: boolean;
 }
 
-type TabId = "branding" | "navigation" | "homepage" | "commissions";
+type TabId = "branding" | "navigation" | "homepage" | "commissions" | "agreements";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "branding", label: "Branding" },
   { id: "navigation", label: "Navigation" },
   { id: "homepage", label: "Home Page" },
   { id: "commissions", label: "Commissions" },
+  { id: "agreements", label: "Agreements" },
 ];
 
 // ─── DEFAULT HOME CONTENT ───────────────────────────────────────────────────
@@ -125,10 +126,16 @@ export default function SettingsPage() {
   const [faviconUrl, setFaviconUrl] = useState("");
 
   // Commissions
-  const [l1Rate, setL1Rate] = useState("20");
+  const [l1Rate, setL1Rate] = useState("25");
   const [l2Rate, setL2Rate] = useState("5");
   const [l3Rate, setL3Rate] = useState("0");
   const [l3Enabled, setL3Enabled] = useState(false);
+
+  // Agreement templates (SignWell template IDs)
+  const [agreementTemplate25, setAgreementTemplate25] = useState("");
+  const [agreementTemplate20, setAgreementTemplate20] = useState("");
+  const [agreementTemplate15, setAgreementTemplate15] = useState("");
+  const [agreementTemplate10, setAgreementTemplate10] = useState("");
 
   // Navigation
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
@@ -161,6 +168,10 @@ export default function SettingsPage() {
       setL2Rate(String(Math.round(settings.l2Rate * 100)));
       setL3Rate(String(Math.round(settings.l3Rate * 100)));
       setL3Enabled(settings.l3Enabled);
+      setAgreementTemplate25(settings.agreementTemplate25 || "");
+      setAgreementTemplate20(settings.agreementTemplate20 || "");
+      setAgreementTemplate15(settings.agreementTemplate15 || "");
+      setAgreementTemplate10(settings.agreementTemplate10 || "");
 
       try { setHiddenNavItems(JSON.parse(settings.hiddenNavItems || "[]")); } catch { setHiddenNavItems([]); }
       try {
@@ -196,6 +207,7 @@ export default function SettingsPage() {
     try {
       const body = {
         firmName, firmShort, firmSlogan, firmPhone, supportEmail, logoUrl, faviconUrl,
+        agreementTemplate25, agreementTemplate20, agreementTemplate15, agreementTemplate10,
         l1Rate: parseFloat(l1Rate) / 100,
         l2Rate: parseFloat(l2Rate) / 100,
         l3Rate: parseFloat(l3Rate) / 100,
@@ -701,6 +713,45 @@ export default function SettingsPage() {
               </div>
               <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">Third-level downline (disabled by default)</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ AGREEMENTS TAB ═══ */}
+      {tab === "agreements" && (
+        <div className="card p-5 sm:p-6">
+          <div className="font-body font-semibold text-sm mb-1">Partnership Agreement Templates</div>
+          <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-5">
+            Enter the SignWell template ID for each commission tier. When a new partner signs up at a specific rate,
+            the corresponding template will be used to generate their partnership agreement.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>25% Template (L1 Partners)</label>
+              <input className={inputClass} value={agreementTemplate25} onChange={(e) => setAgreementTemplate25(e.target.value)} placeholder="SignWell template ID" />
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Direct L1 partners — 25% of firm fee</p>
+            </div>
+            <div>
+              <label className={labelClass}>20% Template (L2 Partners)</label>
+              <input className={inputClass} value={agreementTemplate20} onChange={(e) => setAgreementTemplate20(e.target.value)} placeholder="SignWell template ID" />
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">L2 partners at 20% — L1 earns 5% override</p>
+            </div>
+            <div>
+              <label className={labelClass}>15% Template (L2/L3 Partners)</label>
+              <input className={inputClass} value={agreementTemplate15} onChange={(e) => setAgreementTemplate15(e.target.value)} placeholder="SignWell template ID" />
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Partners at 15% — upline earns 10% override</p>
+            </div>
+            <div>
+              <label className={labelClass}>10% Template (L2/L3 Partners)</label>
+              <input className={inputClass} value={agreementTemplate10} onChange={(e) => setAgreementTemplate10(e.target.value)} placeholder="SignWell template ID" />
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Partners at 10% — upline earns 15% override</p>
+            </div>
+          </div>
+
+          <div className="mt-5 p-3.5 bg-brand-gold/[0.06] border border-brand-gold/20 rounded-lg">
+            <p className="font-body text-[12px] text-[var(--app-text-muted)] leading-relaxed">
+              <strong className="text-brand-gold">How it works:</strong> Upload 4 partnership agreement templates to SignWell (one per commission rate). Copy each template ID and paste it here. When partners sign up via recruitment links, the correct agreement is automatically sent based on the rate their recruiter chose.
+            </p>
           </div>
         </div>
       )}
