@@ -130,7 +130,7 @@ const FIELDS = [
 
 const STEPS = [
   <>TRLN partners share a referral link:<br /><span style={{ fontFamily: "monospace", fontSize: 12 }}>https://referral.frostlawaz.com/l/ANNEXATIONPR/?utm_content=PTNABC123</span></>,
-  "The client fills out the Frost Law referral form",
+  "When a client is qualified by our referral partner, our partner fills out the Frost Law referral form with the client's required information",
   <>The form system passes the <Code>utm_content</Code> value through to the webhook payload</>,
   "TRLN records the deal and attributes it to the correct partner",
   "The partner sees the deal in their portal dashboard",
