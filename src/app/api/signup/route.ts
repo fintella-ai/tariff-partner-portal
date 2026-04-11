@@ -151,6 +151,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       partnerCode,
+      embeddedSigningUrl: embeddedSigningUrl || null,
       message: `Account created! Your partnership agreement has been sent to ${email}. Once signed, you can log in with your email and partner code: ${partnerCode}`,
     }, { status: 201 });
   } catch (err: any) {
