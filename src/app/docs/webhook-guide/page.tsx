@@ -5,165 +5,263 @@ export const metadata: Metadata = {
   description: "Referral webhook integration guide for Frost Law",
 };
 
+function Code({ children }: { children: React.ReactNode }) {
+  return (
+    <code className="bg-white/10 text-[#f0d070] px-1.5 py-0.5 rounded text-[13px] font-mono">
+      {children}
+    </code>
+  );
+}
+
+function FieldBadge({ children }: { children: string }) {
+  return (
+    <span className="inline-block bg-white/[0.06] border border-white/10 text-white/80 px-2 py-0.5 rounded text-[12px] font-mono mr-1.5 mb-1.5">
+      {children}
+    </span>
+  );
+}
+
 export default function WebhookGuidePage() {
   return (
-    <div
-      style={{
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        maxWidth: 800,
-        margin: "40px auto",
-        padding: "0 20px",
-        color: "#1a1a1a",
-        lineHeight: 1.6,
-      }}
-    >
-      <div style={{ fontSize: 28, fontWeight: 700, color: "#c4a050", letterSpacing: 2, marginBottom: 4 }}>TRLN</div>
-      <div style={{ fontSize: 13, color: "#888", marginBottom: 30 }}>
-        Tariff Refund &amp; Litigation Network &mdash; Partner Portal
-      </div>
+    <div className="min-h-screen bg-[#060a18] text-white/90">
+      <div className="max-w-[860px] mx-auto px-5 sm:px-8 py-10 sm:py-16">
 
-      <h1 style={{ fontSize: 24, borderBottom: "2px solid #c4a050", paddingBottom: 10 }}>
-        Referral Webhook Integration Guide
-      </h1>
+        {/* Header */}
+        <div className="mb-10">
+          <div className="font-display text-xl sm:text-2xl font-bold text-[#c4a050] tracking-[2px] mb-1">TRLN</div>
+          <div className="text-[13px] text-white/30 mb-8">Tariff Refund &amp; Litigation Network</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Referral Webhook Integration Guide</h1>
+          <div className="h-[2px] w-20 bg-[#c4a050] rounded-full" />
+        </div>
 
-      {/* Endpoint Details */}
-      <h2 style={{ fontSize: 18, marginTop: 30, color: "#333" }}>Endpoint Details</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse", margin: "16px 0", fontSize: 14 }}>
-        <tbody>
-          <tr><td style={{ padding: "10px 14px", borderBottom: "1px solid #e0e0e0", fontWeight: 600, width: 160 }}>Webhook URL</td><td style={{ padding: "10px 14px", borderBottom: "1px solid #e0e0e0" }}><code style={codeStyle}>https://trln.partners/api/webhook/referral</code></td></tr>
-          <tr style={{ background: "#f9f9f9" }}><td style={{ padding: "10px 14px", borderBottom: "1px solid #e0e0e0", fontWeight: 600 }}>Method</td><td style={{ padding: "10px 14px", borderBottom: "1px solid #e0e0e0" }}><code style={codeStyle}>POST</code></td></tr>
-          <tr><td style={{ padding: "10px 14px", borderBottom: "1px solid #e0e0e0", fontWeight: 600 }}>Content-Type</td><td style={{ padding: "10px 14px", borderBottom: "1px solid #e0e0e0" }}><code style={codeStyle}>application/json</code></td></tr>
-          <tr style={{ background: "#f9f9f9" }}><td style={{ padding: "10px 14px", borderBottom: "1px solid #e0e0e0", fontWeight: 600 }}>Security Header</td><td style={{ padding: "10px 14px", borderBottom: "1px solid #e0e0e0" }}><code style={codeStyle}>x-webhook-secret: [provided separately]</code></td></tr>
-        </tbody>
-      </table>
+        {/* Endpoint Details */}
+        <section className="mb-10">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c4a050]" />
+            Endpoint Details
+          </h2>
+          <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl overflow-hidden">
+            {[
+              ["Webhook URL", "https://trln.partners/api/webhook/referral"],
+              ["Method", "POST"],
+              ["Content-Type", "application/json"],
+              ["Security Header", "x-webhook-secret: [provided separately]"],
+            ].map(([label, value], i) => (
+              <div key={label} className={`flex flex-col sm:flex-row sm:items-center px-5 py-3.5 ${i > 0 ? "border-t border-white/[0.06]" : ""}`}>
+                <div className="text-[12px] font-semibold text-white/50 uppercase tracking-wider sm:w-[160px] shrink-0 mb-1 sm:mb-0">{label}</div>
+                <div className="font-mono text-[13px] text-white/80 break-all">{value}</div>
+              </div>
+            ))}
+          </div>
 
-      <div style={infoBoxStyle}>
-        The security header is required on all requests. The secret token will be provided separately via secure channel. Requests without a valid token will receive a <code style={codeStyle}>401 Unauthorized</code> response.
-      </div>
+          <div className="mt-4 bg-[#c4a050]/[0.08] border border-[#c4a050]/20 rounded-lg px-5 py-3.5 text-[13px] text-white/60 leading-relaxed">
+            The security header is required on all requests. The secret token will be provided separately via secure channel. Requests without a valid token will receive a <Code>401 Unauthorized</Code> response.
+          </div>
+        </section>
 
-      {/* Accepted Fields */}
-      <h2 style={{ fontSize: 18, marginTop: 30, color: "#333" }}>Accepted Fields</h2>
-      <p>All fields should be sent as a flat JSON object in the POST body. Field names are flexible &mdash; the endpoint accepts multiple naming conventions (snake_case, camelCase, or form labels).</p>
+        {/* Accepted Fields */}
+        <section className="mb-10">
+          <h2 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c4a050]" />
+            Accepted Fields
+          </h2>
+          <p className="text-[13px] text-white/40 mb-5 leading-relaxed">
+            All fields should be sent as a flat JSON object in the POST body. Field names are flexible — the endpoint accepts multiple naming conventions (snake_case, camelCase, or form labels).
+          </p>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", margin: "16px 0", fontSize: 14 }}>
-        <thead>
-          <tr>
-            <th style={thStyle}>Category</th>
-            <th style={thStyle}>Fields</th>
-            <th style={thStyle}>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style={tdStyle}><strong>Partner tracking</strong></td>
-            <td style={tdStyle}><code style={codeStyle}>utm_content</code> <code style={codeStyle}>referral_code</code> <code style={codeStyle}>partner_code</code></td>
-            <td style={tdStyle}>Identifies which TRLN partner referred the client. Passed through from the referral link URL parameter.</td>
-          </tr>
-          <tr>
-            <td style={tdStyleAlt}><strong>Client info</strong></td>
-            <td style={tdStyleAlt}><code style={codeStyle}>first_name</code> <code style={codeStyle}>last_name</code> <code style={codeStyle}>email</code> <code style={codeStyle}>phone</code> <code style={codeStyle}>business_title</code></td>
-            <td style={tdStyleAlt}>Client contact details. At least one of name, email, or company is required.</td>
-          </tr>
-          <tr>
-            <td style={tdStyle}><strong>Business</strong></td>
-            <td style={tdStyle}><code style={codeStyle}>legal_entity_name</code> <code style={codeStyle}>service_of_interest</code> <code style={codeStyle}>city</code> <code style={codeStyle}>state</code></td>
-            <td style={tdStyle}>Business/company details and location.</td>
-          </tr>
-          <tr>
-            <td style={tdStyleAlt}><strong>Tariff</strong></td>
-            <td style={tdStyleAlt}><code style={codeStyle}>imports_goods</code> <code style={codeStyle}>import_countries</code> <code style={codeStyle}>annual_import_value</code> <code style={codeStyle}>importer_of_record</code></td>
-            <td style={tdStyleAlt}>Tariff-specific qualification fields.</td>
-          </tr>
-          <tr>
-            <td style={tdStyle}><strong>Deal stage</strong></td>
-            <td style={tdStyle}><code style={codeStyle}>dealstage</code> <code style={codeStyle}>deal_stage</code> <code style={codeStyle}>stage</code> <code style={codeStyle}>pipeline_stage</code> <code style={codeStyle}>status</code></td>
-            <td style={tdStyle}>Current stage in your pipeline. Stored exactly as sent (not mapped or transformed).</td>
-          </tr>
-          <tr>
-            <td style={tdStyleAlt}><strong>Notes</strong></td>
-            <td style={tdStyleAlt}><code style={codeStyle}>affiliate_notes</code></td>
-            <td style={tdStyleAlt}>Any additional notes or comments from the form submission.</td>
-          </tr>
-        </tbody>
-      </table>
+          <div className="space-y-3">
+            {[
+              {
+                category: "Partner Tracking",
+                color: "text-[#c4a050]",
+                borderColor: "border-[#c4a050]/20",
+                bgColor: "bg-[#c4a050]/[0.04]",
+                fields: ["utm_content", "referral_code", "partner_code"],
+                desc: "Identifies which TRLN partner referred the client. Passed through from the referral link URL parameter.",
+              },
+              {
+                category: "Client Info",
+                color: "text-green-400",
+                borderColor: "border-green-400/20",
+                bgColor: "bg-green-400/[0.04]",
+                fields: ["first_name", "last_name", "email", "phone", "business_title"],
+                desc: "Client contact details. At least one of name, email, or company is required.",
+              },
+              {
+                category: "Business",
+                color: "text-blue-400",
+                borderColor: "border-blue-400/20",
+                bgColor: "bg-blue-400/[0.04]",
+                fields: ["legal_entity_name", "service_of_interest", "city", "state"],
+                desc: "Business/company details and location.",
+              },
+              {
+                category: "Tariff",
+                color: "text-purple-400",
+                borderColor: "border-purple-400/20",
+                bgColor: "bg-purple-400/[0.04]",
+                fields: ["imports_goods", "import_countries", "annual_import_value", "importer_of_record"],
+                desc: "Tariff-specific qualification fields.",
+              },
+              {
+                category: "Deal Stage",
+                color: "text-orange-400",
+                borderColor: "border-orange-400/20",
+                bgColor: "bg-orange-400/[0.04]",
+                fields: ["dealstage", "deal_stage", "stage", "pipeline_stage", "status"],
+                desc: "Current stage in your pipeline. Stored exactly as sent (not mapped or transformed).",
+              },
+              {
+                category: "Notes",
+                color: "text-white/60",
+                borderColor: "border-white/10",
+                bgColor: "bg-white/[0.02]",
+                fields: ["affiliate_notes"],
+                desc: "Any additional notes or comments from the form submission.",
+              },
+            ].map((row) => (
+              <div key={row.category} className={`${row.bgColor} border ${row.borderColor} rounded-xl px-5 py-4`}>
+                <div className={`text-[12px] font-semibold uppercase tracking-wider ${row.color} mb-2.5`}>{row.category}</div>
+                <div className="mb-2.5 flex flex-wrap">
+                  {row.fields.map((f) => <FieldBadge key={f}>{f}</FieldBadge>)}
+                </div>
+                <div className="text-[13px] text-white/40 leading-relaxed">{row.desc}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      {/* Example Request */}
-      <h2 style={{ fontSize: 18, marginTop: 30, color: "#333" }}>Example Request</h2>
-      <pre style={preStyle}>{`POST https://trln.partners/api/webhook/referral
-Content-Type: application/json
-x-webhook-secret: [your-secret-token]
+        {/* Example Request */}
+        <section className="mb-10">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c4a050]" />
+            Example Request
+          </h2>
+          <div className="bg-[#0c1228] border border-white/[0.08] rounded-xl overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+              <span className="text-[11px] text-white/30 font-mono">POST /api/webhook/referral</span>
+            </div>
+            <pre className="px-5 py-4 text-[13px] leading-[1.7] overflow-x-auto text-white/70">
+{`{
+  `}<span className="text-[#c4a050]">&quot;utm_content&quot;</span>{`:        `}<span className="text-green-300">&quot;PTNABC123&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;first_name&quot;</span>{`:        `}<span className="text-green-300">&quot;Jane&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;last_name&quot;</span>{`:         `}<span className="text-green-300">&quot;Smith&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;email&quot;</span>{`:             `}<span className="text-green-300">&quot;jane@acmeimports.com&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;phone&quot;</span>{`:             `}<span className="text-green-300">&quot;(555) 123-4567&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;business_title&quot;</span>{`:    `}<span className="text-green-300">&quot;CFO&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;legal_entity_name&quot;</span>{`: `}<span className="text-green-300">&quot;Acme Imports LLC&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;service_of_interest&quot;</span>{`:`}<span className="text-green-300">&quot;Tariff Refund Support&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;city&quot;</span>{`:              `}<span className="text-green-300">&quot;Phoenix&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;state&quot;</span>{`:             `}<span className="text-green-300">&quot;AZ&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;imports_goods&quot;</span>{`:     `}<span className="text-green-300">&quot;Yes&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;import_countries&quot;</span>{`:  `}<span className="text-green-300">&quot;China, Vietnam&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;annual_import_value&quot;</span>{`:`}<span className="text-green-300">&quot;$1M - $5M&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;importer_of_record&quot;</span>{`: `}<span className="text-green-300">&quot;Acme Imports LLC&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;dealstage&quot;</span>{`:         `}<span className="text-green-300">&quot;Qualified&quot;</span>{`,
+  `}<span className="text-[#c4a050]">&quot;affiliate_notes&quot;</span>{`:   `}<span className="text-green-300">&quot;Referred by CPA network&quot;</span>{`
+}`}
+            </pre>
+          </div>
+        </section>
 
-{
-  "utm_content": "PTNABC123",
-  "first_name": "Jane",
-  "last_name": "Smith",
-  "email": "jane@acmeimports.com",
-  "phone": "(555) 123-4567",
-  "business_title": "CFO",
-  "legal_entity_name": "Acme Imports LLC",
-  "service_of_interest": "Tariff Refund Support",
-  "city": "Phoenix",
-  "state": "AZ",
-  "imports_goods": "Yes",
-  "import_countries": "China, Vietnam",
-  "annual_import_value": "$1M - $5M",
-  "importer_of_record": "Acme Imports LLC",
-  "dealstage": "Qualified",
-  "affiliate_notes": "Referred by CPA network"
-}`}</pre>
+        {/* Responses */}
+        <section className="mb-10">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c4a050]" />
+            Responses
+          </h2>
 
-      {/* Responses */}
-      <h2 style={{ fontSize: 18, marginTop: 30, color: "#333" }}>Responses</h2>
-
-      <h3 style={{ fontSize: 15, marginTop: 24, color: "#555" }}>Success (201 Created)</h3>
-      <pre style={preStyle}>{`{
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-green-400" />
+                <span className="text-[13px] font-semibold text-green-400">201 Created</span>
+              </div>
+              <pre className="bg-[#0c1228] border border-white/[0.08] rounded-xl px-5 py-4 text-[13px] leading-[1.7] text-white/70 overflow-x-auto">
+{`{
   "received": true,
   "dealId": "clx1234...",
   "dealName": "Acme Imports LLC",
   "partnerCode": "PTNABC123"
-}`}</pre>
+}`}
+              </pre>
+            </div>
 
-      <h3 style={{ fontSize: 15, marginTop: 24, color: "#555" }}>Validation Error (400)</h3>
-      <pre style={preStyle}>{`{
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-yellow-400" />
+                <span className="text-[13px] font-semibold text-yellow-400">400 Validation Error</span>
+              </div>
+              <pre className="bg-[#0c1228] border border-white/[0.08] rounded-xl px-5 py-4 text-[13px] leading-[1.7] text-white/70 overflow-x-auto">
+{`{
   "error": "At least one of: name, email, or company is required"
-}`}</pre>
+}`}
+              </pre>
+            </div>
 
-      <h3 style={{ fontSize: 15, marginTop: 24, color: "#555" }}>Unauthorized (401)</h3>
-      <pre style={preStyle}>{`{
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-red-400" />
+                <span className="text-[13px] font-semibold text-red-400">401 Unauthorized</span>
+              </div>
+              <pre className="bg-[#0c1228] border border-white/[0.08] rounded-xl px-5 py-4 text-[13px] leading-[1.7] text-white/70 overflow-x-auto">
+{`{
   "error": "Unauthorized"
-}`}</pre>
+}`}
+              </pre>
+            </div>
+          </div>
+        </section>
 
-      {/* Partner Tracking */}
-      <h2 style={{ fontSize: 18, marginTop: 30, color: "#333" }}>How Partner Tracking Works</h2>
-      <ol>
-        <li>TRLN partners share a referral link:<br /><code style={codeStyle}>https://referral.frostlawaz.com/l/ANNEXATIONPR/?utm_content=PTNABC123</code></li>
-        <li>The client fills out the Frost Law referral form</li>
-        <li>The form system passes the <code style={codeStyle}>utm_content</code> value through to the webhook payload</li>
-        <li>TRLN records the deal and attributes it to the correct partner</li>
-        <li>The partner sees the deal in their portal dashboard</li>
-      </ol>
+        {/* How Partner Tracking Works */}
+        <section className="mb-10">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c4a050]" />
+            How Partner Tracking Works
+          </h2>
 
-      <div style={infoBoxStyle}>
-        If <code style={codeStyle}>utm_content</code> is not present in the payload, the deal is still created and stored as &quot;UNATTRIBUTED&quot; so no leads are lost.
-      </div>
+          <div className="space-y-3">
+            {[
+              { step: "1", text: <>TRLN partners share a referral link:<br /><span className="font-mono text-[12px] text-[#c4a050]/80 break-all">https://referral.frostlawaz.com/l/ANNEXATIONPR/?utm_content=PTNABC123</span></> },
+              { step: "2", text: "The client fills out the Frost Law referral form" },
+              { step: "3", text: <>The form system passes the <Code>utm_content</Code> value through to the webhook payload</> },
+              { step: "4", text: "TRLN records the deal and attributes it to the correct partner" },
+              { step: "5", text: "The partner sees the deal in their portal dashboard" },
+            ].map((item) => (
+              <div key={item.step} className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-[#c4a050]/15 border border-[#c4a050]/25 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-[12px] font-bold text-[#c4a050]">{item.step}</span>
+                </div>
+                <div className="text-[14px] text-white/60 leading-relaxed pt-0.5">{item.text}</div>
+              </div>
+            ))}
+          </div>
 
-      {/* Health Check */}
-      <h2 style={{ fontSize: 18, marginTop: 30, color: "#333" }}>Health Check</h2>
-      <p>To verify the endpoint is live, send a <code style={codeStyle}>GET</code> request to the same URL:</p>
-      <pre style={preStyle}>GET https://trln.partners/api/webhook/referral</pre>
-      <p>Returns a JSON object with field documentation and endpoint status.</p>
+          <div className="mt-5 bg-[#c4a050]/[0.08] border border-[#c4a050]/20 rounded-lg px-5 py-3.5 text-[13px] text-white/60 leading-relaxed">
+            If <Code>utm_content</Code> is not present in the payload, the deal is still created and stored as &quot;UNATTRIBUTED&quot; so no leads are lost.
+          </div>
+        </section>
 
-      <div style={{ marginTop: 40, paddingTop: 16, borderTop: "1px solid #ddd", fontSize: 12, color: "#999" }}>
-        TRLN Partner Portal &mdash; Webhook Integration Guide<br />
-        Generated April 2026
+        {/* Health Check */}
+        <section className="mb-10">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c4a050]" />
+            Health Check
+          </h2>
+          <p className="text-[14px] text-white/50 mb-3">To verify the endpoint is live, send a <Code>GET</Code> request to the same URL:</p>
+          <pre className="bg-[#0c1228] border border-white/[0.08] rounded-xl px-5 py-3 text-[13px] text-white/70 overflow-x-auto">
+            GET https://trln.partners/api/webhook/referral
+          </pre>
+          <p className="text-[13px] text-white/40 mt-2">Returns a JSON object with field documentation and endpoint status.</p>
+        </section>
+
+        {/* Footer */}
+        <div className="border-t border-white/[0.06] pt-5 mt-12 flex items-center justify-between">
+          <div className="text-[11px] text-white/20">TRLN Partner Portal &mdash; Webhook Integration Guide</div>
+          <div className="text-[11px] text-white/20">April 2026</div>
+        </div>
       </div>
     </div>
   );
 }
-
-const codeStyle: React.CSSProperties = { background: "#f0f0f0", padding: "2px 6px", borderRadius: 3, fontSize: 13, fontFamily: "'SF Mono', Monaco, Consolas, monospace" };
-const preStyle: React.CSSProperties = { background: "#1a1a2e", color: "#e0e0e0", padding: "16px 20px", borderRadius: 8, overflowX: "auto", fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" };
-const thStyle: React.CSSProperties = { background: "#1a1a2e", color: "#f0d070", textAlign: "left", padding: "10px 14px", fontWeight: 600 };
-const tdStyle: React.CSSProperties = { padding: "10px 14px", borderBottom: "1px solid #e0e0e0", verticalAlign: "top" };
-const tdStyleAlt: React.CSSProperties = { ...tdStyle, background: "#f9f9f9" };
-const infoBoxStyle: React.CSSProperties = { background: "#fdf6e3", borderLeft: "4px solid #c4a050", padding: "12px 16px", margin: "16px 0", borderRadius: "0 6px 6px 0", fontSize: 14 };
