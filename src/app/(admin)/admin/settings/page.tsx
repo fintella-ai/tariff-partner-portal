@@ -683,35 +683,86 @@ export default function SettingsPage() {
       {/* ═══ COMMISSIONS TAB ═══ */}
       {tab === "commissions" && (
         <div className="card p-5 sm:p-6">
-          <div className="font-body font-semibold text-sm mb-1">Default Commission Rates</div>
-          <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-2">These are the default rates for all partners. Override per-partner in Partners &rarr; View Partner.</p>
-          <p className="font-body text-[11px] text-[var(--app-text-muted)] mb-5 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg p-3">
-            The firm fee rate is negotiated per deal and set at the deal level — it is not a global default.
-            Commission percentages below are calculated as a percentage of the firm fee on each deal.
+          <div className="font-body font-semibold text-sm mb-1">Commission Structure</div>
+          <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-5">
+            Partner commissions are calculated as a percentage of the firm fee on each deal.
+            The firm fee rate is negotiated per deal at the deal level.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className={labelClass}>L1 Commission Rate (%)</label>
-              <input className={inputClass} type="number" min="0" max="100" value={l1Rate} onChange={(e) => setL1Rate(e.target.value)} />
-              <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">Direct referral commission (% of firm fee)</p>
+
+          {/* L1 Rate — fixed */}
+          <div className="mb-6 p-4 rounded-lg bg-brand-gold/[0.06] border border-brand-gold/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-body text-[12px] font-semibold text-brand-gold uppercase tracking-wider">L1 Commission Rate</div>
+                <p className="font-body text-[11px] text-[var(--app-text-muted)] mt-1">All L1 partners earn 25% of the firm fee on their direct deals. This is the maximum total commission across all tiers.</p>
+              </div>
+              <div className="font-display text-3xl font-bold text-brand-gold">25%</div>
             </div>
-            <div>
-              <label className={labelClass}>L2 Commission Rate (%)</label>
-              <input className={inputClass} type="number" min="0" max="100" value={l2Rate} onChange={(e) => setL2Rate(e.target.value)} />
-              <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">Downline commission (% of firm fee)</p>
+          </div>
+
+          {/* L2 & L3 Info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div className="p-4 rounded-lg" style={{ background: "var(--app-card-bg)", border: "1px solid var(--app-border)" }}>
+              <div className="font-body text-[12px] font-semibold text-purple-400 uppercase tracking-wider mb-2">L2 Partner Rates</div>
+              <div className="flex gap-2 mb-2">
+                <span className="font-body text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full px-2.5 py-0.5">10%</span>
+                <span className="font-body text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full px-2.5 py-0.5">15%</span>
+                <span className="font-body text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full px-2.5 py-0.5">20%</span>
+              </div>
+              <p className="font-body text-[11px] text-[var(--app-text-muted)]">
+                L1 partners choose one of these rates when recruiting an L2 partner. The L1 earns the override (25% minus L2 rate).
+              </p>
             </div>
-            <div>
-              <label className={labelClass}>L3 Commission Rate (%)</label>
-              <div className="flex gap-3">
-                <input className={`${inputClass} flex-1`} type="number" min="0" max="100" value={l3Rate} onChange={(e) => setL3Rate(e.target.value)} disabled={!l3Enabled} />
+            <div className="p-4 rounded-lg" style={{ background: "var(--app-card-bg)", border: "1px solid var(--app-border)" }}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-body text-[12px] font-semibold text-blue-400 uppercase tracking-wider">L3 Partner Rates</div>
                 <button
                   onClick={() => setL3Enabled(!l3Enabled)}
-                  className={`relative inline-flex h-10 w-16 items-center rounded-lg shrink-0 transition-colors ${l3Enabled ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full shrink-0 transition-colors ${l3Enabled ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
                 >
-                  <span className={`inline-block h-6 w-6 transform rounded-md bg-white transition-transform ${l3Enabled ? "translate-x-8" : "translate-x-2"}`} />
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${l3Enabled ? "translate-x-6" : "translate-x-1"}`} />
                 </button>
               </div>
-              <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">Third-level downline (disabled by default)</p>
+              {l3Enabled ? (
+                <>
+                  <div className="flex gap-2 mb-2">
+                    <span className="font-body text-[11px] bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full px-2.5 py-0.5">10%</span>
+                    <span className="font-body text-[11px] bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full px-2.5 py-0.5">15%</span>
+                  </div>
+                  <p className="font-body text-[11px] text-[var(--app-text-muted)]">
+                    L2 partners choose a rate for their L3 recruits. The override splits between L2 and L1 to total 25%.
+                  </p>
+                </>
+              ) : (
+                <p className="font-body text-[11px] text-[var(--app-text-muted)]">
+                  L3 recruitment is currently disabled. Enable to allow L2 partners to recruit their own downline.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Waterfall example */}
+          <div className="p-4 rounded-lg" style={{ background: "var(--app-card-bg)", border: "1px solid var(--app-border)" }}>
+            <div className="font-body text-[12px] font-semibold text-[var(--app-text-secondary)] uppercase tracking-wider mb-3">Commission Waterfall Example</div>
+            <div className="space-y-2 font-body text-[12px] text-[var(--app-text-muted)]">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-brand-gold" />
+                <span><strong className="text-brand-gold">L1 direct deal:</strong> L1 earns 25% of firm fee</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-purple-400" />
+                <span><strong className="text-purple-400">L2 deal (at 20%):</strong> L2 earns 20%, L1 override = 5%</span>
+              </div>
+              {l3Enabled && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-400" />
+                  <span><strong className="text-blue-400">L3 deal (at 10%):</strong> L3 earns 10%, L2 override = 10%, L1 override = 5%</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 pt-1" style={{ borderTop: "1px solid var(--app-border)" }}>
+                <span className="w-2 h-2 rounded-full bg-green-400" />
+                <span><strong className="text-green-400">Total:</strong> Always 25% of firm fee across all tiers</span>
+              </div>
             </div>
           </div>
         </div>
