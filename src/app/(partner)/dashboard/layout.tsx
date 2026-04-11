@@ -71,6 +71,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [isSudo, setIsSudo] = useState(false);
+
+  // Check for admin impersonation flag
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem("adminSudo") === "true") {
+      setIsSudo(true);
+    }
+  }, []);
   const [firmShort, setFirmShort] = useState(DEFAULT_FIRM_SHORT);
   const [firmSlogan, setFirmSlogan] = useState(DEFAULT_FIRM_SLOGAN);
   const [logoUrl, setLogoUrl] = useState("");
@@ -217,7 +225,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex min-h-screen" style={{ paddingBottom: device.isMobile ? 72 : 0 }}>
+    <div className="flex flex-col min-h-screen">
+      {/* ── ADMIN SUDO BANNER ── */}
+      {isSudo && (
+        <div className="w-full bg-purple-600 text-white text-center py-2 px-4 font-body text-[12px] font-semibold tracking-wider flex items-center justify-center gap-3 z-[1000] relative">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          ADMIN SUDO VIEW — Viewing portal as {user?.name || partnerCode}
+          <button
+            onClick={() => { sessionStorage.removeItem("adminSudo"); sessionStorage.removeItem("adminSudoPartner"); signOut({ callbackUrl: "/login" }); }}
+            className="ml-2 bg-white/20 hover:bg-white/30 rounded px-3 py-0.5 text-[11px] transition-colors"
+          >
+            Exit
+          </button>
+        </div>
+      )}
+
+      <div className="flex flex-1" style={{ paddingBottom: device.isMobile ? 72 : 0 }}>
       {/* ── DESKTOP SIDEBAR ── */}
       {device.isDesktop && (
         <div className={`${sidebarCollapsed ? "w-[68px]" : "w-[250px]"} theme-sidebar border-r p-4 flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto transition-all duration-200`}>
@@ -460,6 +486,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
