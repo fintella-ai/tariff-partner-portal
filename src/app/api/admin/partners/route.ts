@@ -39,7 +39,37 @@ export async function GET(req: NextRequest) {
       partners = await prisma.partner.findMany({ orderBy: { createdAt: "desc" } });
     }
 
-    return NextResponse.json({ partners });
+    // Fetch agreement and W9 status for each partner
+    const partnerCodes = partners.map((p: any) => p.partnerCode);
+
+    const [agreements, w9Docs] = await Promise.all([
+      prisma.partnershipAgreement.findMany({
+        where: { partnerCode: { in: partnerCodes } },
+        orderBy: { version: "desc" },
+        distinct: ["partnerCode"],
+        select: { partnerCode: true, status: true },
+      }),
+      prisma.document.findMany({
+        where: { partnerCode: { in: partnerCodes }, docType: "w9" },
+        orderBy: { createdAt: "desc" },
+        distinct: ["partnerCode"],
+        select: { partnerCode: true, status: true },
+      }),
+    ]);
+
+    const agreementMap: Record<string, string> = {};
+    agreements.forEach((a: any) => { agreementMap[a.partnerCode] = a.status; });
+
+    const w9Map: Record<string, string> = {};
+    w9Docs.forEach((d: any) => { w9Map[d.partnerCode] = d.status; });
+
+    const enriched = partners.map((p: any) => ({
+      ...p,
+      agreementStatus: agreementMap[p.partnerCode] || "none",
+      w9Status: w9Map[p.partnerCode] || "needed",
+    }));
+
+    return NextResponse.json({ partners: enriched });
   } catch {
     return NextResponse.json({ error: "Failed to fetch partners" }, { status: 500 });
   }

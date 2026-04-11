@@ -17,6 +17,20 @@ type Partner = {
   l2Rate: number | null;
   notes: string | null;
   signupDate: string;
+  agreementStatus: string;
+  w9Status: string;
+};
+
+const docBadge: Record<string, string> = {
+  signed: "bg-green-500/10 text-green-400 border border-green-500/20",
+  pending: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
+  amended: "bg-orange-500/10 text-orange-400 border border-orange-500/20",
+  not_sent: "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]",
+  none: "bg-red-500/10 text-red-400 border border-red-500/20",
+  approved: "bg-green-500/10 text-green-400 border border-green-500/20",
+  uploaded: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+  under_review: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
+  needed: "bg-red-500/10 text-red-400 border border-red-500/20",
 };
 
 const statusBadge: Record<string, string> = {
@@ -155,24 +169,29 @@ export default function AdminPartnersPage() {
       ) : (
         <>
           {/* Desktop Table */}
-          <div className="card hidden sm:block">
-            <div className="grid grid-cols-[1.5fr_1fr_1.2fr_0.8fr_0.8fr_0.6fr] gap-3 px-5 py-3 border-b border-[var(--app-border)]">
-              {["Partner", "Code", "Email", "Status", "Joined", ""].map((h) => (
+          <div className="card hidden sm:block overflow-x-auto">
+            <div className="grid grid-cols-[1.5fr_1fr_1.2fr_0.7fr_0.6fr_0.8fr_0.5fr] gap-3 px-5 py-3 border-b border-[var(--app-border)]">
+              {["Partner", "Code", "Email", "Status", "W9", "Joined", ""].map((h) => (
                 <div key={h} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider">{h}</div>
               ))}
             </div>
             {partners.map((p) => (
               <div
                 key={p.id}
-                className="grid grid-cols-[1.5fr_1fr_1.2fr_0.8fr_0.8fr_0.6fr] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer"
+                className="grid grid-cols-[1.5fr_1fr_1.2fr_0.7fr_0.6fr_0.8fr_0.5fr] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer"
                 onClick={() => router.push(`/admin/partners/${p.id}`)}
               >
-                <div className="font-body text-[13px] text-[var(--app-text)] font-medium">{p.firstName} {p.lastName}</div>
+                <div className="font-body text-[13px] text-[var(--app-text)] font-medium truncate">{p.firstName} {p.lastName}</div>
                 <div className="font-mono text-[12px] text-[var(--app-text-secondary)]">{p.partnerCode}</div>
                 <div className="font-body text-[12px] text-[var(--app-text-secondary)] truncate">{p.email}</div>
                 <div>
                   <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[p.status] || statusBadge.active}`}>
                     {p.status}
+                  </span>
+                </div>
+                <div>
+                  <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${docBadge[p.w9Status] || docBadge.needed}`}>
+                    {p.w9Status === "under_review" ? "review" : p.w9Status}
                   </span>
                 </div>
                 <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(p.signupDate)}</div>
@@ -199,8 +218,16 @@ export default function AdminPartnersPage() {
                     {p.status}
                   </span>
                 </div>
-                <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-1">{p.email}</div>
-                <div className="font-body text-[11px] text-[var(--app-text-muted)]">Joined {fmtDate(p.signupDate)}</div>
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-2">{p.email}</div>
+                <div className="flex items-center justify-between">
+                  <div className="font-body text-[11px] text-[var(--app-text-muted)]">Joined {fmtDate(p.signupDate)}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-body text-[9px] text-[var(--app-text-muted)] uppercase">W9:</span>
+                    <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${docBadge[p.w9Status] || docBadge.needed}`}>
+                      {p.w9Status === "under_review" ? "review" : p.w9Status}
+                    </span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
