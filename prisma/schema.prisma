@@ -405,6 +405,7 @@ model Deal {
   l2CommissionStatus    String    @default("pending")
   // Notes
   notes                 String?
+  closedLostReason      String?   // reason if stage moved to closedlost
   closeDate             DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt

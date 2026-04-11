@@ -254,6 +254,146 @@ export default function WebhookGuidePage() {
             <p style={{ fontSize: 13, color: "var(--doc-text-muted)", marginTop: 8 }}>Returns a JSON object with field documentation and endpoint status.</p>
           </Section>
 
+          {/* ── IMPORTANT: STORING DEAL ID ── */}
+          <Section title="Important: Store the Deal ID">
+            <InfoBox>
+              When you create a deal via <Code>POST</Code>, the response includes a <Code>dealId</Code>. <strong style={{ color: "var(--doc-gold)" }}>You must store this ID</strong> in your HubSpot deal record. It is required to send future updates (stage changes, amounts, etc.) to our system.
+            </InfoBox>
+
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 8 }}>1. Create the deal:</div>
+              <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", fontSize: 13, lineHeight: 1.7, color: "var(--doc-pre-text)", overflowX: "auto", margin: 0 }}>
+{`POST https://trln.partners/api/webhook/referral
+→ 201 Created
+
+{
+  "received": true,
+  "dealId": "clx8f9abc123def456",
+  "dealName": "Acme Imports LLC",
+  "partnerCode": "PTNABC123"
+}`}
+              </pre>
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 8 }}>2. Store <Code>dealId</Code> in your HubSpot deal as a custom property (e.g. <Code>trln_deal_id</Code>)</div>
+              <div style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 8 }}>3. Use this ID for all future updates to the deal:</div>
+            </div>
+          </Section>
+
+          {/* ── DEAL UPDATE ENDPOINT ── */}
+          <Section title="Updating a Deal (PATCH)">
+            <div style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
+              {[
+                ["Endpoint", "PATCH /api/webhook/referral"],
+                ["Method", "PATCH"],
+                ["Required Field", "dealId (from the original POST response)"],
+                ["Security Header", "x-webhook-secret: [same as POST]"],
+              ].map(([label, value], i) => (
+                <div key={label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", padding: "14px 20px", borderTop: i > 0 ? "1px solid var(--doc-border-subtle)" : "none", gap: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--doc-text-muted)", textTransform: "uppercase", letterSpacing: 1, width: 150, flexShrink: 0 }}>{label}</div>
+                  <div style={{ fontFamily: "monospace", fontSize: 13, color: "var(--doc-text-secondary)", wordBreak: "break-all" }}>{value}</div>
+                </div>
+              ))}
+            </div>
+
+            <p style={{ fontSize: 14, color: "var(--doc-text-muted)", marginBottom: 20 }}>
+              Send any combination of these fields to update the deal. Only include the fields that changed — all are optional except <Code>dealId</Code>.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+              {[
+                {
+                  category: "Required",
+                  colorVar: "--doc-red",
+                  fields: ["dealId"],
+                  desc: "The unique deal ID returned in the original POST 201 response. Must be stored in your system.",
+                },
+                {
+                  category: "Deal Stage",
+                  colorVar: "--doc-orange",
+                  fields: ["dealstage", "deal_stage", "stage"],
+                  desc: "Current stage in your pipeline. Stored as-is. If set to 'Closed Won' or 'Closed Lost', the close date is automatically recorded.",
+                },
+                {
+                  category: "Financials",
+                  colorVar: "--doc-green",
+                  fields: ["estimated_refund_amount", "firm_fee_rate", "firm_fee_amount"],
+                  desc: "Update the deal's refund amount, firm fee percentage (e.g. 20 or 0.20), or firm fee dollar amount.",
+                },
+                {
+                  category: "Closed Lost",
+                  colorVar: "--doc-text-muted",
+                  fields: ["closed_lost_reason"],
+                  desc: "Optional reason if the deal is moved to Closed Lost. Not required.",
+                },
+              ].map((row) => (
+                <div key={row.category} style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", borderLeftWidth: 3, borderLeftColor: `var(${row.colorVar})` }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: `var(${row.colorVar})`, marginBottom: 10 }}>{row.category}</div>
+                  <div style={{ marginBottom: 8 }}>
+                    {row.fields.map((f) => <FieldBadge key={f}>{f}</FieldBadge>)}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--doc-text-muted)", lineHeight: 1.5 }}>{row.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Example PATCH request */}
+            <div style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
+              <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--doc-border-subtle)", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--doc-orange)", opacity: 0.6 }} />
+                <span style={{ fontSize: 11, color: "var(--doc-text-muted)", fontFamily: "monospace" }}>PATCH /api/webhook/referral</span>
+              </div>
+              <pre style={{ padding: "16px 20px", fontSize: 13, lineHeight: 1.7, overflowX: "auto", color: "var(--doc-pre-text)", margin: 0 }}>
+{`{
+  `}<span style={{ color: "var(--doc-pre-key)" }}>&quot;dealId&quot;</span>{`:                 `}<span style={{ color: "var(--doc-pre-val)" }}>&quot;clx8f9abc123def456&quot;</span>{`,
+  `}<span style={{ color: "var(--doc-pre-key)" }}>&quot;dealstage&quot;</span>{`:               `}<span style={{ color: "var(--doc-pre-val)" }}>&quot;Contract Sent&quot;</span>{`,
+  `}<span style={{ color: "var(--doc-pre-key)" }}>&quot;estimated_refund_amount&quot;</span>{`: `}<span style={{ color: "var(--doc-pre-val)" }}>250000</span>{`,
+  `}<span style={{ color: "var(--doc-pre-key)" }}>&quot;firm_fee_rate&quot;</span>{`:           `}<span style={{ color: "var(--doc-pre-val)" }}>20</span>{`,
+  `}<span style={{ color: "var(--doc-pre-key)" }}>&quot;firm_fee_amount&quot;</span>{`:         `}<span style={{ color: "var(--doc-pre-val)" }}>50000</span>{`
+}`}
+              </pre>
+            </div>
+
+            {/* PATCH Responses */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <ResponseBlock color="var(--doc-green)" label="200 Updated" body={`{\n  "updated": true,\n  "dealId": "clx8f9abc123def456",\n  "dealName": "Acme Imports LLC",\n  "fieldsUpdated": ["externalStage", "estimatedRefundAmount", "firmFeeRate", "firmFeeAmount"]\n}`} />
+              <ResponseBlock color="var(--doc-yellow)" label="400 Missing dealId" body={`{\n  "error": "dealId is required"\n}`} />
+              <ResponseBlock color="var(--doc-red)" label="404 Deal Not Found" body={`{\n  "error": "Deal not found"\n}`} />
+            </div>
+          </Section>
+
+          {/* ── CLOSED LOST EXAMPLE ── */}
+          <Section title="Closing a Deal">
+            <p style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 16 }}>When a deal reaches its final stage, send a PATCH with the stage. The close date is recorded automatically.</p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-green)", marginBottom: 8 }}>Closed Won:</div>
+                <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", fontSize: 13, lineHeight: 1.7, color: "var(--doc-pre-text)", overflowX: "auto", margin: 0 }}>
+{`{
+  "dealId": "clx8f9abc123def456",
+  "dealstage": "Closed Won",
+  "estimated_refund_amount": 300000,
+  "firm_fee_rate": 20,
+  "firm_fee_amount": 60000
+}`}
+                </pre>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-red)", marginBottom: 8 }}>Closed Lost (with optional reason):</div>
+                <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", fontSize: 13, lineHeight: 1.7, color: "var(--doc-pre-text)", overflowX: "auto", margin: 0 }}>
+{`{
+  "dealId": "clx8f9abc123def456",
+  "dealstage": "Closed Lost",
+  "closed_lost_reason": "Client decided not to pursue recovery"
+}`}
+                </pre>
+              </div>
+            </div>
+          </Section>
+
           {/* Footer */}
           <div style={{ borderTop: "1px solid var(--doc-border)", paddingTop: 20, marginTop: 48, display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--doc-text-faint)" }}>
             <span>TRLN Partner Portal &mdash; Webhook Integration Guide</span>

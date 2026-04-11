@@ -151,22 +151,131 @@ export async function POST(req: NextRequest) {
 }
 
 /**
+ * PATCH /api/webhook/referral
+ *
+ * Update an existing deal by dealId. Used by Frost Law to push
+ * deal stage changes, refund amounts, firm fee updates, etc.
+ *
+ * Requires the `dealId` returned in the original POST 201 response.
+ */
+export async function PATCH(req: NextRequest) {
+  try {
+    // ── Optional secret verification ──────────────────────────────────
+    const webhookSecret = process.env.REFERRAL_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const authHeader = req.headers.get("authorization") || "";
+      const secretHeader = req.headers.get("x-webhook-secret") || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (token !== webhookSecret && secretHeader !== webhookSecret) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
+    const body = await req.json();
+    const { dealId } = body;
+
+    if (!dealId) {
+      return NextResponse.json({ error: "dealId is required" }, { status: 400 });
+    }
+
+    // Find the deal
+    const deal = await prisma.deal.findUnique({ where: { id: dealId } });
+    if (!deal) {
+      return NextResponse.json({ error: "Deal not found" }, { status: 404 });
+    }
+
+    const data: Record<string, any> = {};
+
+    // Deal stage
+    const stage = body.dealstage || body.deal_stage || body.dealStage || body.stage || body.pipeline_stage || body.status;
+    if (stage) data.externalStage = stage;
+
+    // Estimated refund amount
+    const refundAmount = body.estimated_refund_amount || body.estimatedRefundAmount || body.refund_amount || body.deal_amount || body.dealAmount || body.amount;
+    if (refundAmount !== undefined) {
+      const parsed = parseFloat(String(refundAmount).replace(/[,$]/g, ""));
+      if (!isNaN(parsed)) data.estimatedRefundAmount = parsed;
+    }
+
+    // Firm fee rate (as decimal: 0.20 = 20%, or as percentage: 20)
+    const feeRate = body.firm_fee_rate || body.firmFeeRate || body.fee_rate || body.feeRate;
+    if (feeRate !== undefined) {
+      let parsed = parseFloat(String(feeRate));
+      if (!isNaN(parsed)) {
+        if (parsed > 1) parsed = parsed / 100; // Convert 20 → 0.20
+        data.firmFeeRate = parsed;
+      }
+    }
+
+    // Firm fee amount
+    const feeAmount = body.firm_fee_amount || body.firmFeeAmount || body.fee_amount || body.feeAmount;
+    if (feeAmount !== undefined) {
+      const parsed = parseFloat(String(feeAmount).replace(/[,$]/g, ""));
+      if (!isNaN(parsed)) data.firmFeeAmount = parsed;
+    }
+
+    // Closed lost reason
+    const closedLostReason = body.closed_lost_reason || body.closedLostReason || body.lost_reason || body.lostReason;
+    if (closedLostReason) data.closedLostReason = String(closedLostReason).trim();
+
+    // Close date (if stage is closedwon or closedlost)
+    if (stage) {
+      const normalizedStage = stage.toLowerCase().replace(/[\s\-_]/g, "");
+      if (normalizedStage === "closedwon" || normalizedStage === "closedlost") {
+        if (!deal.closeDate) data.closeDate = new Date();
+      }
+    }
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ error: "No updatable fields provided" }, { status: 400 });
+    }
+
+    const updated = await prisma.deal.update({
+      where: { id: dealId },
+      data,
+    });
+
+    return NextResponse.json({
+      updated: true,
+      dealId: updated.id,
+      dealName: updated.dealName,
+      fieldsUpdated: Object.keys(data),
+    });
+  } catch (err: any) {
+    console.error("[Webhook/Referral PATCH] Error:", err);
+    return NextResponse.json(
+      { error: "Webhook update failed" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * GET /api/webhook/referral
  * Health check / documentation endpoint.
  */
 export async function GET() {
   return NextResponse.json({
     status: "ok",
-    endpoint: "POST /api/webhook/referral",
-    description: "Frost Law referral form webhook receiver. Creates a Deal record from form submission data.",
+    endpoints: {
+      create: "POST /api/webhook/referral",
+      update: "PATCH /api/webhook/referral",
+    },
+    description: "Frost Law referral form webhook. POST creates deals, PATCH updates existing deals by dealId.",
     tracking: "Include utm_content={partnerCode} in the form URL to attribute deals to partners.",
-    fields: {
+    create_fields: {
       partner_tracking: ["utm_content", "referral_code", "partner_code"],
       client_info: ["first_name", "last_name", "email", "phone", "business_title"],
       business_details: ["legal_entity_name", "service_of_interest", "city", "state"],
       tariff_fields: ["imports_goods", "import_countries", "annual_import_value", "importer_of_record"],
       deal_stage: ["dealstage", "deal_stage", "stage", "pipeline_stage", "status"],
       other: ["affiliate_notes"],
+    },
+    update_fields: {
+      required: ["dealId"],
+      deal_stage: ["dealstage", "deal_stage", "stage", "pipeline_stage", "status"],
+      financials: ["estimated_refund_amount", "firm_fee_rate", "firm_fee_amount"],
+      other: ["closed_lost_reason"],
     },
     security: "Optional: set REFERRAL_WEBHOOK_SECRET env var and send as x-webhook-secret header or Bearer token.",
   });
