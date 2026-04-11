@@ -185,7 +185,7 @@ export async function PUT(req: NextRequest) {
     // If it's an agreement, update the partnership agreement and activate partner
     if (doc.docType === "agreement") {
       const latestAgreement = await prisma.partnershipAgreement.findFirst({
-        where: { partnerCode: doc.partnerCode, status: "pending" },
+        where: { partnerCode: doc.partnerCode, status: { in: ["pending", "under_review"] } },
         orderBy: { version: "desc" },
       });
 
