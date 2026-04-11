@@ -233,9 +233,31 @@ export default function PartnerDetailPage() {
             </span>
           </div>
         </div>
-        <div className="flex gap-2 self-start">
+        <div className="flex gap-2 self-start flex-wrap">
           <button onClick={handleSave} disabled={saving} className="btn-gold text-[12px] px-5 py-2.5 disabled:opacity-50">
             {saving ? "Saving..." : "Save Changes"}
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch("/api/admin/impersonate", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ partnerCode: partner.partnerCode }),
+                });
+                if (res.ok) {
+                  const { url } = await res.json();
+                  window.open(url, "_blank");
+                }
+              } catch {}
+            }}
+            className="font-body text-[12px] text-purple-400/80 border border-purple-400/20 rounded-lg px-4 py-2.5 hover:bg-purple-400/10 transition-colors flex items-center gap-1.5"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            View as Partner
           </button>
           <button onClick={handleDelete} className="font-body text-[12px] text-red-400/60 border border-red-400/20 rounded-lg px-4 py-2.5 hover:bg-red-400/10 transition-colors">
             Delete
