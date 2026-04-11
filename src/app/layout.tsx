@@ -5,6 +5,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Tariff Refund & Litigation Network — Partner Portal",
   description: "Fighting for what's owed, reclaiming what's fair.",
+  icons: {
+    icon: "/api/favicon",
+    shortcut: "/api/favicon",
+    apple: "/api/favicon",
+  },
 };
 
 export default function RootLayout({
