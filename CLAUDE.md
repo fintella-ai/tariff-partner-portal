@@ -128,11 +128,21 @@ npm run db:studio    # Open Prisma Studio
 - Commission tab redesign: fixed 25% display with waterfall examples
 - W9 status column on admin partners list
 - Required email/SMS opt-in checkboxes on partner signup (CAN-SPAM/TCPA compliant)
+- Admin document upload (upload agreement → auto-activates partner, upload W9 → auto-approved)
+- Admin impersonation tokens stored in DB (ImpersonationToken model, 15-min expiry)
+- Double confirmation on partner code reset
+- PostgreSQL migration (Neon via Vercel Storage) — persistent data, no more cold start data loss
+- Company logo displayed in both admin and partner sidebar top-left
+- Admin Account Settings page (name, email, password change)
+- Partner password authentication (email + password login, replaces partner code)
+- Admin can set/reset partner passwords from partner detail page
+- Admin name syncs across layout from account API (not just session)
+- Company Revenue reporting page (/admin/revenue) — TRLN 40% share, partner 25%, net 15%, deal-by-deal breakdown
 
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)
 - **Phase 15**: Email & SMS Integration (SendGrid/Twilio)
 - **Phase 16**: Payments & Payouts (Stripe Connect)
 - **Phase 17**: AI Support Bot (Claude/OpenAI)
-- **Phase 18**: Deployment Hardening (PostgreSQL, monitoring, analytics)
+- **Phase 18**: Deployment Hardening (monitoring, analytics, error tracking)
 - **Tech Debt**: Replace demo data, form validation (zod), tests, accessibility audit, PWA
