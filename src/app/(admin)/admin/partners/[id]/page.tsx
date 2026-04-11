@@ -40,6 +40,7 @@ type DocEntry = {
   id: string;
   docType: string;
   fileName: string;
+  fileUrl: string;
   status: string;
   createdAt: string;
 };
@@ -748,6 +749,29 @@ export default function PartnerDetailPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {/* View / Download */}
+                  {d.fileUrl && (
+                    <>
+                      <button
+                        onClick={() => {
+                          const w = window.open();
+                          if (w) { w.document.write(`<img src="${d.fileUrl}" style="max-width:100%;height:auto;" />`); w.document.title = d.fileName; }
+                        }}
+                        className="font-body text-[10px] text-brand-gold/60 hover:text-brand-gold transition-colors"
+                        title="View document"
+                      >
+                        View
+                      </button>
+                      <a
+                        href={d.fileUrl}
+                        download={d.fileName}
+                        className="font-body text-[10px] text-blue-400/60 hover:text-blue-400 transition-colors"
+                        title="Download document"
+                      >
+                        Download
+                      </a>
+                    </>
+                  )}
                   <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${
                     d.status === "approved"
                       ? "bg-green-500/10 text-green-400 border border-green-500/20"
