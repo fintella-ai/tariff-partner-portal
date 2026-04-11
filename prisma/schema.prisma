@@ -41,6 +41,10 @@ model Partner {
   l2Rate                Float?
   l3Rate                Float?
   l3Enabled             Boolean  @default(false)
+  // Communications opt-in
+  emailOptIn            Boolean  @default(false)
+  smsOptIn              Boolean  @default(false)
+  optInDate             DateTime? // when they consented
   // Metadata
   notes                 String?  // admin notes
   signupDate            DateTime @default(now())

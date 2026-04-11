@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { token, firstName, lastName, email, phone, companyName } = body;
+    const { token, firstName, lastName, email, phone, companyName, emailOptIn, smsOptIn } = body;
 
     if (!token || !firstName || !lastName || !email) {
       return NextResponse.json({ error: "Token, first name, last name, and email are required" }, { status: 400 });
@@ -88,6 +88,9 @@ export async function POST(req: NextRequest) {
         tier: invite.targetTier,
         commissionRate: invite.commissionRate,
         recruitedViaInvite: invite.token,
+        emailOptIn: !!emailOptIn,
+        smsOptIn: !!smsOptIn,
+        optInDate: (emailOptIn || smsOptIn) ? new Date() : null,
       },
     });
 

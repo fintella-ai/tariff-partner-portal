@@ -34,6 +34,8 @@ function SignupContent() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [emailOptIn, setEmailOptIn] = useState(false);
+  const [smsOptIn, setSmsOptIn] = useState(false);
 
   useEffect(() => {
     if (!token) { setError("No invite token provided. Please use the link your partner shared with you."); setLoading(false); return; }
@@ -53,6 +55,10 @@ function SignupContent() {
       setError("First name, last name, and email are required.");
       return;
     }
+    if (!emailOptIn || !smsOptIn) {
+      setError("You must consent to both email and SMS communications to proceed.");
+      return;
+    }
     setError("");
     setSubmitting(true);
 
@@ -60,7 +66,7 @@ function SignupContent() {
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, firstName, lastName, email, phone, companyName }),
+        body: JSON.stringify({ token, firstName, lastName, email, phone, companyName, emailOptIn, smsOptIn }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Signup failed"); return; }
@@ -158,7 +164,34 @@ function SignupContent() {
                   </div>
                 </div>
 
-                <button type="submit" disabled={submitting} className="btn-gold w-full min-h-[48px] mt-2">
+                {/* Communications opt-in (required) */}
+                <div className="mb-4 p-4 rounded-lg" style={{ background: "var(--app-card-bg)", border: "1px solid var(--app-border)" }}>
+                  <div className="font-body text-[12px] font-semibold theme-text-secondary mb-3">Communications Consent <span className="text-red-400">*</span></div>
+                  <label className="flex items-start gap-3 mb-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={emailOptIn}
+                      onChange={(e) => setEmailOptIn(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-brand-gold/30 bg-transparent text-brand-gold focus:ring-brand-gold/50 cursor-pointer shrink-0"
+                    />
+                    <span className="font-body text-[12px] theme-text-secondary leading-relaxed">
+                      I consent to receive email communications from {FIRM_SHORT} including partnership updates, deal notifications, commission statements, and program announcements.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={smsOptIn}
+                      onChange={(e) => setSmsOptIn(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-brand-gold/30 bg-transparent text-brand-gold focus:ring-brand-gold/50 cursor-pointer shrink-0"
+                    />
+                    <span className="font-body text-[12px] theme-text-secondary leading-relaxed">
+                      I consent to receive SMS/text messages from {FIRM_SHORT} for time-sensitive deal updates, commission alerts, and important program notifications. Msg &amp; data rates may apply.
+                    </span>
+                  </label>
+                </div>
+
+                <button type="submit" disabled={submitting || !emailOptIn || !smsOptIn} className={`btn-gold w-full min-h-[48px] mt-2 ${(!emailOptIn || !smsOptIn) ? "opacity-50 cursor-not-allowed" : ""}`}>
                   {submitting ? "Creating Account..." : "Sign Up as Partner"}
                 </button>
               </form>
