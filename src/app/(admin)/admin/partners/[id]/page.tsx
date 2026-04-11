@@ -82,6 +82,8 @@ export default function PartnerDetailPage() {
   const [tin, setTin] = useState("");
   const [sendingAgreement, setSendingAgreement] = useState(false);
   const [sendingW9, setSendingW9] = useState(false);
+  const [uploadingAgreement, setUploadingAgreement] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [status, setStatus] = useState("active");
   const [referrer, setReferrer] = useState("");
   const [notes, setNotes] = useState("");
@@ -494,7 +496,7 @@ export default function PartnerDetailPage() {
       <div className="card mb-6">
         <div className="px-5 py-4 border-b border-[var(--app-border)] flex items-center justify-between">
           <div className="font-body font-semibold text-sm">Documents & Agreement</div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button
               onClick={async () => {
                 setSendingAgreement(true);
@@ -514,6 +516,45 @@ export default function PartnerDetailPage() {
             >
               {sendingAgreement ? "Sending..." : "Send Agreement"}
             </button>
+            <label className={`font-body text-[11px] text-green-400/70 border border-green-400/20 rounded-lg px-3 py-1.5 hover:bg-green-400/10 transition-colors cursor-pointer ${uploadingAgreement ? "opacity-50 pointer-events-none" : ""}`}>
+              {uploadingAgreement ? "Uploading..." : "Upload Agreement"}
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.png,.jpg"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploadingAgreement(true);
+                  try {
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                      const res = await fetch("/api/admin/documents", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          partnerCode: partner.partnerCode,
+                          docType: "agreement",
+                          fileName: file.name,
+                          fileData: reader.result,
+                        }),
+                      });
+                      if (res.ok) {
+                        fetchPartner();
+                        setSaved(true);
+                        setTimeout(() => setSaved(false), 3000);
+                      } else {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.error || "Upload failed");
+                      }
+                      setUploadingAgreement(false);
+                    };
+                    reader.readAsDataURL(file);
+                  } catch { setUploadingAgreement(false); }
+                  e.target.value = "";
+                }}
+              />
+            </label>
             <button
               onClick={async () => {
                 setSendingW9(true);
@@ -523,7 +564,6 @@ export default function PartnerDetailPage() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ w9Requested: true }),
                   });
-                  // Create a document record for the W9 request
                   setSaved(true);
                   setTimeout(() => setSaved(false), 3000);
                 } catch {} finally { setSendingW9(false); }
@@ -533,6 +573,45 @@ export default function PartnerDetailPage() {
             >
               {sendingW9 ? "Sending..." : "Request W9"}
             </button>
+            <label className={`font-body text-[11px] text-blue-400/70 border border-blue-400/20 rounded-lg px-3 py-1.5 hover:bg-blue-400/10 transition-colors cursor-pointer ${uploadingDoc ? "opacity-50 pointer-events-none" : ""}`}>
+              {uploadingDoc ? "Uploading..." : "Upload W9"}
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.png,.jpg"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploadingDoc(true);
+                  try {
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                      const res = await fetch("/api/admin/documents", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          partnerCode: partner.partnerCode,
+                          docType: "w9",
+                          fileName: file.name,
+                          fileData: reader.result,
+                        }),
+                      });
+                      if (res.ok) {
+                        fetchPartner();
+                        setSaved(true);
+                        setTimeout(() => setSaved(false), 3000);
+                      } else {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.error || "Upload failed");
+                      }
+                      setUploadingDoc(false);
+                    };
+                    reader.readAsDataURL(file);
+                  } catch { setUploadingDoc(false); }
+                  e.target.value = "";
+                }}
+              />
+            </label>
           </div>
         </div>
 
