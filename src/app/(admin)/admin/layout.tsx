@@ -36,6 +36,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
+  const [adminName, setAdminName] = useState("");
 
   const user = session?.user as any;
 
@@ -46,7 +47,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (settings.logoUrl) setLogoUrl(settings.logoUrl);
       })
       .catch(() => {});
-  }, []);
+    // Fetch current admin name from account API
+    fetch("/api/admin/account")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(({ user: u }) => {
+        if (u?.name) setAdminName(u.name);
+      })
+      .catch(() => {});
+  }, [pathname]); // refetch when navigating (catches updates from account page)
 
   function navigate(href: string) {
     router.push(href);
@@ -110,7 +118,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {!collapsed && (
           <>
             <div className="font-body text-xs theme-text-secondary mb-1">
-              {user?.name || "Admin"}
+              {adminName || user?.name || "Admin"}
             </div>
             <div className="font-body text-[11px] theme-text-muted tracking-[1px] mb-3">
               Administrator
@@ -186,7 +194,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Admin Panel
           </div>
           <h1 className="font-display text-xl sm:text-2xl lg:text-[28px] font-bold mb-1">
-            {user?.name || "Administrator"}
+            {adminName || user?.name || "Administrator"} <span className="font-body text-[13px] font-normal theme-text-muted">(Admin)</span>
           </h1>
         </div>
         {children}
