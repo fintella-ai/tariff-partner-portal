@@ -20,7 +20,7 @@ function SortHeader({ label, sortKey, currentSort, currentDir, onSort }: {
   );
 }
 
-const MONTHS = ["Mar 2025", "Feb 2025", "Jan 2025", "Dec 2024", "Nov 2024"];
+const MONTHS = ["All Data", "Mar 2025", "Feb 2025", "Jan 2025", "Dec 2024", "Nov 2024"];
 
 const DEMO_STATS = {
   totalPipeline: 1850000,
@@ -52,7 +52,8 @@ const MONTHLY_DATA = [
 ];
 
 export default function ReportsPage() {
-  const [period, setPeriod] = useState("Mar 2025");
+  const [period, setPeriod] = useState("All Data");
+  const [searchPartner, setSearchPartner] = useState("");
   const s = DEMO_STATS;
 
   // Monthly table sorting
@@ -71,11 +72,18 @@ export default function ReportsPage() {
   const [pDir, setPDir] = useState<SortDir>("desc");
   const togglePSort = (key: string) => { if (pSort === key) setPDir(pDir === "asc" ? "desc" : "asc"); else { setPSort(key); setPDir("desc"); } };
 
-  const sortedPartners = useMemo(() => [...TOP_PARTNERS].sort((a, b) => {
-    const av = (a as any)[pSort]; const bv = (b as any)[pSort];
-    if (typeof av === "string") return pDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
-    return pDir === "asc" ? av - bv : bv - av;
-  }), [pSort, pDir]);
+  const sortedPartners = useMemo(() => {
+    let data = [...TOP_PARTNERS];
+    if (searchPartner) {
+      const q = searchPartner.toLowerCase();
+      data = data.filter((p) => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q));
+    }
+    return data.sort((a, b) => {
+      const av = (a as any)[pSort]; const bv = (b as any)[pSort];
+      if (typeof av === "string") return pDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+      return pDir === "asc" ? av - bv : bv - av;
+    });
+  }, [pSort, pDir, searchPartner]);
 
   return (
     <div>
@@ -154,8 +162,14 @@ export default function ReportsPage() {
 
       {/* ═══ TOP PARTNERS ═══ */}
       <div className="card">
-        <div className="px-6 py-4 border-b border-[var(--app-border)]">
+        <div className="px-6 py-4 border-b border-[var(--app-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="font-body font-semibold text-sm">Top Partners by Commission</div>
+          <input
+            value={searchPartner}
+            onChange={(e) => setSearchPartner(e.target.value)}
+            placeholder="Search by name or code..."
+            className="w-full sm:w-64 theme-input rounded-lg px-3 py-2 font-body text-[12px] outline-none focus:border-brand-gold/40 transition-colors"
+          />
         </div>
         <div className="grid grid-cols-[0.3fr_1.5fr_0.6fr_0.6fr_0.8fr_0.8fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
           <div className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">#</div>

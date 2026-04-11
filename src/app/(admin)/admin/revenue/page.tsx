@@ -55,6 +55,12 @@ export default function RevenuePage() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "closedwon" | "pipeline">("all");
+  const [search, setSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterPartner, setFilterPartner] = useState("");
+  const [filterStage, setFilterStage] = useState("");
+  const [filterMinAmount, setFilterMinAmount] = useState("");
+  const [filterMaxAmount, setFilterMaxAmount] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("dealName");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -79,11 +85,37 @@ export default function RevenuePage() {
 
   // Filter and sort deals
   const filtered = useMemo(() => {
-    const base = deals.filter((d) => {
+    let base = deals.filter((d) => {
       if (filter === "closedwon") return d.stage === "closedwon";
       if (filter === "pipeline") return d.stage !== "closedwon" && d.stage !== "closedlost";
       return true;
     });
+
+    // Text search
+    if (search) {
+      const q = search.toLowerCase();
+      base = base.filter((d) =>
+        d.dealName.toLowerCase().includes(q) ||
+        d.partnerCode.toLowerCase().includes(q)
+      );
+    }
+
+    // Advanced filters
+    if (filterPartner) {
+      const q = filterPartner.toLowerCase();
+      base = base.filter((d) => d.partnerCode.toLowerCase().includes(q));
+    }
+    if (filterStage) {
+      base = base.filter((d) => d.stage === filterStage);
+    }
+    if (filterMinAmount) {
+      const min = parseFloat(filterMinAmount);
+      if (!isNaN(min)) base = base.filter((d) => d.estimatedRefundAmount >= min);
+    }
+    if (filterMaxAmount) {
+      const max = parseFloat(filterMaxAmount);
+      if (!isNaN(max)) base = base.filter((d) => d.estimatedRefundAmount <= max);
+    }
 
     return [...base].sort((a, b) => {
       const getFirmFee = (d: Deal) => d.firmFeeAmount || d.estimatedRefundAmount * (d.firmFeeRate || 0.20);
@@ -97,6 +129,7 @@ export default function RevenuePage() {
       switch (sortKey) {
         case "dealName": aVal = a.dealName.toLowerCase(); bVal = b.dealName.toLowerCase(); break;
         case "stage": aVal = a.stage; bVal = b.stage; break;
+        case "dealAmount": aVal = a.estimatedRefundAmount; bVal = b.estimatedRefundAmount; break;
         case "firmFee": aVal = getFirmFee(a); bVal = getFirmFee(b); break;
         case "trlnGross": aVal = getTrlnGross(a); bVal = getTrlnGross(b); break;
         case "partnerComm": aVal = getPartnerComm(a); bVal = getPartnerComm(b); break;
@@ -109,13 +142,14 @@ export default function RevenuePage() {
       if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
-  }, [deals, filter, sortKey, sortDir]);
+  }, [deals, filter, search, filterPartner, filterStage, filterMinAmount, filterMaxAmount, sortKey, sortDir]);
 
   // ── Revenue calculations ──────────────────────────────────────────────
   const closedWonDeals = deals.filter((d) => d.stage === "closedwon");
   const pipelineDeals = deals.filter((d) => d.stage !== "closedwon" && d.stage !== "closedlost");
 
   // Closed Won (realized revenue)
+  const totalDealAmountWon = closedWonDeals.reduce((sum, d) => sum + d.estimatedRefundAmount, 0);
   const totalFirmFeesWon = closedWonDeals.reduce((sum, d) => sum + d.firmFeeAmount, 0);
   const totalTRLNGrossWon = totalFirmFeesWon * TRLN_FEE_RATE;
   const totalPartnerCommWon = closedWonDeals.reduce((sum, d) => sum + d.l1CommissionAmount + d.l2CommissionAmount, 0);
@@ -161,11 +195,16 @@ export default function RevenuePage() {
       </div>
 
       {/* ═══ REVENUE SUMMARY ═══ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div className="stat-card">
+          <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Total Deal Value</div>
+          <div className="font-display text-xl sm:text-2xl font-bold">{fmt$(totalDealAmountWon)}</div>
+          <div className="font-body text-[10px] theme-text-muted mt-1">{closedWonDeals.length} closed won deals</div>
+        </div>
         <div className="stat-card">
           <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">TRLN Gross (40%)</div>
           <div className="font-display text-xl sm:text-2xl font-bold text-brand-gold">{fmt$(totalTRLNGrossWon)}</div>
-          <div className="font-body text-[10px] theme-text-muted mt-1">From {closedWonDeals.length} closed won deals</div>
+          <div className="font-body text-[10px] theme-text-muted mt-1">Of firm fees earned</div>
         </div>
         <div className="stat-card">
           <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Partner Commissions (25%)</div>
@@ -191,7 +230,11 @@ export default function RevenuePage() {
         <div className="font-body font-semibold text-sm mb-4">Revenue Breakdown</div>
         <div className="space-y-3">
           <div className="flex items-center justify-between py-2" style={{ borderBottom: "1px solid var(--app-border)" }}>
-            <span className="font-body text-[13px] theme-text-secondary">Total Firm Fees (Closed Won)</span>
+            <span className="font-body text-[13px] theme-text-secondary">Total Deal Value (Closed Won)</span>
+            <span className="font-display text-[15px] font-bold">{fmt$(totalDealAmountWon)}</span>
+          </div>
+          <div className="flex items-center justify-between py-2" style={{ borderBottom: "1px solid var(--app-border)" }}>
+            <span className="font-body text-[13px] theme-text-secondary">Total Firm Fees</span>
             <span className="font-display text-[15px] font-bold">{fmt$(totalFirmFeesWon)}</span>
           </div>
           <div className="flex items-center justify-between py-2" style={{ borderBottom: "1px solid var(--app-border)" }}>
@@ -215,31 +258,89 @@ export default function RevenuePage() {
 
       {/* ═══ DEAL-BY-DEAL TABLE ═══ */}
       <div className="card">
-        <div className="px-5 py-4 flex items-center justify-between flex-wrap gap-3" style={{ borderBottom: "1px solid var(--app-border)" }}>
-          <div className="font-body font-semibold text-sm">Deal Revenue Detail</div>
-          <div className="flex gap-2">
-            {(["all", "closedwon", "pipeline"] as const).map((f) => (
+        <div className="px-5 py-4 flex flex-col gap-3" style={{ borderBottom: "1px solid var(--app-border)" }}>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="font-body font-semibold text-sm">Deal Revenue Detail</div>
+            <div className="flex gap-2 flex-wrap">
+              {(["all", "closedwon", "pipeline"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`font-body text-[11px] px-3 py-1.5 rounded-lg border transition-colors ${
+                    filter === f ? "bg-brand-gold/10 border-brand-gold/30 text-brand-gold" : "border-[var(--app-border)] theme-text-muted"
+                  }`}
+                >
+                  {f === "all" ? "All Deals" : f === "closedwon" ? "Closed Won" : "Pipeline"}
+                </button>
+              ))}
               <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`font-body text-[11px] px-3 py-1.5 rounded-lg border transition-colors ${
-                  filter === f ? "bg-brand-gold/10 border-brand-gold/30 text-brand-gold" : "border-[var(--app-border)] theme-text-muted"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`font-body text-[11px] px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 ${
+                  showFilters ? "bg-purple-500/10 border-purple-500/30 text-purple-400" : "border-[var(--app-border)] theme-text-muted"
                 }`}
               >
-                {f === "all" ? "All Deals" : f === "closedwon" ? "Closed Won" : "Pipeline"}
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
               </button>
-            ))}
+            </div>
           </div>
+
+          {/* Search bar */}
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search deals by name or partner code..."
+            className="w-full theme-input rounded-lg px-4 py-2.5 font-body text-[13px] outline-none focus:border-brand-gold/40 transition-colors"
+          />
+
+          {/* Advanced filters */}
+          {showFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-lg" style={{ background: "var(--app-card-bg)", border: "1px solid var(--app-border)" }}>
+              <div>
+                <label className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-1 block">Partner Code</label>
+                <input value={filterPartner} onChange={(e) => setFilterPartner(e.target.value)} placeholder="e.g. PTNABC" className="w-full theme-input rounded-lg px-3 py-2 font-body text-[12px] outline-none" />
+              </div>
+              <div>
+                <label className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-1 block">Stage</label>
+                <select value={filterStage} onChange={(e) => setFilterStage(e.target.value)} className="w-full theme-input rounded-lg px-3 py-2 font-body text-[12px] outline-none">
+                  <option value="">All Stages</option>
+                  <option value="new_lead">New Lead</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="consultation_booked">Consultation</option>
+                  <option value="engaged">Engaged</option>
+                  <option value="closedwon">Closed Won</option>
+                  <option value="closedlost">Closed Lost</option>
+                </select>
+              </div>
+              <div>
+                <label className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-1 block">Min Deal Amount</label>
+                <input type="number" value={filterMinAmount} onChange={(e) => setFilterMinAmount(e.target.value)} placeholder="$0" className="w-full theme-input rounded-lg px-3 py-2 font-body text-[12px] outline-none" />
+              </div>
+              <div>
+                <label className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-1 block">Max Deal Amount</label>
+                <input type="number" value={filterMaxAmount} onChange={(e) => setFilterMaxAmount(e.target.value)} placeholder="No max" className="w-full theme-input rounded-lg px-3 py-2 font-body text-[12px] outline-none" />
+              </div>
+              <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
+                <button onClick={() => { setFilterPartner(""); setFilterStage(""); setFilterMinAmount(""); setFilterMaxAmount(""); setSearch(""); }} className="font-body text-[11px] theme-text-muted hover:text-brand-gold transition-colors">
+                  Clear All Filters
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Desktop table */}
         <div className="hidden sm:block overflow-x-auto">
-          <div className="grid grid-cols-[1.5fr_0.7fr_0.8fr_0.8fr_0.7fr_0.7fr_0.7fr] gap-3 px-5 py-3 min-w-[700px]" style={{ borderBottom: "1px solid var(--app-border)" }}>
+          <div className="grid grid-cols-[1.4fr_0.6fr_0.7fr_0.7fr_0.7fr_0.6fr_0.6fr_0.6fr] gap-2 px-5 py-3 min-w-[800px]" style={{ borderBottom: "1px solid var(--app-border)" }}>
             <SortHeader label="Deal" sortKey="dealName" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortHeader label="Stage" sortKey="stage" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
+            <SortHeader label="Deal Amt" sortKey="dealAmount" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortHeader label="Firm Fee" sortKey="firmFee" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
-            <SortHeader label="TRLN (40%)" sortKey="trlnGross" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
-            <SortHeader label="Partner (25%)" sortKey="partnerComm" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
+            <SortHeader label="TRLN 40%" sortKey="trlnGross" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
+            <SortHeader label="Partner 25%" sortKey="partnerComm" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortHeader label="TRLN Net" sortKey="trlnNet" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortHeader label="Date" sortKey="date" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
           </div>
@@ -249,7 +350,7 @@ export default function RevenuePage() {
             const partnerComm = d.l1CommissionAmount + d.l2CommissionAmount;
             const trlnNet = trlnGross - partnerComm;
             return (
-              <div key={d.id} className="grid grid-cols-[1.5fr_0.7fr_0.8fr_0.8fr_0.7fr_0.7fr_0.7fr] gap-3 px-5 py-3 items-center min-w-[700px] hover:bg-[var(--app-hover)] transition-colors" style={{ borderBottom: "1px solid var(--app-border)" }}>
+              <div key={d.id} className="grid grid-cols-[1.4fr_0.6fr_0.7fr_0.7fr_0.7fr_0.6fr_0.6fr_0.6fr] gap-2 px-5 py-3 items-center min-w-[800px] hover:bg-[var(--app-hover)] transition-colors" style={{ borderBottom: "1px solid var(--app-border)" }}>
                 <div>
                   <div className="font-body text-[13px] font-medium truncate">{d.dealName}</div>
                   <div className="font-mono text-[10px] theme-text-muted">{d.partnerCode}</div>
@@ -259,6 +360,7 @@ export default function RevenuePage() {
                     {d.stage.replace("_", " ")}
                   </span>
                 </div>
+                <div className="font-body text-[13px]">{fmt$(d.estimatedRefundAmount)}</div>
                 <div className="font-body text-[13px] theme-text-secondary">{fmt$(firmFee)}</div>
                 <div className="font-body text-[13px] text-brand-gold font-semibold">{fmt$(trlnGross)}</div>
                 <div className="font-body text-[13px] text-red-400">-{fmt$(partnerComm)}</div>
@@ -287,6 +389,7 @@ export default function RevenuePage() {
                     {d.stage.replace("_", " ")}
                   </span>
                 </div>
+                <div className="font-body text-[11px] theme-text-muted mb-2">Deal: {fmt$(d.estimatedRefundAmount)} · Fee: {fmt$(firmFee)}</div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
                     <div className="font-body text-[9px] theme-text-muted uppercase">TRLN 40%</div>
@@ -310,9 +413,21 @@ export default function RevenuePage() {
         {filtered.length > 0 && (
           <div className="px-5 py-4 flex items-center justify-between" style={{ borderTop: "2px solid var(--app-border)" }}>
             <div className="font-body text-[12px] font-semibold theme-text-secondary">{filtered.length} deals</div>
-            <div className="flex gap-6 text-right">
+            <div className="flex gap-4 sm:gap-6 text-right flex-wrap">
               <div>
-                <div className="font-body text-[9px] theme-text-muted uppercase">TRLN Gross</div>
+                <div className="font-body text-[9px] theme-text-muted uppercase">Deal Total</div>
+                <div className="font-body text-[13px] font-semibold">
+                  {fmt$(filtered.reduce((sum, d) => sum + d.estimatedRefundAmount, 0))}
+                </div>
+              </div>
+              <div>
+                <div className="font-body text-[9px] theme-text-muted uppercase">Firm Fees</div>
+                <div className="font-body text-[13px] theme-text-secondary font-semibold">
+                  {fmt$(filtered.reduce((sum, d) => sum + (d.firmFeeAmount || d.estimatedRefundAmount * (d.firmFeeRate || 0.20)), 0))}
+                </div>
+              </div>
+              <div>
+                <div className="font-body text-[9px] theme-text-muted uppercase">TRLN 40%</div>
                 <div className="font-body text-[13px] text-brand-gold font-semibold">
                   {fmt$(filtered.reduce((sum, d) => sum + (d.firmFeeAmount || d.estimatedRefundAmount * (d.firmFeeRate || 0.20)) * TRLN_FEE_RATE, 0))}
                 </div>
