@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useDevice } from "@/lib/useDevice";
 import { useRouter } from "next/navigation";
+import CountryCodeSelect, { parseMobilePhone, buildMobilePhone } from "@/components/ui/CountryCodeSelect";
 
 interface SettingsData {
   firstName: string;
@@ -36,6 +37,8 @@ export default function AccountSettingsPage() {
   const router = useRouter();
   const [form, setForm] = useState<SettingsData>(EMPTY);
   const [original, setOriginal] = useState<SettingsData>(EMPTY);
+  const [mobileCountry, setMobileCountry] = useState("US");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "warning" | "error" } | null>(null);
@@ -46,6 +49,9 @@ export default function AccountSettingsPage() {
       .then((data: SettingsData) => {
         setForm(data);
         setOriginal(data);
+        const parsed = parseMobilePhone(data.mobilePhone);
+        setMobileCountry(parsed.countryCode);
+        setMobileNumber(parsed.phoneNumber);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -66,17 +72,22 @@ export default function AccountSettingsPage() {
     form.lastName !== original.lastName ||
     form.companyName !== original.companyName;
 
-  const hasChanges = JSON.stringify(form) !== JSON.stringify(original);
+  const builtMobile = buildMobilePhone(mobileCountry, mobileNumber);
+  const hasChanges = JSON.stringify(form) !== JSON.stringify(original) || builtMobile !== original.mobilePhone;
 
   async function handleSave() {
     setSaving(true);
     setMessage(null);
 
     try {
+      const payload = {
+        ...form,
+        mobilePhone: buildMobilePhone(mobileCountry, mobileNumber),
+      };
       const res = await fetch("/api/partner/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -225,14 +236,21 @@ export default function AccountSettingsPage() {
               />
             </div>
             <div>
-              <label htmlFor="mobilePhone" className={labelClass}>
+              <label htmlFor="mobileNumber" className={labelClass}>
                 Mobile Phone <span className="text-white/30 normal-case">(SMS)</span>
               </label>
-              <input
-                id="mobilePhone" name="mobilePhone" type="tel"
-                value={form.mobilePhone} onChange={handleChange}
-                className={inputClass} placeholder="+1 555-123-4567"
-              />
+              <div className="flex gap-2">
+                <CountryCodeSelect
+                  selectedCode={mobileCountry}
+                  onChange={(code) => { setMobileCountry(code); if (message) setMessage(null); }}
+                />
+                <input
+                  id="mobileNumber" type="tel"
+                  value={mobileNumber}
+                  onChange={(e) => { setMobileNumber(e.target.value); if (message) setMessage(null); }}
+                  className={`${inputClass} flex-1`} placeholder="555-123-4567"
+                />
+              </div>
             </div>
           </div>
         </div>

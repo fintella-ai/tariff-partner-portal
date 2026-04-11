@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { fmtDate } from "@/lib/format";
+import CountryCodeSelect, { parseMobilePhone, buildMobilePhone } from "@/components/ui/CountryCodeSelect";
 
 type Partner = {
   id: string;
@@ -73,8 +74,11 @@ export default function PartnerDetailPage() {
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [mobilePhone, setMobilePhone] = useState("");
+  const [mobileCountry, setMobileCountry] = useState("US");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [tin, setTin] = useState("");
+  const [sendingAgreement, setSendingAgreement] = useState(false);
+  const [sendingW9, setSendingW9] = useState(false);
   const [status, setStatus] = useState("active");
   const [referrer, setReferrer] = useState("");
   const [notes, setNotes] = useState("");
@@ -109,7 +113,9 @@ export default function PartnerDetailPage() {
       setCompanyName(p.companyName || "");
       setEmail(p.email);
       setPhone(p.phone || "");
-      setMobilePhone(p.mobilePhone || "");
+      const parsedMobile = parseMobilePhone(p.mobilePhone || "");
+      setMobileCountry(parsedMobile.countryCode);
+      setMobileNumber(parsedMobile.phoneNumber);
       setTin(p.tin || "");
       setStatus(p.status);
       setReferrer(p.referredByPartnerCode || "");
@@ -137,7 +143,7 @@ export default function PartnerDetailPage() {
         firstName, lastName, email,
         companyName: companyName || null,
         phone: phone || null,
-        mobilePhone: mobilePhone || null,
+        mobilePhone: buildMobilePhone(mobileCountry, mobileNumber) || null,
         tin: tin || null,
         status,
         referredByPartnerCode: referrer || null,
@@ -265,7 +271,10 @@ export default function PartnerDetailPage() {
           </div>
           <div>
             <label className={labelClass}>Mobile Phone (SMS)</label>
-            <input className={inputClass} value={mobilePhone} onChange={(e) => setMobilePhone(e.target.value)} placeholder="+1 555-555-0000" />
+            <div className="flex gap-2">
+              <CountryCodeSelect selectedCode={mobileCountry} onChange={setMobileCountry} />
+              <input className={`${inputClass} flex-1`} value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="555-555-0000" />
+            </div>
           </div>
           <div>
             <label className={labelClass}>TIN</label>
@@ -403,8 +412,48 @@ export default function PartnerDetailPage() {
 
       {/* ─── DOCUMENTS & AGREEMENT ─────────────────────────────── */}
       <div className="card mb-6">
-        <div className="px-5 py-4 border-b border-white/[0.06]">
+        <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
           <div className="font-body font-semibold text-sm">Documents & Agreement</div>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                setSendingAgreement(true);
+                try {
+                  await fetch(`/api/admin/agreement/${partner.partnerCode}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, name: `${firstName} ${lastName}` }),
+                  });
+                  fetchPartner();
+                  setSaved(true);
+                  setTimeout(() => setSaved(false), 3000);
+                } catch {} finally { setSendingAgreement(false); }
+              }}
+              disabled={sendingAgreement}
+              className="font-body text-[11px] text-brand-gold/70 border border-brand-gold/20 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors disabled:opacity-50"
+            >
+              {sendingAgreement ? "Sending..." : "Send Agreement"}
+            </button>
+            <button
+              onClick={async () => {
+                setSendingW9(true);
+                try {
+                  await fetch("/api/admin/partners/" + id, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ w9Requested: true }),
+                  });
+                  // Create a document record for the W9 request
+                  setSaved(true);
+                  setTimeout(() => setSaved(false), 3000);
+                } catch {} finally { setSendingW9(false); }
+              }}
+              disabled={sendingW9}
+              className="font-body text-[11px] text-purple-400/70 border border-purple-400/20 rounded-lg px-3 py-1.5 hover:bg-purple-400/10 transition-colors disabled:opacity-50"
+            >
+              {sendingW9 ? "Sending..." : "Request W9"}
+            </button>
+          </div>
         </div>
 
         {/* Agreement status */}
@@ -428,6 +477,36 @@ export default function PartnerDetailPage() {
                     : "bg-white/10 text-white/40 border border-white/10"
             }`}>
               {agreement?.status || "none"}
+            </span>
+          </div>
+        </div>
+
+        {/* W9 status */}
+        <div className="px-5 py-3 border-b border-white/[0.04]">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-body text-[13px] text-white/70">W-9 (1099 Tax Filing)</div>
+              <div className="font-body text-[11px] text-white/35 mt-0.5">
+                {(() => {
+                  const w9 = documents.find((d) => d.docType === "w9");
+                  return w9 ? `Uploaded ${fmtDate(w9.createdAt)}` : "Required for year-end 1099 reporting";
+                })()}
+              </div>
+            </div>
+            <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${
+              (() => {
+                const w9 = documents.find((d) => d.docType === "w9");
+                if (!w9) return "bg-red-500/10 text-red-400 border border-red-500/20";
+                if (w9.status === "approved") return "bg-green-500/10 text-green-400 border border-green-500/20";
+                if (w9.status === "under_review") return "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20";
+                return "bg-blue-500/10 text-blue-400 border border-blue-500/20";
+              })()
+            }`}>
+              {(() => {
+                const w9 = documents.find((d) => d.docType === "w9");
+                if (!w9) return "needed";
+                return w9.status.replace("_", " ");
+              })()}
             </span>
           </div>
         </div>
