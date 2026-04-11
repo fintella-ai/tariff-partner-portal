@@ -30,6 +30,8 @@ export async function GET(req: NextRequest) {
         firmSlogan: "Fighting for what's owed, reclaiming what's fair.",
         firmPhone: "(410) 497-5947",
         supportEmail: "",
+        logoUrl: "",
+        faviconUrl: "",
         firmFeeRate: 0.20,
         l1Rate: 0.20,
         l2Rate: 0.05,

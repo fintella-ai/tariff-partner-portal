@@ -85,6 +85,8 @@ export default function SettingsPage() {
   const [firmSlogan, setFirmSlogan] = useState("");
   const [firmPhone, setFirmPhone] = useState("");
   const [supportEmail, setSupportEmail] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [faviconUrl, setFaviconUrl] = useState("");
 
   // Commissions
   const [l1Rate, setL1Rate] = useState("20");
@@ -116,6 +118,8 @@ export default function SettingsPage() {
       setFirmSlogan(settings.firmSlogan);
       setFirmPhone(settings.firmPhone);
       setSupportEmail(settings.supportEmail || "");
+      setLogoUrl(settings.logoUrl || "");
+      setFaviconUrl(settings.faviconUrl || "");
 
       setL1Rate(String(Math.round(settings.l1Rate * 100)));
       setL2Rate(String(Math.round(settings.l2Rate * 100)));
@@ -155,7 +159,7 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       const body = {
-        firmName, firmShort, firmSlogan, firmPhone, supportEmail,
+        firmName, firmShort, firmSlogan, firmPhone, supportEmail, logoUrl, faviconUrl,
         l1Rate: parseFloat(l1Rate) / 100,
         l2Rate: parseFloat(l2Rate) / 100,
         l3Rate: parseFloat(l3Rate) / 100,
@@ -320,28 +324,125 @@ export default function SettingsPage() {
 
       {/* ═══ BRANDING TAB ═══ */}
       {tab === "branding" && (
-        <div className="card p-5 sm:p-6">
-          <div className="font-body font-semibold text-sm mb-4">Branding & Contact</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Firm Name</label>
-              <input className={inputClass} value={firmName} onChange={(e) => setFirmName(e.target.value)} />
+        <div className="space-y-6">
+          <div className="card p-5 sm:p-6">
+            <div className="font-body font-semibold text-sm mb-4">Branding & Contact</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Firm Name</label>
+                <input className={inputClass} value={firmName} onChange={(e) => setFirmName(e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Short Name</label>
+                <input className={inputClass} value={firmShort} onChange={(e) => setFirmShort(e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelClass}>Slogan</label>
+                <input className={inputClass} value={firmSlogan} onChange={(e) => setFirmSlogan(e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Support Phone</label>
+                <input className={inputClass} value={firmPhone} onChange={(e) => setFirmPhone(e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Support Email</label>
+                <input className={inputClass} value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} placeholder="support@trln.com" />
+              </div>
             </div>
-            <div>
-              <label className={labelClass}>Short Name</label>
-              <input className={inputClass} value={firmShort} onChange={(e) => setFirmShort(e.target.value)} />
-            </div>
-            <div className="sm:col-span-2">
-              <label className={labelClass}>Slogan</label>
-              <input className={inputClass} value={firmSlogan} onChange={(e) => setFirmSlogan(e.target.value)} />
-            </div>
-            <div>
-              <label className={labelClass}>Support Phone</label>
-              <input className={inputClass} value={firmPhone} onChange={(e) => setFirmPhone(e.target.value)} />
-            </div>
-            <div>
-              <label className={labelClass}>Support Email</label>
-              <input className={inputClass} value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} placeholder="support@trln.com" />
+          </div>
+
+          {/* Logo & Favicon Upload */}
+          <div className="card p-5 sm:p-6">
+            <div className="font-body font-semibold text-sm mb-4">Company Logo & Favicon</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+              {/* Logo Upload */}
+              <div>
+                <label className={labelClass}>Company Logo</label>
+                <p className="font-body text-[11px] theme-text-muted mb-3">Displayed in the partner portal sidebar. Recommended: PNG or SVG, max 200KB.</p>
+                <div className="flex items-center gap-4 mb-3">
+                  {logoUrl ? (
+                    <div className="w-16 h-16 rounded-lg border flex items-center justify-center overflow-hidden p-1" style={{ borderColor: "var(--app-border)", background: "var(--app-card-bg)" }}>
+                      <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg border flex items-center justify-center" style={{ borderColor: "var(--app-border)", background: "var(--app-card-bg)" }}>
+                      <span className="theme-text-faint text-[10px] text-center">No logo</span>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-2">
+                    <label className="font-body text-[11px] text-brand-gold/70 border border-brand-gold/20 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors cursor-pointer text-center">
+                      Upload Logo
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 200 * 1024) { alert("File too large. Max 200KB."); return; }
+                          const reader = new FileReader();
+                          reader.onload = () => setLogoUrl(reader.result as string);
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                    {logoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setLogoUrl("")}
+                        className="font-body text-[11px] text-red-400/60 hover:text-red-400 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Favicon Upload */}
+              <div>
+                <label className={labelClass}>Favicon</label>
+                <p className="font-body text-[11px] theme-text-muted mb-3">Displayed in browser tab. Recommended: square PNG or ICO, max 100KB.</p>
+                <div className="flex items-center gap-4 mb-3">
+                  {faviconUrl ? (
+                    <div className="w-16 h-16 rounded-lg border flex items-center justify-center overflow-hidden p-2" style={{ borderColor: "var(--app-border)", background: "var(--app-card-bg)" }}>
+                      <img src={faviconUrl} alt="Favicon" className="max-w-full max-h-full object-contain" />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg border flex items-center justify-center" style={{ borderColor: "var(--app-border)", background: "var(--app-card-bg)" }}>
+                      <span className="theme-text-faint text-[10px] text-center">No favicon</span>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-2">
+                    <label className="font-body text-[11px] text-brand-gold/70 border border-brand-gold/20 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors cursor-pointer text-center">
+                      Upload Favicon
+                      <input
+                        type="file"
+                        accept="image/png,image/x-icon,image/svg+xml,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 100 * 1024) { alert("File too large. Max 100KB."); return; }
+                          const reader = new FileReader();
+                          reader.onload = () => setFaviconUrl(reader.result as string);
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                    {faviconUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFaviconUrl("")}
+                        className="font-body text-[11px] text-red-400/60 hover:text-red-400 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

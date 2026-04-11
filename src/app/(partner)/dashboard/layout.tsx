@@ -69,6 +69,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [firmShort, setFirmShort] = useState(DEFAULT_FIRM_SHORT);
   const [firmSlogan, setFirmSlogan] = useState(DEFAULT_FIRM_SLOGAN);
+  const [logoUrl, setLogoUrl] = useState("");
+  const [faviconUrl, setFaviconUrl] = useState("");
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
   const [navOrder, setNavOrder] = useState<string[]>([]);
 
@@ -79,6 +81,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .then(({ settings }) => {
         if (settings.firmShort) setFirmShort(settings.firmShort);
         if (settings.firmSlogan) setFirmSlogan(settings.firmSlogan);
+        if (settings.logoUrl) setLogoUrl(settings.logoUrl);
+        if (settings.faviconUrl) setFaviconUrl(settings.faviconUrl);
         try { setHiddenNavItems(JSON.parse(settings.hiddenNavItems || "[]")); } catch {}
         try {
           const order = JSON.parse(settings.navOrder || "[]");
@@ -118,10 +122,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex flex-col h-full">
       {/* Brand */}
       <div className="pl-2 mb-6">
-        <div className="font-display text-sm font-bold text-brand-gold tracking-[1px]">
-          {firmShort}
-        </div>
-        <div className="font-body text-[10px] text-white/30 mt-1 italic leading-tight">
+        {logoUrl ? (
+          <div className="mb-2">
+            <img src={logoUrl} alt={firmShort} className="max-h-10 max-w-[180px] object-contain" />
+          </div>
+        ) : (
+          <div className="font-display text-sm font-bold text-brand-gold tracking-[1px]">
+            {firmShort}
+          </div>
+        )}
+        <div className="font-body text-[10px] theme-text-muted mt-1 italic leading-tight">
           {firmSlogan}
         </div>
       </div>

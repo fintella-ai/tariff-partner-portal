@@ -57,6 +57,8 @@ export async function PUT(req: NextRequest) {
     if (body.firmSlogan !== undefined) data.firmSlogan = body.firmSlogan;
     if (body.firmPhone !== undefined) data.firmPhone = body.firmPhone;
     if (body.supportEmail !== undefined) data.supportEmail = body.supportEmail;
+    if (body.logoUrl !== undefined) data.logoUrl = body.logoUrl;
+    if (body.faviconUrl !== undefined) data.faviconUrl = body.faviconUrl;
 
     // Commission Rates
     if (body.firmFeeRate !== undefined) data.firmFeeRate = parseFloat(body.firmFeeRate);
