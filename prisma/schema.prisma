@@ -274,6 +274,19 @@ model TrainingResource {
   updatedAt   DateTime @updatedAt
 }
 
+// ─── PARTNER CODE HISTORY (audit trail for code changes) ────────────────────
+model PartnerCodeHistory {
+  id              String   @id @default(cuid())
+  partnerId       String   // Partner record ID (stable, never changes)
+  oldCode         String   // the code that was replaced
+  newCode         String   // the new code that replaced it
+  changedBy       String   // admin email who made the change
+  createdAt       DateTime @default(now())
+
+  @@index([partnerId])
+  @@index([oldCode])
+}
+
 // ─── ADMIN NOTES (immutable audit log) ───────────────────────────────────────
 model AdminNote {
   id          String   @id @default(cuid())

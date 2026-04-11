@@ -21,7 +21,7 @@ export async function GET(
     if (!partner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
 
     // Parallel queries for related data
-    const [downlineCount, downline, agreement, profile, documents, adminNotes] = await Promise.all([
+    const [downlineCount, downline, agreement, profile, documents, adminNotes, codeHistory] = await Promise.all([
       prisma.partner.count({
         where: { referredByPartnerCode: partner.partnerCode },
       }),
@@ -44,6 +44,10 @@ export async function GET(
         where: { partnerCode: partner.partnerCode },
         orderBy: { createdAt: "desc" },
       }).catch(() => []),
+      prisma.partnerCodeHistory.findMany({
+        where: { partnerId: partner.id },
+        orderBy: { createdAt: "desc" },
+      }).catch(() => []),
     ]);
 
     // L3 downline (partners recruited by L2 partners)
@@ -55,7 +59,7 @@ export async function GET(
         })
       : [];
 
-    return NextResponse.json({ partner, downlineCount, downline, agreement, profile, documents, l3Partners, adminNotes });
+    return NextResponse.json({ partner, downlineCount, downline, agreement, profile, documents, l3Partners, adminNotes, codeHistory });
   } catch {
     return NextResponse.json({ error: "Failed to fetch partner" }, { status: 500 });
   }
@@ -96,11 +100,30 @@ export async function PUT(
     if (body.l3Rate !== undefined) data.l3Rate = body.l3Rate != null ? parseFloat(body.l3Rate) : null;
     if (body.l3Enabled !== undefined) data.l3Enabled = body.l3Enabled;
 
-    // Reset partner code (regenerate)
+    // Generate new partner code (preserves old code in history)
     if (body.resetPartnerCode) {
+      // Only super_admin can do this (enforced on frontend, double-check here)
+      if (role !== "super_admin") {
+        return NextResponse.json({ error: "Only super admins can generate new partner codes" }, { status: 403 });
+      }
+
+      const currentPartner = await prisma.partner.findUnique({ where: { id: params.id } });
+      if (!currentPartner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
+
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       let code = "PTN";
       for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+
+      // Save old code to history before changing
+      await prisma.partnerCodeHistory.create({
+        data: {
+          partnerId: currentPartner.id,
+          oldCode: currentPartner.partnerCode,
+          newCode: code,
+          changedBy: session.user.email || "admin",
+        },
+      });
+
       data.partnerCode = code;
     }
 

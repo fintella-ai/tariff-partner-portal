@@ -73,6 +73,7 @@ export default function PartnerDetailPage() {
   const [documents, setDocuments] = useState<DocEntry[]>([]);
   const [agreement, setAgreement] = useState<Agreement | null>(null);
   const [adminNotes, setAdminNotes] = useState<any[]>([]);
+  const [codeHistory, setCodeHistory] = useState<any[]>([]);
   const [downlineView, setDownlineView] = useState<"list" | "tree">("list");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -121,6 +122,7 @@ export default function PartnerDetailPage() {
       setDocuments(data.documents || []);
       setAgreement(data.agreement || null);
       setAdminNotes(data.adminNotes || []);
+      setCodeHistory(data.codeHistory || []);
 
       setFirstName(p.firstName);
       setLastName(p.lastName);
@@ -352,6 +354,27 @@ export default function PartnerDetailPage() {
           </button>
           )}
         </div>
+
+        {/* Code History */}
+        {codeHistory.length > 0 && (
+          <div className="mb-4 pb-4" style={{ borderBottom: "1px solid var(--app-border)" }}>
+            <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-2">Previous Codes</div>
+            <div className="space-y-1.5">
+              {codeHistory.map((h: any) => (
+                <div key={h.id} className="flex items-center justify-between py-1.5 px-3 rounded-lg" style={{ background: "var(--app-card-bg)" }}>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[12px] text-[var(--app-text-muted)] line-through">{h.oldCode}</span>
+                    <span className="text-[var(--app-text-faint)]">&rarr;</span>
+                    <span className="font-mono text-[12px] text-[var(--app-text-secondary)]">{h.newCode}</span>
+                  </div>
+                  <div className="font-body text-[10px] text-[var(--app-text-muted)]">
+                    {new Date(h.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} by {h.changedBy}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Set Password */}
         <div>
