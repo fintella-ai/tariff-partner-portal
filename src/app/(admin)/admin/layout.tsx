@@ -118,6 +118,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </>
         )}
         <button
+          onClick={() => navigate("/admin/account")}
+          title={collapsed ? "Account Settings" : undefined}
+          className={`w-full font-body text-[11px] rounded px-3 py-2 mb-2 transition-colors ${
+            pathname === "/admin/account"
+              ? "text-brand-gold border-brand-gold/30 bg-brand-gold/10"
+              : "theme-text-muted hover:opacity-80"
+          }`}
+          style={{ border: `1px solid ${pathname === "/admin/account" ? "" : "var(--app-border)"}` }}
+        >
+          {collapsed ? "\u2699\uFE0F" : "Account Settings"}
+        </button>
+        <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className={`w-full font-body text-[11px] theme-text-muted rounded px-3 py-2 transition-colors hover:opacity-80 ${collapsed ? "text-center" : ""}`}
           style={{ border: "1px solid var(--app-border)" }}
