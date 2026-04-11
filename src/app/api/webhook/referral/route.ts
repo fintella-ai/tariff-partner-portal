@@ -74,6 +74,13 @@ export async function POST(req: NextRequest) {
     const annualImportValue = get("annual_import_value", "annualImportValue", "import_value", "importValue", "Annual Import Value", "annual_value");
     const importerOfRecord = get("importer_of_record", "importerOfRecord", "ior", "Importer of Record");
 
+    // Deal stage (passed through from Frost Law's system — stored as-is)
+    const externalStage = get(
+      "dealstage", "deal_stage", "dealStage",
+      "stage", "Stage", "pipeline_stage", "pipelineStage",
+      "status", "Status"
+    );
+
     // ── Build deal name ───────────────────────────────────────────────
     const dealName = legalEntityName
       || (firstName && lastName ? `${firstName} ${lastName}` : "")
@@ -94,6 +101,7 @@ export async function POST(req: NextRequest) {
         dealName,
         partnerCode: partnerCode || "UNATTRIBUTED",
         stage: "new_lead",
+        externalStage: externalStage || null,
         clientFirstName: firstName || null,
         clientLastName: lastName || null,
         clientName: firstName && lastName ? `${firstName} ${lastName}` : null,
@@ -109,7 +117,7 @@ export async function POST(req: NextRequest) {
         annualImportValue: annualImportValue || null,
         importerOfRecord: importerOfRecord || null,
         affiliateNotes: affiliateNotes || null,
-        notes: `Source: Frost Law Referral Form | Partner: ${partnerCode || "none"}`,
+        notes: `Source: Frost Law Referral Form | Partner: ${partnerCode || "none"}${externalStage ? ` | External Stage: ${externalStage}` : ""}`,
       },
     });
 
@@ -157,6 +165,7 @@ export async function GET() {
       client_info: ["first_name", "last_name", "email", "phone", "business_title"],
       business_details: ["legal_entity_name", "service_of_interest", "city", "state"],
       tariff_fields: ["imports_goods", "import_countries", "annual_import_value", "importer_of_record"],
+      deal_stage: ["dealstage", "deal_stage", "stage", "pipeline_stage", "status"],
       other: ["affiliate_notes"],
     },
     security: "Optional: set REFERRAL_WEBHOOK_SECRET env var and send as x-webhook-secret header or Bearer token.",

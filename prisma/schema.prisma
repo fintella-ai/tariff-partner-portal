@@ -327,6 +327,7 @@ model Deal {
   affiliateNotes        String?   // affiliate notes from referral form
   // Deal tracking
   stage                 String    @default("new_lead")
+  externalStage         String?   // raw deal stage from external system (Frost Law / HubSpot)
   productType           String?   // "ieepa", "section301", "other"
   importedProducts      String?   // description of goods
   estimatedRefundAmount Float     @default(0)
