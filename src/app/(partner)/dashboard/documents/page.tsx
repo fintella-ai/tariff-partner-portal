@@ -312,7 +312,7 @@ export default function DocumentsPage() {
                     <span className={`inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase ${dCfg.bg} ${dCfg.text}`}>{dCfg.label}</span>
                     <span className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(doc.createdAt)}</span>
                     <div className="text-right">
-                      {doc.fileUrl && <button onClick={() => { const w = window.open(); if (w) { w.document.write(`<iframe src="${doc.fileUrl}" style="width:100%;height:100vh;border:none;"></iframe>`); w.document.title = doc.fileName; } }} className="text-[11px] text-brand-gold hover:underline">View</button>}
+                      {doc.fileUrl && <div className="flex items-center gap-2"><button onClick={() => { const w = window.open(); if (w) { w.document.write(`<iframe src="${doc.fileUrl}" style="width:100%;height:100vh;border:none;"></iframe>`); w.document.title = doc.fileName; } }} className="text-[11px] text-brand-gold hover:underline">View</button><a href={doc.fileUrl} download={doc.fileName} className="text-[11px] text-blue-400 hover:underline">Download</a></div>}
                     </div>
                   </div>
                 );
@@ -331,7 +331,7 @@ export default function DocumentsPage() {
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase shrink-0 ${dCfg.bg} ${dCfg.text}`}>{dCfg.label}</span>
                     </div>
                     {doc.notes && <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-2">Note: {doc.notes}</div>}
-                    {doc.fileUrl && <button onClick={() => { const w = window.open(); if (w) { w.document.write(`<iframe src="${doc.fileUrl}" style="width:100%;height:100vh;border:none;"></iframe>`); w.document.title = doc.fileName; } }} className="text-[11px] text-brand-gold hover:underline">View</button>}
+                    {doc.fileUrl && <div className="flex items-center gap-2"><button onClick={() => { const w = window.open(); if (w) { w.document.write(`<iframe src="${doc.fileUrl}" style="width:100%;height:100vh;border:none;"></iframe>`); w.document.title = doc.fileName; } }} className="text-[11px] text-brand-gold hover:underline">View</button><a href={doc.fileUrl} download={doc.fileName} className="text-[11px] text-blue-400 hover:underline">Download</a></div>}
                   </div>
                 );
               })}
