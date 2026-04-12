@@ -155,8 +155,8 @@ export default function AdminChatPage() {
       </div>
 
       <div className="flex gap-4" style={{ height: "calc(100vh - 220px)", minHeight: 400 }}>
-        {/* ── SESSION LIST (left panel) ── */}
-        <div className="w-[320px] shrink-0 card flex flex-col overflow-hidden">
+        {/* ── SESSION LIST (left panel — hidden on mobile when a session is selected) ── */}
+        <div className={`${selectedId ? "hidden md:flex" : "flex"} w-full md:w-[320px] shrink-0 card flex-col overflow-hidden`}>
           {/* Filter tabs */}
           <div className="flex gap-1 p-3 border-b border-[var(--app-border)]">
             {(["active", "closed", "all"] as const).map((f) => (
@@ -207,8 +207,8 @@ export default function AdminChatPage() {
           </div>
         </div>
 
-        {/* ── CHAT PANEL (right) ── */}
-        <div className="flex-1 card flex flex-col overflow-hidden">
+        {/* ── CHAT PANEL (right — full width on mobile when session selected) ── */}
+        <div className={`${selectedId ? "flex" : "hidden md:flex"} flex-1 card flex-col overflow-hidden`}>
           {!selectedId || !detail ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -220,12 +220,20 @@ export default function AdminChatPage() {
             <>
               {/* Chat header */}
               <div className="px-5 py-3 border-b border-[var(--app-border)] flex items-center justify-between">
-                <div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => { setSelectedId(null); setDetail(null); }}
+                    className="md:hidden font-body text-[var(--app-text-muted)] hover:text-[var(--app-text)] min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  >
+                    ←
+                  </button>
+                  <div>
                   <PartnerLink partnerId={detail.partnerId} className="font-body text-sm font-semibold text-[var(--app-text)]">
                     {detail.partnerName}
                   </PartnerLink>
                   <div className="font-body text-[11px] text-[var(--app-text-muted)]">
                     {detail.partnerCode} {detail.companyName ? `· ${detail.companyName}` : ""} {detail.partnerEmail ? `· ${detail.partnerEmail}` : ""}
+                  </div>
                   </div>
                 </div>
                 <div className="flex gap-2">

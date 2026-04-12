@@ -508,7 +508,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <button
               onClick={() => setChatOpen(false)}
-              className="text-[var(--app-text-muted)] hover:text-[var(--app-text)] text-lg w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--app-input-bg)] transition-colors"
+              className="text-[var(--app-text-muted)] hover:text-[var(--app-text)] text-lg w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[var(--app-input-bg)] transition-colors"
             >
               ✕
             </button>
