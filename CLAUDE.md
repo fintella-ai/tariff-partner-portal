@@ -192,6 +192,10 @@ npm run db:studio    # Open Prisma Studio
 - Admin user management page (/admin/users): super_admin can create admins, assign roles, reset passwords, delete users
 - Permission checks: void documents (admin+ only), reset partner code (super_admin only), settings tabs filtered by role, nav items filtered by role
 - Permissions config: `src/lib/permissions.ts` — centralized role definitions, nav visibility, feature flags
+- Live chat system: ChatSession + ChatMessage Prisma models, partner widget (real-time), admin agent panel (/admin/chat) with conversation list + reply
+- Live chat on/off toggle: admin Settings > Home Page tab, controls `liveChatEnabled` in PortalSettings
+- Partner chat widget: only visible when live chat is enabled, creates sessions, sends/receives messages with 4s polling
+- Admin chat page: split panel (session list left, conversation right), 5s polling, unread badges, close session, partner profile links
 
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)

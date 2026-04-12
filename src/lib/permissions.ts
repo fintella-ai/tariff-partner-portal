@@ -14,10 +14,10 @@ export type AdminRole = "super_admin" | "admin" | "accounting" | "partner_suppor
 
 // Which sidebar nav items each role can see
 export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
-  super_admin: ["partners", "deals", "communications", "training", "conference", "documents", "support", "payouts", "revenue", "reports", "settings", "users"],
-  admin: ["partners", "deals", "communications", "training", "conference", "documents", "support", "payouts", "reports", "settings"],
+  super_admin: ["partners", "deals", "communications", "training", "conference", "documents", "support", "chat", "payouts", "revenue", "reports", "settings", "users"],
+  admin: ["partners", "deals", "communications", "training", "conference", "documents", "support", "chat", "payouts", "reports", "settings"],
   accounting: ["deals", "documents", "payouts", "revenue", "reports"],
-  partner_support: ["partners", "deals", "communications", "training", "conference", "documents", "support", "payouts", "settings"],
+  partner_support: ["partners", "deals", "communications", "training", "conference", "documents", "support", "chat", "payouts", "settings"],
 };
 
 // Specific permission flags per role

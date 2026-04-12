@@ -155,6 +155,7 @@ export default function SettingsPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>(DEFAULT_EVENTS);
   const [referralOpps, setReferralOpps] = useState<ReferralOpp[]>(DEFAULT_REFERRAL_OPPS);
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
+  const [liveChatEnabled, setLiveChatEnabled] = useState(false);
 
   // ── Fetch settings ────────────────────────────────────────────────────
 
@@ -200,6 +201,7 @@ export default function SettingsPage() {
         if (ro.length > 0) setReferralOpps(ro);
       } catch {}
       setLeaderboardEnabled(settings.leaderboardEnabled);
+      if (settings.liveChatEnabled !== undefined) setLiveChatEnabled(settings.liveChatEnabled);
     } catch {
       // Use defaults
     } finally {
@@ -227,6 +229,7 @@ export default function SettingsPage() {
         upcomingEvents: JSON.stringify(upcomingEvents),
         referralOpportunities: JSON.stringify(referralOpps),
         leaderboardEnabled,
+        liveChatEnabled,
       };
 
       const res = await fetch("/api/admin/settings", {
@@ -604,6 +607,27 @@ export default function SettingsPage() {
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${leaderboardEnabled ? "translate-x-6" : "translate-x-1"}`} />
               </button>
             </div>
+          </div>
+
+          {/* Live Chat toggle */}
+          <div className="card p-5 sm:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-body font-semibold text-sm">Live Support Chat</div>
+                <p className="font-body text-[12px] text-[var(--app-text-muted)] mt-0.5">Enable the live chat widget for partners to message support agents in real-time</p>
+              </div>
+              <button
+                onClick={() => setLiveChatEnabled(!liveChatEnabled)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${liveChatEnabled ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${liveChatEnabled ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
+            {liveChatEnabled && (
+              <div className="mt-3 p-2.5 rounded-lg bg-green-500/5 border border-green-500/10">
+                <div className="font-body text-[11px] text-green-400">Chat is active. Partners will see the chat widget. Admin agents can respond from the Live Chat page.</div>
+              </div>
+            )}
           </div>
 
           {/* Announcements */}

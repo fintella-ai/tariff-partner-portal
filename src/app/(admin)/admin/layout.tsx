@@ -16,6 +16,7 @@ const ADMIN_NAV_ITEMS = [
   { id: "conference", href: "/admin/conference", icon: "\u{1F4F9}", label: "Live Weekly" },
   { id: "documents", href: "/admin/documents", icon: "\u{1F4C4}", label: "Documents" },
   { id: "support", href: "/admin/support", icon: "\u{1F3AB}", label: "Support" },
+  { id: "chat", href: "/admin/chat", icon: "\u{1F4AC}", label: "Live Chat" },
   { id: "payouts", href: "/admin/payouts", icon: "\u{1F4B3}", label: "Payouts" },
   { id: "revenue", href: "/admin/revenue", icon: "\u{1F4B5}", label: "Revenue" },
   { id: "reports", href: "/admin/reports", icon: "\u{1F4CA}", label: "Reports" },

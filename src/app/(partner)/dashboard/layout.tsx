@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FIRM_SHORT as DEFAULT_FIRM_SHORT, FIRM_SLOGAN as DEFAULT_FIRM_SLOGAN } from "@/lib/constants";
 import { useDevice } from "@/lib/useDevice";
 import NotificationBell from "@/components/ui/NotificationBell";
@@ -71,6 +71,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatEnabled, setChatEnabled] = useState(false);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatSending, setChatSending] = useState(false);
+  const [chatSessionId, setChatSessionId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [isSudo, setIsSudo] = useState(false);
 
@@ -104,6 +109,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       })
       .catch(() => {});
   }, []);
+
+  // Chat: fetch session & poll for new messages
+  const fetchChat = useCallback(() => {
+    fetch("/api/chat")
+      .then((r) => r.json())
+      .then((data) => {
+        setChatEnabled(data.enabled || false);
+        if (data.session) {
+          setChatSessionId(data.session.id);
+          setChatMessages(data.session.messages || []);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { fetchChat(); }, [fetchChat]);
+
+  useEffect(() => {
+    if (!chatOpen || !chatEnabled) return;
+    const interval = setInterval(fetchChat, 4000);
+    return () => clearInterval(interval);
+  }, [chatOpen, chatEnabled, fetchChat]);
+
+  async function sendChatMessage() {
+    if (!chatInput.trim() || chatSending) return;
+    setChatSending(true);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: chatInput.trim() }),
+      });
+      if (res.ok) {
+        setChatInput("");
+        fetchChat();
+      }
+    } catch {}
+    finally { setChatSending(false); }
+  }
 
   const user = session?.user as any;
   const partnerCode = user?.partnerCode || "DEMO";
@@ -434,6 +478,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* ── LIVE CHAT BUTTON ── */}
+      {chatEnabled && (
       <button
         onClick={() => setChatOpen(!chatOpen)}
         className={`fixed z-[950] bg-gradient-to-br from-brand-gold to-[#e8c060] text-brand-dark rounded-full shadow-lg shadow-brand-gold/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${
@@ -445,9 +490,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         {chatOpen ? "✕" : "💬"}
       </button>
+      )}
 
       {/* ── CHAT PANEL ── */}
-      {chatOpen && (
+      {chatOpen && chatEnabled && (
         <div
           className={`fixed z-[951] bg-[var(--app-bg-secondary)] border border-brand-gold/20 shadow-2xl shadow-black/40 flex flex-col ${
             device.isMobile
@@ -457,8 +503,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--app-border)]">
             <div>
-              <div className="font-body text-sm font-semibold text-[var(--app-text)]">Support Chat</div>
-              <div className="font-body text-[11px] text-brand-gold/70">AI Assistant</div>
+              <div className="font-body text-sm font-semibold text-[var(--app-text)]">Live Support</div>
+              <div className="font-body text-[11px] text-green-400">Online</div>
             </div>
             <button
               onClick={() => setChatOpen(false)}
@@ -468,22 +514,47 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
-            <div className="bg-brand-gold/10 border border-brand-gold/15 rounded-xl rounded-tl-sm px-4 py-3 max-w-[85%]">
-              <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed">
-                Hi! I&apos;m your {firmShort} support assistant. How can I help you today?
+            {chatMessages.length === 0 && (
+              <div className="bg-brand-gold/10 border border-brand-gold/15 rounded-xl rounded-tl-sm px-4 py-3 max-w-[85%]">
+                <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed">
+                  Hi! How can we help you today? Send a message and our support team will respond.
+                </div>
               </div>
-              <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-1.5">Just now</div>
-            </div>
+            )}
+            {chatMessages.map((msg: any) => (
+              <div key={msg.id} className={`flex ${msg.senderType === "partner" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] rounded-xl px-4 py-3 ${
+                  msg.senderType === "partner"
+                    ? "bg-brand-gold/15 border border-brand-gold/20 rounded-br-sm"
+                    : "bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-bl-sm"
+                }`}>
+                  {msg.senderType === "admin" && (
+                    <div className="font-body text-[10px] font-semibold text-brand-gold mb-1">{msg.senderName || "Support"}</div>
+                  )}
+                  <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed whitespace-pre-wrap">{msg.content}</div>
+                  <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-1.5">
+                    {new Date(msg.createdAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
           <div className="p-4 border-t border-[var(--app-border)]">
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Type your question..."
+                placeholder="Type your message..."
                 className="flex-1 bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-[var(--app-text)] font-body text-[13px] outline-none focus:border-brand-gold/30 transition-colors placeholder:text-[var(--app-text-muted)]"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
               />
-              <button className="bg-brand-gold/20 text-brand-gold border border-brand-gold/30 rounded-xl px-4 font-body text-sm font-semibold hover:bg-brand-gold/30 transition-colors">
-                Send
+              <button
+                onClick={sendChatMessage}
+                disabled={!chatInput.trim() || chatSending}
+                className="bg-brand-gold/20 text-brand-gold border border-brand-gold/30 rounded-xl px-4 font-body text-sm font-semibold hover:bg-brand-gold/30 transition-colors disabled:opacity-50"
+              >
+                {chatSending ? "..." : "Send"}
               </button>
             </div>
           </div>
