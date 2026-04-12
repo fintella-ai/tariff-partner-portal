@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useDevice } from "@/lib/useDevice";
 import { useSession } from "next-auth/react";
-import { FIRM_SHORT } from "@/lib/constants";
+import { FIRM_SHORT, DOC_TYPE_LABELS } from "@/lib/constants";
 import { fmtDate } from "@/lib/format";
 
 type AgreementStatus = "not_sent" | "pending" | "signed" | "approved" | "amended" | "under_review";
@@ -54,9 +54,14 @@ export default function DocumentsPage() {
   const partnerCode = (session?.user as any)?.partnerCode ?? "—";
 
   const [agreementData, setAgreementData] = useState<AgreementData | null>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showSigningModal, setShowSigningModal] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploadType, setUploadType] = useState("");
+  const [uploadNotes, setUploadNotes] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   // Close modal on ESC
   useEffect(() => {
@@ -69,26 +74,26 @@ export default function DocumentsPage() {
     }
   }, [showSigningModal]);
 
-  // Demo fallback docs
-  const requiredDocs: RequiredDoc[] = [
-    { name: "W-9 Form",            status: "uploaded", date: "2025-02-15" },
-    { name: "Tax ID Verification",  status: "required", date: null },
-  ];
+  const fetchDocuments = () => {
+    fetch("/api/partner/documents")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data?.documents) setDocuments(data.documents); })
+      .catch(() => {});
+  };
 
-  // Fetch agreement status from API
+  // Fetch agreement + documents from API
   useEffect(() => {
-    fetch("/api/agreement")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data) => {
-        if (data.agreement) {
-          setAgreementData(data.agreement);
-        }
-      })
-      .catch(() => {
-        // Demo fallback — no agreement in DB yet
-      })
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/agreement").then((r) => (r.ok ? r.json() : null)).then((data) => {
+        if (data?.agreement) setAgreementData(data.agreement);
+      }),
+      fetch("/api/partner/documents").then((r) => (r.ok ? r.json() : null)).then((data) => {
+        if (data?.documents) setDocuments(data.documents);
+      }),
+    ]).catch(() => {}).finally(() => setLoading(false));
   }, []);
+
+  const nonAgreementDocs = documents.filter((d) => d.docType !== "agreement");
 
   const agreementStatus: AgreementStatus = agreementData?.status || "not_sent";
   const astCfg = AGREEMENT_STATUS_CONFIG[agreementStatus];
@@ -240,107 +245,90 @@ export default function DocumentsPage() {
         )}
       </div>
 
-      {/* ── Required Documents ─────────────────────────────────────────────── */}
+      {/* ── My Documents ─────────────────────────────────────────────── */}
       <div className={`card ${device.cardPadding} ${device.borderRadius} mb-6`}>
-        <h3 className="font-display text-base sm:text-lg font-bold mb-1">Required Documents</h3>
-        <p className="font-body text-xs text-[var(--app-text-muted)] mb-5">
-          Documents are only required if you have earned commissions.
-        </p>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-display text-base sm:text-lg font-bold">My Documents</h3>
+          <button onClick={() => setShowUpload(!showUpload)} className="btn-gold text-[12px] px-4 py-2.5">{showUpload ? "Cancel" : "+ Upload"}</button>
+        </div>
 
-        {device.isMobile ? (
-          <div className={`flex flex-col ${device.gap}`}>
-            {requiredDocs.map((doc) => {
-              const dCfg = DOC_STATUS_CONFIG[doc.status];
-              return (
-                <div
-                  key={doc.name}
-                  className="p-4 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="shrink-0 w-9 h-9 rounded-lg bg-[var(--app-card-bg)] flex items-center justify-center">
-                      <svg className="w-4.5 h-4.5 text-[var(--app-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-medium text-[var(--app-text)] truncate">{doc.name}</p>
-                      <p className="font-body text-[11px] text-[var(--app-text-muted)]">
-                        {doc.date ? fmtDate(doc.date) : "No date"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium tracking-wide uppercase ${dCfg.bg} ${dCfg.text}`}
-                    >
-                      {dCfg.label}
-                    </span>
-                    <button className="text-[12px] font-medium tracking-wide uppercase text-[var(--app-text-secondary)] border border-[var(--app-input-border)] rounded-lg px-3.5 py-1.5 hover:border-[var(--app-border)] hover:text-[var(--app-text)] transition-colors">
-                      {doc.status === "required" || doc.status === "expired" ? "Upload" : "View"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="border border-[var(--app-border)] rounded-lg overflow-hidden">
-            <div className="grid grid-cols-[1fr_140px_140px_100px] gap-4 px-4 py-2.5 bg-[var(--app-card-bg)] border-b border-[var(--app-border)]">
-              <span className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Document</span>
-              <span className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Status</span>
-              <span className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Date</span>
-              <span className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">Action</span>
+        {showUpload && (
+          <div className="mb-4 p-4 rounded-lg border border-brand-gold/20 bg-brand-gold/[0.03]">
+            <div className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2"} gap-3 mb-3`}>
+              <div>
+                <label className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-secondary)] mb-1.5 block">Document Type *</label>
+                <select value={uploadType} onChange={(e) => setUploadType(e.target.value)} className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-sm outline-none">
+                  <option value="">Select type...</option>
+                  <option value="w9">W-9 Form</option>
+                  <option value="w8">W-8 Form</option>
+                  <option value="tax_form">Tax Form</option>
+                  <option value="bank_letter">Bank Letter</option>
+                  <option value="voided_check">Voided Check</option>
+                </select>
+              </div>
+              <div>
+                <label className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-secondary)] mb-1.5 block">Notes</label>
+                <input value={uploadNotes} onChange={(e) => setUploadNotes(e.target.value)} className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-sm outline-none" placeholder="Notes about this document..." />
+              </div>
             </div>
-            {requiredDocs.map((doc) => {
-              const dCfg = DOC_STATUS_CONFIG[doc.status];
-              return (
-                <div
-                  key={doc.name}
-                  className="grid grid-cols-[1fr_140px_140px_100px] gap-4 px-4 py-3 items-center border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="shrink-0 w-8 h-8 rounded-lg bg-[var(--app-card-bg)] flex items-center justify-center">
-                      <svg className="w-4 h-4 text-[var(--app-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                      </svg>
-                    </div>
-                    <span className="font-body text-sm text-[var(--app-text)]">{doc.name}</span>
-                  </div>
-                  <span
-                    className={`inline-flex items-center w-fit px-2.5 py-1 rounded-full text-[11px] font-medium tracking-wide uppercase ${dCfg.bg} ${dCfg.text}`}
-                  >
-                    {dCfg.label}
-                  </span>
-                  <span className="font-body text-sm text-[var(--app-text-secondary)]">
-                    {doc.date ? fmtDate(doc.date) : "—"}
-                  </span>
-                  <div className="text-right">
-                    <button className="text-[12px] font-medium tracking-wide uppercase text-[var(--app-text-secondary)] border border-[var(--app-input-border)] rounded-lg px-3.5 py-1.5 hover:border-[var(--app-border)] hover:text-[var(--app-text)] transition-colors">
-                      {doc.status === "required" || doc.status === "expired" ? "Upload" : "View"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            <label className={`inline-flex items-center gap-2 btn-gold text-[12px] px-5 py-2.5 cursor-pointer ${uploading || !uploadType ? "opacity-50 pointer-events-none" : ""}`}>
+              {uploading ? "Uploading..." : "Choose File & Upload"}
+              <input type="file" accept=".pdf,.doc,.docx,.png,.jpg" className="hidden" disabled={uploading || !uploadType} onChange={async (e) => { const file = e.target.files?.[0]; if (!file || !uploadType) return; setUploading(true); try { const reader = new FileReader(); reader.onload = async () => { const res = await fetch("/api/partner/documents", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ docType: uploadType, fileName: file.name, fileData: reader.result, notes: uploadNotes || null }) }); if (res.ok) { setShowUpload(false); setUploadType(""); setUploadNotes(""); fetchDocuments(); } else { const err = await res.json().catch(() => ({})); alert(err.error || "Upload failed"); } setUploading(false); }; reader.readAsDataURL(file); } catch { setUploading(false); } e.target.value = ""; }} />
+            </label>
           </div>
         )}
-      </div>
 
-      {/* ── Upload Area ────────────────────────────────────────────────────── */}
-      <div className={`card ${device.cardPadding} ${device.borderRadius}`}>
-        <div className="border-2 border-dashed border-[var(--app-input-border)] rounded-lg p-8 sm:p-12 text-center hover:border-[var(--app-border)] transition-colors cursor-pointer">
-          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-[var(--app-card-bg)] flex items-center justify-center">
-            <svg className="w-6 h-6 text-[var(--app-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-            </svg>
+        {nonAgreementDocs.length === 0 && !showUpload ? (
+          <div className="p-8 text-center">
+            <div className="font-body text-sm text-[var(--app-text-muted)] mb-2">No documents uploaded yet.</div>
+            <button onClick={() => setShowUpload(true)} className="font-body text-[12px] text-brand-gold hover:underline">Upload your first document</button>
           </div>
-          <p className="font-body text-sm text-[var(--app-text-secondary)] mb-2">
-            Drag &amp; drop files here or click to upload
-          </p>
-          <p className="font-body text-[11px] text-[var(--app-text-muted)]">
-            Accepted formats: PDF, JPG, PNG up to 10MB
-          </p>
-        </div>
+        ) : nonAgreementDocs.length > 0 ? (
+          <>
+            <div className="hidden md:block border border-[var(--app-border)] rounded-lg overflow-hidden">
+              <div className="grid grid-cols-[1.5fr_0.8fr_0.7fr_0.6fr_0.6fr] gap-3 px-4 py-2.5 bg-[var(--app-card-bg)] border-b border-[var(--app-border)]">
+                {["Document", "Type", "Status", "Date", "Action"].map((h) => (
+                  <span key={h} className={`font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-muted)] ${h === "Action" ? "text-right" : ""}`}>{h}</span>
+                ))}
+              </div>
+              {nonAgreementDocs.map((doc: any) => {
+                const dCfg = DOC_STATUS_CONFIG[(doc.status || "uploaded") as DocStatus] || DOC_STATUS_CONFIG.uploaded;
+                return (
+                  <div key={doc.id} className="grid grid-cols-[1.5fr_0.8fr_0.7fr_0.6fr_0.6fr] gap-3 px-4 py-3 items-center border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors">
+                    <div>
+                      <div className="font-body text-sm text-[var(--app-text)] truncate">{doc.fileName}</div>
+                      {doc.notes && <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-0.5 truncate">Note: {doc.notes}</div>}
+                    </div>
+                    <div className="font-body text-[12px] text-[var(--app-text-secondary)]">{DOC_TYPE_LABELS[doc.docType] || doc.docType}</div>
+                    <span className={`inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase ${dCfg.bg} ${dCfg.text}`}>{dCfg.label}</span>
+                    <span className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(doc.createdAt)}</span>
+                    <div className="text-right">
+                      {doc.fileUrl && <button onClick={() => { const w = window.open(); if (w) { w.document.write(`<iframe src="${doc.fileUrl}" style="width:100%;height:100vh;border:none;"></iframe>`); w.document.title = doc.fileName; } }} className="text-[11px] text-brand-gold hover:underline">View</button>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="md:hidden flex flex-col gap-3">
+              {nonAgreementDocs.map((doc: any) => {
+                const dCfg = DOC_STATUS_CONFIG[(doc.status || "uploaded") as DocStatus] || DOC_STATUS_CONFIG.uploaded;
+                return (
+                  <div key={doc.id} className="p-4 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-body text-sm font-medium text-[var(--app-text)] truncate">{doc.fileName}</div>
+                        <div className="font-body text-[11px] text-[var(--app-text-muted)]">{DOC_TYPE_LABELS[doc.docType] || doc.docType} &middot; {fmtDate(doc.createdAt)}</div>
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase shrink-0 ${dCfg.bg} ${dCfg.text}`}>{dCfg.label}</span>
+                    </div>
+                    {doc.notes && <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-2">Note: {doc.notes}</div>}
+                    {doc.fileUrl && <button onClick={() => { const w = window.open(); if (w) { w.document.write(`<iframe src="${doc.fileUrl}" style="width:100%;height:100vh;border:none;"></iframe>`); w.document.title = doc.fileName; } }} className="text-[11px] text-brand-gold hover:underline">View</button>}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : null}
       </div>
 
       {/* ── Embedded Signing Modal ─────────────────────────────────────────── */}

@@ -56,3 +56,13 @@ export const US_STATES = [
   "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
   "VA","WA","WV","WI","WY","DC",
 ] as const;
+
+// ─── DOCUMENT TYPES ─────────────────────────────────────────────────────────
+export const DOC_TYPE_LABELS: Record<string, string> = {
+  agreement: "Agreement",
+  w9: "W-9",
+  w8: "W-8",
+  tax_form: "Tax Form",
+  bank_letter: "Bank Letter",
+  voided_check: "Voided Check",
+};
