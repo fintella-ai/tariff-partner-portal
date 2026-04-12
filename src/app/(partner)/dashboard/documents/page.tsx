@@ -6,17 +6,19 @@ import { useSession } from "next-auth/react";
 import { FIRM_SHORT } from "@/lib/constants";
 import { fmtDate } from "@/lib/format";
 
-type AgreementStatus = "not_sent" | "pending" | "signed" | "amended";
+type AgreementStatus = "not_sent" | "pending" | "signed" | "approved" | "amended" | "under_review";
 type DocStatus = "required" | "uploaded" | "under_review" | "approved" | "expired";
 
 const AGREEMENT_STATUS_CONFIG: Record<
   AgreementStatus,
   { label: string; bg: string; text: string; dot: string }
 > = {
-  not_sent:  { label: "Not Sent",           bg: "bg-[var(--app-input-bg)]",        text: "text-[var(--app-text-secondary)]",   dot: "bg-[var(--app-text-muted)]" },
-  pending:   { label: "Pending Signature",  bg: "bg-yellow-500/15",   text: "text-yellow-400", dot: "bg-yellow-400" },
-  signed:    { label: "Signed",             bg: "bg-green-500/15",    text: "text-green-400",  dot: "bg-green-400" },
-  amended:   { label: "Amendment Pending",  bg: "bg-orange-500/15",   text: "text-orange-400", dot: "bg-orange-400" },
+  not_sent:     { label: "Not Sent",           bg: "bg-[var(--app-input-bg)]",        text: "text-[var(--app-text-secondary)]",   dot: "bg-[var(--app-text-muted)]" },
+  pending:      { label: "Pending Signature",  bg: "bg-yellow-500/15",   text: "text-yellow-400", dot: "bg-yellow-400" },
+  signed:       { label: "Signed",             bg: "bg-green-500/15",    text: "text-green-400",  dot: "bg-green-400" },
+  approved:     { label: "Signed & Approved",  bg: "bg-green-500/15",    text: "text-green-400",  dot: "bg-green-400" },
+  under_review: { label: "Under Review",       bg: "bg-blue-500/15",     text: "text-blue-400",   dot: "bg-blue-400" },
+  amended:      { label: "Amendment Pending",  bg: "bg-orange-500/15",   text: "text-orange-400", dot: "bg-orange-400" },
 };
 
 const DOC_STATUS_CONFIG: Record<
@@ -90,7 +92,7 @@ export default function DocumentsPage() {
 
   const agreementStatus: AgreementStatus = agreementData?.status || "not_sent";
   const astCfg = AGREEMENT_STATUS_CONFIG[agreementStatus];
-  const isSigned = agreementStatus === "signed";
+  const isSigned = agreementStatus === "signed" || agreementStatus === "approved";
   const isPending = agreementStatus === "pending";
 
   // Request signing — sends agreement then opens embedded signing modal

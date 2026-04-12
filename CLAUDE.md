@@ -167,6 +167,7 @@ npm run db:studio    # Open Prisma Studio
 - Notification system: NotificationBell component with polling (30s), unread badge, mark-read, click-to-navigate
 - 7 new API routes: /api/admin/reports, /api/admin/payouts (GET+POST), /api/admin/support (GET), /api/admin/support/[id] (GET+PATCH), /api/tickets (GET+POST), /api/tickets/[id]/messages (GET+POST), /api/notifications (GET+PATCH)
 - Mobile optimization pass: reports grids → hidden md:block + mobile cards, NotificationBell 44px touch target + responsive width, revenue mobile label sizes
+- Agreement status sync: "approved" and "under_review" statuses properly displayed across admin partner detail, partner documents page, agreement gates, and void logic
 
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)

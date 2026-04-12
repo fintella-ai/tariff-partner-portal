@@ -792,15 +792,17 @@ export default function PartnerDetailPage() {
               </div>
             </div>
             <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${
-              agreement?.status === "signed"
+              agreement?.status === "signed" || agreement?.status === "approved"
                 ? "bg-green-500/10 text-green-400 border border-green-500/20"
                 : agreement?.status === "pending"
                   ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                  : agreement?.status === "amended"
-                    ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                    : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]"
+                  : agreement?.status === "under_review"
+                    ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                    : agreement?.status === "amended"
+                      ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
+                      : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]"
             }`}>
-              {agreement?.status || "none"}
+              {agreement?.status === "approved" ? "signed & approved" : agreement?.status?.replace("_", " ") || "none"}
             </span>
           </div>
         </div>

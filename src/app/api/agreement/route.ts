@@ -75,11 +75,11 @@ export async function POST(req: NextRequest) {
   try {
     // Check if there's already a pending or signed agreement
     const existing = await prisma.partnershipAgreement.findFirst({
-      where: { partnerCode, status: { in: ["pending", "signed"] } },
+      where: { partnerCode, status: { in: ["pending", "signed", "approved"] } },
       orderBy: { version: "desc" },
     });
 
-    if (existing?.status === "signed") {
+    if (existing?.status === "signed" || existing?.status === "approved") {
       return NextResponse.json({ error: "Agreement already signed" }, { status: 400 });
     }
 

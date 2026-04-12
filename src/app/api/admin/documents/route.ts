@@ -120,7 +120,7 @@ export async function PATCH(req: NextRequest) {
     if (doc.docType === "agreement") {
       // Void the latest signed agreement
       const latestAgreement = await prisma.partnershipAgreement.findFirst({
-        where: { partnerCode: doc.partnerCode, status: "signed" },
+        where: { partnerCode: doc.partnerCode, status: { in: ["signed", "approved"] } },
         orderBy: { version: "desc" },
       });
 
