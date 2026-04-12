@@ -15,7 +15,7 @@ export default auth((req) => {
     // If already logged in, redirect to appropriate dashboard
     if (session?.user) {
       const role = (session.user as any).role;
-      if (role === "admin" || role === "super_admin") {
+      if (["admin", "super_admin", "accounting", "partner_support"].includes(role)) {
         return NextResponse.redirect(new URL("/admin/partners", req.url));
       }
       return NextResponse.redirect(new URL("/dashboard/home", req.url));
@@ -31,7 +31,7 @@ export default auth((req) => {
   // Admin-only routes
   if (pathname.startsWith("/admin")) {
     const role = (session.user as any).role;
-    if (role !== "admin" && role !== "super_admin") {
+    if (!["admin", "super_admin", "accounting", "partner_support"].includes(role)) {
       return NextResponse.redirect(new URL("/dashboard/home", req.url));
     }
   }

@@ -188,6 +188,10 @@ npm run db:studio    # Open Prisma Studio
 - Enterprise Remove/Terminate: "Terminate" keeps historical data but stops tracking; "Remove" permanently deletes all EP data. Double confirmation on remove.
 - Enterprise payouts wired into standard Payouts page: EP overrides appear as "EP" tier entries alongside L1/L2/L3 commissions with due/pending/paid status
 - Communication log filters: partner profile now has filter tabs for All, Support Tickets, Email, SMS, Live Chat, Phone Calls (SMS/Email/Chat/Phone show phase placeholders)
+- Admin role-based permissions: 4 roles (super_admin, admin, accounting, partner_support) with per-role nav visibility, feature restrictions, settings tab access
+- Admin user management page (/admin/users): super_admin can create admins, assign roles, reset passwords, delete users
+- Permission checks: void documents (admin+ only), reset partner code (super_admin only), settings tabs filtered by role, nav items filtered by role
+- Permissions config: `src/lib/permissions.ts` — centralized role definitions, nav visibility, feature flags
 
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)

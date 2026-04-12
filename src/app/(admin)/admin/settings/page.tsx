@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { getPermissions } from "@/lib/permissions";
 
 /**
  * Compress an image file to a smaller base64 data URL.
@@ -111,7 +113,12 @@ const DEFAULT_REFERRAL_OPPS: ReferralOpp[] = [
 // ─── COMPONENT ──────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState<TabId>("branding");
+  const { data: session } = useSession();
+  const permissions = getPermissions((session?.user as any)?.role || "admin");
+  const allowedTabs = TABS.filter((t) => permissions.settingsTabs.includes(t.id));
+  const defaultTab = allowedTabs.length > 0 ? allowedTabs[0].id : "branding";
+
+  const [tab, setTab] = useState<TabId>(defaultTab);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -362,7 +369,7 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto">
-        {TABS.map((t) => (
+        {allowedTabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { fmtDate } from "@/lib/format";
+import { getPermissions } from "@/lib/permissions";
 import CountryCodeSelect, { parseMobilePhone, buildMobilePhone } from "@/components/ui/CountryCodeSelect";
 import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
 
@@ -65,6 +66,7 @@ const statusBadge: Record<string, string> = {
 export default function PartnerDetailPage() {
   const { data: session } = useSession();
   const isSuperAdmin = (session?.user as any)?.role === "super_admin";
+  const permissions = getPermissions((session?.user as any)?.role || "admin");
   const { id } = useParams();
   const router = useRouter();
   const [partner, setPartner] = useState<Partner | null>(null);
@@ -966,7 +968,7 @@ export default function PartnerDetailPage() {
                       Approve
                     </button>
                   )}
-                  {d.status !== "voided" && (
+                  {d.status !== "voided" && permissions.canVoidDocuments && (
                     <button
                       onClick={async () => {
                         const docLabel = d.docType === "agreement" ? "agreement" : "W9";

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { FIRM_SHORT } from "@/lib/constants";
 import { useDevice } from "@/lib/useDevice";
 import NotificationBell from "@/components/ui/NotificationBell";
+import { getVisibleNav, getPermissions, ROLE_LABELS, type AdminRole } from "@/lib/permissions";
 
 const ADMIN_NAV_ITEMS = [
   { id: "partners", href: "/admin/partners", icon: "\u{1F465}", label: "Partners" },
@@ -19,6 +20,7 @@ const ADMIN_NAV_ITEMS = [
   { id: "revenue", href: "/admin/revenue", icon: "\u{1F4B5}", label: "Revenue" },
   { id: "reports", href: "/admin/reports", icon: "\u{1F4CA}", label: "Reports" },
   { id: "settings", href: "/admin/settings", icon: "\u2699\uFE0F", label: "Settings" },
+  { id: "users", href: "/admin/users", icon: "\u{1F6E1}\uFE0F", label: "Admin Users" },
 ];
 
 function CollapseIcon({ collapsed }: { collapsed: boolean }) {
@@ -40,6 +42,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [adminName, setAdminName] = useState("");
 
   const user = session?.user as any;
+  const userRole = (user?.role || "admin") as AdminRole;
+  const visibleNavIds = getVisibleNav(userRole);
+  const permissions = getPermissions(userRole);
+  const filteredNav = ADMIN_NAV_ITEMS.filter((item) => visibleNavIds.includes(item.id));
 
   useEffect(() => {
     fetch("/api/settings")
@@ -82,7 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
       {collapsed && <div className="mb-3" />}
 
-      {ADMIN_NAV_ITEMS.map((item) => {
+      {filteredNav.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <button
@@ -122,7 +128,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {adminName || user?.name || "Admin"}
             </div>
             <div className="font-body text-[11px] theme-text-muted tracking-[1px] mb-3">
-              Administrator
+              {ROLE_LABELS[userRole] || "Administrator"}
             </div>
           </>
         )}
@@ -197,7 +203,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 Admin Panel
               </div>
               <h1 className="font-display text-xl sm:text-2xl lg:text-[28px] font-bold mb-1">
-                {adminName || user?.name || "Administrator"} <span className="font-body text-[13px] font-normal theme-text-muted">(Admin)</span>
+                {adminName || user?.name || "Administrator"} <span className="font-body text-[13px] font-normal theme-text-muted">({ROLE_LABELS[userRole] || "Admin"})</span>
               </h1>
             </div>
             <NotificationBell />

@@ -11,7 +11,7 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const role = (session.user as any).role;
-  if (role !== "admin" && role !== "super_admin") {
+  if (!["super_admin", "admin", "accounting", "partner_support"].includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
