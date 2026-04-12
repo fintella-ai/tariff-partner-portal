@@ -26,18 +26,44 @@ type DevData = {
   githubTokenConfigured: boolean;
 };
 
+type SentryIssue = {
+  id: string;
+  title: string;
+  culprit: string;
+  level: string;
+  count: number;
+  userCount: number;
+  firstSeen: string;
+  lastSeen: string;
+  permalink: string;
+  status: string;
+};
+
+type ErrorsData = {
+  issues: SentryIssue[];
+  configured: boolean;
+  total?: number;
+  message?: string;
+  error?: string;
+};
+
 export default function DevPage() {
   const { data: session } = useSession();
   const isSuperAdmin = (session?.user as any)?.role === "super_admin";
   const [data, setData] = useState<DevData | null>(null);
+  const [errors, setErrors] = useState<ErrorsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isSuperAdmin) { setLoading(false); return; }
-    fetch("/api/admin/dev")
-      .then((r) => r.json())
-      .then((d) => setData(d))
-      .catch(() => {})
+    Promise.all([
+      fetch("/api/admin/dev").then((r) => r.json()).catch(() => null),
+      fetch("/api/admin/dev/errors").then((r) => r.json()).catch(() => null),
+    ])
+      .then(([devData, errorsData]) => {
+        setData(devData);
+        setErrors(errorsData);
+      })
       .finally(() => setLoading(false));
   }, [isSuperAdmin]);
 
@@ -185,6 +211,107 @@ export default function DevPage() {
                   >
                     View ↗
                   </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ─── RECENT ERRORS (SENTRY) ─── */}
+      <div className="card mt-6 overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--app-border)] flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🚨</span>
+            <div>
+              <div className="font-body font-semibold text-sm">Recent Errors (Last 24h)</div>
+              <div className="font-body text-[11px] theme-text-muted">
+                {errors?.configured
+                  ? `${errors.total || 0} unresolved issue${errors.total === 1 ? "" : "s"} from Sentry`
+                  : "Sentry not configured"}
+              </div>
+            </div>
+          </div>
+          {errors?.configured && (
+            <a
+              href="https://sentry.io/organizations/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-body text-[11px] text-brand-gold hover:underline"
+            >
+              Open Sentry ↗
+            </a>
+          )}
+        </div>
+
+        {!errors?.configured ? (
+          <div className="px-5 py-6 text-center">
+            <div className="font-body text-[12px] theme-text-muted mb-1">
+              Set <code className="text-brand-gold">SENTRY_AUTH_TOKEN</code>, <code className="text-brand-gold">SENTRY_ORG</code>, and <code className="text-brand-gold">SENTRY_PROJECT</code> in Vercel env vars to enable live error tracking.
+            </div>
+            <div className="font-body text-[11px] theme-text-muted">
+              Errors are still captured in Sentry if <code>SENTRY_DSN</code> is set — this panel just fetches the list.
+            </div>
+          </div>
+        ) : errors.error ? (
+          <div className="px-5 py-6 text-center">
+            <div className="font-body text-[12px] text-red-400">{errors.error}</div>
+          </div>
+        ) : errors.issues.length === 0 ? (
+          <div className="px-5 py-8 text-center">
+            <div className="text-3xl mb-2">✅</div>
+            <div className="font-body text-[13px] theme-text-secondary">No unresolved errors in the last 24 hours.</div>
+            <div className="font-body text-[11px] theme-text-muted mt-1">Your portal is healthy.</div>
+          </div>
+        ) : (
+          <div>
+            {errors.issues.map((issue, idx) => (
+              <div
+                key={issue.id}
+                className={`px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 ${idx % 2 === 1 ? "bg-[rgba(239,68,68,0.02)]" : ""}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-body text-[13px] text-[var(--app-text)] mb-1 break-words font-medium">
+                      {issue.title}
+                    </div>
+                    {issue.culprit && (
+                      <div className="font-mono text-[10px] theme-text-muted break-all mb-1">
+                        {issue.culprit}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 font-body text-[10px] theme-text-muted flex-wrap">
+                      <span className={`px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                        issue.level === "error" || issue.level === "fatal"
+                          ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                          : issue.level === "warning"
+                            ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                            : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                      }`}>
+                        {issue.level}
+                      </span>
+                      <span>·</span>
+                      <span>{issue.count} event{issue.count === 1 ? "" : "s"}</span>
+                      {issue.userCount > 0 && (
+                        <>
+                          <span>·</span>
+                          <span>{issue.userCount} user{issue.userCount === 1 ? "" : "s"}</span>
+                        </>
+                      )}
+                      <span>·</span>
+                      <span>Last seen {new Date(issue.lastSeen).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                    </div>
+                  </div>
+                  {issue.permalink && (
+                    <a
+                      href={issue.permalink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-body text-[10px] text-brand-gold hover:underline shrink-0"
+                    >
+                      View ↗
+                    </a>
+                  )}
                 </div>
               </div>
             ))}
