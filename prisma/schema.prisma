@@ -521,3 +521,22 @@ model ChatMessage {
 
   @@index([sessionId])
 }
+
+// ─── FEATURE REQUESTS ───────────────────────────────────────────────────────
+model FeatureRequest {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  priority        String   @default("normal") // low, normal, high, urgent
+  status          String   @default("submitted") // submitted, in_review, in_progress, completed, rejected
+  submittedBy     String   // partnerCode or admin email
+  submittedByType String   // "partner" or "admin"
+  submittedByName String?  // display name
+  adminNotes      String?  // super admin internal notes
+  category        String?  // "ui", "feature", "bug", "integration", "other"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([submittedBy])
+}

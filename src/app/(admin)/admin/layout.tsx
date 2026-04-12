@@ -23,6 +23,7 @@ const ADMIN_NAV_ITEMS = [
   { id: "settings", href: "/admin/settings", icon: "\u2699\uFE0F", label: "Settings" },
   { id: "users", href: "/admin/users", icon: "\u{1F6E1}\uFE0F", label: "Admin Users" },
   { id: "dev", href: "/admin/dev", icon: "\u{1F6E0}\uFE0F", label: "Development" },
+  { id: "features", href: "/admin/features", icon: "\u{2728}", label: "Feature Requests" },
 ];
 
 function CollapseIcon({ collapsed }: { collapsed: boolean }) {

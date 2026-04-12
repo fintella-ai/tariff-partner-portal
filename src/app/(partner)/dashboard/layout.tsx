@@ -21,6 +21,7 @@ const MAIN_NAV = [
   { id: "referral-links", href: "/dashboard/referral-links", icon: "\u{1F517}", label: "Referral Links", shortLabel: "Links" },
   { id: "documents", href: "/dashboard/documents", icon: "\u{1F4C4}", label: "Documents", shortLabel: "Docs" },
   { id: "conference", href: "/dashboard/conference", icon: "\u{1F4F9}", label: "Live Weekly Call!", shortLabel: "Live" },
+  { id: "feature-request", href: "/dashboard/feature-request", icon: "\u{2728}", label: "Feature Requests", shortLabel: "Ideas" },
 ];
 
 // Bottom section items (above user info)
