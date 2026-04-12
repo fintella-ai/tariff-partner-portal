@@ -194,14 +194,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
     <div className="flex flex-col h-full">
       {/* Brand */}
-      <div className={`${isCollapsed ? "px-1 text-center" : "pl-2"} mb-6`}>
+      <div className={`${isCollapsed ? "px-1" : "px-2"} mb-6 text-center`}>
         {isCollapsed ? (
           <div className="font-display text-xs font-bold text-brand-gold">
             {logoUrl ? <img src={logoUrl} alt={firmShort} className="max-h-8 mx-auto object-contain" /> : firmShort.charAt(0)}
           </div>
         ) : logoUrl ? (
           <div className="mb-2">
-            <img src={logoUrl} alt={firmShort} className="max-h-10 max-w-[180px] object-contain" />
+            <img src={logoUrl} alt={firmShort} className="max-h-10 mx-auto object-contain" />
           </div>
         ) : (
           <div className="font-display text-sm font-bold text-brand-gold tracking-[1px]">
@@ -209,7 +209,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         )}
         {!isCollapsed && (
-          <div className="font-body text-[10px] theme-text-muted mt-1 italic leading-tight">
+          <div className="font-body text-[10px] theme-text-muted mt-1 italic leading-tight text-center">
             {firmSlogan}
           </div>
         )}
@@ -370,12 +370,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      {/* ── MOBILE FLOATING NOTIFICATION BELL ── */}
-      {device.isMobile && (
-        <div className="fixed z-[902] right-4" style={{ top: "calc(env(safe-area-inset-top, 12px) + 56px)" }}>
-          <NotificationBell />
-        </div>
-      )}
+      {/* ── FLOATING NOTIFICATION BELL ── */}
+      <div
+        className="fixed z-[902]"
+        style={{
+          top: device.isMobile ? "calc(env(safe-area-inset-top, 12px) + 56px)" : "20px",
+          right: device.isMobile ? "16px" : "24px",
+        }}
+      >
+        <NotificationBell />
+      </div>
 
       {/* ══ MAIN CONTENT ══ */}
       <div
@@ -479,7 +483,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   👥 Referral Links
                 </button>
-                <NotificationBell />
                 <button
                   onClick={() => navigate("/dashboard/support")}
                   className={`font-body text-lg font-bold tracking-[1px] border rounded-lg px-5 py-2.5 transition-colors flex items-center gap-2 ${
