@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { FIRM_NAME, FIRM_SHORT, FIRM_SLOGAN } from "@/lib/constants";
+import CountryCodeSelect, { buildMobilePhone } from "@/components/ui/CountryCodeSelect";
 
 function GetStartedContent() {
   const [submitting, setSubmitting] = useState(false);
@@ -12,14 +13,18 @@ function GetStartedContent() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [mobileCountry, setMobileCountry] = useState("US");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [emailOptIn, setEmailOptIn] = useState(false);
   const [smsOptIn, setSmsOptIn] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPhoneError("");
     if (!firstName.trim() || !lastName.trim() || !email.trim()) {
       setError("First name, last name, and email are required.");
       return;
@@ -30,6 +35,13 @@ function GetStartedContent() {
     }
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+    // Require at least one phone number
+    const hasPhone = phone.replace(/\D/g, "").length >= 7;
+    const hasMobile = mobileNumber.replace(/\D/g, "").length >= 7;
+    if (!hasPhone && !hasMobile) {
+      setPhoneError("Please enter at least one valid phone number (Phone or Mobile).");
       return;
     }
     if (!emailOptIn || !smsOptIn) {
@@ -43,7 +55,7 @@ function GetStartedContent() {
       const res = await fetch("/api/getstarted", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, phone, companyName, password, emailOptIn, smsOptIn }),
+        body: JSON.stringify({ firstName, lastName, email, phone, mobilePhone: buildMobilePhone(mobileCountry, mobileNumber) || null, companyName, password, emailOptIn, smsOptIn }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Signup failed"); return; }
@@ -158,9 +170,21 @@ function GetStartedContent() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className={labelClass}>Phone</label>
+                <label className={labelClass}>Phone <span className="theme-text-faint normal-case">(optional)</span></label>
                 <input className={inputClass} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 123-4567" />
               </div>
+              <div>
+                <label className={labelClass}>Mobile Phone (SMS) <span className="theme-text-faint normal-case">(optional)</span></label>
+                <div className="flex gap-2">
+                  <div className="shrink-0"><CountryCodeSelect selectedCode={mobileCountry} onChange={setMobileCountry} /></div>
+                  <input className={inputClass} type="tel" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="(123) 444-2124" />
+                </div>
+              </div>
+            </div>
+            {phoneError && (
+              <div className="mb-4 p-3 bg-red-500/[0.08] border border-red-500/25 rounded-lg font-body text-[13px] text-red-400">{phoneError}</div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className={labelClass}>Company <span className="theme-text-faint normal-case">(optional)</span></label>
                 <input className={inputClass} value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Company name" />
