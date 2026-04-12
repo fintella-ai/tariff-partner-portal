@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const DISMISS_KEY = "trln_pwa_install_dismissed";
+const DISMISS_KEY = "fintella_pwa_install_dismissed";
 const REAPPEAR_DAYS = 7;
 
 interface BeforeInstallPromptEvent extends Event {

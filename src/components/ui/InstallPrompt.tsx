@@ -59,20 +59,20 @@ export default function InstallPrompt() {
         {/* Logo */}
         <div className="mb-8">
           {logoUrl ? (
-            <img src={logoUrl} alt="TRLN" className="max-h-16 mx-auto object-contain" />
+            <img src={logoUrl} alt="Fintella" className="max-h-16 mx-auto object-contain" />
           ) : (
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#c4a050] to-[#e8c060] flex items-center justify-center mx-auto">
-              <span className="text-3xl font-bold text-white font-display">T</span>
+              <span className="text-3xl font-bold text-white font-display">F</span>
             </div>
           )}
         </div>
 
         {/* Heading */}
         <h1 className="font-display text-2xl sm:text-3xl font-bold text-white mb-3">
-          Get the TRLN App
+          Get the Fintella App
         </h1>
         <p className="font-body text-sm text-white/60 mb-8 max-w-sm mx-auto leading-relaxed">
-          Add TRLN to your home screen for instant access to your deals, commissions, and partner portal.
+          Add Fintella to your home screen for instant access to your deals, commissions, and partner portal.
         </p>
 
         {/* ── ANDROID: Native install button ── */}
@@ -82,7 +82,7 @@ export default function InstallPrompt() {
               onClick={promptInstall}
               className="w-full bg-gradient-to-r from-[#c4a050] to-[#e8c060] text-[#060a18] font-body text-base font-bold py-4 rounded-xl shadow-lg shadow-[#c4a050]/20 hover:shadow-[#c4a050]/40 transition-all active:scale-[0.98]"
             >
-              Install TRLN App
+              Install Fintella App
             </button>
             <p className="font-body text-xs text-white/30 mt-3">
               Or tap the browser menu and select &quot;Add to Home Screen&quot;
@@ -127,7 +127,7 @@ export default function InstallPrompt() {
                 </div>
               </div>
               <p className="font-body text-[13px] text-white/70 leading-relaxed mb-4">
-                Copy the link below and paste it into <strong className="text-white">Safari</strong> to install the TRLN app on your home screen.
+                Copy the link below and paste it into <strong className="text-white">Safari</strong> to install the Fintella app on your home screen.
               </p>
               <button
                 onClick={() => {
@@ -159,7 +159,7 @@ export default function InstallPrompt() {
                   onClick={promptInstall}
                   className="w-full bg-gradient-to-r from-[#c4a050] to-[#e8c060] text-[#060a18] font-body text-base font-bold py-4 rounded-xl shadow-lg shadow-[#c4a050]/20 hover:shadow-[#c4a050]/40 transition-all active:scale-[0.98]"
                 >
-                  Install TRLN App
+                  Install Fintella App
                 </button>
                 <p className="font-body text-xs text-white/30 mt-3">
                   Installs as a standalone desktop app
@@ -168,7 +168,7 @@ export default function InstallPrompt() {
             ) : (
               <div className="p-5 rounded-xl border border-white/10 bg-white/5">
                 <p className="font-body text-sm text-white/70 leading-relaxed">
-                  For the best experience, visit <span className="text-[#c4a050] font-semibold">trln.partners</span> on your phone and add it to your home screen.
+                  For the best experience, visit <span className="text-[#c4a050] font-semibold">fintella.partners</span> on your phone and add it to your home screen.
                 </p>
               </div>
             )}

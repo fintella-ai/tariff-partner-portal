@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "TRLN Webhook Integration Guide",
+  title: "Fintella Webhook Integration Guide",
   description: "Referral webhook integration guide for Frost Law",
 };
 

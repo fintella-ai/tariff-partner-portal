@@ -25,8 +25,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       settings: {
         id: "global",
-        firmName: "Tariff Refund & Litigation Network",
-        firmShort: "TRLN",
+        firmName: "Financial Intelligence Network",
+        firmShort: "Fintella",
         firmSlogan: "Fighting for what's owed, reclaiming what's fair.",
         firmPhone: "(410) 497-5947",
         supportEmail: "",

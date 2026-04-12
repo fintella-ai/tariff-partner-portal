@@ -5,7 +5,7 @@ import SessionProvider from "@/components/layout/SessionProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tariff Refund & Litigation Network — Partner Portal",
+  title: "Fintella — Financial Intelligence Network Partner Portal",
   description: "Fighting for what's owed, reclaiming what's fair.",
   manifest: "/api/manifest",
   icons: {
@@ -16,11 +16,11 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "TRLN",
+    title: "Fintella",
   },
   other: {
     "mobile-web-app-capable": "yes",
-    "application-name": "TRLN",
+    "application-name": "Fintella",
   },
 };
 

@@ -13,8 +13,8 @@ export async function GET() {
     });
 
     const manifest = {
-      name: settings?.firmName || "Tariff Refund & Litigation Network",
-      short_name: settings?.firmShort || "TRLN",
+      name: settings?.firmName || "Financial Intelligence Network",
+      short_name: settings?.firmShort || "Fintella",
       description: settings?.firmSlogan || "Fighting for what's owed, reclaiming what's fair.",
       start_url: "/dashboard/home",
       scope: "/",

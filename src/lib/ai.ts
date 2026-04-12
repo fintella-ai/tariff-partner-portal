@@ -1,5 +1,5 @@
 /**
- * TRLN PartnerOS — AI Assistant core library
+ * Fintella PartnerOS — AI Assistant core library
  *
  * Handles Anthropic client initialization, system prompt construction with
  * prompt caching, partner data context injection, rate limiting, daily
@@ -42,14 +42,14 @@ function getClient(): Anthropic | null {
 // This text is prepended to every request and cached server-side by Anthropic,
 // so the effective cost is ~90% discounted on repeat queries.
 const KNOWLEDGE_BASE = `
-# TRLN Partner Portal Knowledge Base
+# Fintella Partner Portal Knowledge Base
 
 ## About ${FIRM_NAME} (${FIRM_SHORT})
-TRLN is a partner network that helps U.S. importers recover overpaid tariffs
-through legal action. Partners refer importer clients to TRLN's affiliated
-law firm (Frost Law). When a refund case closes successfully, the firm
-collects a fee and TRLN pays commissions to the partner(s) who sourced the
-client.
+Fintella is a partner network that helps U.S. importers recover overpaid
+tariffs through legal action. Partners refer importer clients to Fintella's
+affiliated law firm (Frost Law). When a refund case closes successfully, the
+firm collects a fee and Fintella pays commissions to the partner(s) who
+sourced the client.
 
 ## Commission Structure (Waterfall Model)
 Total partner commission is capped at **25% of the firm fee** on every deal.
@@ -95,7 +95,7 @@ Partners have two kinds of referral URLs:
    happens via the utm_content param.
 2. **Recruitment link**: partners generate these in the "Referral Links"
    page. Each link has a pre-set L2 or L3 commission rate. Recruits use
-   the link to sign up at \`trln.partners/signup?token=XXX\`.
+   the link to sign up at \`fintella.partners/signup?token=XXX\`.
 
 ## Payouts
 Commissions accumulate in the Commission Ledger on Closed Won deals.
@@ -108,7 +108,7 @@ Settings > Payout Information.
 - **Live chat**: if enabled, talk to a human support rep in real time
 - **Support tickets**: create a ticket from the Support page for async help
 - **Training**: self-serve videos and docs in the Training section
-- **Weekly call**: live Q&A with TRLN team in the Conference section
+- **Weekly call**: live Q&A with the Fintella team in the Conference section
 - **This AI Assistant (PartnerOS)**: ask me anything about how the portal
   works, your deals, your commissions, or how to get things done
 
@@ -136,7 +136,7 @@ their question and offer to create a support ticket or connect them with
 a human rep.
 
 ## Tone and Style
-- Professional but warm — the TRLN voice is confident, helpful, direct
+- Professional but warm — the Fintella voice is confident, helpful, direct
 - Keep answers concise (3-5 sentences for simple questions)
 - Use bullet points or numbered steps for procedural answers
 - Never use emojis unless the user uses them first
@@ -327,7 +327,7 @@ export async function generateResponse(
 
 I received your question: "${lastUserMsg?.content.slice(0, 200) || ""}"
 
-In production, I would consult the TRLN knowledge base and your personal portal data to give you a tailored answer. To enable real AI responses, add ANTHROPIC_API_KEY to your Vercel environment variables and redeploy.
+In production, I would consult the Fintella knowledge base and your personal portal data to give you a tailored answer. To enable real AI responses, add ANTHROPIC_API_KEY to your Vercel environment variables and redeploy.
 
 In the meantime, you can:
 - Browse the Training section for self-serve guides
