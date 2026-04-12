@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
       partnerId: partnerMap[c.partnerCode]?.id || null,
       partnerCode: c.partnerCode,
       tier: c.tier.toUpperCase(),
+      dealId: c.dealId,
       dealName: c.dealName || c.dealId,
       amount: c.amount,
       status: c.status,

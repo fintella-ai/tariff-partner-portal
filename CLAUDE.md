@@ -176,6 +176,8 @@ npm run db:studio    # Open Prisma Studio
 - Revenue page tabs: Revenue, Custom Commissions, Enterprise Reporting
 - Custom Commissions tab: create enterprise partners with custom total rate, add/remove L1 partners by code, expandable detail cards
 - Enterprise Reporting tab: deal-level breakdown per enterprise partner showing TRLN 40%, L1 commission, enterprise override, and net profit
+- Clickable deal name links: all deal names across admin pages (revenue, payouts, enterprise reporting) link to deals page via DealLink component with auto-expand and scroll-to
+- DealLink reusable component: `src/components/ui/DealLink.tsx` — navigates to `/admin/deals?deal={id}`, auto-expands and scrolls to target deal
 
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)

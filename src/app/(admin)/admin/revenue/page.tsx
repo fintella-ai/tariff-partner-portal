@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { fmt$, fmtDate } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
+import DealLink from "@/components/ui/DealLink";
 import { useSession } from "next-auth/react";
 
 type RevenueTab = "Revenue" | "Custom Commissions" | "Enterprise Reporting";
@@ -447,7 +448,7 @@ export default function RevenuePage() {
             return (
               <div key={d.id} className="grid grid-cols-[1.4fr_0.6fr_0.7fr_0.7fr_0.7fr_0.6fr_0.6fr_0.6fr] gap-2 px-5 py-3 items-center min-w-[800px] hover:bg-[var(--app-hover)] transition-colors" style={{ borderBottom: "1px solid var(--app-border)" }}>
                 <div>
-                  <div className="font-body text-[13px] font-medium truncate">{d.dealName}</div>
+                  <DealLink dealId={d.id} className="font-body text-[13px] font-medium truncate block">{d.dealName}</DealLink>
                   <PartnerLink partnerId={d.partnerId} className="font-mono text-[10px] theme-text-muted">{d.partnerCode}</PartnerLink>
                 </div>
                 <div>
@@ -479,7 +480,7 @@ export default function RevenuePage() {
             return (
               <div key={d.id} className="p-4" style={{ borderBottom: "1px solid var(--app-border)" }}>
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="font-body text-[13px] font-medium">{d.dealName}</div>
+                  <DealLink dealId={d.id} className="font-body text-[13px] font-medium">{d.dealName}</DealLink>
                   <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${stageBadge[d.stage] || stageBadge.new_lead}`}>
                     {d.stage.replace("_", " ")}
                   </span>
@@ -855,7 +856,7 @@ export default function RevenuePage() {
                           {activeDeals.map((d) => (
                             <div key={d.id} className="grid grid-cols-[1.4fr_0.6fr_0.6fr_0.6fr_0.6fr_0.6fr_0.6fr] gap-2 px-5 py-3 items-center min-w-[700px] hover:bg-[var(--app-hover)] transition-colors border-b border-[var(--app-border)] last:border-b-0">
                               <div>
-                                <div className="font-body text-[13px] font-medium truncate">{d.dealName}</div>
+                                <DealLink dealId={d.id} className="font-body text-[13px] font-medium truncate block">{d.dealName}</DealLink>
                                 <div className="font-body text-[10px] theme-text-muted">{d.stage.replace("_", " ")}</div>
                               </div>
                               <PartnerLink partnerId={null} className="font-body text-[12px] theme-text-secondary truncate">{d.partnerName}</PartnerLink>
@@ -872,7 +873,7 @@ export default function RevenuePage() {
                         <div className="md:hidden divide-y divide-[var(--app-border)]">
                           {activeDeals.map((d) => (
                             <div key={d.id} className="px-4 py-4">
-                              <div className="font-body text-sm font-medium text-[var(--app-text)] mb-1">{d.dealName}</div>
+                              <DealLink dealId={d.id} className="font-body text-sm font-medium text-[var(--app-text)] mb-1 block">{d.dealName}</DealLink>
                               <div className="font-body text-xs theme-text-muted mb-2">{d.partnerName} &middot; {d.stage.replace("_", " ")}</div>
                               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                                 <div className="flex justify-between"><span className="font-body text-xs theme-text-muted">TRLN 40%</span><span className="font-body text-xs text-brand-gold font-semibold">{fmt$(d.trlnGross)}</span></div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { fmt$ } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
+import DealLink from "@/components/ui/DealLink";
 
 type Payout = {
   id: string;
@@ -10,6 +11,7 @@ type Payout = {
   partnerId: string | null;
   partnerCode: string;
   tier: string;
+  dealId: string;
   dealName: string;
   amount: number;
   status: "pending" | "due" | "paid";
@@ -210,7 +212,7 @@ export default function PayoutManagementPage() {
                       <PartnerLink partnerId={p.partnerId} className="text-[var(--app-text)]">{p.partnerName}</PartnerLink>
                       <div className="text-xs text-[var(--app-text-muted)]">{p.partnerCode}</div>
                     </td>
-                    <td className="px-4 py-3 text-[var(--app-text-secondary)]">{p.dealName}</td>
+                    <td className="px-4 py-3"><DealLink dealId={p.dealId} className="text-[var(--app-text-secondary)]">{p.dealName}</DealLink></td>
                     <td className="px-4 py-3">
                       <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${tierBadge[p.tier] || tierBadge.L1}`}>
                         {p.tier}
@@ -257,7 +259,7 @@ export default function PayoutManagementPage() {
                     {p.tier}
                   </span>
                 </div>
-                <div className="font-body text-xs text-[var(--app-text-secondary)] mb-1">{p.dealName}</div>
+                <DealLink dealId={p.dealId} className="font-body text-xs text-[var(--app-text-secondary)] mb-1 block">{p.dealName}</DealLink>
                 <div className="flex items-center justify-between mt-3">
                   <div>
                     <div className="font-display text-lg font-bold text-[var(--app-text)]">{fmt$(p.amount)}</div>

@@ -72,8 +72,16 @@ export default function AdminDealsPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [partners, setPartners] = useState<{ partnerCode: string; firstName: string; lastName: string }[]>([]);
 
+  // Deep link: auto-expand a deal from URL ?deal=xxx
+  const [deepLinkDealId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search).get("deal");
+    }
+    return null;
+  });
+
   // Expanded deal for editing
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(deepLinkDealId);
   const [editStage, setEditStage] = useState("");
   const [editL1Status, setEditL1Status] = useState("");
   const [editL2Status, setEditL2Status] = useState("");
@@ -100,6 +108,16 @@ export default function AdminDealsPage() {
   }, [stageFilter, partnerFilter, search]);
 
   useEffect(() => { fetchDeals(); }, [fetchDeals]);
+
+  // Auto-scroll to deep-linked deal after data loads
+  useEffect(() => {
+    if (deepLinkDealId && deals.length > 0 && expandedId === deepLinkDealId) {
+      setTimeout(() => {
+        const el = document.getElementById(`deal-${deepLinkDealId}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 200);
+    }
+  }, [deepLinkDealId, deals.length, expandedId]);
 
   // Sort deals
   const sorted = [...deals].sort((a, b) => {
@@ -303,7 +321,7 @@ export default function AdminDealsPage() {
         </div>
 
         {sorted.map((deal) => (
-          <div key={deal.id}>
+          <div key={deal.id} id={`deal-${deal.id}`}>
             <div
               className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.6fr] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer"
               onClick={() => toggleExpand(deal)}
@@ -489,7 +507,7 @@ export default function AdminDealsPage() {
       {/* ═══ MOBILE CARDS ═══ */}
       <div className="md:hidden space-y-3">
         {sorted.map((deal) => (
-          <div key={deal.id} className="card">
+          <div key={deal.id} id={`deal-m-${deal.id}`} className="card">
             <div className="p-4 cursor-pointer" onClick={() => toggleExpand(deal)}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex-1 min-w-0">
