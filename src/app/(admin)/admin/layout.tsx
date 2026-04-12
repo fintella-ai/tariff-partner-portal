@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { FIRM_SHORT } from "@/lib/constants";
 import { useDevice } from "@/lib/useDevice";
+import NotificationBell from "@/components/ui/NotificationBell";
 
 const ADMIN_NAV_ITEMS = [
   { id: "partners", href: "/admin/partners", icon: "\u{1F465}", label: "Partners" },
@@ -190,12 +191,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:px-10 lg:py-9" style={{ paddingTop: !device.isDesktop ? 72 : undefined }}>
         <div className="mb-5 sm:mb-8">
-          <div className="font-body text-[11px] theme-text-muted tracking-[1px] uppercase mb-1">
-            Admin Panel
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="font-body text-[11px] theme-text-muted tracking-[1px] uppercase mb-1">
+                Admin Panel
+              </div>
+              <h1 className="font-display text-xl sm:text-2xl lg:text-[28px] font-bold mb-1">
+                {adminName || user?.name || "Administrator"} <span className="font-body text-[13px] font-normal theme-text-muted">(Admin)</span>
+              </h1>
+            </div>
+            <NotificationBell />
           </div>
-          <h1 className="font-display text-xl sm:text-2xl lg:text-[28px] font-bold mb-1">
-            {adminName || user?.name || "Administrator"} <span className="font-body text-[13px] font-normal theme-text-muted">(Admin)</span>
-          </h1>
         </div>
         {children}
       </div>

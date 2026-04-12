@@ -160,6 +160,13 @@ npm run db:studio    # Open Prisma Studio
 - Admin approve flow: L1-uploaded agreements go to "under_review" → admin approves → partner active
 - Agreement gates accept both "signed" (L1/SignWell) and "approved" (L2/L3/admin review)
 - Commissions: 25% total paid to L1 only, L1 pays downline using portal reporting
+- Real database queries: Admin Reports page (pipeline stats, monthly trends, top partners from Deal/Partner/CommissionLedger)
+- Real database queries: Admin Payouts page (commission ledger entries, batch creation, single approve, status tracking)
+- Real database queries: Admin Support page (ticket list, detail view with conversation thread, admin reply, status management)
+- Real database queries: Partner Support page (ticket creation via POST /api/tickets, conversation view with replies)
+- Notification system: NotificationBell component with polling (30s), unread badge, mark-read, click-to-navigate
+- 7 new API routes: /api/admin/reports, /api/admin/payouts (GET+POST), /api/admin/support (GET), /api/admin/support/[id] (GET+PATCH), /api/tickets (GET+POST), /api/tickets/[id]/messages (GET+POST), /api/notifications (GET+PATCH)
+- Mobile optimization pass: reports grids → hidden md:block + mobile cards, NotificationBell 44px touch target + responsive width, revenue mobile label sizes
 
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)
@@ -167,4 +174,4 @@ npm run db:studio    # Open Prisma Studio
 - **Phase 16**: Payments & Payouts (Stripe Connect)
 - **Phase 17**: AI Support Bot (Claude/OpenAI)
 - **Phase 18**: Deployment Hardening (monitoring, analytics, error tracking)
-- **Tech Debt**: Replace demo data, form validation (zod), tests, accessibility audit, PWA
+- **Tech Debt**: Form validation (zod), tests, accessibility audit, PWA

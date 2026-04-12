@@ -392,15 +392,15 @@ export default function RevenuePage() {
                 <div className="font-body text-[11px] theme-text-muted mb-2">Deal: {fmt$(d.estimatedRefundAmount)} · Fee: {fmt$(firmFee)}</div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
-                    <div className="font-body text-[9px] theme-text-muted uppercase">TRLN 40%</div>
+                    <div className="font-body text-[10px] theme-text-muted uppercase">TRLN 40%</div>
                     <div className="font-body text-[13px] text-brand-gold font-semibold">{fmt$(trlnGross)}</div>
                   </div>
                   <div>
-                    <div className="font-body text-[9px] theme-text-muted uppercase">Partner</div>
+                    <div className="font-body text-[10px] theme-text-muted uppercase">Partner</div>
                     <div className="font-body text-[13px] text-red-400">-{fmt$(partnerComm)}</div>
                   </div>
                   <div>
-                    <div className="font-body text-[9px] theme-text-muted uppercase">Net</div>
+                    <div className="font-body text-[10px] theme-text-muted uppercase">Net</div>
                     <div className="font-display text-[13px] font-semibold text-green-400">{fmt$(trlnNet)}</div>
                   </div>
                 </div>

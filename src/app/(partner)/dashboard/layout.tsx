@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { FIRM_SHORT as DEFAULT_FIRM_SHORT, FIRM_SLOGAN as DEFAULT_FIRM_SLOGAN } from "@/lib/constants";
 import { useDevice } from "@/lib/useDevice";
+import NotificationBell from "@/components/ui/NotificationBell";
 
 // ─── NAV STRUCTURE ───────────────────────────────────────────────────────────
 // Main nav items (top section of sidebar)
@@ -320,6 +321,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {firmShort}
               </div>
               <div className="flex items-center gap-2">
+                <NotificationBell />
                 <button
                   onClick={() => navigate("/dashboard/support")}
                   className={`font-body text-lg font-bold border rounded px-3 py-1.5 tracking-wider min-h-[32px] transition-colors ${
@@ -412,6 +414,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   {copiedLink === "partner" ? "✓ Copied!" : "👥 Partner Link"}
                 </button>
+                <NotificationBell />
                 <button
                   onClick={() => navigate("/dashboard/support")}
                   className={`font-body text-lg font-bold tracking-[1px] border rounded-lg px-5 py-2.5 transition-colors flex items-center gap-2 ${
