@@ -129,12 +129,12 @@ function SignupContent() {
                 </div>
                 <div className="text-right">
                   <div className="font-body text-[11px] theme-text-muted uppercase tracking-wider">Your Commission</div>
-                  <div className="font-display text-lg font-bold text-brand-gold">Competitive %</div>
+                  <div className="font-display text-2xl font-bold text-brand-gold">{ratePercent}%</div>
                   <div className="font-body text-[10px] theme-text-muted">of firm fee</div>
                 </div>
               </div>
               <div className="font-body text-[12px] theme-text-muted" style={{ borderTop: "1px solid var(--app-border)", paddingTop: 12 }}>
-                You are joining as an <strong className="text-brand-gold">{invite.targetTier.toUpperCase()}</strong> partner. You will earn a considerable % of the firm fee on every deal you refer!
+                You are joining as an <strong className="text-brand-gold">{invite.targetTier.toUpperCase()}</strong> partner. You will earn {ratePercent}% of the firm fee on every deal you refer.
               </div>
             </div>
 
