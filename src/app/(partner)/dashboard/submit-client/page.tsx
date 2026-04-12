@@ -144,13 +144,13 @@ export default function SubmitClientPage() {
             Open in new tab ↗
           </a>
         </div>
-        {/* Cropped iframe — hides header/nav, dark bg for contrast */}
+        {/* Cropped iframe — hides nav + hero, shows form directly */}
         <div
           className="overflow-hidden relative"
           style={{
-            background: "#0c1630", // dark blue theme background for contrast
+            background: "#0c1630",
             height: device.isMobile ? "calc(100vh - 200px)" : "85vh",
-            minHeight: 700,
+            minHeight: 800,
           }}
         >
           <iframe
@@ -160,10 +160,10 @@ export default function SubmitClientPage() {
             allow="camera; microphone; geolocation"
             sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-top-navigation"
             style={{
-              top: -120,       // crop top nav + hero section
+              top: -680,       // crop nav (~80px) + hero section (~600px) to show form directly
               left: 0,
               width: "100%",
-              height: "calc(100% + 200px)", // extra height: 120 top + 80 bottom
+              height: "calc(100% + 750px)", // extra height to compensate: 680 top + 70 bottom
             }}
           />
         </div>
