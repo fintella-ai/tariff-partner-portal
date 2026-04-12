@@ -173,13 +173,13 @@ function GetStartedContent() {
               <label className="flex items-start gap-3 mb-3 cursor-pointer">
                 <input type="checkbox" checked={emailOptIn} onChange={(e) => setEmailOptIn(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-brand-gold/30 bg-transparent text-brand-gold focus:ring-brand-gold/50 cursor-pointer shrink-0" />
                 <span className="font-body text-[12px] theme-text-secondary leading-relaxed">
-                  I consent to receive email communications from {FIRM_SHORT} including partnership updates, deal notifications, commission statements, and program announcements.
+                  I consent to receive email communications from &quot;Annexation PR LLC&quot; and &quot;Tariff Refund &amp; Litigation Network DBA&quot; (TRLN), including partnership updates, deal notifications, commission statements, and program announcements.
                 </span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" checked={smsOptIn} onChange={(e) => setSmsOptIn(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-brand-gold/30 bg-transparent text-brand-gold focus:ring-brand-gold/50 cursor-pointer shrink-0" />
                 <span className="font-body text-[12px] theme-text-secondary leading-relaxed">
-                  I consent to receive SMS/text messages from {FIRM_SHORT} for time-sensitive deal updates, commission alerts, and important program notifications. Msg &amp; data rates may apply.
+                  I consent to receive SMS/text messages from &quot;Annexation PR LLC&quot; and &quot;Tariff Refund &amp; Litigation Network DBA&quot; (TRLN) for time-sensitive deal updates, commission alerts, and important program notifications. Msg &amp; data rates may apply.
                 </span>
               </label>
             </div>
