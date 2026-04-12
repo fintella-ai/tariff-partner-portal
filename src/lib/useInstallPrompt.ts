@@ -16,6 +16,7 @@ export function useInstallPrompt() {
   const [isDismissed, setIsDismissed] = useState(true); // default true to avoid flash
   const [isIOS, setIsIOS] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -24,6 +25,8 @@ export function useInstallPrompt() {
     const ua = navigator.userAgent;
     setIsIOS(/iPad|iPhone|iPod/.test(ua));
     setIsAndroid(/Android/.test(ua));
+    // Safari detection: Safari UA but NOT Chrome/CriOS/Firefox/FxiOS
+    setIsSafari(/Safari/.test(ua) && !/Chrome|CriOS|Firefox|FxiOS|Edg/.test(ua));
 
     // Detect standalone mode (already installed)
     const isStandalone =
@@ -75,6 +78,7 @@ export function useInstallPrompt() {
     isInstalled,
     isIOS,
     isAndroid,
+    isSafari,
     canPromptNatively: !!deferredPrompt,
     promptInstall,
     isDismissed,

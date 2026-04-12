@@ -24,7 +24,8 @@ function PlusSquareIcon() {
 }
 
 export default function InstallPrompt() {
-  const { isIOS, isAndroid, canPromptNatively, promptInstall, dismiss, shouldShow } = useInstallPrompt();
+  const { isIOS, isAndroid, isSafari, canPromptNatively, promptInstall, dismiss, shouldShow } = useInstallPrompt();
+  const [copied, setCopied] = useState(false);
   const [showSkip, setShowSkip] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
 
@@ -98,12 +99,54 @@ export default function InstallPrompt() {
           </div>
         )}
 
-        {/* ── iOS: Step-by-step instructions ── */}
-        {isIOS && (
+        {/* ── iOS in Safari: Step-by-step instructions ── */}
+        {isIOS && isSafari && (
           <div className="mb-8 space-y-3">
             <Step num={1} icon={<ShareIcon />} text={'Tap the Share button at the bottom of Safari'} />
             <Step num={2} icon={<PlusSquareIcon />} text={'Scroll down and tap "Add to Home Screen"'} />
             <Step num={3} icon={null} text={'Tap "Add" in the top right corner'} />
+          </div>
+        )}
+
+        {/* ── iOS NOT in Safari: redirect message ── */}
+        {isIOS && !isSafari && (
+          <div className="mb-8">
+            <div className="p-5 rounded-xl border border-[#c4a050]/20 bg-[#c4a050]/[0.04] mb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500/15 border border-blue-500/25 flex items-center justify-center shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                    <line x1="9" y1="9" x2="9.01" y2="9" />
+                    <line x1="15" y1="9" x2="15.01" y2="9" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="font-body text-sm font-semibold text-white">Open in Safari to Install</div>
+                  <div className="font-body text-[11px] text-white/50">iPhone requires Safari to add apps to your home screen</div>
+                </div>
+              </div>
+              <p className="font-body text-[13px] text-white/70 leading-relaxed mb-4">
+                Copy the link below and paste it into <strong className="text-white">Safari</strong> to install the TRLN app on your home screen.
+              </p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.origin + "/dashboard/home");
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 3000);
+                }}
+                className={`w-full py-3.5 rounded-xl font-body text-sm font-bold transition-all ${
+                  copied
+                    ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                    : "bg-gradient-to-r from-[#c4a050] to-[#e8c060] text-[#060a18] shadow-lg shadow-[#c4a050]/20"
+                }`}
+              >
+                {copied ? "Link Copied! Now open Safari & paste" : "Copy Link for Safari"}
+              </button>
+            </div>
+            <div className="text-center">
+              <p className="font-body text-[11px] text-white/30">Then in Safari: Share → Add to Home Screen → Add</p>
+            </div>
           </div>
         )}
 
