@@ -48,6 +48,15 @@ export default function SupportPage() {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Deal / partner reference fields
+  const [dealIds, setDealIds] = useState<string[]>([""]);
+  const [multipleDealIds, setMultipleDealIds] = useState(false);
+  const [l2PartnerCode, setL2PartnerCode] = useState("");
+  const [l3PartnerCode, setL3PartnerCode] = useState("");
+  const [partnerDeals, setPartnerDeals] = useState<any[]>([]);
+  const [downlinePartners, setDownlinePartners] = useState<any[]>([]);
+  const [l3Enabled, setL3Enabled] = useState(false);
+
   // Detail view
   const [detail, setDetail] = useState<TicketDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -64,6 +73,19 @@ export default function SupportPage() {
 
   useEffect(() => { fetchTickets(); }, [fetchTickets]);
 
+  // Fetch deals and downline for reference fields
+  useEffect(() => {
+    fetch("/api/deals")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.directDeals) setPartnerDeals(data.directDeals);
+        if (data?.downlinePartners) setDownlinePartners(data.downlinePartners);
+        // Check if any downline partner has L3 enabled (user is L1 with L3 capability)
+        if (data?.l3Partners?.length > 0) setL3Enabled(true);
+      })
+      .catch(() => {});
+  }, []);
+
   // Auto-open new ticket form from URL params (e.g., from Deal Support button)
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -72,7 +94,12 @@ export default function SupportPage() {
       setView("new");
       if (params.get("subject")) setSubject(params.get("subject") || "");
       if (params.get("category")) setCategory(params.get("category") || "");
-      if (params.get("dealRef")) setMessage(params.get("dealRef") || "");
+      if (params.get("dealRef")) {
+        setMessage(params.get("dealRef") || "");
+        // Extract deal ID from dealRef if present
+        const dealRefMatch = (params.get("dealRef") || "").match(/ID:\s*([^\]]+)/);
+        if (dealRefMatch) setDealIds([dealRefMatch[1].trim()]);
+      }
     }
   }, []);
 
@@ -81,6 +108,14 @@ export default function SupportPage() {
     if (!subject.trim()) e.subject = "Subject is required";
     if (!category) e.category = "Please select a category";
     if (!message.trim()) e.message = "Please describe your issue";
+    // Deal tracking requires at least one deal ID
+    if (category === "Deal Tracking" && !dealIds.some((id) => id.trim())) {
+      e.dealIds = "At least one Deal ID is required for deal tracking issues";
+    }
+    // Commission Question about downline requires at least one partner code
+    if (category === "Commission Question" && downlinePartners.length > 0) {
+      // Only require if they have downline (otherwise it's about their own commissions)
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -93,7 +128,16 @@ export default function SupportPage() {
       const res = await fetch("/api/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject: subject.trim(), category, message: message.trim() }),
+        body: JSON.stringify({
+          subject: subject.trim(),
+          category,
+          message: [
+            message.trim(),
+            dealIds.some((id) => id.trim()) ? `\n\nDeal ID(s): ${dealIds.filter((id) => id.trim()).join(", ")}` : "",
+            l2PartnerCode ? `\nL2 Partner: ${l2PartnerCode}` : "",
+            l3PartnerCode ? `\nL3 Partner: ${l3PartnerCode}` : "",
+          ].filter(Boolean).join(""),
+        }),
       });
       if (res.ok) {
         setSubmitted(true);
@@ -110,6 +154,10 @@ export default function SupportPage() {
     setSubject("");
     setCategory("");
     setMessage("");
+    setDealIds([""]);
+    setMultipleDealIds(false);
+    setL2PartnerCode("");
+    setL3PartnerCode("");
     setErrors({});
     setSubmitted(false);
     setView("list");
@@ -286,6 +334,110 @@ export default function SupportPage() {
                 {errors.category && <div className="font-body text-[11px] text-red-400 mt-1">{errors.category}</div>}
               </div>
             </div>
+            {/* ── Conditional: Deal ID fields (shown for Deal Tracking) ── */}
+            {category === "Deal Tracking" && (
+              <div className="mb-4 p-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-card-bg)]">
+                <div className="flex items-center justify-between mb-3">
+                  <label className={labelClass} style={{ marginBottom: 0 }}>Deal ID *</label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={multipleDealIds}
+                      onChange={(e) => {
+                        setMultipleDealIds(e.target.checked);
+                        if (!e.target.checked) setDealIds([dealIds[0] || ""]);
+                      }}
+                      className="w-3.5 h-3.5 rounded accent-brand-gold"
+                    />
+                    <span className="font-body text-[11px] text-[var(--app-text-muted)]">Multiple deals?</span>
+                  </label>
+                </div>
+                {dealIds.map((id, idx) => (
+                  <div key={idx} className="flex gap-2 mb-2">
+                    <select
+                      className={inputClass}
+                      value={id}
+                      onChange={(e) => {
+                        const updated = [...dealIds];
+                        updated[idx] = e.target.value;
+                        setDealIds(updated);
+                      }}
+                    >
+                      <option value="">Select a deal or paste ID...</option>
+                      {partnerDeals.map((d: any) => (
+                        <option key={d.id} value={d.id}>{d.dealName} ({d.id.slice(0, 8)}...)</option>
+                      ))}
+                    </select>
+                    {multipleDealIds && dealIds.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setDealIds(dealIds.filter((_, i) => i !== idx))}
+                        className="font-body text-xs text-red-400/60 hover:text-red-400 px-2 shrink-0"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {/* Manual entry fallback */}
+                {dealIds.some((id) => !id) && (
+                  <input
+                    className={`${inputClass} mt-1`}
+                    placeholder="Or paste Deal ID manually..."
+                    value={dealIds[dealIds.length - 1]}
+                    onChange={(e) => {
+                      const updated = [...dealIds];
+                      updated[updated.length - 1] = e.target.value;
+                      setDealIds(updated);
+                    }}
+                  />
+                )}
+                {multipleDealIds && (
+                  <button
+                    type="button"
+                    onClick={() => setDealIds([...dealIds, ""])}
+                    className="font-body text-[11px] text-brand-gold hover:underline mt-2"
+                  >
+                    + Add another Deal ID
+                  </button>
+                )}
+                {errors.dealIds && <div className="font-body text-[11px] text-red-400 mt-2">{errors.dealIds}</div>}
+              </div>
+            )}
+
+            {/* ── Conditional: Partner ID fields (shown for Commission Question when has downline) ── */}
+            {category === "Commission Question" && downlinePartners.length > 0 && (
+              <div className="mb-4 p-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-card-bg)]">
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-3">If this is about a downline partner, select them below:</div>
+                <div className={`grid ${device.isMobile ? "grid-cols-1" : l3Enabled ? "grid-cols-2" : "grid-cols-1"} gap-4`}>
+                  <div>
+                    <label className={labelClass}>L2 Partner</label>
+                    <select
+                      className={inputClass}
+                      value={l2PartnerCode}
+                      onChange={(e) => setL2PartnerCode(e.target.value)}
+                    >
+                      <option value="">Select L2 partner (optional)...</option>
+                      {downlinePartners.map((p: any) => (
+                        <option key={p.partnerCode} value={p.partnerCode}>{p.firstName} {p.lastName} ({p.partnerCode})</option>
+                      ))}
+                    </select>
+                  </div>
+                  {l3Enabled && (
+                    <div>
+                      <label className={labelClass}>L3 Partner</label>
+                      <input
+                        className={inputClass}
+                        placeholder="L3 Partner Code (if applicable)"
+                        value={l3PartnerCode}
+                        onChange={(e) => setL3PartnerCode(e.target.value.toUpperCase())}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="mb-5">
               <label className={labelClass}>Describe your issue *</label>
               <textarea
