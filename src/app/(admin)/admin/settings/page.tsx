@@ -136,6 +136,7 @@ export default function SettingsPage() {
   const [agreementTemplate20, setAgreementTemplate20] = useState("");
   const [agreementTemplate15, setAgreementTemplate15] = useState("");
   const [agreementTemplate10, setAgreementTemplate10] = useState("");
+  const [agreementTemplateEnterprise, setAgreementTemplateEnterprise] = useState("");
 
   // Navigation
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
@@ -172,6 +173,7 @@ export default function SettingsPage() {
       setAgreementTemplate20(settings.agreementTemplate20 || "");
       setAgreementTemplate15(settings.agreementTemplate15 || "");
       setAgreementTemplate10(settings.agreementTemplate10 || "");
+      setAgreementTemplateEnterprise(settings.agreementTemplateEnterprise || "");
 
       try { setHiddenNavItems(JSON.parse(settings.hiddenNavItems || "[]")); } catch { setHiddenNavItems([]); }
       try {
@@ -207,7 +209,7 @@ export default function SettingsPage() {
     try {
       const body = {
         firmName, firmShort, firmSlogan, firmPhone, supportEmail, logoUrl, faviconUrl,
-        agreementTemplate25, agreementTemplate20, agreementTemplate15, agreementTemplate10,
+        agreementTemplate25, agreementTemplate20, agreementTemplate15, agreementTemplate10, agreementTemplateEnterprise,
         l1Rate: parseFloat(l1Rate) / 100,
         l2Rate: parseFloat(l2Rate) / 100,
         l3Rate: parseFloat(l3Rate) / 100,
@@ -796,6 +798,11 @@ export default function SettingsPage() {
               <label className={labelClass}>10% Template (L2/L3 Partners)</label>
               <input className={inputClass} value={agreementTemplate10} onChange={(e) => setAgreementTemplate10(e.target.value)} placeholder="SignWell template ID" />
               <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Partners at 10% — upline earns 15% override</p>
+            </div>
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Enterprise Partner Agreement Template</label>
+              <input className={inputClass} value={agreementTemplateEnterprise} onChange={(e) => setAgreementTemplateEnterprise(e.target.value)} placeholder="SignWell template ID for enterprise agreements" />
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Confidential — used for enterprise partners with custom commission rates above 25%</p>
             </div>
           </div>
 

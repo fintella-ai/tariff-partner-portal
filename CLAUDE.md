@@ -176,6 +176,10 @@ npm run db:studio    # Open Prisma Studio
 - Revenue page tabs: Revenue, Custom Commissions, Enterprise Reporting
 - Custom Commissions tab: create enterprise partners with custom total rate, add/remove L1 partners by code, expandable detail cards
 - Enterprise Reporting tab: deal-level breakdown per enterprise partner showing TRLN 40%, L1 commission, enterprise override, and net profit
+- Enterprise "Apply to All" toggle: global override on all portal deals without adding individual partner codes
+- Enterprise Partner display in admin partner profile: shows tier badge, total rate, override rate, coverage (confidential — admin-only)
+- Enterprise agreement template: SignWell template ID field in admin Settings > Agreements for enterprise partner agreements
+- Enterprise data confidentiality: EP info only visible in admin panel, never exposed to partner portal or non-EP partners
 - Clickable deal name links: all deal names across admin pages (revenue, payouts, enterprise reporting) link to deals page via DealLink component with auto-expand and scroll-to
 - DealLink reusable component: `src/components/ui/DealLink.tsx` — navigates to `/admin/deals?deal={id}`, auto-expands and scrolls to target deal
 

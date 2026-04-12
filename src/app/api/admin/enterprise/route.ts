@@ -43,25 +43,35 @@ export async function GET() {
       };
     }
 
-    // For reporting: get all deals for L1 partners under each enterprise partner
+    // For reporting: get deals
+    // If any enterprise has applyToAll, we need ALL deals
+    const hasApplyToAll = enterprises.some((ep) => ep.applyToAll && ep.status === "active");
+
     const allL1Codes = new Set<string>();
     for (const ep of enterprises) {
-      for (const ov of ep.overrides) {
-        if (ov.status === "active") allL1Codes.add(ov.l1PartnerCode);
+      if (!ep.applyToAll) {
+        for (const ov of ep.overrides) {
+          if (ov.status === "active") allL1Codes.add(ov.l1PartnerCode);
+        }
       }
     }
 
-    const deals = allL1Codes.size > 0
-      ? await prisma.deal.findMany({
-          where: { partnerCode: { in: Array.from(allL1Codes) } },
-        })
-      : [];
+    const allDeals = await prisma.deal.findMany();
+    const specificDeals = hasApplyToAll ? allDeals : (
+      allL1Codes.size > 0
+        ? allDeals.filter((d) => allL1Codes.has(d.partnerCode))
+        : []
+    );
 
     // Build enriched response
     const enriched = enterprises.map((ep) => {
       const activeOverrides = ep.overrides.filter((o) => o.status === "active");
       const l1Codes = activeOverrides.map((o) => o.l1PartnerCode);
-      const epDeals = deals.filter((d) => l1Codes.includes(d.partnerCode));
+
+      // If applyToAll, include all deals except the EP's own deals
+      const epDeals = ep.applyToAll
+        ? allDeals.filter((d) => d.partnerCode !== ep.partnerCode)
+        : specificDeals.filter((d) => l1Codes.includes(d.partnerCode));
 
       // Calculate enterprise override earnings
       const FIRM_FEE_RATE = 0.40; // TRLN 40%
@@ -104,6 +114,7 @@ export async function GET() {
         companyName: partnerMap[ep.partnerCode]?.company || null,
         totalRate: ep.totalRate,
         overrideRate: ep.overrideRate,
+        applyToAll: ep.applyToAll,
         status: ep.status,
         notes: ep.notes,
         createdAt: ep.createdAt,
@@ -180,6 +191,7 @@ export async function POST(req: NextRequest) {
           partnerCode,
           totalRate: rate,
           overrideRate: rate - 0.25,
+          applyToAll: body.applyToAll === true,
           notes: notes || null,
           createdBy: session.user.email || "admin",
         },
@@ -263,6 +275,7 @@ export async function POST(req: NextRequest) {
         data.totalRate = rate;
         data.overrideRate = rate - 0.25;
       }
+      if (body.applyToAll !== undefined) data.applyToAll = body.applyToAll;
       if (status !== undefined) data.status = status;
       if (notes !== undefined) data.notes = notes;
 

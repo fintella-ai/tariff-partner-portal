@@ -16,6 +16,7 @@ type EnterprisePartnerData = {
   companyName: string | null;
   totalRate: number;
   overrideRate: number;
+  applyToAll: boolean;
   status: string;
   notes: string | null;
   createdAt: string;
@@ -112,6 +113,7 @@ export default function RevenuePage() {
   const [newEPCode, setNewEPCode] = useState("");
   const [newEPRate, setNewEPRate] = useState("30");
   const [newEPNotes, setNewEPNotes] = useState("");
+  const [newEPApplyAll, setNewEPApplyAll] = useState(false);
   const [epSubmitting, setEpSubmitting] = useState(false);
   const [addOverrideFor, setAddOverrideFor] = useState<string | null>(null);
   const [newL1Code, setNewL1Code] = useState("");
@@ -608,6 +610,18 @@ export default function RevenuePage() {
                   />
                 </div>
               </div>
+              <label className="flex items-center gap-3 mb-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newEPApplyAll}
+                  onChange={(e) => setNewEPApplyAll(e.target.checked)}
+                  className="w-4 h-4 rounded border-[var(--app-border)] accent-brand-gold"
+                />
+                <div>
+                  <div className="font-body text-sm text-[var(--app-text)]">Apply to All Partners</div>
+                  <div className="font-body text-[11px] theme-text-muted">Override applies to ALL partner deals in the portal (no need to add individual partner codes)</div>
+                </div>
+              </label>
               <button
                 onClick={async () => {
                   if (!newEPCode.trim()) return alert("Partner code is required");
@@ -618,7 +632,7 @@ export default function RevenuePage() {
                     const res = await fetch("/api/admin/enterprise", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ action: "create", partnerCode: newEPCode.trim(), totalRate: rate / 100, notes: newEPNotes || null }),
+                      body: JSON.stringify({ action: "create", partnerCode: newEPCode.trim(), totalRate: rate / 100, applyToAll: newEPApplyAll, notes: newEPNotes || null }),
                     });
                     const data = await res.json();
                     if (!res.ok) { alert(data.error || "Failed"); return; }
@@ -626,6 +640,7 @@ export default function RevenuePage() {
                     setNewEPCode("");
                     setNewEPRate("30");
                     setNewEPNotes("");
+                    setNewEPApplyAll(false);
                     fetchEnterprises();
                   } catch { alert("Network error"); }
                   finally { setEpSubmitting(false); }
@@ -669,7 +684,8 @@ export default function RevenuePage() {
                           <span>&middot;</span>
                           <span className="text-purple-400 font-semibold">{Math.round(ep.overrideRate * 100)}% override</span>
                           <span>&middot;</span>
-                          <span>{ep.overrides.filter((o) => o.status === "active").length} L1 partners</span>
+                          <span>{ep.applyToAll ? "All Partners" : `${ep.overrides.filter((o) => o.status === "active").length} L1 partners`}</span>
+                          {ep.applyToAll && <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase bg-green-500/10 text-green-400 border border-green-500/20 ml-1">GLOBAL</span>}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
@@ -682,7 +698,31 @@ export default function RevenuePage() {
                   {/* Expanded detail */}
                   {expandedEP === ep.id && (
                     <div className="px-5 py-4">
-                      {/* Assigned L1 Partners */}
+                      {/* Apply to All toggle (for existing EP) */}
+                      {isSuperAdmin && (
+                        <label className="flex items-center gap-3 mb-4 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={ep.applyToAll}
+                            onChange={async (e) => {
+                              await fetch("/api/admin/enterprise", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ action: "update", partnerCode: ep.partnerCode, applyToAll: e.target.checked }),
+                              });
+                              fetchEnterprises();
+                            }}
+                            className="w-4 h-4 rounded border-[var(--app-border)] accent-brand-gold"
+                          />
+                          <div>
+                            <div className="font-body text-sm text-[var(--app-text)]">Apply to All Partners</div>
+                            <div className="font-body text-[11px] theme-text-muted">Override on ALL partner deals in the portal</div>
+                          </div>
+                        </label>
+                      )}
+
+                      {/* Assigned L1 Partners (hidden when applyToAll) */}
+                      {!ep.applyToAll && (
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-3">
                           <div className="font-body text-[11px] tracking-[1.5px] uppercase theme-text-muted">Assigned L1 Partners</div>
@@ -763,6 +803,14 @@ export default function RevenuePage() {
                           </div>
                         )}
                       </div>
+                      )}
+
+                      {ep.applyToAll && (
+                        <div className="mb-4 p-3 rounded-lg bg-green-500/5 border border-green-500/10">
+                          <div className="font-body text-sm text-green-400 font-semibold mb-0.5">Global Override Active</div>
+                          <div className="font-body text-[11px] theme-text-muted">This enterprise partner earns a {Math.round(ep.overrideRate * 100)}% override on ALL partner deals in the portal.</div>
+                        </div>
+                      )}
 
                       {/* Summary stats */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">

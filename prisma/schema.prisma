@@ -382,6 +382,7 @@ model PortalSettings {
   agreementTemplate20 String @default("") // 20% agreement template
   agreementTemplate15 String @default("") // 15% agreement template
   agreementTemplate10 String @default("") // 10% agreement template
+  agreementTemplateEnterprise String @default("") // Enterprise partner agreement template
   // Navigation visibility + order (JSON strings)
   hiddenNavItems String @default("[]")
   navOrder       String @default("[]")  // ordered array of nav IDs
@@ -451,6 +452,7 @@ model EnterprisePartner {
   partnerCode     String   @unique           // must be an existing active Partner
   totalRate       Float                      // e.g. 0.30 for 30%
   overrideRate    Float                      // totalRate - 0.25 (auto-calculated, stored for convenience)
+  applyToAll      Boolean  @default(false)   // if true, override applies to ALL partners in the portal (no need to add individual codes)
   status          String   @default("active") // active, inactive
   notes           String?
   createdBy       String?                    // admin email who created

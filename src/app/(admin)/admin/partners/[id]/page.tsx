@@ -76,6 +76,7 @@ export default function PartnerDetailPage() {
   const [codeHistory, setCodeHistory] = useState<any[]>([]);
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [enterprisePartner, setEnterprisePartner] = useState<any>(null);
   const [downlineView, setDownlineView] = useState<"list" | "tree">("list");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -127,6 +128,7 @@ export default function PartnerDetailPage() {
       setCodeHistory(data.codeHistory || []);
       setSupportTickets(data.supportTickets || []);
       setNotifications(data.notifications || []);
+      setEnterprisePartner(data.enterprisePartner || null);
 
       setFirstName(p.firstName);
       setLastName(p.lastName);
@@ -495,6 +497,49 @@ export default function PartnerDetailPage() {
             All partners earn <strong className="text-brand-gold">25%</strong> of the firm fee total across tiers. L2/L3 rates are chosen by the recruiting partner (10%, 15%, or 20%) when they generate a recruitment link. The override (25% minus the recruit&apos;s rate) goes to the upline.
           </p>
         </div>
+
+        {/* Enterprise Partner Commission (only visible if this partner is an EP) */}
+        {enterprisePartner && (
+          <div className="mt-4 p-4 rounded-lg bg-purple-500/[0.06] border border-purple-500/20">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase bg-purple-500/15 text-purple-400 border border-purple-500/25">
+                Enterprise Partner
+              </span>
+              {enterprisePartner.applyToAll && (
+                <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase bg-green-500/10 text-green-400 border border-green-500/20">
+                  GLOBAL
+                </span>
+              )}
+              <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${
+                enterprisePartner.status === "active"
+                  ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                  : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]"
+              }`}>
+                {enterprisePartner.status}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div>
+                <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Total Rate</div>
+                <div className="font-display text-xl font-bold text-purple-400">{Math.round(enterprisePartner.totalRate * 100)}%</div>
+              </div>
+              <div>
+                <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Override Rate</div>
+                <div className="font-display text-xl font-bold text-purple-400">{Math.round(enterprisePartner.overrideRate * 100)}%</div>
+                <div className="font-body text-[10px] text-[var(--app-text-muted)]">above standard 25%</div>
+              </div>
+              <div>
+                <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Coverage</div>
+                <div className="font-body text-sm font-semibold text-[var(--app-text)]">
+                  {enterprisePartner.applyToAll ? "All Partners" : `${enterprisePartner.overrides?.length || 0} L1 Partners`}
+                </div>
+              </div>
+            </div>
+            <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-3">
+              Confidential — this information is only visible to admins and the enterprise partner. Managed in Revenue &gt; Custom Commissions.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ─── ADMIN NOTES (audit log) ──────────────────────────────── */}
