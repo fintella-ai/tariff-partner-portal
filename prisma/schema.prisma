@@ -82,11 +82,14 @@ model PartnerProfile {
   zip             String?
   country         String   @default("US")
   phone           String?
-  // Payout info (encrypted)
-  payoutMethod    String?  // "ach", "wire", "paypal", "check"
+  // Payout info (banking for domestic wire)
+  payoutMethod    String?  // "wire", "ach", "check"
   bankName        String?
-  routingNumber   String?  // encrypted
-  accountNumber   String?  // encrypted
+  accountType     String?  // "checking", "savings"
+  routingNumber   String?
+  accountNumber   String?
+  beneficiaryName String?  // name on the account
+  bankAddress     String?  // bank branch address
   paypalEmail     String?
   // Status
   isBlocked       Boolean  @default(false)

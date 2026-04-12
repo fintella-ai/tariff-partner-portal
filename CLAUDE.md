@@ -199,6 +199,10 @@ npm run db:studio    # Open Prisma Studio
 - PWA "Add to Home Screen": manifest API (/api/manifest), icon API (/api/icon), service worker, apple-web-app meta tags
 - PWA install prompt overlay: full-screen onboarding on first dashboard visit, platform-specific instructions (iOS Share→Add, Android native install), reappears every 7 days if not installed, hidden in standalone mode
 - PWA hook: `src/lib/useInstallPrompt.ts` — beforeinstallprompt capture, standalone detection, localStorage dismiss with 7-day reappearance
+- Payout banking fields: PartnerProfile schema updated with accountType, beneficiaryName, bankAddress fields
+- Partner account settings: full payout information section (method, bank name, account type, routing, account number, beneficiary, bank address)
+- Admin partner profile: matching payout information section with all banking fields, editable by admin
+- Bank letter/voided check: new document type "bank_letter" for both partner and admin document uploads
 
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)

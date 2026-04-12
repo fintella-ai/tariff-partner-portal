@@ -149,7 +149,7 @@ export default function DocumentTrackingPage() {
                   <PartnerLink partnerId={d.partnerId} className="text-[var(--app-text)]">{d.partnerName}</PartnerLink>
                   <div className="text-xs text-[var(--app-text-muted)]">{d.partnerCode}</div>
                 </td>
-                <td className="px-4 py-3 text-[var(--app-text-secondary)]">{d.docType === "agreement" ? "Agreement" : d.docType === "w9" ? "Tax Document (W9)" : d.docType.toUpperCase()}</td>
+                <td className="px-4 py-3 text-[var(--app-text-secondary)]">{d.docType === "agreement" ? "Agreement" : d.docType === "w9" ? "Tax Document (W9)" : d.docType === "bank_letter" ? "Bank Letter" : d.docType.toUpperCase()}</td>
                 <td className="px-4 py-3 text-[var(--app-text-secondary)] text-[12px] truncate max-w-[150px]">{d.fileName}</td>
                 <td className="px-4 py-3">
                   <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${statusBadge[d.status] || statusBadge.uploaded}`}>
@@ -209,7 +209,7 @@ export default function DocumentTrackingPage() {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--app-text-secondary)] mb-3">
-              <span>{d.docType === "agreement" ? "Agreement" : d.docType === "w9" ? "W9" : d.docType}</span>
+              <span>{d.docType === "agreement" ? "Agreement" : d.docType === "w9" ? "W9" : d.docType === "bank_letter" ? "Bank Letter" : d.docType}</span>
               <span>&middot;</span>
               <span>{fmtDate(d.createdAt)}</span>
               <span>&middot;</span>

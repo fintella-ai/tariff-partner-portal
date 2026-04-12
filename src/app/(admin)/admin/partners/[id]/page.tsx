@@ -109,6 +109,15 @@ export default function PartnerDetailPage() {
   const [addrState, setAddrState] = useState("");
   const [zip, setZip] = useState("");
 
+  // Payout / Banking
+  const [payoutMethod, setPayoutMethod] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [accountType, setAccountType] = useState("");
+  const [routingNumber, setRoutingNumber] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [beneficiaryName, setBeneficiaryName] = useState("");
+  const [bankAddress, setBankAddress] = useState("");
+
   // Commission overrides
   const [l1Rate, setL1Rate] = useState("");
   const [l2Rate, setL2Rate] = useState("");
@@ -150,6 +159,13 @@ export default function PartnerDetailPage() {
       setCity(prof?.city || "");
       setAddrState(prof?.state || "");
       setZip(prof?.zip || "");
+      setPayoutMethod(prof?.payoutMethod || "");
+      setBankName(prof?.bankName || "");
+      setAccountType(prof?.accountType || "");
+      setRoutingNumber(prof?.routingNumber || "");
+      setAccountNumber(prof?.accountNumber || "");
+      setBeneficiaryName(prof?.beneficiaryName || "");
+      setBankAddress(prof?.bankAddress || "");
       setL1Rate(p.l1Rate != null ? String(Math.round(p.l1Rate * 100)) : "");
       setL2Rate(p.l2Rate != null ? String(Math.round(p.l2Rate * 100)) : "");
       setL3Rate(p.l3Rate != null ? String(Math.round(p.l3Rate * 100)) : "");
@@ -174,6 +190,8 @@ export default function PartnerDetailPage() {
         referredByPartnerCode: referrer || null,
         notes: notes || null,
         street, street2, city, state: addrState, zip,
+        payoutMethod, bankName, accountType, routingNumber,
+        accountNumber, beneficiaryName, bankAddress,
         l1Rate: l1Rate ? parseFloat(l1Rate) / 100 : null,
         l2Rate: l2Rate ? parseFloat(l2Rate) / 100 : null,
         l3Rate: l3Rate ? parseFloat(l3Rate) / 100 : null,
@@ -452,6 +470,54 @@ export default function PartnerDetailPage() {
               <input className={inputClass} value={zip} onChange={(e) => setZip(e.target.value)} placeholder="12345" />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ─── PAYOUT INFORMATION ─────────────────────────────────── */}
+      <div className="card p-5 sm:p-6 mb-6">
+        <div className="font-body font-semibold text-sm mb-4">Payout Information</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className={labelClass}>Payout Method</label>
+            <select className={inputClass} value={payoutMethod} onChange={(e) => setPayoutMethod(e.target.value)}>
+              <option value="">Select method...</option>
+              <option value="wire">Domestic Wire Transfer</option>
+              <option value="ach">ACH Transfer</option>
+              <option value="check">Paper Check</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Bank Name</label>
+            <input className={inputClass} value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. Chase, Bank of America" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className={labelClass}>Account Type</label>
+            <select className={inputClass} value={accountType} onChange={(e) => setAccountType(e.target.value)}>
+              <option value="">Select type...</option>
+              <option value="checking">Business Checking</option>
+              <option value="savings">Business Savings</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Beneficiary Name</label>
+            <input className={inputClass} value={beneficiaryName} onChange={(e) => setBeneficiaryName(e.target.value)} placeholder="Name on the account" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className={labelClass}>Routing Number</label>
+            <input className={inputClass} value={routingNumber} onChange={(e) => setRoutingNumber(e.target.value)} placeholder="9-digit routing number" maxLength={9} />
+          </div>
+          <div>
+            <label className={labelClass}>Account Number</label>
+            <input className={inputClass} value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="Account number" />
+          </div>
+        </div>
+        <div>
+          <label className={labelClass}>Bank Address</label>
+          <input className={inputClass} value={bankAddress} onChange={(e) => setBankAddress(e.target.value)} placeholder="Full bank branch street address" />
         </div>
       </div>
 
@@ -832,6 +898,45 @@ export default function PartnerDetailPage() {
                 }}
               />
             </label>
+            <label className={`font-body text-[11px] text-green-400/70 border border-green-400/20 rounded-lg px-3 py-1.5 hover:bg-green-400/10 transition-colors cursor-pointer ${uploadingDoc ? "opacity-50 pointer-events-none" : ""}`}>
+              Upload Bank Letter
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.png,.jpg"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploadingDoc(true);
+                  try {
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                      const res = await fetch("/api/admin/documents", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          partnerCode: partner.partnerCode,
+                          docType: "bank_letter",
+                          fileName: file.name,
+                          fileData: reader.result,
+                        }),
+                      });
+                      if (res.ok) {
+                        fetchPartner();
+                        setSaved(true);
+                        setTimeout(() => setSaved(false), 3000);
+                      } else {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.error || "Upload failed");
+                      }
+                      setUploadingDoc(false);
+                    };
+                    reader.readAsDataURL(file);
+                  } catch { setUploadingDoc(false); }
+                  e.target.value = "";
+                }}
+              />
+            </label>
           </div>
         </div>
 
@@ -909,13 +1014,13 @@ export default function PartnerDetailPage() {
                 <div className="min-w-0">
                   <div className="font-body text-[13px] text-[var(--app-text)] truncate">{d.fileName}</div>
                   <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 sm:hidden">
-                    {d.docType === "agreement" ? "Agreement" : d.docType === "w9" ? "Tax Document (W9)" : d.docType.toUpperCase()} &middot; {fmtDate(d.createdAt)}
+                    {d.docType === "agreement" ? "Agreement" : d.docType === "w9" ? "Tax Document (W9)" : d.docType === "bank_letter" ? "Bank Letter / Voided Check" : d.docType.toUpperCase()} &middot; {fmtDate(d.createdAt)}
                   </div>
                   <div className="hidden sm:block font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">{fmtDate(d.createdAt)}</div>
                 </div>
                 <div className="hidden sm:block">
                   <span className="font-body text-[12px] text-[var(--app-text-secondary)]">
-                    {d.docType === "agreement" ? "Agreement" : d.docType === "w9" ? "Tax Document (W9)" : d.docType.toUpperCase()}
+                    {d.docType === "agreement" ? "Agreement" : d.docType === "w9" ? "Tax Document (W9)" : d.docType === "bank_letter" ? "Bank Letter / Voided Check" : d.docType.toUpperCase()}
                   </span>
                 </div>
                 {/* Status column */}

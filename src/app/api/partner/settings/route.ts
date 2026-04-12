@@ -40,6 +40,14 @@ export async function GET() {
       city: profile?.city || "",
       state: profile?.state || "",
       zip: profile?.zip || "",
+      // Payout / Banking
+      payoutMethod: profile?.payoutMethod || "",
+      bankName: profile?.bankName || "",
+      accountType: profile?.accountType || "",
+      routingNumber: profile?.routingNumber || "",
+      accountNumber: profile?.accountNumber || "",
+      beneficiaryName: profile?.beneficiaryName || "",
+      bankAddress: profile?.bankAddress || "",
     });
   } catch {
     return NextResponse.json(
@@ -71,6 +79,8 @@ export async function PATCH(req: NextRequest) {
       firstName, lastName, companyName, tin,
       email, phone, mobilePhone,
       street, street2, city, state, zip,
+      payoutMethod, bankName, accountType, routingNumber,
+      accountNumber, beneficiaryName, bankAddress,
     } = body;
 
     // Fetch current partner to detect name/company changes
@@ -111,6 +121,13 @@ export async function PATCH(req: NextRequest) {
         city: city || null,
         state: state || null,
         zip: zip || null,
+        payoutMethod: payoutMethod || null,
+        bankName: bankName || null,
+        accountType: accountType || null,
+        routingNumber: routingNumber || null,
+        accountNumber: accountNumber || null,
+        beneficiaryName: beneficiaryName || null,
+        bankAddress: bankAddress || null,
       },
       update: {
         ...(street !== undefined && { street: street || null }),
@@ -118,6 +135,13 @@ export async function PATCH(req: NextRequest) {
         ...(city !== undefined && { city: city || null }),
         ...(state !== undefined && { state: state || null }),
         ...(zip !== undefined && { zip: zip || null }),
+        ...(payoutMethod !== undefined && { payoutMethod: payoutMethod || null }),
+        ...(bankName !== undefined && { bankName: bankName || null }),
+        ...(accountType !== undefined && { accountType: accountType || null }),
+        ...(routingNumber !== undefined && { routingNumber: routingNumber || null }),
+        ...(accountNumber !== undefined && { accountNumber: accountNumber || null }),
+        ...(beneficiaryName !== undefined && { beneficiaryName: beneficiaryName || null }),
+        ...(bankAddress !== undefined && { bankAddress: bankAddress || null }),
       },
     });
 

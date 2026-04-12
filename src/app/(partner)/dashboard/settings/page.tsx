@@ -18,12 +18,22 @@ interface SettingsData {
   city: string;
   state: string;
   zip: string;
+  // Payout / Banking
+  payoutMethod: string;
+  bankName: string;
+  accountType: string;
+  routingNumber: string;
+  accountNumber: string;
+  beneficiaryName: string;
+  bankAddress: string;
 }
 
 const EMPTY: SettingsData = {
   firstName: "", lastName: "", companyName: "", tin: "",
   email: "", phone: "", mobilePhone: "",
   street: "", street2: "", city: "", state: "", zip: "",
+  payoutMethod: "", bankName: "", accountType: "", routingNumber: "",
+  accountNumber: "", beneficiaryName: "", bankAddress: "",
 };
 
 function formatTIN(value: string): string {
@@ -57,7 +67,7 @@ export default function AccountSettingsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     if (name === "tin") {
       setForm((prev) => ({ ...prev, tin: formatTIN(value) }));
@@ -315,6 +325,73 @@ export default function AccountSettingsPage() {
                 className={inputClass} placeholder="12345"
               />
             </div>
+          </div>
+        </div>
+
+        {/* ── PAYOUT INFORMATION ── */}
+        <div className={`card ${device.cardPadding} mb-5`}>
+          <div className="font-body font-semibold text-sm mb-1">Payout Information</div>
+          <p className="font-body text-[11px] text-[var(--app-text-muted)] mb-5">Banking details for commission payouts via domestic wire transfer.</p>
+
+          <div className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2"} gap-4 mb-4`}>
+            <div>
+              <label htmlFor="payoutMethod" className={labelClass}>Payout Method</label>
+              <select
+                id="payoutMethod" name="payoutMethod"
+                value={form.payoutMethod} onChange={handleChange}
+                className={inputClass}
+              >
+                <option value="">Select method...</option>
+                <option value="wire">Domestic Wire Transfer</option>
+                <option value="ach">ACH Transfer</option>
+                <option value="check">Paper Check</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="bankName" className={labelClass}>Bank Name</label>
+              <input id="bankName" name="bankName" value={form.bankName} onChange={handleChange} className={inputClass} placeholder="e.g. Chase, Bank of America" />
+            </div>
+          </div>
+
+          <div className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2"} gap-4 mb-4`}>
+            <div>
+              <label htmlFor="accountType" className={labelClass}>Account Type</label>
+              <select
+                id="accountType" name="accountType"
+                value={form.accountType} onChange={handleChange}
+                className={inputClass}
+              >
+                <option value="">Select type...</option>
+                <option value="checking">Business Checking</option>
+                <option value="savings">Business Savings</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="beneficiaryName" className={labelClass}>Beneficiary Name (on account)</label>
+              <input id="beneficiaryName" name="beneficiaryName" value={form.beneficiaryName} onChange={handleChange} className={inputClass} placeholder="Name as it appears on the account" />
+            </div>
+          </div>
+
+          <div className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2"} gap-4 mb-4`}>
+            <div>
+              <label htmlFor="routingNumber" className={labelClass}>Routing Number</label>
+              <input id="routingNumber" name="routingNumber" value={form.routingNumber} onChange={handleChange} className={inputClass} placeholder="9-digit routing number" maxLength={9} />
+            </div>
+            <div>
+              <label htmlFor="accountNumber" className={labelClass}>Account Number</label>
+              <input id="accountNumber" name="accountNumber" value={form.accountNumber} onChange={handleChange} className={inputClass} placeholder="Account number" />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="bankAddress" className={labelClass}>Bank Address (Branch)</label>
+            <input id="bankAddress" name="bankAddress" value={form.bankAddress} onChange={handleChange} className={inputClass} placeholder="Bank branch address" />
+          </div>
+
+          <div className="mt-4 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
+            <p className="font-body text-[11px] text-blue-400/80 leading-relaxed">
+              You can also upload a <strong>voided check</strong> or <strong>bank letter</strong> in your <button onClick={() => router.push("/dashboard/documents")} className="underline hover:no-underline">Documents</button> page to verify your banking information.
+            </p>
           </div>
         </div>
 
