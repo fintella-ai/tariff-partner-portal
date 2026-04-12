@@ -287,6 +287,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ enterprise: ep });
     }
 
+    // ─── Delete Enterprise Partner (permanent) ─────────────────────────
+    if (body.action === "delete") {
+      const { partnerCode } = body;
+      if (!partnerCode) return NextResponse.json({ error: "partnerCode is required" }, { status: 400 });
+
+      // Delete all overrides first (foreign key constraint)
+      await prisma.enterpriseOverride.deleteMany({
+        where: { enterprisePartnerCode: partnerCode },
+      });
+
+      // Delete the enterprise partner record
+      await prisma.enterprisePartner.delete({
+        where: { partnerCode },
+      });
+
+      return NextResponse.json({ deleted: true, partnerCode });
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (e) {
     console.error("Enterprise POST error:", e);

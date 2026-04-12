@@ -185,10 +185,17 @@ npm run db:studio    # Open Prisma Studio
 - Webhook guide: consultation fields documented in POST + PATCH sections, deal example screenshot section added
 - Clickable deal name links: all deal names across admin pages (revenue, payouts, enterprise reporting) link to deals page via DealLink component with auto-expand and scroll-to
 - DealLink reusable component: `src/components/ui/DealLink.tsx` — navigates to `/admin/deals?deal={id}`, auto-expands and scrolls to target deal
+- Enterprise Remove/Terminate: "Terminate" keeps historical data but stops tracking; "Remove" permanently deletes all EP data. Double confirmation on remove.
+- Enterprise payouts wired into standard Payouts page: EP overrides appear as "EP" tier entries alongside L1/L2/L3 commissions with due/pending/paid status
+- Communication log filters: partner profile now has filter tabs for All, Support Tickets, Email, SMS, Live Chat, Phone Calls (SMS/Email/Chat/Phone show phase placeholders)
 
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)
-- **Phase 15**: Email & SMS Integration (SendGrid/Twilio)
+- **Phase 15**: Email, SMS & VOIP Integration
+  - **Email**: SendGrid — transactional emails, partner notifications, commission alerts, logged in partner communication log
+  - **SMS**: Twilio Programmable Messaging — opt-in partner SMS notifications, logged in partner communication log
+  - **VOIP**: Twilio Voice — admin click-to-call dialer from portal, call recording, call logs in partner communication log. Twilio recommended because: single provider for SMS + VOIP (unified billing, shared phone numbers), excellent API for call tracking/recording, built-in webhooks for call status events, programmable IVR, and React/Next.js SDKs available. Alternative considered: Vonage (similar features but less developer ecosystem).
+  - **Integration plan**: Twilio account → provision phone numbers → build `/api/twilio/call` endpoint for outbound calls → `/api/twilio/sms` for sending → `/api/twilio/webhook` for status callbacks → CallLog + SmsLog Prisma models → display in partner communication log
 - **Phase 16**: Payments & Payouts (Stripe Connect)
 - **Phase 17**: AI Support Bot (Claude/OpenAI)
 - **Phase 18**: Deployment Hardening (monitoring, analytics, error tracking)

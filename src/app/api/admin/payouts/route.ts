@@ -59,6 +59,62 @@ export async function GET(req: NextRequest) {
     const totalPaid = allComm.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
     const partnersToPay = new Set(allComm.filter((c) => c.status === "due").map((c) => c.partnerCode)).size;
 
+    // ─── Enterprise override payouts ─────────────────────────────────
+    // Calculate enterprise overrides from active enterprise partners and add to payouts list
+    const enterprises = await prisma.enterprisePartner.findMany({
+      where: { status: "active" },
+      include: { overrides: { where: { status: "active" } } },
+    });
+
+    if (enterprises.length > 0) {
+      const allDeals = await prisma.deal.findMany();
+
+      for (const ep of enterprises) {
+        // Get applicable deals
+        const l1Codes = ep.overrides.map((o) => o.l1PartnerCode);
+        const epDeals = ep.applyToAll
+          ? allDeals.filter((d) => d.partnerCode !== ep.partnerCode)
+          : allDeals.filter((d) => l1Codes.includes(d.partnerCode));
+
+        for (const deal of epDeals) {
+          const firmFee = deal.firmFeeAmount || deal.estimatedRefundAmount * (deal.firmFeeRate || 0.20);
+          const overrideAmount = firmFee * ep.overrideRate;
+          if (overrideAmount <= 0) continue;
+
+          // Determine status based on deal stage
+          const epStatus = deal.stage === "closedwon" ? "due"
+            : deal.stage === "closedlost" ? "paid" // closed lost = no payout (skip)
+            : "pending";
+          if (deal.stage === "closedlost") continue;
+
+          // Check status filter
+          if (statusFilter && statusFilter !== "all" && epStatus !== statusFilter) continue;
+
+          payouts.push({
+            id: `ep-${ep.id}-${deal.id}`,
+            partnerName: partnerMap[ep.partnerCode]?.company || partnerMap[ep.partnerCode]?.name || ep.partnerCode,
+            partnerId: partnerMap[ep.partnerCode]?.id || null,
+            partnerCode: ep.partnerCode,
+            tier: "EP",
+            dealId: deal.id,
+            dealName: deal.dealName,
+            amount: overrideAmount,
+            status: epStatus,
+            periodMonth: "",
+            payoutDate: null,
+            batchId: null,
+          });
+        }
+      }
+    }
+
+    // Recalculate stats including EP payouts
+    const allPayoutAmounts = payouts;
+    const epDue = allPayoutAmounts.filter((p) => p.status === "due").reduce((s, p) => s + p.amount, 0);
+    const epPending = allPayoutAmounts.filter((p) => p.status === "pending").reduce((s, p) => s + p.amount, 0);
+    const epPaid = allPayoutAmounts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
+    const allPartnersToPay = new Set(allPayoutAmounts.filter((p) => p.status === "due").map((p) => p.partnerCode)).size;
+
     // Payout batches
     const batches = await prisma.payoutBatch.findMany({
       orderBy: { createdAt: "desc" },
@@ -67,7 +123,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       payouts,
-      stats: { totalDue, totalPending, totalPaid, partnersToPay },
+      stats: { totalDue: epDue, totalPending: epPending, totalPaid: epPaid, partnersToPay: allPartnersToPay },
       batches,
     });
   } catch (e) {

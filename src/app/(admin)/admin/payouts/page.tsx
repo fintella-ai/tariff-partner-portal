@@ -34,6 +34,7 @@ const tierBadge: Record<string, string> = {
   L1: "bg-brand-gold/20 text-brand-gold",
   L2: "bg-purple-500/20 text-purple-400",
   L3: "bg-blue-500/20 text-blue-400",
+  EP: "bg-purple-500/20 text-purple-400",
 };
 
 const statusBadge: Record<string, string> = {

@@ -675,8 +675,12 @@ export default function RevenuePage() {
                           <PartnerLink partnerId={ep.partnerId} className="font-body text-[15px] font-semibold text-[var(--app-text)]">
                             {ep.partnerName}
                           </PartnerLink>
-                          <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                            Enterprise
+                          <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${
+                            ep.status === "terminated"
+                              ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                              : "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                          }`}>
+                            {ep.status === "terminated" ? "Terminated" : "Enterprise"}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 text-xs theme-text-muted">
@@ -831,6 +835,59 @@ export default function RevenuePage() {
 
                       {ep.notes && (
                         <div className="font-body text-xs theme-text-muted italic mb-4">Note: {ep.notes}</div>
+                      )}
+
+                      {/* Remove / Terminate actions */}
+                      {isSuperAdmin && (
+                        <div className="flex gap-3 pt-3 mt-3" style={{ borderTop: "1px solid var(--app-border)" }}>
+                          {ep.status === "active" && (
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`Terminate enterprise status for ${ep.partnerName}?\n\nThis will STOP all future override tracking but KEEP all historical data and past earnings.`)) return;
+                                await fetch("/api/admin/enterprise", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ action: "update", partnerCode: ep.partnerCode, status: "terminated" }),
+                                });
+                                fetchEnterprises();
+                              }}
+                              className="font-body text-[11px] text-yellow-400 border border-yellow-400/20 rounded-lg px-4 py-2 hover:bg-yellow-400/10 transition-colors"
+                            >
+                              Terminate (Keep Data)
+                            </button>
+                          )}
+                          {ep.status === "terminated" && (
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`Reactivate enterprise status for ${ep.partnerName}?`)) return;
+                                await fetch("/api/admin/enterprise", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ action: "update", partnerCode: ep.partnerCode, status: "active" }),
+                                });
+                                fetchEnterprises();
+                              }}
+                              className="font-body text-[11px] text-green-400 border border-green-400/20 rounded-lg px-4 py-2 hover:bg-green-400/10 transition-colors"
+                            >
+                              Reactivate
+                            </button>
+                          )}
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`PERMANENTLY REMOVE ${ep.partnerName} as an enterprise partner?\n\nThis will DELETE all enterprise tracking data, override records, and earnings history. This cannot be undone.`)) return;
+                              if (!confirm(`Are you absolutely sure? Type the partner code to confirm.\n\nThis action is IRREVERSIBLE.`)) return;
+                              await fetch("/api/admin/enterprise", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ action: "delete", partnerCode: ep.partnerCode }),
+                              });
+                              fetchEnterprises();
+                            }}
+                            className="font-body text-[11px] text-red-400/60 border border-red-400/15 rounded-lg px-4 py-2 hover:bg-red-400/10 hover:text-red-400 transition-colors"
+                          >
+                            Remove (Delete All Data)
+                          </button>
+                        </div>
                       )}
                     </div>
                   )}
