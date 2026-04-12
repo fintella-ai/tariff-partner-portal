@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { SkeletonStatCard, SkeletonTableRow } from "@/components/ui/Skeleton";
@@ -11,6 +12,7 @@ import { useDevice } from "@/lib/useDevice";
 export default function OverviewPage() {
   const { data: session } = useSession();
   const device = useDevice();
+  const router = useRouter();
   const [directDeals, setDirectDeals] = useState<any[]>([]);
   const [downlinePartners, setDownlinePartners] = useState<any[]>([]);
   const [downlineDeals, setDownlineDeals] = useState<any[]>([]);
@@ -119,9 +121,9 @@ export default function OverviewPage() {
               return (
                 <div key={deal.id} className="px-4 py-4 border-b border-[var(--app-border-subtle)] last:border-b-0">
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="font-body text-[13px] font-medium text-[var(--app-text)] leading-snug flex-1 min-w-0">
+                    <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] font-medium text-[var(--app-text)] leading-snug flex-1 min-w-0 text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors truncate">
                       {p.dealName}
-                    </div>
+                    </button>
                     <StageBadge stage={p.stage} />
                   </div>
                   <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-3">
@@ -167,7 +169,7 @@ export default function OverviewPage() {
                 >
                   {/* Col 1: Deal name */}
                   <div>
-                    <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{p.dealName}</div>
+                    <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] font-medium text-[var(--app-text)] truncate text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors block w-full">{p.dealName}</button>
                     <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
                       {p.importedProducts || p.productType} · {fmtDate(p.createdAt)}
                     </div>
@@ -257,7 +259,7 @@ export default function OverviewPage() {
                     className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors"
                   >
                     <div>
-                      <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{p.dealName}</div>
+                      <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] font-medium text-[var(--app-text)] truncate text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors block w-full">{p.dealName}</button>
                       <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
                         Via {p.submittingPartnerName || partnerNameMap[p.partnerCode] || p.partnerCode} · {fmtDate(p.createdAt)}
                       </div>

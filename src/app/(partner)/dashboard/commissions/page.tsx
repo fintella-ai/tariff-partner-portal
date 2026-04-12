@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { fmt$, fmtDate } from "@/lib/format";
 import { useDevice } from "@/lib/useDevice";
@@ -23,6 +24,7 @@ interface CommissionRates {
 export default function CommissionsPage() {
   const { data: session } = useSession();
   const device = useDevice();
+  const router = useRouter();
 
   const [rates, setRates] = useState<CommissionRates>({
     l1Rate: DEFAULT_L1_RATE,
@@ -361,7 +363,7 @@ export default function CommissionsPage() {
                   return (
                     <div key={deal.id} className="px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0">
                       <div className="flex justify-between items-center mb-1">
-                        <div className="font-body text-[13px] text-[var(--app-text)] truncate flex-1 mr-3">{deal.dealName}</div>
+                        <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] text-[var(--app-text)] truncate flex-1 mr-3 text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors">{deal.dealName}</button>
                         <StatusBadge status={deal.l1CommissionStatus} />
                       </div>
                       <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-1">{fmtDate(deal.createdAt)}</div>
@@ -411,7 +413,7 @@ export default function CommissionsPage() {
                 {directDeals.map((deal) => {
                   return (
                     <div key={deal.id} className="grid grid-cols-[1.8fr_0.8fr_0.5fr_1fr_0.7fr_0.8fr_0.7fr] gap-3 px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors">
-                      <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
+                      <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] text-[var(--app-text)] truncate text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors">{deal.dealName}</button>
                       <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</div>
                       <div><span className="font-body text-[10px] text-brand-gold font-semibold bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5">L1</span></div>
                       <div className="font-body text-[12px] text-[var(--app-text-muted)] italic">— (Direct)</div>

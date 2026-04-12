@@ -15,7 +15,13 @@ export default function DealsPage() {
   const router = useRouter();
   const [deals, setDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Deep link: auto-expand a deal from URL ?deal=xxx
+  const [expandedId, setExpandedId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search).get("deal");
+    }
+    return null;
+  });
 
   const loadData = useCallback(async () => {
     try {
