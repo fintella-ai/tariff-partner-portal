@@ -408,24 +408,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {device.isMobile && (
             <div className="flex gap-2 mb-4">
               <button
-                onClick={() => copyAndNotify(clientRefUrl, "client")}
-                className={`flex-1 font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all text-center ${
-                  copiedLink === "client"
-                    ? "bg-green-500/15 border-green-500/30 text-green-400"
-                    : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold"
-                }`}
+                onClick={() => navigate("/dashboard/submit-client")}
+                className="flex-1 font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all text-center bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold"
               >
-                {copiedLink === "client" ? "✓ Copied!" : "💼 Share Client Link"}
+                💼 Submit Client
               </button>
               <button
-                onClick={() => copyAndNotify(partnerRefUrl, "partner")}
-                className={`flex-1 font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all text-center ${
-                  copiedLink === "partner"
-                    ? "bg-green-500/15 border-green-500/30 text-green-400"
-                    : "bg-purple-500/[0.06] border-purple-500/20 text-purple-400"
-                }`}
+                onClick={() => navigate("/dashboard/referral-links")}
+                className="flex-1 font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all text-center bg-purple-500/[0.06] border-purple-500/20 text-purple-400"
               >
-                {copiedLink === "partner" ? "✓ Copied!" : "👥 Share Partner Link"}
+                👥 Referral Links
               </button>
             </div>
           )}
@@ -457,24 +449,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {!device.isDesktop ? null : (
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => copyAndNotify(clientRefUrl, "client")}
+                  onClick={() => navigate("/dashboard/submit-client")}
                   className={`font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2.5 transition-all flex items-center gap-1.5 ${
-                    copiedLink === "client"
-                      ? "bg-green-500/15 border-green-500/30 text-green-400"
+                    isActive("/dashboard/submit-client")
+                      ? "bg-brand-gold/15 border-brand-gold/30 text-brand-gold"
                       : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold hover:bg-brand-gold/10"
                   }`}
                 >
-                  {copiedLink === "client" ? "✓ Copied!" : "💼 Client Link"}
+                  💼 Submit Client
                 </button>
                 <button
-                  onClick={() => copyAndNotify(partnerRefUrl, "partner")}
+                  onClick={() => navigate("/dashboard/referral-links")}
                   className={`font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2.5 transition-all flex items-center gap-1.5 ${
-                    copiedLink === "partner"
-                      ? "bg-green-500/15 border-green-500/30 text-green-400"
+                    isActive("/dashboard/referral-links")
+                      ? "bg-purple-500/15 border-purple-500/30 text-purple-400"
                       : "bg-purple-500/[0.06] border-purple-500/20 text-purple-400 hover:bg-purple-500/10"
                   }`}
                 >
-                  {copiedLink === "partner" ? "✓ Copied!" : "👥 Partner Link"}
+                  👥 Referral Links
                 </button>
                 <NotificationBell />
                 <button
