@@ -545,6 +545,91 @@ export default function PartnerDetailPage() {
         )}
       </div>
 
+      {/* ─── DOWNLINE ─────────────────────────────────────────────── */}
+      <div className="card mb-6">
+        <div className="px-5 py-4 border-b border-[var(--app-border)] flex items-center justify-between flex-wrap gap-2">
+          <div className="font-body font-semibold text-sm">Downline Partners ({downline.length})</div>
+          {downline.length > 0 && (
+            <div className="flex bg-[var(--app-input-bg)] rounded-lg p-0.5">
+              <button
+                onClick={() => setDownlineView("list")}
+                className={`font-body text-[11px] px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
+                  downlineView === "list" ? "bg-brand-gold/15 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                List
+              </button>
+              <button
+                onClick={() => setDownlineView("tree")}
+                className={`font-body text-[11px] px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
+                  downlineView === "tree" ? "bg-brand-gold/15 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v4m0 0a4 4 0 014 4h2a2 2 0 012 2v2M12 8a4 4 0 00-4 4H6a2 2 0 00-2 2v2m8-8v4m0 0a2 2 0 012 2v2m-2-4a2 2 0 00-2 2v2" />
+                </svg>
+                Tree View
+              </button>
+            </div>
+          )}
+        </div>
+        {downline.length === 0 ? (
+          <div className="px-5 py-8 text-center font-body text-[13px] text-[var(--app-text-muted)]">No downline partners.</div>
+        ) : downlineView === "tree" ? (
+          (() => {
+            const rootPartner: TreePartner = {
+              id: partner.id,
+              partnerCode: partner.partnerCode,
+              firstName: partner.firstName,
+              lastName: partner.lastName,
+              status: partner.status,
+              commissionRate: partner.commissionRate,
+              children: downline.map((d) => ({
+                id: d.id,
+                partnerCode: d.partnerCode,
+                firstName: d.firstName,
+                lastName: d.lastName,
+                status: d.status,
+                commissionRate: d.commissionRate,
+                children: l3Partners
+                  .filter((l3) => l3.referredByPartnerCode === d.partnerCode)
+                  .map((l3) => ({
+                    id: l3.id,
+                    partnerCode: l3.partnerCode,
+                    firstName: l3.firstName,
+                    lastName: l3.lastName,
+                    status: l3.status,
+                    commissionRate: (l3 as any).commissionRate,
+                    children: [],
+                  })),
+              })),
+            };
+            return <DownlineTree root={rootPartner} />;
+          })()
+        ) : (
+          <div>
+            {downline.map((d) => (
+              <div
+                key={d.id}
+                className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer flex items-center justify-between"
+                onClick={() => router.push(`/admin/partners/${d.id}`)}
+              >
+                <div>
+                  <div className="font-body text-[13px] text-[var(--app-text)]">{d.firstName} {d.lastName}</div>
+                  <div className="font-mono text-[11px] text-[var(--app-text-muted)]">{d.partnerCode}</div>
+                </div>
+                <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[d.status] || statusBadge.active}`}>
+                  {d.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* ─── ADMIN NOTES (audit log) ──────────────────────────────── */}
       <div className="card mb-6">
         <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--app-border)" }}>
@@ -625,88 +710,6 @@ export default function PartnerDetailPage() {
             <div className="px-5 py-6 text-center font-body text-[13px] text-[var(--app-text-muted)]">No notes yet.</div>
           );
         })()}
-      </div>
-
-      {/* ─── DOWNLINE ─────────────────────────────────────────────── */}
-      <div className="card mb-6">
-        <div className="px-5 py-4 border-b border-[var(--app-border)] flex items-center justify-between flex-wrap gap-2">
-          <div className="font-body font-semibold text-sm">Downline Partners ({downline.length})</div>
-          {downline.length > 0 && (
-            <div className="flex bg-[var(--app-input-bg)] rounded-lg p-0.5">
-              <button
-                onClick={() => setDownlineView("list")}
-                className={`font-body text-[11px] px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
-                  downlineView === "list" ? "bg-brand-gold/15 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
-                }`}
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                List
-              </button>
-              <button
-                onClick={() => setDownlineView("tree")}
-                className={`font-body text-[11px] px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
-                  downlineView === "tree" ? "bg-brand-gold/15 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
-                }`}
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v4m0 0a4 4 0 014 4h2a2 2 0 012 2v2M12 8a4 4 0 00-4 4H6a2 2 0 00-2 2v2m8-8v4m0 0a2 2 0 012 2v2m-2-4a2 2 0 00-2 2v2" />
-                </svg>
-                Tree View
-              </button>
-            </div>
-          )}
-        </div>
-        {downline.length === 0 ? (
-          <div className="px-5 py-8 text-center font-body text-[13px] text-[var(--app-text-muted)]">No downline partners.</div>
-        ) : downlineView === "tree" ? (
-          (() => {
-            const rootPartner: TreePartner = {
-              id: partner.id,
-              partnerCode: partner.partnerCode,
-              firstName: partner.firstName,
-              lastName: partner.lastName,
-              status: partner.status,
-              children: downline.map((d) => ({
-                id: d.id,
-                partnerCode: d.partnerCode,
-                firstName: d.firstName,
-                lastName: d.lastName,
-                status: d.status,
-                children: l3Partners
-                  .filter((l3) => l3.referredByPartnerCode === d.partnerCode)
-                  .map((l3) => ({
-                    id: l3.id,
-                    partnerCode: l3.partnerCode,
-                    firstName: l3.firstName,
-                    lastName: l3.lastName,
-                    status: l3.status,
-                    children: [],
-                  })),
-              })),
-            };
-            return <DownlineTree root={rootPartner} />;
-          })()
-        ) : (
-          <div>
-            {downline.map((d) => (
-              <div
-                key={d.id}
-                className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer flex items-center justify-between"
-                onClick={() => router.push(`/admin/partners/${d.id}`)}
-              >
-                <div>
-                  <div className="font-body text-[13px] text-[var(--app-text)]">{d.firstName} {d.lastName}</div>
-                  <div className="font-mono text-[11px] text-[var(--app-text-muted)]">{d.partnerCode}</div>
-                </div>
-                <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[d.status] || statusBadge.active}`}>
-                  {d.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ─── DOCUMENTS & AGREEMENT ─────────────────────────────── */}
