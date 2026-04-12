@@ -141,6 +141,7 @@ export default function DownlinePage() {
                 firstName: p.firstName,
                 lastName: p.lastName,
                 status: p.status,
+                commissionRate: p.commissionRate,
                 children: l3Partners
                   .filter((l3) => l3.referredByPartnerCode === p.partnerCode)
                   .map((l3) => ({
@@ -149,6 +150,7 @@ export default function DownlinePage() {
                     firstName: l3.firstName,
                     lastName: l3.lastName,
                     status: l3.status,
+                    commissionRate: (l3 as any).commissionRate,
                     children: [],
                   })),
               })),

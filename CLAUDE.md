@@ -203,6 +203,11 @@ npm run db:studio    # Open Prisma Studio
 - Partner account settings: full payout information section (method, bank name, account type, routing, account number, beneficiary, bank address)
 - Admin partner profile: matching payout information section with all banking fields, editable by admin
 - Bank letter/voided check: new document type "bank_letter" for both partner and admin document uploads
+- Partner deal drill-down: expandable read-only deal detail with deal ID, client info, tariff info, financials
+- Partner deal status tracker: visual pipeline progress bar showing all 8 stages with current stage highlighted
+- Partner deal notes & activity: timeline showing creation, consultation scheduled, referral notes, close events
+- Deal Support button: opens live chat (if enabled) pre-filled with deal context, or opens support ticket with deal ID auto-populated
+- Partner downline tree: commission percentages shown for L2/L3 downline only (upline % hidden from downline view)
 
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)

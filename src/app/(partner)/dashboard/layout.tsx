@@ -127,6 +127,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => { fetchChat(); }, [fetchChat]);
 
+  // Listen for deal support chat events from child pages
+  useEffect(() => {
+    function handleDealChat(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (chatEnabled && detail?.message) {
+        setChatOpen(true);
+        setChatInput(detail.message);
+        (window as any).__trlnChatOpened = true;
+      }
+    }
+    window.addEventListener("openDealChat", handleDealChat);
+    return () => window.removeEventListener("openDealChat", handleDealChat);
+  }, [chatEnabled]);
+
   useEffect(() => {
     if (!chatOpen || !chatEnabled) return;
     const interval = setInterval(fetchChat, 4000);

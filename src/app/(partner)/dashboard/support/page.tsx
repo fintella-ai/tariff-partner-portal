@@ -64,6 +64,18 @@ export default function SupportPage() {
 
   useEffect(() => { fetchTickets(); }, [fetchTickets]);
 
+  // Auto-open new ticket form from URL params (e.g., from Deal Support button)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("newTicket") === "true") {
+      setView("new");
+      if (params.get("subject")) setSubject(params.get("subject") || "");
+      if (params.get("category")) setCategory(params.get("category") || "");
+      if (params.get("dealRef")) setMessage(params.get("dealRef") || "");
+    }
+  }, []);
+
   function validate(): boolean {
     const e: Record<string, string> = {};
     if (!subject.trim()) e.subject = "Subject is required";
