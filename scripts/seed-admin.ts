@@ -4,7 +4,7 @@ import { hashSync } from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  const existing = await prisma.user.findUnique({ where: { email: "admin@trln.com" } });
+  const existing = await prisma.user.findUnique({ where: { email: "admin@fintella.partners" } });
   if (existing) {
     console.log("Admin user already exists:", existing.email);
     return;
@@ -12,7 +12,7 @@ async function main() {
 
   const user = await prisma.user.create({
     data: {
-      email: "admin@trln.com",
+      email: "admin@fintella.partners",
       passwordHash: hashSync("admin123", 10),
       name: "Admin User",
       role: "super_admin",

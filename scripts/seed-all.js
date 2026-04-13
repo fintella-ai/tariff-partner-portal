@@ -9,7 +9,7 @@ async function main() {
   console.log("Seeding database...\n");
 
   // ── Admin User ────────────────────────────────────────────────────────
-  const adminEmail = "admin@trln.com";
+  const adminEmail = "admin@fintella.partners";
   const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!existing) {
     await prisma.user.create({
@@ -20,7 +20,7 @@ async function main() {
         role: "super_admin",
       },
     });
-    console.log("✓ Admin user created (admin@trln.com)");
+    console.log("✓ Admin user created (admin@fintella.partners)");
   } else {
     console.log("✓ Admin user already exists");
   }

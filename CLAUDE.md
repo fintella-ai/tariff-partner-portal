@@ -55,7 +55,7 @@ scripts/                     — Seeding scripts
 
 ## Partner Signup Flow
 1. L1 goes to Referral Links → selects rate (10/15/20%) → generates invite link
-2. Recruit opens `trln.partners/signup?token=XXX`
+2. Recruit opens `fintella.partners/signup?token=XXX`
 3. Fills out form (name, email, phone, company) + required email/SMS opt-in checkboxes
 4. Partner created as "pending", agreement sent via SignWell + embedded iframe for immediate signing
 5. SignWell webhook marks agreement as signed → partner becomes active
@@ -95,7 +95,7 @@ scripts/                     — Seeding scripts
 DATABASE_URL              — "file:./dev.db" (local) or PostgreSQL connection string (prod)
 DIRECT_URL                — PostgreSQL unpooled connection (Prisma migrations)
 NEXTAUTH_SECRET           — JWT signing secret
-NEXTAUTH_URL              — https://trln.partners
+NEXTAUTH_URL              — https://fintella.partners
 SIGNWELL_API_KEY          — Optional: e-signature integration
 SIGNWELL_WEBHOOK_SECRET   — Optional: SignWell webhook verification
 HUBSPOT_PRIVATE_TOKEN     — Optional: CRM integration
@@ -118,13 +118,13 @@ npm run db:studio    # Open Prisma Studio
 
 ## Webhook Endpoints
 - **SignWell**: `POST /api/signwell/webhook` — handles document_completed, document_viewed, document_expired
-- **Frost Law Referral**: `POST /api/webhook/referral` — receives form submissions, creates Deal records, attributes to partner via `utm_content`. Public docs at `https://trln.partners/docs/webhook-guide`
+- **Frost Law Referral**: `POST /api/webhook/referral` — receives form submissions, creates Deal records, attributes to partner via `utm_content`. Public docs at `https://fintella.partners/docs/webhook-guide`
 
 ## Portal State (compressed — see git history for detail)
 
 The portal is feature-complete for demo / pre-launch. Everything below is shipped and working. Git commit history is the source of truth for line-level detail — this section is just a map.
 
-**Partner side** — home feed, overview stats, deals (with pipeline tracker + drill-down), commissions, downline tree, training, live weekly conference, submit client (Frost Law iframe), referral links, documents, account settings, support tickets, feature requests, AI assistant (TRLN PartnerOS / Fintella PartnerOS — Claude Sonnet 4.6).
+**Partner side** — home feed, overview stats, deals (with pipeline tracker + drill-down), commissions, downline tree, training, live weekly conference, submit client (Frost Law iframe), referral links, documents, account settings, support tickets, feature requests, AI assistant (Fintella PartnerOS — Claude Sonnet 4.6).
 
 **Admin side** — partners (detail, notes, communications log, sudo impersonation), deals, revenue / custom commissions / enterprise reporting, payouts (with EP overrides), support, chat (live agent panel), communications hub, documents, training management, conference management, feature request triage, user management (4 roles: super_admin / admin / accounting / partner_support), settings, development page (/admin/dev) with live GitHub feed + Sentry errors panel + webhook test harness (super_admin only).
 

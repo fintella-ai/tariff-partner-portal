@@ -1,9 +1,11 @@
-# TRLN Partner Portal — Master Roadmap
+# Fintella Partner Portal — Master Roadmap
+
+> Historical note: this portal was originally developed under the "Tariff Refund & Litigation Network (TRLN)" brand and was rebranded to Fintella (Financial Intelligence Network) in April 2026 before launch. Older sections of this roadmap may reference TRLN as historical context — CLAUDE.md is the current source of truth for active work.
 
 ## Project Overview
-Partner portal for Tariff Refund & Litigation Network (TRLN).
+Partner portal for **Fintella — Financial Intelligence Network** (legal DBA: Financial Intelligence Network DBA (Fintella), parent: Annexation PR LLC).
 Dark theme, mobile-first, device-aware responsive design.
-Stack: Next.js 14, Tailwind CSS, Prisma/SQLite, NextAuth, TypeScript.
+Stack: Next.js 14, Tailwind CSS, Prisma/PostgreSQL (Neon), NextAuth, TypeScript.
 
 ---
 
