@@ -116,7 +116,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {device.isDesktop && (
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-body text-[11px] theme-text-muted hover:bg-brand-gold/5 transition-colors mb-2"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="flex items-center justify-center gap-2 w-full min-h-[44px] px-3 py-2.5 rounded-lg font-body text-[12px] theme-text-muted hover:bg-brand-gold/5 active:scale-[0.98] transition-all mb-2"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <CollapseIcon collapsed={collapsed} />

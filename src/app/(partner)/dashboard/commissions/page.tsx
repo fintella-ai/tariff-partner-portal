@@ -209,7 +209,7 @@ export default function CommissionsPage() {
           <div className="font-body text-[10px] tracking-[2px] uppercase text-brand-gold/80 mb-3">
             Direct Referral (L1) — {(rates.l1Rate * 100).toFixed(0)}% of fee
           </div>
-          <div className={`font-display ${device.isMobile ? "text-3xl" : "text-[40px]"} font-bold text-brand-gold mb-0.5`}>
+          <div className={`font-display ${device.isMobile ? "text-[28px] leading-tight" : "text-[40px]"} font-bold text-brand-gold mb-0.5 break-words`}>
             {fmt$(totalL1Earned)}
           </div>
           <div className="font-body text-xs text-[var(--app-text-secondary)] mb-4">
@@ -233,7 +233,7 @@ export default function CommissionsPage() {
             <div className="font-body text-[10px] tracking-[2px] uppercase text-purple-400/80 mb-3">
               Downline Referral (L2) — {(rates.l2Rate * 100).toFixed(0)}% of fee
             </div>
-            <div className={`font-display ${device.isMobile ? "text-3xl" : "text-[40px]"} font-bold text-purple-400 mb-0.5`}>
+            <div className={`font-display ${device.isMobile ? "text-[28px] leading-tight" : "text-[40px]"} font-bold text-purple-400 mb-0.5 break-words`}>
               {fmt$(totalL2Earned)}
             </div>
             <div className="font-body text-xs text-[var(--app-text-secondary)] mb-4">
@@ -258,7 +258,7 @@ export default function CommissionsPage() {
             <div className="font-body text-[10px] tracking-[2px] uppercase text-cyan-400/80 mb-3">
               Level 3 Downline (L3) — {(rates.l3Rate * 100).toFixed(0)}% of fee
             </div>
-            <div className={`font-display ${device.isMobile ? "text-3xl" : "text-[40px]"} font-bold text-cyan-400 mb-0.5`}>
+            <div className={`font-display ${device.isMobile ? "text-[28px] leading-tight" : "text-[40px]"} font-bold text-cyan-400 mb-0.5 break-words`}>
               {fmt$(0)}
             </div>
             <div className="font-body text-xs text-[var(--app-text-secondary)] mb-4">No L3 deals yet</div>

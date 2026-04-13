@@ -135,8 +135,9 @@ export default function DealsPage() {
             ))}
           </div>
         ) : (
-          /* ── Desktop/Tablet: Grid table ── */
-          <div>
+          /* ── Desktop/Tablet: Grid table (horizontal scroll on narrow viewports) ── */
+          <div className="overflow-x-auto">
+            <div className="min-w-[820px]">
             <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_0.7fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
               {["Client / Deal", "Stage", "Est. Refund", "Firm Fee", "Commission", "Status"].map((h) => (
                 <div key={h} className={`font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] ${h === "Status" || h === "Stage" ? "text-center" : ""}`}>{h}</div>
@@ -165,6 +166,7 @@ export default function DealsPage() {
                 )}
               </div>
             ))}
+            </div>
           </div>
         )}
       </div>

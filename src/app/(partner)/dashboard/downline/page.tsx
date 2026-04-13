@@ -223,8 +223,9 @@ export default function DownlinePage() {
             })}
           </div>
         ) : (
-          /* ── Desktop/Tablet: Table layout ── */
-          <div>
+          /* ── Desktop/Tablet: Table layout (horizontal scroll on narrow viewports) ── */
+          <div className="overflow-x-auto">
+            <div className="min-w-[840px]">
             {/* Header */}
             <div className="grid grid-cols-[2fr_1.5fr_1fr_0.7fr_0.8fr_0.8fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
               {["Partner", "Email", "Code", "Status", "Joined", "Agreement"].map((h) => (
@@ -296,6 +297,7 @@ export default function DownlinePage() {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
       </div>

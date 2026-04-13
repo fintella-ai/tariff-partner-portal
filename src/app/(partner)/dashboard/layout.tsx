@@ -363,12 +363,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button
               key={item.id}
               onClick={() => navigate(item.href)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 px-1 font-body text-[10px] transition-colors ${
+              aria-label={item.shortLabel}
+              aria-current={isActive(item.href) ? "page" : undefined}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3 px-1 min-h-[56px] font-body text-[11px] transition-colors active:scale-95 ${
                 isActive(item.href) ? "text-brand-gold" : "text-[var(--app-text-muted)]"
               }`}
             >
               <span className="text-xl leading-none">{item.icon}</span>
-              <span>{item.shortLabel}</span>
+              <span className="leading-tight">{item.shortLabel}</span>
             </button>
           ))}
         </div>
@@ -397,24 +399,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {/* Safe area spacer for iPhone notch/Dynamic Island */}
               <div style={{ paddingTop: "env(safe-area-inset-top, 12px)" }} />
               {/* Top bar: Sign Out (left) — Fintella (center) — Support (right) */}
-              <div className="flex justify-between items-center py-3">
+              <div className="flex justify-between items-center py-3 gap-2">
                 <button
                   onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="font-body text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded px-3 py-1.5 tracking-wider min-h-[32px]"
+                  aria-label="Sign out"
+                  className="font-body text-[11px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded-lg px-3.5 py-2.5 tracking-wider min-h-[44px] min-w-[44px] flex items-center hover:text-[var(--app-text-secondary)] active:scale-95 transition-all"
                 >
                   Sign Out
                 </button>
-                <div className="text-center">
-                  <div className="font-display text-[18px] font-bold text-brand-gold tracking-[2px]">
+                <div className="text-center min-w-0 px-1">
+                  <div className="font-display text-[18px] font-bold text-brand-gold tracking-[2px] truncate">
                     {firmShort}
                   </div>
-                  <div className="font-body text-[8px] text-[var(--app-text-muted)] tracking-[0.5px] mt-0.5 leading-tight">
+                  <div className="font-body text-[8px] text-[var(--app-text-muted)] tracking-[0.5px] mt-0.5 leading-tight truncate">
                     {FIRM_NAME}
                   </div>
                 </div>
                 <button
                   onClick={() => navigate("/dashboard/support")}
-                  className={`font-body text-[10px] border rounded px-3 py-1.5 tracking-wider min-h-[32px] transition-colors ${
+                  aria-label="Support"
+                  className={`font-body text-[11px] border rounded-lg px-3.5 py-2.5 tracking-wider min-h-[44px] min-w-[44px] flex items-center transition-all active:scale-95 ${
                     isActive("/dashboard/support")
                       ? "text-brand-gold border-brand-gold/30 bg-brand-gold/10"
                       : "text-[var(--app-text-muted)] border-[var(--app-border)] hover:text-[var(--app-text-secondary)]"

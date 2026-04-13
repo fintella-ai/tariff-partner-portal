@@ -299,7 +299,8 @@ export default function AdminDealsPage() {
       </div>
 
       {/* ═══ DESKTOP TABLE ═══ */}
-      <div className="card hidden md:block">
+      <div className="card hidden md:block overflow-x-auto">
+        <div className="min-w-[920px]">
         {/* Header */}
         <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.6fr] gap-3 px-5 py-3 border-b border-[var(--app-border)]">
           <button onClick={() => toggleSort("dealName")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-left hover:text-[var(--app-text-secondary)]">
@@ -519,6 +520,7 @@ export default function AdminDealsPage() {
         {sorted.length === 0 && (
           <div className="px-5 py-10 text-center font-body text-[13px] text-[var(--app-text-muted)]">No deals found matching your filters.</div>
         )}
+        </div>
       </div>
 
       {/* ═══ MOBILE CARDS ═══ */}

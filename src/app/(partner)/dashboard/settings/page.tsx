@@ -300,8 +300,11 @@ export default function AccountSettingsPage() {
             />
           </div>
 
-          <div className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-3"} gap-4`}>
-            <div>
+          {/* City takes full width on mobile + tablet (≤1024px) so the input has room
+              to breathe; State and Zip share a row beneath. On desktop they collapse
+              back to a single 3-column row. */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-1">
               <label htmlFor="city" className={labelClass}>
                 City
               </label>
@@ -319,6 +322,7 @@ export default function AccountSettingsPage() {
                 id="state" name="state" type="text"
                 value={form.state} onChange={handleChange}
                 className={inputClass} placeholder="State"
+                maxLength={2}
               />
             </div>
             <div>
