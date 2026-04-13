@@ -1,8 +1,12 @@
+/* Google Fonts — @import must come before @tailwind directives because
+   `@tailwind base` expands into thousands of rules during PostCSS processing,
+   and per CSS spec `@import` must precede all non-@charset/@layer rules.
+   Turbopack enforces this strictly; webpack did not. */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 /* ── Global safe-area insets (iPhone notch, Android gesture bar, etc.) ── */
 :root {
