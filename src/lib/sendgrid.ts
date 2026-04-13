@@ -38,7 +38,14 @@ export interface SendEmailInput {
   toName?: string;
   subject: string;
   html: string;
-  text?: string;
+  /**
+   * Plain-text body. REQUIRED — every transactional email is sent as
+   * multipart/alternative, and the text part is also what we slice into
+   * `EmailLog.bodyPreview`. Templates author this side-by-side with the HTML
+   * rather than having us regex-strip tags out of the HTML (which would be
+   * lossy and ReDoS-prone).
+   */
+  text: string;
   /** Logged to EmailLog.template — short identifier for the email kind. */
   template: string;
   /** Optional partner attribution for the EmailLog row. */
@@ -60,7 +67,7 @@ export interface SendEmailResult {
  * a failure should never block the user-facing flow that triggered it.
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
-  const text = input.text || htmlToPlainText(input.html);
+  const text = input.text;
   const bodyPreview = text.slice(0, 300);
 
   // ── Demo mode: log it and short-circuit ───────────────────────────────────
@@ -183,36 +190,25 @@ async function logEmail(row: LogEmailRow): Promise<void> {
   }
 }
 
-// ─── Plain-text fallback for HTML bodies ─────────────────────────────────────
+// ─── Shared HTML + text shells ───────────────────────────────────────────────
+//
+// Each template authors HTML and plain text side-by-side. We deliberately do
+// NOT derive plain text by regex-stripping HTML — that path is lossy, was
+// flagged by CodeQL for incomplete sanitization + ReDoS, and the multipart
+// email spec wants both parts authored anyway.
 
-function htmlToPlainText(html: string): string {
-  return html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<\/div>/gi, "\n")
-    .replace(/<\/h[1-6]>/gi, "\n\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-// ─── Shared HTML shell ───────────────────────────────────────────────────────
-
-function emailShell(opts: {
+interface ShellOpts {
   preheader?: string;
   heading: string;
+  /** HTML body — already escaped, ready to drop into the shell. */
   bodyHtml: string;
+  /** Plain-text body — already formatted with newlines. */
+  bodyText: string;
   ctaLabel?: string;
   ctaUrl?: string;
-}): string {
+}
+
+function buildHtml(opts: ShellOpts): string {
   const cta =
     opts.ctaLabel && opts.ctaUrl
       ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
@@ -246,6 +242,30 @@ ${opts.preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacit
   </td></tr>
 </table>
 </body></html>`;
+}
+
+function buildText(opts: ShellOpts): string {
+  const lines: string[] = [];
+  lines.push(opts.heading);
+  lines.push("=".repeat(Math.min(opts.heading.length, 60)));
+  lines.push("");
+  lines.push(opts.bodyText.trim());
+  if (opts.ctaLabel && opts.ctaUrl) {
+    lines.push("");
+    lines.push(`${opts.ctaLabel}: ${opts.ctaUrl}`);
+  }
+  lines.push("");
+  lines.push("—");
+  lines.push(`${FIRM_NAME} · ${PORTAL_URL.replace(/^https?:\/\//, "")}`);
+  lines.push(
+    `You're receiving this because you have a partner account at ${FIRM_SHORT}.`
+  );
+  return lines.join("\n");
+}
+
+/** Convenience wrapper: build both shells from a single ShellOpts. */
+function emailShell(opts: ShellOpts): { html: string; text: string } {
+  return { html: buildHtml(opts), text: buildText(opts) };
 }
 
 function escapeHtml(s: string): string {
@@ -282,7 +302,8 @@ export async function sendWelcomeEmail(
   partner: PartnerEmailContext
 ): Promise<SendEmailResult> {
   const name = partnerDisplayName(partner);
-  const heading = `Welcome to ${FIRM_SHORT}, ${escapeHtml(name)}`;
+  // Heading is plain text; the HTML shell escapes it via buildHtml.
+  const heading = `Welcome to ${FIRM_SHORT}, ${name}`;
   const bodyHtml = `
     <p>Your partner account is now created. Your partner code is
        <strong style="font-family:'Courier New',monospace;background:#f5f5f5;padding:2px 6px;border-radius:3px;color:${BRAND_GOLD};">${escapeHtml(partner.partnerCode)}</strong>.</p>
@@ -290,10 +311,16 @@ export async function sendWelcomeEmail(
        you'll be able to start submitting clients and tracking commissions
        from your dashboard.</p>
     <p>If you have any questions, just reply to this email.</p>`;
-  const html = emailShell({
+  const bodyText = `Your partner account is now created. Your partner code is ${partner.partnerCode}.
+
+Next step: your partnership agreement is on its way. Once it's signed you'll be able to start submitting clients and tracking commissions from your dashboard.
+
+If you have any questions, just reply to this email.`;
+  const { html, text } = emailShell({
     preheader: `Welcome to ${FIRM_SHORT}. Your partner code is ${partner.partnerCode}.`,
     heading,
     bodyHtml,
+    bodyText,
     ctaLabel: "Open your dashboard",
     ctaUrl: `${PORTAL_URL}/login`,
   });
@@ -302,6 +329,7 @@ export async function sendWelcomeEmail(
     toName: name,
     subject: `Welcome to ${FIRM_SHORT}`,
     html,
+    text,
     template: "welcome",
     partnerCode: partner.partnerCode,
   });
@@ -325,11 +353,17 @@ export async function sendAgreementReadyEmail(
        under two minutes.</p>
     <p>Once it's signed, your account activates immediately and you can start
        submitting clients.</p>`;
-  const html = emailShell({
+  const bodyText = `Hi ${name},
+
+Your ${FIRM_SHORT} partnership agreement is ready for your signature. Use the link below to review and sign — it should take under two minutes.
+
+Once it's signed, your account activates immediately and you can start submitting clients.`;
+  const { html, text } = emailShell({
     preheader: "Your Fintella partnership agreement is ready for signature.",
     heading,
     bodyHtml,
-    ctaLabel: "Review &amp; sign agreement",
+    bodyText,
+    ctaLabel: "Review & sign agreement",
     ctaUrl: signingUrl || `${PORTAL_URL}/dashboard`,
   });
   return sendEmail({
@@ -337,6 +371,7 @@ export async function sendAgreementReadyEmail(
     toName: name,
     subject: `${FIRM_SHORT} partnership agreement — ready to sign`,
     html,
+    text,
     template: "agreement_ready",
     partnerCode: partner.partnerCode,
   });
@@ -358,10 +393,16 @@ export async function sendAgreementSignedEmail(
        clients, generate referral links, and track commissions from your
        dashboard.</p>
     <p>Welcome aboard.</p>`;
-  const html = emailShell({
+  const bodyText = `Hi ${name},
+
+Your ${FIRM_SHORT} partnership agreement has been signed and your account is now ACTIVE. You can submit clients, generate referral links, and track commissions from your dashboard.
+
+Welcome aboard.`;
+  const { html, text } = emailShell({
     preheader: "Your partnership agreement has been signed. Welcome aboard.",
     heading,
     bodyHtml,
+    bodyText,
     ctaLabel: "Go to dashboard",
     ctaUrl: `${PORTAL_URL}/dashboard`,
   });
@@ -370,6 +411,7 @@ export async function sendAgreementSignedEmail(
     toName: name,
     subject: `${FIRM_SHORT}: your partner account is active`,
     html,
+    text,
     template: "agreement_signed",
     partnerCode: partner.partnerCode,
   });
@@ -397,10 +439,16 @@ export async function sendInviterSignupNotificationEmail(opts: {
        ${ratePct}% commission.</p>
     <p>Next step: upload their countersigned partnership agreement from your
        Downline page so we can activate their account.</p>`;
-  const html = emailShell({
+  const bodyText = `Hi ${opts.inviterName},
+
+${opts.recruitName} has signed up as your ${opts.recruitTier.toUpperCase()} partner at ${ratePct}% commission.
+
+Next step: upload their countersigned partnership agreement from your Downline page so we can activate their account.`;
+  const { html, text } = emailShell({
     preheader: `${opts.recruitName} joined your downline at ${ratePct}%.`,
     heading,
     bodyHtml,
+    bodyText,
     ctaLabel: "Open downline",
     ctaUrl: `${PORTAL_URL}/dashboard/downline`,
   });
@@ -409,6 +457,7 @@ export async function sendInviterSignupNotificationEmail(opts: {
     toName: opts.inviterName,
     subject: `New downline partner: ${opts.recruitName}`,
     html,
+    text,
     template: "signup_notification",
     partnerCode: opts.inviterCode,
   });
