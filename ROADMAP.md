@@ -131,20 +131,31 @@ Stack: Next.js 14, Tailwind CSS, Prisma/PostgreSQL (Neon), NextAuth, TypeScript.
 - [x] Admin agreement management API (send, resend, manual status update)
 - [x] SignWell API client with demo mode (src/lib/signwell.ts)
 
-### Phase 14 — HubSpot API Integration 🔲
-- [ ] Real deal/contact sync (create, read, update)
-- [ ] Lead submission → HubSpot contact/deal creation
-- [ ] Deal stage change webhooks
-- [ ] Partner activity logging in HubSpot
-- [ ] Commission calculation from deal data
+### Phase 14 — HubSpot API Integration ❌ DESCOPED
+Fintella does not run its own HubSpot instance. Frost Law owns the CRM and
+pushes deal data to Fintella via `POST /api/webhook/referral` (with PATCH
+support for lifecycle updates — see `src/app/docs/webhook-guide/page.tsx`).
+Outbound HubSpot sync is not needed and was removed from the plan.
 
-### Phase 15 — Email & SMS Integration 🔲
-- [ ] Email provider integration (SendGrid/Resend/Gmail API)
-- [ ] Real email sending from Communications Hub
-- [ ] SMS provider integration (Twilio)
-- [ ] Template variable interpolation ({partner_name}, {deal_name}, etc.)
-- [ ] Automation trigger engine (event-driven sends)
-- [ ] Opt-in/opt-out compliance (CAN-SPAM, TCPA)
+### Phase 15 — Email, SMS & VOIP Integration ✅
+All three sub-phases shipped. See CLAUDE.md "Remaining Phases" for
+line-level detail; summary here:
+- [x] **15a** — SendGrid v3 REST via raw `fetch()` in `src/lib/sendgrid.ts`.
+      Demo-mode fallback when `SENDGRID_API_KEY` unset (still writes
+      `EmailLog` rows). Four transactional templates wired: welcome,
+      agreement_ready, agreement_signed, signup_notification. New
+      `EmailLog` Prisma model; admin Communication Log → Email tab
+      reads from it.
+- [x] **15b** — Twilio Programmable Messaging via raw `fetch()` in
+      `src/lib/twilio.ts`. Demo-mode fallback. **TCPA gate**: every send
+      checks `Partner.smsOptIn` before the network call; suppressed sends
+      log with `status="skipped_optout"` for audit. Same four templates
+      as 15a. New `SmsLog` Prisma model.
+- [x] **15c** — Twilio Voice (bridged click-to-call) in
+      `src/lib/twilio-voice.ts`. Admin-only `POST /api/twilio/call` dials
+      `TWILIO_ADMIN_PHONE` first, then bridges the partner. Status
+      callbacks update `CallLog` rows. Recording deliberately not
+      enabled (state-by-state consent laws — deferred to 15c-followup).
 
 ### Phase 16 — Payments & Payouts 🔲
 - [ ] Stripe Connect for partner payouts
@@ -153,22 +164,36 @@ Stack: Next.js 14, Tailwind CSS, Prisma/PostgreSQL (Neon), NextAuth, TypeScript.
 - [ ] Payment history & receipts
 - [ ] 1099 reporting support
 
-### Phase 17 — AI Support Bot 🔲
-- [ ] Live chat widget (partner-facing)
-- [ ] AI bot powered by Claude/OpenAI
-- [ ] Knowledge base from training materials
-- [ ] Escalation to human support
-- [ ] Chat history persistence
+### Phase 17 — AI Support Bot ✅
+- [x] Claude Sonnet 4.6 powered "Fintella PartnerOS" assistant (dedicated
+      page, prompt caching, mock fallback when `ANTHROPIC_API_KEY` unset,
+      per-partner daily rate limit + per-deploy daily budget cap)
+- [x] Chat history persistence (`AiConversation` + `AiMessage` models)
+- [x] Admin-side cost tracking (`AiUsageDay` model)
+- [ ] **17b** — split single assistant into dual personalities: **Finn**
+      (direct, data-driven) + **Stella** (warm, relationship-focused).
+      Narrative foundation for the Fintella portmanteau. Future work.
 
-### Phase 18 — Deployment & Production ✅ (initial) / 🔲 (hardening)
+### Phase 18 — Deployment & Production
 - [x] Vercel deployment configuration (vercel.json, .env.example)
 - [x] Build command: prisma generate && next build
-- [ ] PostgreSQL migration (from SQLite)
-- [ ] Custom domain setup
-- [ ] SSL/security hardening
-- [ ] Performance optimization (caching, lazy loading)
-- [ ] Error monitoring (Sentry)
-- [ ] Analytics (PostHog/Mixpanel)
+- [x] **PostgreSQL migration (Neon)** — done; `prisma/schema.prisma`
+      pinned to `provider = "postgresql"` with `DATABASE_URL` +
+      `DIRECT_URL` (pooled + unpooled)
+- [x] Custom domain setup (fintella.partners primary; trln.partners
+      still resolves and will eventually redirect)
+- [x] **18a monitoring** — Sentry (error tracking) + Vercel Analytics +
+      Speed Insights, all with graceful fallbacks
+- [x] Security hardening — main branch protection ruleset, Dependabot,
+      private vulnerability reporting, secret scanning, CodeQL
+- [ ] **18b — Next.js 14.2.35 → 16 upgrade**. Deferred deliberately:
+      5 remaining CVEs on Next are all DoS-only (no RCE / auth bypass /
+      data exfil), pre-launch impact is zero, and no safe intermediate
+      version exists (Next 15.x is still within vulnerable range for 2
+      of 5). Must go straight 14 → 16; requires React 18 → 19,
+      `middleware.ts` → `proxy.ts` rename, App Router caching opt-in,
+      Turbopack-as-default, dedicated testing session. See CLAUDE.md
+      for audit notes and deferral rationale.
 
 ---
 
@@ -185,4 +210,5 @@ Stack: Next.js 14, Tailwind CSS, Prisma/PostgreSQL (Neon), NextAuth, TypeScript.
 
 ---
 
-*Last updated: March 27, 2026*
+*Last updated: April 13, 2026 — sync pass. CLAUDE.md remains the source
+of truth for active work; this roadmap is a high-level phase map.*
