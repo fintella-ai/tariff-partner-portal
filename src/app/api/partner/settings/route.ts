@@ -35,6 +35,9 @@ export async function GET() {
       email: partner.email,
       phone: partner.phone || "",
       mobilePhone: partner.mobilePhone || "",
+      // Communications opt-ins (Phase 15a / 15b)
+      emailOptIn: !!partner.emailOptIn,
+      smsOptIn: !!partner.smsOptIn,
       street: profile?.street || "",
       street2: profile?.street2 || "",
       city: profile?.city || "",
@@ -82,6 +85,7 @@ export async function PATCH(req: NextRequest) {
     const {
       firstName, lastName, companyName, tin,
       email, phone, mobilePhone,
+      emailOptIn, smsOptIn,
       street, street2, city, state, zip,
       payoutMethod, bankName, accountType, routingNumber,
       accountNumber, beneficiaryName,
@@ -102,6 +106,15 @@ export async function PATCH(req: NextRequest) {
       (lastName !== undefined && lastName !== currentPartner.lastName) ||
       (companyName !== undefined && (companyName || "") !== (currentPartner.companyName || ""));
 
+    // Phase 15a/15b — refresh optInDate when an opt-in flips ON. We don't
+    // touch optInDate on opt-out (the historical consent date is still
+    // useful for audit). The TCPA gate inside src/lib/twilio.ts reads
+    // smsOptIn directly off the Partner row, so flipping this here is
+    // sufficient to suppress future sends without any other plumbing.
+    const flippedOnOptIn =
+      (emailOptIn === true && !currentPartner.emailOptIn) ||
+      (smsOptIn === true && !currentPartner.smsOptIn);
+
     // Update Partner record
     await prisma.partner.update({
       where: { partnerCode },
@@ -113,6 +126,9 @@ export async function PATCH(req: NextRequest) {
         ...(email !== undefined && { email }),
         ...(phone !== undefined && { phone: phone || null }),
         ...(mobilePhone !== undefined && { mobilePhone: mobilePhone || null }),
+        ...(typeof emailOptIn === "boolean" && { emailOptIn }),
+        ...(typeof smsOptIn === "boolean" && { smsOptIn }),
+        ...(flippedOnOptIn && { optInDate: new Date() }),
       },
     });
 
