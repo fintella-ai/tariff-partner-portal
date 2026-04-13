@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendForSigning, cancelDocument, isSignWellConfigured } from "@/lib/signwell";
+import {
+  sendForSigning,
+  cancelDocument,
+  isSignWellConfigured,
+  buildPartnerTemplateFields,
+  resolveAgreementTemplateId,
+} from "@/lib/signwell";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
 
 /**
@@ -56,10 +62,23 @@ export async function POST(
   }
 
   try {
-    const body = await req.json();
-    const partnerEmail = body.email;
-    const partnerName = body.name || "Partner";
+    const body = await req.json().catch(() => ({}));
     const partnerCode = params.partnerCode;
+
+    // Load partner + profile so we can (a) derive name/email authoritatively
+    // from the DB instead of trusting the request body, and (b) pre-fill the
+    // SignWell template fields.
+    const partner = await prisma.partner.findUnique({ where: { partnerCode } });
+    if (!partner) {
+      return NextResponse.json({ error: "Partner not found" }, { status: 404 });
+    }
+    const profile = await prisma.partnerProfile.findUnique({ where: { partnerCode } });
+
+    const partnerName =
+      body.name ||
+      [partner.firstName, partner.lastName].filter(Boolean).join(" ").trim() ||
+      "Partner";
+    const partnerEmail = body.email || partner.email || "";
 
     // Cancel any existing pending agreement
     const pendingAgreement = await prisma.partnershipAgreement.findFirst({
@@ -81,19 +100,50 @@ export async function POST(
     });
     const nextVersion = (latestVersion?.version || 0) + 1;
 
+    // Resolve the right template for this partner's commission rate. Admin
+    // can override by passing an explicit `rate` (0.25/0.20/0.15/0.10) in
+    // the body — useful when reissuing at a different rate without first
+    // editing the partner record.
+    const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
+    const effectiveRate =
+      typeof body.rate === "number" ? body.rate : partner.commissionRate ?? 0.25;
+    const { templateId, templateRate } = resolveAgreementTemplateId(effectiveRate, settings);
+
+    // Build the SignWell template_fields array from partner data.
+    const templateFields = buildPartnerTemplateFields({
+      partnerCode,
+      firstName: partner.firstName,
+      lastName: partner.lastName,
+      fullName: partnerName,
+      email: partnerEmail,
+      phone: partner.phone,
+      mobilePhone: partner.mobilePhone,
+      companyName: partner.companyName,
+      tin: partner.tin,
+      commissionRate: effectiveRate,
+      street: profile?.street,
+      street2: profile?.street2,
+      city: profile?.city,
+      state: profile?.state,
+      zip: profile?.zip,
+      country: profile?.country,
+    });
+
     // Send via SignWell
-    const { documentId } = await sendForSigning({
+    const { documentId, embeddedSigningUrl } = await sendForSigning({
       name: `${FIRM_SHORT} Partnership Agreement — ${partnerName}`,
       subject: `${FIRM_SHORT} Partnership Agreement`,
       message: `Hi ${partnerName}, please review and sign your ${FIRM_NAME} partnership agreement.`,
       recipients: [
         {
           id: partnerCode,
-          email: partnerEmail || "",
+          email: partnerEmail,
           name: partnerName,
           role: "Partner",
         },
       ],
+      templateId: templateId || undefined,
+      templateFields,
     });
 
     const agreement = await prisma.partnershipAgreement.create({
@@ -101,6 +151,9 @@ export async function POST(
         partnerCode,
         version: nextVersion,
         signwellDocumentId: documentId,
+        embeddedSigningUrl: embeddedSigningUrl || null,
+        templateRate,
+        templateId: templateId || null,
         status: "pending",
         sentDate: new Date(),
       },

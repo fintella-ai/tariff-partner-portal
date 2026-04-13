@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendForSigning } from "@/lib/signwell";
+import { sendForSigning, buildPartnerTemplateFields } from "@/lib/signwell";
 import { hashSync } from "bcryptjs";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
 
@@ -65,14 +65,28 @@ export async function POST(req: NextRequest) {
     const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
     const templateId = settings?.agreementTemplate25 || undefined;
 
-    // Send 25% partnership agreement via SignWell
+    // Send 25% partnership agreement via SignWell — pre-fill the template
+    // with everything we captured on the signup form so the new partner
+    // doesn't have to retype name/email/company when they land in the
+    // embedded signing view.
     const partnerName = `${firstName.trim()} ${lastName.trim()}`;
+    const templateFields = buildPartnerTemplateFields({
+      partnerCode,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      fullName: partnerName,
+      email: email.trim(),
+      phone: phone?.trim(),
+      companyName: companyName?.trim(),
+      commissionRate: 0.25,
+    });
     const { documentId, embeddedSigningUrl } = await sendForSigning({
       name: `${FIRM_SHORT} Partnership Agreement — ${partnerName} (25%)`,
       subject: `${FIRM_SHORT} Partnership Agreement`,
       message: `Hi ${partnerName}, please review and sign your ${FIRM_NAME} partnership agreement.`,
       recipients: [{ id: partnerCode, email: email.trim(), name: partnerName, role: "Partner" }],
       templateId,
+      templateFields,
     });
 
     await prisma.partnershipAgreement.create({

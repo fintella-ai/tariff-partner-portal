@@ -326,6 +326,12 @@ export default function DevPage() {
           <div className="font-body font-semibold text-sm">Quick Links</div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <a href="/admin/dev/webhook-test" className="p-3 rounded-lg border border-brand-gold/20 bg-brand-gold/[0.04] hover:border-brand-gold/40 hover:bg-brand-gold/[0.08] transition-colors">
+            <div className="font-body text-sm text-brand-gold mb-1 flex items-center gap-1.5">
+              <span>🧪</span> Webhook Test Harness
+            </div>
+            <div className="font-body text-[10px] theme-text-muted">POST/PATCH/GET test requests to the referral webhook with auto-injected secret</div>
+          </a>
           <a href="/docs/webhook-guide" target="_blank" className="p-3 rounded-lg border border-[var(--app-border)] hover:border-brand-gold/30 transition-colors">
             <div className="font-body text-sm text-[var(--app-text)] mb-1">Webhook Guide</div>
             <div className="font-body text-[10px] theme-text-muted">Frost Law referral webhook integration docs</div>

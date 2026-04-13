@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendForSigning, getEmbeddedSigningUrl, isSignWellConfigured } from "@/lib/signwell";
+import {
+  sendForSigning,
+  getEmbeddedSigningUrl,
+  isSignWellConfigured,
+  buildPartnerTemplateFields,
+  resolveAgreementTemplateId,
+} from "@/lib/signwell";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
 
 /**
@@ -122,6 +128,37 @@ export async function POST(req: NextRequest) {
     });
     const nextVersion = (latestVersion?.version || 0) + 1;
 
+    // Look up partner record + profile so we can pre-fill the template.
+    const partner = await prisma.partner.findUnique({ where: { partnerCode } });
+    const profile = await prisma.partnerProfile.findUnique({ where: { partnerCode } });
+
+    // Resolve the right template for this partner's commission rate.
+    const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
+    const { templateId, templateRate } = resolveAgreementTemplateId(
+      partner?.commissionRate ?? 0.25,
+      settings
+    );
+
+    // Build the SignWell template_fields array from partner data.
+    const templateFields = buildPartnerTemplateFields({
+      partnerCode,
+      firstName: partner?.firstName,
+      lastName: partner?.lastName,
+      fullName: partnerName,
+      email: partner?.email || partnerEmail,
+      phone: partner?.phone,
+      mobilePhone: partner?.mobilePhone,
+      companyName: partner?.companyName,
+      tin: partner?.tin,
+      commissionRate: partner?.commissionRate ?? templateRate,
+      street: profile?.street,
+      street2: profile?.street2,
+      city: profile?.city,
+      state: profile?.state,
+      zip: profile?.zip,
+      country: profile?.country,
+    });
+
     // Send via SignWell (with embedded signing enabled)
     const { documentId, embeddedSigningUrl } = await sendForSigning({
       name: `${FIRM_SHORT} Partnership Agreement — ${partnerName}`,
@@ -135,6 +172,8 @@ export async function POST(req: NextRequest) {
           role: "Partner",
         },
       ],
+      templateId: templateId || undefined,
+      templateFields,
     });
 
     // Create agreement record
@@ -144,6 +183,8 @@ export async function POST(req: NextRequest) {
         version: nextVersion,
         signwellDocumentId: documentId,
         embeddedSigningUrl: embeddedSigningUrl || null,
+        templateRate,
+        templateId: templateId || null,
         status: "pending",
         sentDate: new Date(),
       },
