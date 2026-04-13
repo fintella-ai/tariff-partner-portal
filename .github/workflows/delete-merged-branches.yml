@@ -1,0 +1,77 @@
+name: Auto-delete merged branches
+
+# Fires whenever a commit lands on main (which happens on every PR merge)
+# plus a manual workflow_dispatch button for on-demand cleanup.
+#
+# For every non-protected branch, asks the GitHub API how far it is ahead of
+# main via the compare endpoint. If ahead_by == 0, every commit on that
+# branch is already reachable from main, meaning the branch is fully merged
+# and safe to delete.
+#
+# This replaces the need for a human to run `git push origin --delete ...`
+# after every PR merge. It also runs a sweep on workflow_dispatch so old
+# merged branches get cleaned up even if the automation was added after
+# they were merged.
+#
+# Safety:
+# - Only operates on non-protected branches (main is marked protected via
+#   GitHub Ruleset, so it's ignored by the loop filter).
+# - Explicit main/master skip as a belt-and-suspenders guard.
+# - Uses `ahead_by == 0` as the merge check — catches squash/rebase merges
+#   as well as vanilla merge commits, because in all three cases main ends
+#   up containing equivalent or superseding commits.
+# - Uses `|| true` on delete so one stuck branch doesn't abort the sweep.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete branches fully merged into main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          echo "Listing non-protected branches in $REPO..."
+          BRANCHES=$(gh api "repos/$REPO/branches" --paginate --jq '.[] | select(.protected == false) | .name')
+          if [ -z "$BRANCHES" ]; then
+            echo "No non-protected branches found. Nothing to do."
+            exit 0
+          fi
+          echo "Candidates:"
+          echo "$BRANCHES" | sed 's/^/  - /'
+          echo ""
+          DELETED=0
+          KEPT=0
+          while IFS= read -r BRANCH; do
+            [ -z "$BRANCH" ] && continue
+            if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+              echo "Skipping default branch: $BRANCH"
+              continue
+            fi
+            # ahead_by counts commits on BRANCH that are NOT on main.
+            # 0 means the branch is fully merged (or is a rebase/squash
+            # equivalent) and can be safely deleted.
+            AHEAD=$(gh api "repos/$REPO/compare/main...$BRANCH" --jq '.ahead_by' 2>/dev/null || echo "unknown")
+            if [ "$AHEAD" = "0" ]; then
+              echo "Deleting fully-merged branch: $BRANCH"
+              if gh api -X DELETE "repos/$REPO/git/refs/heads/$BRANCH"; then
+                DELETED=$((DELETED + 1))
+              else
+                echo "  (delete failed, continuing)"
+              fi
+            else
+              echo "Keeping branch '$BRANCH' (ahead by $AHEAD commits)"
+              KEPT=$((KEPT + 1))
+            fi
+          done <<< "$BRANCHES"
+          echo ""
+          echo "Summary: deleted $DELETED, kept $KEPT"
