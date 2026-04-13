@@ -153,6 +153,53 @@ The portal is feature-complete for demo / pre-launch. Everything below is shippe
 - PostgreSQL migration (Neon), PWA install prompt, real DB queries on reports/payouts/support
 
 
+## Session Continuity Protocol (usage-limit failsafe)
+
+**Why**: Long sessions can run into context-window compaction, rate limits, or token budget caps. When that happens, the next session needs to pick up exactly where the last one left off without replaying the whole conversation. This protocol is the failsafe.
+
+**The state file**: `.claude/session-state.md` is the single source of truth for session-to-session continuity. It's committed to the repo so it survives across machines and sessions. **The active Claude session mechanically maintains this file.** Humans generally do NOT hand-edit it.
+
+**MANDATORY — read on startup**: At the start of every Claude Code session on this repo, **before responding to the first user message**, read `.claude/session-state.md`. If it exists and has a `🕒 Last updated` timestamp within the last ~48 hours, treat it as authoritative context about what was in flight and what's queued next. Summarize "where we left off" in your first substantive response so John knows you've picked up the thread.
+
+**MANDATORY — update at checkpoints**: The active session must update `.claude/session-state.md` at all of these points:
+
+1. **After every PR merge** — bump the done table, shift the "what's next" list, refresh `🕒 Last updated`
+2. **At the end of every completed task** (even if no commit) — update "what's in flight" + "what's next"
+3. **Before any operation that could end the session** — build verify, PR merge, major commit — so if the session dies mid-operation the next one can resume cleanly
+4. **On explicit user request** ("checkpoint", "save state", "update session state")
+5. **Proactively when the session feels long** — see next section
+
+**Proactive usage-limit alerts (John's explicit ask)**: The active session must voluntarily flag when it notices signs of an approaching usage / context limit. Trigger any of these and say something like "Heads up — this conversation is getting long. Want me to checkpoint state and break so we can resume in a fresh session cleanly?":
+
+- **Message count**: after ~40+ user/assistant exchanges in a single session
+- **Repeated context reminders**: if the system has sent >3 auto-compaction or "context getting low" notices
+- **Huge tool output dumps**: after any single tool call that returned >5k tokens of output (big file reads, large grep results, long build logs)
+- **Deeply nested work**: if the current task has touched >10 distinct files in one session and isn't clearly wrapping up
+- **Before starting a new major phase** — always checkpoint before opening a big new scope so the pre-new-work state is recoverable
+
+The alert is purely informational. Do NOT stop working unless John says so. Just surface the risk, update `.claude/session-state.md` so resume is safe, and let John decide whether to keep going or break.
+
+**Structure of `.claude/session-state.md`** — always contains these headings in order:
+
+1. `🕒 Last updated` — ISO 8601 timestamp + session id
+2. `🌿 Git state at last checkpoint` — current branch, base commit on main, working tree state, last clean commit
+3. `✅ What's done` — ordered table of merged PRs / completed tasks this session
+4. `🔄 What's in flight` — current task description + uncommitted file list + next step after commit
+5. `🎯 What's next` — prioritized queue of tasks for the next session
+6. `🧠 Context that matters for resuming` — gotchas, policy reminders, environmental facts the next Claude needs to know
+7. `📂 Relevant files for the next task` — file paths + line refs for the first queued item so the next session doesn't have to re-explore
+
+**Recovery protocol from a fresh session**:
+
+1. Read `.claude/session-state.md` first
+2. Run `git status` and `git log --oneline -5` to verify the reported git state matches reality (guard against stale state file)
+3. If the state file's `🕒 Last updated` is older than ~7 days OR the reported git state doesn't match reality, flag that to John and ask whether to trust the file or start fresh
+4. Otherwise, say something like "Picking up from `.claude/session-state.md` — last session left off at [X], next step is [Y]. Ready to continue?"
+5. Wait for confirmation before touching code
+
+**The state file is NOT a substitute for CLAUDE.md**. CLAUDE.md describes the project and the workflow rules. `.claude/session-state.md` describes the current in-flight work and queued next steps. Both are read on startup; CLAUDE.md takes precedence for project policy.
+
+
 ## Mandatory Task Workflow (user preference — applies to EVERY code task)
 
 John explicitly requires this full workflow on every code-touching task. Do NOT skip steps to save time — John has stated he prefers thoroughness and accuracy over speed. The workflow:
