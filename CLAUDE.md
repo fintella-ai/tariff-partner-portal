@@ -1,5 +1,14 @@
 # Fintella Partner Portal
 
+## Development Status (IMPORTANT)
+**Pre-launch / pure build-out mode.** The portal is NOT live to real customers yet. There are no real partners, deals, commissions, or customer data in any environment — every row in every database (local, preview, production) is test data Claude or John seeded. Implications for Claude sessions:
+- Safe to freely test, seed, reset, or wipe any environment without concern for data loss
+- Safe to run `prisma db push --accept-data-loss` style migrations without hesitation
+- Smoke-testing can go directly against production (fintella.partners) instead of fussing with Vercel preview deployment protection
+- Do NOT add "heads-up, this writes to the real DB" style warnings for routine test actions
+- Destructive schema changes, seed resets, and test deal creation via `/admin/dev/webhook-test` are all zero-stakes
+- When this status changes (real customers sign up), update this section
+
 ## Project Overview
 - **Brand**: Fintella — Financial Intelligence Network
 - **Legal DBA**: "Financial Intelligence Network DBA (Fintella)" (parent: Annexation PR LLC)
