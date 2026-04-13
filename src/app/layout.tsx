@@ -27,9 +27,14 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: "#c4a050",
+  // Allow pinch-zoom for accessibility (WCAG 2.1 SC 1.4.4).
+  // maximumScale + userScalable:false are intentionally omitted.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f6fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#080d1c" },
+  ],
+  // viewport-fit:cover lets us extend behind iPhone notch / home indicator;
+  // fixed elements opt in to env(safe-area-inset-*) padding individually.
   viewportFit: "cover",
 };
 

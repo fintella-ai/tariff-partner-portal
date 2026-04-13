@@ -4,6 +4,14 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
+/* ── Global safe-area insets (iPhone notch, Android gesture bar, etc.) ── */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
 /* ── Theme Variables ─────────────────────────────────────────────────── */
 :root {
   /* Light mode (default) */
@@ -130,6 +138,25 @@
     background: var(--app-sidebar-bg);
     border-color: var(--app-sidebar-border);
   }
+
+  /* Safe-area padding utilities — apply to fixed-position elements that
+     need to respect iPhone notch / Dynamic Island / home indicator and
+     Android gesture bar. Gracefully no-ops on devices without insets. */
+  .pt-safe { padding-top: var(--safe-top); }
+  .pb-safe { padding-bottom: var(--safe-bottom); }
+  .pl-safe { padding-left: var(--safe-left); }
+  .pr-safe { padding-right: var(--safe-right); }
+  .px-safe { padding-left: var(--safe-left); padding-right: var(--safe-right); }
+  .py-safe { padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
+  .top-safe { top: var(--safe-top); }
+  .bottom-safe { bottom: var(--safe-bottom); }
+}
+
+/* ── Prevent PWA pull-to-refresh bounce on iOS (standalone mode only) ── */
+@media (display-mode: standalone) {
+  html, body {
+    overscroll-behavior-y: none;
+  }
 }
 
 @keyframes shimmer {
@@ -140,6 +167,11 @@
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
 }
 
 @keyframes spin {

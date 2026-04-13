@@ -171,11 +171,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {!device.isDesktop && mobileOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 z-[998] backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="fixed left-0 top-0 bottom-0 w-[280px] max-w-[85vw] theme-sidebar border-r z-[999] overflow-y-auto p-4 flex flex-col gap-1" style={{ animation: "slideIn .25s ease" }}>
+          <div className="fixed left-0 top-0 bottom-0 w-[280px] max-w-[85vw] theme-sidebar border-r z-[999] overflow-y-auto p-4 pt-safe pb-safe pl-safe flex flex-col gap-1" style={{ animation: "slideIn .25s ease" }}>
             {/* Close button */}
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg theme-text-muted hover:bg-brand-gold/10 transition-colors"
+              className="absolute right-3 w-8 h-8 flex items-center justify-center rounded-lg theme-text-muted hover:bg-brand-gold/10 transition-colors"
+              style={{ top: "calc(0.75rem + var(--safe-top))" }}
+              aria-label="Close menu"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -190,8 +192,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {!device.isDesktop && !mobileOpen && (
         <button
           onClick={() => setMobileOpen(true)}
-          className="fixed top-4 left-4 z-[901] rounded-lg w-11 h-11 flex items-center justify-center cursor-pointer text-brand-gold text-xl backdrop-blur-lg"
-          style={{ background: "var(--app-bg-secondary)", border: "1px solid var(--app-sidebar-border)" }}
+          className="fixed left-4 z-[901] rounded-lg w-11 h-11 flex items-center justify-center cursor-pointer text-brand-gold text-xl backdrop-blur-lg"
+          style={{ top: "calc(1rem + var(--safe-top))", background: "var(--app-bg-secondary)", border: "1px solid var(--app-sidebar-border)" }}
+          aria-label="Open menu"
         >
           ☰
         </button>

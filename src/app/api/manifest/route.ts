@@ -19,7 +19,9 @@ export async function GET() {
       start_url: "/dashboard/home",
       scope: "/",
       display: "standalone",
-      orientation: "portrait",
+      // Allow orientation changes — portal has responsive layouts for both.
+      // "any" lets iOS/Android follow the device rotation setting.
+      orientation: "any",
       background_color: "#060a18",
       theme_color: "#c4a050",
       id: "/",

@@ -324,7 +324,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={() => setSidebarOpen(false)}
           />
           <div
-            className="fixed left-0 top-0 bottom-0 w-[280px] max-w-[85vw] theme-sidebar border-r z-[999] overflow-y-auto p-5"
+            className="fixed left-0 top-0 bottom-0 w-[280px] max-w-[85vw] theme-sidebar border-r z-[999] overflow-y-auto p-5 pt-safe pb-safe pl-safe"
             style={{ animation: "slideIn .25s ease" }}
           >
             {/* Close button */}
@@ -345,7 +345,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {device.isTablet && !sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="fixed top-4 left-4 z-[901] bg-[var(--app-bg)]/90 border border-brand-gold/20 rounded-lg w-11 h-11 flex items-center justify-center cursor-pointer text-brand-gold text-xl backdrop-blur-lg"
+          className="fixed left-4 z-[901] bg-[var(--app-bg)]/90 border border-brand-gold/20 rounded-lg w-11 h-11 flex items-center justify-center cursor-pointer text-brand-gold text-xl backdrop-blur-lg"
+          style={{ top: "calc(1rem + var(--safe-top))" }}
+          aria-label="Open menu"
         >
           ☰
         </button>
@@ -354,8 +356,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── MOBILE BOTTOM NAV ── */}
       {device.isMobile && (
         <div
-          className="fixed bottom-0 left-0 right-0 border-t flex z-[900] backdrop-blur-xl"
-          style={{ background: "var(--app-bg-secondary)", borderColor: "var(--app-sidebar-border)", paddingBottom: device.os === "ios" ? "env(safe-area-inset-bottom, 0)" : 0 }}
+          className="fixed bottom-0 left-0 right-0 border-t flex z-[900] backdrop-blur-xl pb-safe"
+          style={{ background: "var(--app-bg-secondary)", borderColor: "var(--app-sidebar-border)" }}
         >
           {MOBILE_BAR.map((item) => (
             <button
@@ -528,8 +530,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div
           className={`fixed z-[951] bg-[var(--app-bg-secondary)] border border-brand-gold/20 shadow-2xl shadow-black/40 flex flex-col ${
             device.isMobile
-              ? "inset-0 rounded-none"
-              : "bottom-24 right-6 w-[380px] h-[520px] rounded-2xl"
+              ? "inset-0 rounded-none pt-safe pb-safe pl-safe pr-safe"
+              : "bottom-24 right-6 w-[380px] h-[520px] max-w-[calc(100vw-3rem)] max-h-[calc(100vh-8rem)] rounded-2xl"
           }`}
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--app-border)]">
