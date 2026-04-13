@@ -203,6 +203,32 @@ model Notification {
   @@index([recipientId, read])
 }
 
+// ─── EMAIL LOG ───────────────────────────────────────────────────────────────
+// Every email sent through src/lib/sendgrid.ts gets a row here, regardless of
+// whether SendGrid is in demo mode or live. Powers the partner detail page
+// "Email" tab in the Communication Log so admins can see exactly what each
+// partner has been sent.
+model EmailLog {
+  id                String   @id @default(cuid())
+  partnerCode       String?  // null for system-wide / unattributed sends
+  recipientEmail    String
+  fromEmail         String
+  fromName          String?
+  emailType         String   // "welcome" | "agreement_signed" | "deal_received" | "payout_processed" | "admin_oneoff" | "test"
+  subject           String
+  bodyPreview       String?  // first ~200 chars of the text body, for log display
+  sendgridMessageId String?  // SendGrid's x-message-id header (live mode only)
+  status            String   @default("sent") // "sent" | "failed" | "demo" | "skipped_optout"
+  errorMessage      String?  // populated when status = "failed"
+  sentByAdminId     String?  // User.id when admin manually triggered the send
+  sentByAdminName   String?  // denormalized for log display without a join
+  sentAt            DateTime @default(now())
+
+  @@index([partnerCode, sentAt])
+  @@index([emailType])
+  @@index([status])
+}
+
 // ─── COMMISSION LEDGER ───────────────────────────────────────────────────────
 model CommissionLedger {
   id             String   @id @default(cuid())

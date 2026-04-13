@@ -78,8 +78,15 @@ export default function PartnerDetailPage() {
   const [codeHistory, setCodeHistory] = useState<any[]>([]);
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [enterprisePartner, setEnterprisePartner] = useState<any>(null);
   const [commLogFilter, setCommLogFilter] = useState<"all" | "support" | "email" | "sms" | "chat" | "phone">("all");
+  // Send Email modal state
+  const [showSendEmail, setShowSendEmail] = useState(false);
+  const [sendEmailSubject, setSendEmailSubject] = useState("");
+  const [sendEmailBody, setSendEmailBody] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendEmailResult, setSendEmailResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [downlineView, setDownlineView] = useState<"list" | "tree">("list");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -144,6 +151,7 @@ export default function PartnerDetailPage() {
       setCodeHistory(data.codeHistory || []);
       setSupportTickets(data.supportTickets || []);
       setNotifications(data.notifications || []);
+      setEmailLogs(data.emailLogs || []);
       setEnterprisePartner(data.enterprisePartner || null);
 
       setFirstName(p.firstName);
@@ -1246,12 +1254,91 @@ export default function PartnerDetailPage() {
           </div>
         )}
 
-        {/* Email placeholder */}
-        {commLogFilter === "email" && (
+        {/* Email logs */}
+        {(commLogFilter === "all" || commLogFilter === "email") && emailLogs.length > 0 && (
+          <div>
+            <div className="px-5 py-2.5 bg-[var(--app-card-bg)] border-b border-[var(--app-border)] flex items-center justify-between gap-3 flex-wrap">
+              <div className="font-body text-[10px] tracking-[1.5px] uppercase text-[var(--app-text-muted)]">
+                Emails ({emailLogs.length})
+              </div>
+              {commLogFilter === "email" && (
+                <button
+                  onClick={() => { setShowSendEmail(true); setSendEmailResult(null); }}
+                  className="font-body text-[11px] font-semibold bg-brand-gold/15 border border-brand-gold/30 text-brand-gold rounded-md px-3 py-1.5 hover:bg-brand-gold/25 transition-colors min-h-[32px]"
+                >
+                  + Send Email
+                </button>
+              )}
+            </div>
+            {emailLogs.map((e: any) => {
+              const statusColor =
+                e.status === "sent" ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                : e.status === "failed" ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                : e.status === "demo" ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                : e.status === "skipped_optout" ? "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] border border-[var(--app-border)]"
+                : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]";
+              const typeLabel: Record<string, string> = {
+                welcome: "Welcome",
+                agreement_signed: "Agreement Signed",
+                deal_received: "Deal Received",
+                payout_processed: "Payout Processed",
+                admin_oneoff: "Manual",
+                test: "Test",
+              };
+              return (
+                <div key={e.id} className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0">
+                  <div className="flex items-start gap-3">
+                    <span className="text-base mt-0.5 shrink-0">📧</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <span className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{e.subject}</span>
+                        <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 ${statusColor}`}>
+                          {e.status === "skipped_optout" ? "OPT-OUT" : e.status}
+                        </span>
+                      </div>
+                      {e.bodyPreview && (
+                        <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 line-clamp-2">
+                          {e.bodyPreview}
+                        </div>
+                      )}
+                      <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1 flex items-center gap-2 flex-wrap">
+                        <span>{typeLabel[e.emailType] || e.emailType}</span>
+                        <span>·</span>
+                        <span>{e.recipientEmail}</span>
+                        <span>·</span>
+                        <span>{fmtDate(e.sentAt)}</span>
+                        {e.sentByAdminName && (
+                          <>
+                            <span>·</span>
+                            <span>by {e.sentByAdminName}</span>
+                          </>
+                        )}
+                      </div>
+                      {e.errorMessage && (
+                        <div className="font-body text-[10px] text-red-400 mt-1">
+                          Error: {e.errorMessage.substring(0, 200)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Empty state for the email tab when there's no history yet */}
+        {commLogFilter === "email" && emailLogs.length === 0 && (
           <div className="px-5 py-8 text-center">
             <div className="text-2xl mb-2">📧</div>
-            <div className="font-body text-sm text-[var(--app-text-muted)]">Email communication logs will appear here once email integration is connected.</div>
-            <div className="font-body text-[11px] text-[var(--app-text-faint)] mt-1">Coming in Phase 15 — SendGrid Integration</div>
+            <div className="font-body text-sm text-[var(--app-text-muted)]">No emails sent to this partner yet.</div>
+            <div className="font-body text-[11px] text-[var(--app-text-faint)] mt-1">Welcome, agreement, deal, and payout emails will appear here automatically.</div>
+            <button
+              onClick={() => { setShowSendEmail(true); setSendEmailResult(null); }}
+              className="mt-4 font-body text-[12px] font-semibold bg-brand-gold/15 border border-brand-gold/30 text-brand-gold rounded-md px-4 py-2 hover:bg-brand-gold/25 transition-colors min-h-[36px]"
+            >
+              + Send Manual Email
+            </button>
           </div>
         )}
 
@@ -1283,7 +1370,7 @@ export default function PartnerDetailPage() {
         )}
 
         {/* Empty state for filtered views */}
-        {commLogFilter === "all" && supportTickets.length === 0 && notifications.length === 0 && (
+        {commLogFilter === "all" && supportTickets.length === 0 && notifications.length === 0 && emailLogs.length === 0 && (
           <div className="px-5 py-8 text-center font-body text-[13px] text-[var(--app-text-muted)]">
             No communications recorded yet.
           </div>
@@ -1294,6 +1381,124 @@ export default function PartnerDetailPage() {
           </div>
         )}
       </div>
+
+      {/* ═══ SEND EMAIL MODAL ═══ */}
+      {showSendEmail && partner && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => { if (!sendingEmail) setShowSendEmail(false); }}
+        >
+          <div
+            className="w-full max-w-lg rounded-xl border border-[var(--app-border)] bg-[var(--app-card-bg)] shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-[var(--app-border)] flex items-center justify-between gap-3">
+              <div>
+                <div className="font-body font-semibold text-sm text-[var(--app-text)]">Send Email</div>
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
+                  To {partner.firstName} {partner.lastName} &lt;{partner.email}&gt;
+                </div>
+              </div>
+              <button
+                onClick={() => { if (!sendingEmail) setShowSendEmail(false); }}
+                disabled={sendingEmail}
+                className="text-[var(--app-text-muted)] hover:text-[var(--app-text)] text-xl leading-none px-2"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-5 space-y-3">
+              <div>
+                <label className="block font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1.5">Subject</label>
+                <input
+                  type="text"
+                  value={sendEmailSubject}
+                  onChange={(e) => setSendEmailSubject(e.target.value)}
+                  disabled={sendingEmail}
+                  placeholder="Quick question about your account"
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-sm text-[var(--app-text)] outline-none focus:border-brand-gold/30 transition-colors disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <label className="block font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1.5">Message</label>
+                <textarea
+                  value={sendEmailBody}
+                  onChange={(e) => setSendEmailBody(e.target.value)}
+                  disabled={sendingEmail}
+                  rows={8}
+                  placeholder="Hi — wanted to follow up on..."
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-sm text-[var(--app-text)] outline-none focus:border-brand-gold/30 transition-colors resize-y disabled:opacity-50"
+                />
+                <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1.5">
+                  Plain text only. Paragraph breaks (double newlines) are preserved. The Fintella email template, greeting, and footer are added automatically.
+                </div>
+              </div>
+              {sendEmailResult && (
+                <div className={`font-body text-[12px] px-3 py-2 rounded-lg border ${
+                  sendEmailResult.ok
+                    ? "bg-green-500/10 text-green-400 border-green-500/20"
+                    : "bg-red-500/10 text-red-400 border-red-500/20"
+                }`}>
+                  {sendEmailResult.message}
+                </div>
+              )}
+            </div>
+            <div className="px-5 py-4 border-t border-[var(--app-border)] flex items-center justify-end gap-2">
+              <button
+                onClick={() => { if (!sendingEmail) setShowSendEmail(false); }}
+                disabled={sendingEmail}
+                className="font-body text-[12px] font-semibold border border-[var(--app-border)] text-[var(--app-text-secondary)] rounded-lg px-4 py-2 hover:text-[var(--app-text)] hover:border-brand-gold/30 transition-colors min-h-[36px] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!partner || !sendEmailSubject.trim() || !sendEmailBody.trim()) return;
+                  setSendingEmail(true);
+                  setSendEmailResult(null);
+                  try {
+                    const res = await fetch("/api/admin/communications/email", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        partnerCode: partner.partnerCode,
+                        subject: sendEmailSubject.trim(),
+                        bodyText: sendEmailBody.trim(),
+                      }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                      setSendEmailResult({ ok: false, message: data.error || "Failed to send email" });
+                    } else {
+                      const statusMessage =
+                        data.status === "demo" ? "Sent (demo mode — SendGrid API key not configured, no real email delivered)"
+                        : data.status === "sent" ? "Sent successfully"
+                        : data.status === "failed" ? `Send failed: ${data.errorMessage || "unknown error"}`
+                        : `Sent (${data.status})`;
+                      setSendEmailResult({ ok: data.success !== false, message: statusMessage });
+                      // Reload the partner data so the new email shows in the log
+                      if (data.success !== false) {
+                        setSendEmailSubject("");
+                        setSendEmailBody("");
+                        await fetchPartner();
+                      }
+                    }
+                  } catch (err: any) {
+                    setSendEmailResult({ ok: false, message: err?.message || "Network error" });
+                  } finally {
+                    setSendingEmail(false);
+                  }
+                }}
+                disabled={sendingEmail || !sendEmailSubject.trim() || !sendEmailBody.trim()}
+                className="font-body text-[12px] font-semibold bg-brand-gold/20 border border-brand-gold/30 text-brand-gold rounded-lg px-4 py-2 hover:bg-brand-gold/30 transition-colors min-h-[36px] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sendingEmail ? "Sending..." : "Send Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom save */}
       <div className="flex justify-end">

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/sendgrid";
+import { dealReceivedEmail } from "@/lib/email-templates/dealReceivedEmail";
 
 /**
  * POST /api/webhook/referral
@@ -145,6 +147,38 @@ export async function POST(req: NextRequest) {
           link: "/dashboard/deals",
         },
       }).catch(() => {}); // Don't fail the webhook if notification fails
+
+      // Email the partner about the new referral. Fire-and-forget — webhook
+      // must always return 2xx so Frost Law's system doesn't retry, and the
+      // email is a notification not a critical path.
+      const partner = await prisma.partner
+        .findUnique({
+          where: { partnerCode },
+          select: { firstName: true, email: true },
+        })
+        .catch(() => null);
+      if (partner?.email) {
+        const businessLocation =
+          businessCity && businessState
+            ? `${businessCity}, ${businessState}`
+            : businessCity || businessState || null;
+        const { subject, html, text } = dealReceivedEmail({
+          firstName: partner.firstName || "there",
+          dealId: deal.id,
+          dealName,
+          clientEmail: email || null,
+          serviceOfInterest: serviceOfInterest || null,
+          businessLocation,
+        });
+        sendEmail({
+          to: partner.email,
+          subject,
+          html,
+          text,
+          type: "deal_received",
+          partnerCode,
+        }).catch((e) => console.error("[referral webhook] deal email failed:", e));
+      }
     }
 
     return NextResponse.json({

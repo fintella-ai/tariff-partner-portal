@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/sendgrid";
+import { agreementSignedEmail } from "@/lib/email-templates/agreementSignedEmail";
 
 // SignWell sends webhooks when documents are signed, viewed, etc.
 // Webhook events: document_completed, document_viewed, document_expired
@@ -44,6 +46,30 @@ export async function POST(req: NextRequest) {
             message: "Your partnership agreement has been signed and is now active. You can now submit deals.",
           },
         });
+
+        // Send agreement-signed confirmation email.
+        // Fire-and-forget — webhook must always return 2xx to SignWell so they
+        // don't retry, and the email is a nice-to-have not a critical path.
+        const partner = await prisma.partner
+          .findUnique({
+            where: { partnerCode: agreement.partnerCode },
+            select: { firstName: true, email: true },
+          })
+          .catch(() => null);
+        if (partner?.email) {
+          const { subject, html, text } = agreementSignedEmail({
+            firstName: partner.firstName || "there",
+            partnerCode: agreement.partnerCode,
+          });
+          sendEmail({
+            to: partner.email,
+            subject,
+            html,
+            text,
+            type: "agreement_signed",
+            partnerCode: agreement.partnerCode,
+          }).catch((e) => console.error("[signwell webhook] agreement email failed:", e));
+        }
       }
     }
 

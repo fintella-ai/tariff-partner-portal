@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendForSigning, isSignWellConfigured } from "@/lib/signwell";
+import { sendEmail } from "@/lib/sendgrid";
+import { welcomeEmail } from "@/lib/email-templates/welcomeEmail";
 import { hashSync } from "bcryptjs";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
 
@@ -128,6 +130,40 @@ export async function POST(req: NextRequest) {
         link: "/dashboard/downline",
       },
     }).catch(() => {});
+
+    // Send welcome email to the new partner.
+    // Fire-and-forget — sendEmail() never throws (returns a result object),
+    // and the .catch() is belt-and-suspenders. We do NOT block the signup
+    // response on email delivery: even if SendGrid is down, the partner
+    // account still gets created successfully.
+    {
+      const inviter = await prisma.partner
+        .findUnique({
+          where: { partnerCode: invite.inviterCode },
+          select: { firstName: true, lastName: true, companyName: true },
+        })
+        .catch(() => null);
+      const inviterName = inviter
+        ? `${inviter.firstName} ${inviter.lastName}`.trim() || inviter.companyName || "your sponsor"
+        : "your sponsor";
+
+      const { subject, html, text } = welcomeEmail({
+        firstName: firstName.trim(),
+        partnerCode,
+        inviterName,
+        commissionRatePercent: ratePercent,
+        tierLabel: invite.targetTier.toUpperCase(),
+      });
+
+      sendEmail({
+        to: partner.email,
+        subject,
+        html,
+        text,
+        type: "welcome",
+        partnerCode,
+      }).catch((e) => console.error("[signup] welcome email failed:", e));
+    }
 
     return NextResponse.json({
       success: true,

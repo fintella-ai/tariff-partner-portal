@@ -106,6 +106,9 @@ ANTHROPIC_API_KEY         — Optional: AI assistant (falls back to mock respons
 ANTHROPIC_MODEL           — Optional: AI model override (defaults to claude-sonnet-4-6)
 AI_DAILY_BUDGET_USD       — Optional: AI daily spend cap per deploy (defaults to $5)
 AI_DAILY_MESSAGE_LIMIT    — Optional: AI messages/partner/day (defaults to 50)
+SENDGRID_API_KEY          — Optional: transactional email (falls back to demo mode if unset, logs to EmailLog table only)
+SENDGRID_FROM_EMAIL       — Optional: from address (defaults to noreply@fintella.partners)
+SENDGRID_FROM_NAME        — Optional: from display name (defaults to "Fintella Partner Portal")
 ```
 
 ## Dev Commands
@@ -130,9 +133,10 @@ The portal is feature-complete for demo / pre-launch. Everything below is shippe
 
 **Key systems** — NextAuth dual providers (partner email+password, admin email+password), Prisma + PostgreSQL (Neon), SignWell e-signing with template field pre-fill, HubSpot CRM stub (demo mode), referral webhook (POST+PATCH+GET), PWA (manifest, install prompt, safe-area handling), notification bell (30s polling), live chat (WebSocket-style polling), waterfall commission model (L1/L2/L3), enterprise partner overrides, admin role-based permissions, Sentry + Vercel Analytics + Speed Insights, 4 agreement templates by rate (25/20/15/10), Dependabot + CodeQL + branch protection on main.
 
-**Key Prisma models** — User, Partner, PartnerProfile, PartnerOverride, RecruitmentInvite, PartnershipAgreement, Document, Deal, DealNote, CommissionLedger, PayoutBatch, EnterprisePartner, EnterpriseOverride, SupportTicket, TicketMessage, ChatSession, ChatMessage, Notification, TrainingModule, TrainingProgress, ConferenceSchedule, FeatureRequest, AdminNote, AiConversation, AiMessage, AiUsageDay, ImpersonationToken, PartnerCodeHistory, PortalSettings.
+**Key Prisma models** — User, Partner, PartnerProfile, PartnerOverride, RecruitmentInvite, PartnershipAgreement, Document, Deal, DealNote, CommissionLedger, PayoutBatch, EnterprisePartner, EnterpriseOverride, SupportTicket, TicketMessage, ChatSession, ChatMessage, Notification, EmailLog, TrainingModule, TrainingProgress, ConferenceSchedule, FeatureRequest, AdminNote, AiConversation, AiMessage, AiUsageDay, ImpersonationToken, PartnerCodeHistory, PortalSettings.
 
 **Recent major milestones** (most recent first):
+- Phase 15a SendGrid email integration: `src/lib/sendgrid.ts` core module (demo mode + opt-in gating + auto EmailLog), 5 branded transactional templates (welcome, agreement signed, deal received, payout processed, admin one-off), 4 trigger points wired (signup, signwell webhook, referral webhook, payout process_batch with per-partner aggregation), `EmailLog` Prisma model, partner detail page Email tab + Send Email modal, `POST /api/admin/communications/email` admin one-off endpoint, `/admin/dev/email-test` super-admin dev harness. Demo mode default until SendGrid API key is set in Vercel env vars.
 - Auto-delete merged branches workflow (`.github/workflows/delete-merged-branches.yml`) — fires on every push to main, deletes any non-protected branch with `ahead_by == 0` vs main via GitHub REST API. Supports manual `workflow_dispatch` trigger. Replaces manual `git push origin --delete`.
 - Responsive + mobile + PWA hardening pass (safe-area insets, notch safety, slideIn keyframe, accessibility pinch-zoom, orientation unlock)
 - SignWell template field pre-fill across all three agreement send paths + webhook test harness at /admin/dev/webhook-test
@@ -164,7 +168,7 @@ John explicitly requires this full workflow on every code-touching task. Do NOT 
 
 **3. Build verification (MANDATORY before commit)**
 - `./node_modules/.bin/next build` — must compile cleanly
-- Static page count should match expected (currently 91) unless new routes were added
+- Static page count should match expected (currently 94) unless new routes were added
 - Fix TypeScript errors by resolving the root cause, NEVER by suppressing with `any` / `@ts-ignore`
 - Do not commit if build is red
 
@@ -304,7 +308,7 @@ Default branch was switched from stale `master` → `main` in this session; stal
 ## Remaining Phases
 - **Phase 14**: HubSpot API Integration (real deal/contact sync)
 - **Phase 15**: Email, SMS & VOIP Integration
-  - **Email**: SendGrid — transactional emails, partner notifications, commission alerts, logged in partner communication log
+  - ~~**Phase 15a — Email (SendGrid)**~~ ✅ **COMPLETE** — `@sendgrid/mail` + `src/lib/sendgrid.ts` (demo mode + opt-in gating + auto EmailLog), 5 branded templates (welcome / agreement_signed / deal_received / payout_processed / admin_oneoff) in `src/lib/email-templates/`, 4 trigger points wired (signup, signwell webhook, referral webhook, payout process_batch — aggregates per-partner so a 50-commission batch sends 12 emails to 12 partners not 50), `EmailLog` Prisma model, partner detail page Email tab + "Send Email" modal, `POST /api/admin/communications/email` for admin one-off sends, `/admin/dev/email-test` super-admin test harness. Demo mode default — when `SENDGRID_API_KEY` is unset, sends are logged to EmailLog with status="demo" but no real email is delivered. Vercel-side setup (DKIM/SPF DNS records, API key in env vars) required before live sends. Phase 15b will add granular per-type notification preferences UI + SendGrid event webhooks for bounce/open tracking.
   - **SMS**: Twilio Programmable Messaging — opt-in partner SMS notifications, logged in partner communication log
   - **VOIP**: Twilio Voice — admin click-to-call dialer from portal, call recording, call logs in partner communication log. Twilio recommended because: single provider for SMS + VOIP (unified billing, shared phone numbers), excellent API for call tracking/recording, built-in webhooks for call status events, programmable IVR, and React/Next.js SDKs available. Alternative considered: Vonage (similar features but less developer ecosystem).
   - **Integration plan**: Twilio account → provision phone numbers → build `/api/twilio/call` endpoint for outbound calls → `/api/twilio/sms` for sending → `/api/twilio/webhook` for status callbacks → CallLog + SmsLog Prisma models → display in partner communication log

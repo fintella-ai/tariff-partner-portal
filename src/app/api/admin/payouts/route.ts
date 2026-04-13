@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/sendgrid";
+import { payoutProcessedEmail } from "@/lib/email-templates/payoutProcessedEmail";
 
 /**
  * GET /api/admin/payouts
@@ -191,13 +193,98 @@ export async function POST(req: NextRequest) {
         data: { status: "processed", processedDate: new Date() },
       });
 
+      // Snapshot the commissions BEFORE we flip them to paid — we need
+      // the per-partner aggregation for the email send below, and a
+      // findMany-then-updateMany pair lets us avoid a join.
+      const batchCommissions = await prisma.commissionLedger.findMany({
+        where: { batchId: body.batchId },
+        select: {
+          partnerCode: true,
+          amount: true,
+          periodMonth: true,
+        },
+      });
+
       // Mark all commissions in batch as paid
       await prisma.commissionLedger.updateMany({
         where: { batchId: body.batchId },
         data: { status: "paid", payoutDate: new Date() },
       });
 
-      return NextResponse.json({ batch });
+      // Aggregate by partnerCode → ONE email per partner with their total,
+      // not one email per individual commission row. A batch processing
+      // 50 commissions across 12 partners sends 12 emails, not 50.
+      const byPartner = new Map<
+        string,
+        { total: number; count: number; periods: Set<string> }
+      >();
+      for (const c of batchCommissions) {
+        const acc = byPartner.get(c.partnerCode) || {
+          total: 0,
+          count: 0,
+          periods: new Set<string>(),
+        };
+        acc.total += c.amount;
+        acc.count += 1;
+        if (c.periodMonth) acc.periods.add(c.periodMonth);
+        byPartner.set(c.partnerCode, acc);
+      }
+
+      // Look up partner details for every recipient in one query.
+      const partners = await prisma.partner.findMany({
+        where: { partnerCode: { in: Array.from(byPartner.keys()) } },
+        select: { partnerCode: true, firstName: true, email: true },
+      });
+
+      // Fire-and-forget every send. We do NOT await Promise.all on these —
+      // the admin clicking "Process Batch" should get an immediate 200 back.
+      // Each sendEmail() catches its own errors and writes an EmailLog row,
+      // so failures are visible in the comm log without blocking the request.
+      for (const p of partners) {
+        if (!p.email) continue;
+        const agg = byPartner.get(p.partnerCode);
+        if (!agg) continue;
+
+        // Build a human "March 2026" period label if all commissions in
+        // this partner's slice came from the same period.
+        let periodLabel: string | null = null;
+        if (agg.periods.size === 1) {
+          const ym = Array.from(agg.periods)[0]; // "2026-03"
+          const [y, m] = ym.split("-");
+          if (y && m) {
+            const d = new Date(parseInt(y, 10), parseInt(m, 10) - 1, 1);
+            if (!isNaN(d.getTime())) {
+              periodLabel = d.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+              });
+            }
+          }
+        }
+
+        const { subject, html, text } = payoutProcessedEmail({
+          firstName: p.firstName || "there",
+          totalAmount: agg.total,
+          commissionCount: agg.count,
+          batchId: batch.id,
+          periodLabel,
+        });
+        sendEmail({
+          to: p.email,
+          subject,
+          html,
+          text,
+          type: "payout_processed",
+          partnerCode: p.partnerCode,
+        }).catch((e) =>
+          console.error(`[payouts process_batch] payout email failed for ${p.partnerCode}:`, e)
+        );
+      }
+
+      return NextResponse.json({
+        batch,
+        emailsQueued: partners.filter((p) => p.email).length,
+      });
     }
 
     if (body.action === "approve_single" && body.commissionId) {
