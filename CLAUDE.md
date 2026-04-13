@@ -202,13 +202,36 @@ John explicitly requires this full workflow on every code-touching task. Do NOT 
 - Signal completion ONLY when fully done (no outstanding errors, no half-finished TODOs)
 - Follow Session Signoff Style rules below (checklist + rainbow)
 
-### Claude's additional recommendations (John to confirm before adding)
-- [ ] After any risky change, fetch recent Sentry errors via `/api/admin/dev/errors` to verify no new errors
-- [ ] Smoke-test via `/admin/dev/webhook-test` after webhook-related changes
-- [ ] Run `npx prisma generate` after schema changes before building
-- [ ] Check `package.json` vs `package-lock.json` consistency before committing (avoid lock drift)
-- [ ] For cross-cutting refactors, spawn a parallel Explore subagent to sanity-check the scope before touching files
-- [ ] Keep TodoWrite updated in real-time — mark items completed the instant they're done, not in batches
+**10. Schema changes**
+- After any edit to `prisma/schema.prisma`, run `npx prisma generate` before `next build`
+- Catches type drift before it hits the build-time type checker
+- For destructive changes, `npx prisma db push --accept-data-loss` is safe (pre-launch DB)
+
+**11. Package-lock drift check (before every commit)**
+- After installing any dep (or if `npm install` ran implicitly), run `git diff --stat package-lock.json`
+- If `package-lock.json` changed but `package.json` didn't, investigate — usually a rebrand rename or accidental `npm install` side effect
+- Stage lockfile changes only when intentional; never `git add -A` blindly
+
+**12. Real-time TodoWrite discipline**
+- Mark items `completed` the instant they finish, not in batches
+- Exactly ONE item `in_progress` at any time (the current action)
+- When new subtasks emerge mid-work, add them immediately
+- Stale todos = lost context; keep the list honest
+
+**13. Sentry error check after risky changes**
+- After deploying anything touching auth, webhooks, SignWell, HubSpot, AI, payouts, or DB writes, fetch `/api/admin/dev/errors` to verify no new unresolved issues in the last hour
+- Mention new Sentry issues in the signoff status block if any appear
+
+**14. Webhook smoke-test after webhook changes**
+- After any edit to `/api/webhook/referral/route.ts`, `/api/signwell/webhook/route.ts`, or related files, fire a test POST via `/admin/dev/webhook-test` before reporting done
+- Verify the test deal / event lands in the DB and the response matches the pre-change contract
+
+**15. Parallel subagent sanity-check for cross-cutting refactors**
+- Before touching files for a refactor that spans more than 3 files or crosses partner/admin boundaries, spawn an Explore subagent to enumerate the actual scope
+- Prevents missing files and speculative over-scoping; keeps main context clean
+
+### Confirmed additional requirements (enforced, all 6 items John confirmed)
+All items from the previous "recommendations" block have been promoted into steps 10-15 above. This section is retained as a historical marker — the rules themselves are now part of the main mandatory workflow.
 
 ## Session Signoff Style (user preference)
 
