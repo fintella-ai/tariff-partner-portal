@@ -120,119 +120,95 @@ npm run db:studio    # Open Prisma Studio
 - **SignWell**: `POST /api/signwell/webhook` — handles document_completed, document_viewed, document_expired
 - **Frost Law Referral**: `POST /api/webhook/referral` — receives form submissions, creates Deal records, attributes to partner via `utm_content`. Public docs at `https://trln.partners/docs/webhook-guide`
 
-## Completed Work (This Session)
-- Submit Client page with Frost Law iframe embed (replacing Submit Lead)
-- Partnership agreement gate on Submit Client + Referral Links
-- Account Settings page for partners (name, company, TIN, email, phone, mobile with country code dropdown, address)
-- Agreement trigger: changing name/company invalidates signed agreement
-- Admin partner detail sync (company, TIN, mobile, address, documents, W9 status, send agreement/W9 buttons)
-- Admin document upload (upload agreement → auto-activates partner, upload W9 → auto-approved)
-- Country code dropdown component (30 countries with flags)
-- Downline tree view (L1/L2/L3 visual hierarchy) for partner and admin
-- Portal rebrand: TRRLN → TRLN, full name updated
-- Client referral URL updated to referral.frostlawaz.com/l/ANNEXATIONPR/
-- Partner tracking switched to utm_content for HubSpot compatibility
-- Referral webhook endpoint built with flexible field mapping + external deal stage
-- Webhook integration guide (public page at /docs/webhook-guide, auto light/dark)
-- Custom domain setup: trln.partners
-- Logo/favicon upload in admin settings with auto-compression
-- Collapsible sidebar (desktop: icon-only mode, mobile: overlay with close button)
-- Full light/dark theme support across all 32 files (870+ color values replaced with CSS variables)
-- Mobile optimization passes (touch targets, overflow, responsive padding)
-- Commission structure redesign: waterfall model (25% max, L1/L2/L3 tiers)
-- RecruitmentInvite system with token-based signup links
-- Public partner signup page with embedded agreement signing
-- Rate-specific agreement templates (admin configures SignWell template IDs)
-- Admin impersonation ("View as Partner" button with sudo banner)
-- Commission tab redesign: fixed 25% display with waterfall examples
-- W9 status column on admin partners list
-- Required email/SMS opt-in checkboxes on partner signup (CAN-SPAM/TCPA compliant)
-- Admin document upload (upload agreement → auto-activates partner, upload W9 → auto-approved)
-- Admin impersonation tokens stored in DB (ImpersonationToken model, 15-min expiry)
-- Double confirmation on partner code reset
-- PostgreSQL migration (Neon via Vercel Storage) — persistent data, no more cold start data loss
-- Company logo displayed in both admin and partner sidebar top-left
-- Admin Account Settings page (name, email, password change)
-- Partner password authentication (email + password login, replaces partner code)
-- Admin can set/reset partner passwords from partner detail page
-- Admin name syncs across layout from account API (not just session)
-- Company Revenue reporting page (/admin/revenue) — TRLN 40% share, partner 25%, net 15%, deal-by-deal breakdown
-- Sortable table headers on Revenue and Reports pages (A-Z, dollar amount sorting)
-- Advanced filters on Revenue page (search, partner code, stage, min/max amount)
-- Deal amount column added to Revenue table with totals
-- "All Data" option on Reports page (not just monthly)
-- Document void capability with audit trail (agreement void → partner pending, W9 void → stays active)
-- View/Download links for uploaded documents (base64 stored in DB)
-- Column headers on Documents section (Document Name, Type, Status, Actions)
-- Immutable admin notes audit log (AdminNote model — timestamped, author-tracked, cannot be deleted)
-- Removed Commissions page from admin panel (L1 dictates L2 rates via recruitment links)
-- PATCH /api/webhook/referral endpoint for deal updates (stage, amounts, closed lost reason)
-- Webhook guide redesigned with navigation menu, anchored sections, overview at top
-- DealId displayed in Client Submission Details (static, immutable, searchable)
-- Deal notes audit log with pin feature (DealNote model)
-- Pin/unpin feature on both partner and deal admin notes
-- Partner code generation restricted to super_admin only ("Generate New Code")
-- Partner code history preserved (PartnerCodeHistory model — old codes kept for audit)
-- L2/L3 signup redesign: no SignWell agreements sent, simple success page with login link
-- L1 responsible for uploading signed agreements for downline partners
-- L1 downline page: "Upload Agreement" button for pending partners
-- Admin approve flow: L1-uploaded agreements go to "under_review" → admin approves → partner active
-- Agreement gates accept both "signed" (L1/SignWell) and "approved" (L2/L3/admin review)
-- Commissions: 25% total paid to L1 only, L1 pays downline using portal reporting
-- Real database queries: Admin Reports page (pipeline stats, monthly trends, top partners from Deal/Partner/CommissionLedger)
-- Real database queries: Admin Payouts page (commission ledger entries, batch creation, single approve, status tracking)
-- Real database queries: Admin Support page (ticket list, detail view with conversation thread, admin reply, status management)
-- Real database queries: Partner Support page (ticket creation via POST /api/tickets, conversation view with replies)
-- Notification system: NotificationBell component with polling (30s), unread badge, mark-read, click-to-navigate
-- 7 new API routes: /api/admin/reports, /api/admin/payouts (GET+POST), /api/admin/support (GET), /api/admin/support/[id] (GET+PATCH), /api/tickets (GET+POST), /api/tickets/[id]/messages (GET+POST), /api/notifications (GET+PATCH)
-- Mobile optimization pass: reports grids → hidden md:block + mobile cards, NotificationBell 44px touch target + responsive width, revenue mobile label sizes
-- Agreement status sync: "approved" and "under_review" statuses properly displayed across admin partner detail, partner documents page, agreement gates, and void logic
-- Agreement auto-reconcile: if PartnershipAgreement is "under_review" but an approved Document exists, auto-fixes on page load (both admin and partner APIs)
-- Clickable partner name links: all partner names across admin pages (deals, documents, support, payouts, reports, communications, revenue) link to partner profile via PartnerLink component
-- Communication log in partner profile: support tickets + system notifications displayed in partner detail page with status badges and timestamps
-- PartnerLink reusable component: `src/components/ui/PartnerLink.tsx` — stopPropagation-aware, gold hover underline, graceful null fallback
-- Enterprise Partner system: EnterprisePartner + EnterpriseOverride Prisma models, /api/admin/enterprise API (super_admin only)
-- Revenue page tabs: Revenue, Custom Commissions, Enterprise Reporting
-- Custom Commissions tab: create enterprise partners with custom total rate, add/remove L1 partners by code, expandable detail cards
-- Enterprise Reporting tab: deal-level breakdown per enterprise partner showing TRLN 40%, L1 commission, enterprise override, and net profit
-- Enterprise "Apply to All" toggle: global override on all portal deals without adding individual partner codes
-- Enterprise Partner display in admin partner profile: shows tier badge, total rate, override rate, coverage (confidential — admin-only)
-- Enterprise agreement template: SignWell template ID field in admin Settings > Agreements for enterprise partner agreements
-- Enterprise data confidentiality: EP info only visible in admin panel, never exposed to partner portal or non-EP partners
-- Deal pipeline stages updated: New Lead → No Consultation Booked → Consultation Booked → Client No Show → Client Engaged → In Process → Closed Won → Closed Lost
-- Consultation date/time fields: consultBookedDate + consultBookedTime on Deal model, webhook POST creates + PATCH updates (for rescheduling)
-- Webhook guide: consultation fields documented in POST + PATCH sections, deal example screenshot section added
-- Clickable deal name links: all deal names across admin pages (revenue, payouts, enterprise reporting) link to deals page via DealLink component with auto-expand and scroll-to
-- DealLink reusable component: `src/components/ui/DealLink.tsx` — navigates to `/admin/deals?deal={id}`, auto-expands and scrolls to target deal
-- Enterprise Remove/Terminate: "Terminate" keeps historical data but stops tracking; "Remove" permanently deletes all EP data. Double confirmation on remove.
-- Enterprise payouts wired into standard Payouts page: EP overrides appear as "EP" tier entries alongside L1/L2/L3 commissions with due/pending/paid status
-- Communication log filters: partner profile now has filter tabs for All, Support Tickets, Email, SMS, Live Chat, Phone Calls (SMS/Email/Chat/Phone show phase placeholders)
-- Admin role-based permissions: 4 roles (super_admin, admin, accounting, partner_support) with per-role nav visibility, feature restrictions, settings tab access
-- Admin user management page (/admin/users): super_admin can create admins, assign roles, reset passwords, delete users
-- Permission checks: void documents (admin+ only), reset partner code (super_admin only), settings tabs filtered by role, nav items filtered by role
-- Permissions config: `src/lib/permissions.ts` — centralized role definitions, nav visibility, feature flags
-- Live chat system: ChatSession + ChatMessage Prisma models, partner widget (real-time), admin agent panel (/admin/chat) with conversation list + reply
-- Live chat on/off toggle: admin Settings > Home Page tab, controls `liveChatEnabled` in PortalSettings
-- Partner chat widget: only visible when live chat is enabled, creates sessions, sends/receives messages with 4s polling
-- Admin chat page: split panel (session list left, conversation right), 5s polling, unread badges, close session, partner profile links
-- PWA "Add to Home Screen": manifest API (/api/manifest), icon API (/api/icon), service worker, apple-web-app meta tags
-- PWA install prompt overlay: full-screen onboarding on first dashboard visit, platform-specific instructions (iOS Share→Add, Android native install), reappears every 7 days if not installed, hidden in standalone mode
-- PWA hook: `src/lib/useInstallPrompt.ts` — beforeinstallprompt capture, standalone detection, localStorage dismiss with 7-day reappearance
-- Payout banking fields: PartnerProfile schema updated with accountType, beneficiaryName, bankAddress fields
-- Partner account settings: full payout information section (method, bank name, account type, routing, account number, beneficiary, bank address)
-- Admin partner profile: matching payout information section with all banking fields, editable by admin
-- Bank letter/voided check: new document type "bank_letter" for both partner and admin document uploads
-- Partner deal drill-down: expandable read-only deal detail with deal ID, client info, tariff info, financials
-- Partner deal status tracker: visual pipeline progress bar showing all 8 stages with current stage highlighted
-- Partner deal notes & activity: timeline showing creation, consultation scheduled, referral notes, close events
-- Deal Support button: opens live chat (if enabled) pre-filled with deal context, or opens support ticket with deal ID auto-populated
-- Partner downline tree: commission percentages shown for L2/L3 downline only (upline % hidden from downline view)
-- Admin Development page (/admin/dev, super_admin only): live GitHub commits feed via GITHUB_TOKEN, deployment info (Vercel env vars), quick-links to Claude Code + GitHub repo, static fallback when token absent
-- Feature Request System: FeatureRequest Prisma model, partner + admin submission endpoints (/api/feature-requests), super_admin management endpoint (/api/admin/feature-requests) with stats + filter, partner UI (/dashboard/feature-request) for submitting ideas/bugs/UX improvements, admin UI (/admin/features) with status triage (submitted → in_review → in_progress → completed/rejected), priority, admin response notes visible to requester
-- Security hardening (branch-protected `main`): switched default branch from `master` → `main` (deleted stale master), created GitHub Ruleset on `main` (restrict deletions, require PR before merging, block force pushes, dismiss stale approvals), enabled Dependabot + private vulnerability reporting + secret scanning, Next.js 14.2.15 → 14.2.35 upgrade fixing 9 CVEs including critical CVSS 9.1 middleware auth bypass (GHSA-f82v-jwr5-mffw)
-- TRLN PartnerOS AI Assistant (Phase 17): Claude Sonnet 4.6 powered support bot with partner data context (recent deals, commission totals, downline count, agreement status), conversation persistence (AiConversation + AiMessage + AiUsageDay Prisma models), prompt caching on static knowledge base (commission structure, deal stages, FAQ), rate limiting (50 msgs/partner/day, $5/day budget cap via AI_DAILY_BUDGET_USD env var), graceful mock fallback when ANTHROPIC_API_KEY not set, dedicated page at /dashboard/ai-assistant with conversation history sidebar + suggested prompts empty state, 3 API routes (/api/ai/chat, /api/ai/conversations, /api/ai/conversations/[id]), nav item with 🤖 icon. Uses @anthropic-ai/sdk 0.88.0.
-- Phase 18a — Monitoring & Observability: Sentry error tracking (@sentry/nextjs ^10, client + server + edge configs with PII scrubbing, ignored-errors list for noise reduction), Vercel Analytics (@vercel/analytics) + Speed Insights (@vercel/speed-insights) wired into root layout, branded global-error.tsx boundary with friendly fallback UI (error ID, Try Again + Go Home buttons) that auto-reports to Sentry, src/lib/monitoring.ts helper with captureError/captureMessage + automatic secret redaction, next.config.js conditionally wrapped with withSentryConfig for build-time source map upload (only when SENTRY_AUTH_TOKEN + SENTRY_ORG + SENTRY_PROJECT are all set). Admin /admin/dev page extended with "Recent Errors (Last 24h)" panel that fetches unresolved issues from Sentry API via new /api/admin/dev/errors route (super_admin only). ALL graceful — no env vars required for build to succeed; mock/empty states everywhere.
-- Rebrand (April 2026): **TRLN → Fintella** — full rename from "Tariff Refund & Litigation Network (TRLN)" to "Fintella — Financial Intelligence Network". Portal had not yet launched, so no customer impact. Scope: FIRM_NAME/FIRM_SHORT constants, root layout metadata + PWA manifest, AI knowledge base + system prompts, InstallPrompt component + localStorage key (fintella_pwa_install_dismissed), /docs/webhook-guide (title + header + URL examples + footer), admin revenue page (labels "Fintella 40%", "Fintella Net Revenue", internal variable renames trlnGross → fintellaGross, TRLN_FEE_RATE → FINTELLA_FEE_RATE, etc.), admin enterprise API (internal vars + comment), admin/partner training seed data + FAQ content, conference pages (host name "Fintella Leadership Team", ICS filename fintella-weekly-call.ics), admin communications email templates, admin settings support email placeholder (support@fintella.partners), partner dashboard layout (mobile header, partnerRefUrl, __fintellaChatOpened DOM key), URL fallbacks in /api/invites and /api/admin/impersonate (https://fintella.partners), legal DBA consent text on /signup + /getstarted ("Financial Intelligence Network DBA (Fintella)"), package.json name (fintella-partner-portal), seed-training.ts + seed-conference.ts scripts, Accordion doc comment example. Historical session artifacts in docs/superpowers/* intentionally NOT touched. New domain fintella.partners added in Vercel alongside legacy trln.partners; NEXTAUTH_URL needs to be updated to https://fintella.partners post-merge. Vercel project name unchanged (still "tariff-partner-portal-iwki") to avoid deployment URL churn.
+## Portal State (compressed — see git history for detail)
+
+The portal is feature-complete for demo / pre-launch. Everything below is shipped and working. Git commit history is the source of truth for line-level detail — this section is just a map.
+
+**Partner side** — home feed, overview stats, deals (with pipeline tracker + drill-down), commissions, downline tree, training, live weekly conference, submit client (Frost Law iframe), referral links, documents, account settings, support tickets, feature requests, AI assistant (TRLN PartnerOS / Fintella PartnerOS — Claude Sonnet 4.6).
+
+**Admin side** — partners (detail, notes, communications log, sudo impersonation), deals, revenue / custom commissions / enterprise reporting, payouts (with EP overrides), support, chat (live agent panel), communications hub, documents, training management, conference management, feature request triage, user management (4 roles: super_admin / admin / accounting / partner_support), settings, development page (/admin/dev) with live GitHub feed + Sentry errors panel + webhook test harness (super_admin only).
+
+**Key systems** — NextAuth dual providers (partner email+password, admin email+password), Prisma + PostgreSQL (Neon), SignWell e-signing with template field pre-fill, HubSpot CRM stub (demo mode), referral webhook (POST+PATCH+GET), PWA (manifest, install prompt, safe-area handling), notification bell (30s polling), live chat (WebSocket-style polling), waterfall commission model (L1/L2/L3), enterprise partner overrides, admin role-based permissions, Sentry + Vercel Analytics + Speed Insights, 4 agreement templates by rate (25/20/15/10), Dependabot + CodeQL + branch protection on main.
+
+**Key Prisma models** — User, Partner, PartnerProfile, PartnerOverride, RecruitmentInvite, PartnershipAgreement, Document, Deal, DealNote, CommissionLedger, PayoutBatch, EnterprisePartner, EnterpriseOverride, SupportTicket, TicketMessage, ChatSession, ChatMessage, Notification, TrainingModule, TrainingProgress, ConferenceSchedule, FeatureRequest, AdminNote, AiConversation, AiMessage, AiUsageDay, ImpersonationToken, PartnerCodeHistory, PortalSettings.
+
+**Recent major milestones** (most recent first):
+- Responsive + mobile + PWA hardening pass (safe-area insets, notch safety, slideIn keyframe, accessibility pinch-zoom, orientation unlock)
+- SignWell template field pre-fill across all three agreement send paths + webhook test harness at /admin/dev/webhook-test
+- Rebrand TRLN → Fintella (April 2026, pre-launch so no customer impact)
+- Phase 18a monitoring: Sentry + Vercel Analytics + Speed Insights + graceful fallbacks
+- Phase 17 AI assistant: Claude Sonnet 4.6 powered PartnerOS with prompt caching + budget cap
+- Security hardening: main branch protection, Dependabot, private vulnerability reporting, Next.js 14.2.15 → 14.2.35 (9 CVEs fixed)
+- Enterprise partner system (hidden from partner view, admin-only reporting)
+- Admin role-based permissions (4 roles with per-feature gates)
+- PostgreSQL migration (Neon), PWA install prompt, real DB queries on reports/payouts/support
+
+
+## Mandatory Task Workflow (user preference — applies to EVERY code task)
+
+John explicitly requires this full workflow on every code-touching task. Do NOT skip steps to save time — John has stated he prefers thoroughness and accuracy over speed. The workflow:
+
+**1. Pre-flight**
+- Read `CLAUDE.md` (this file) to refresh project context
+- `git status` to verify working tree state
+- `git log --oneline -5` to see recent history
+- Confirm the designated feature branch (never work directly on `main` — it's branch-protected)
+- Use `TodoWrite` to lay out the planned subtasks before touching code
+
+**2. Development**
+- Make changes on a feature branch (pattern: `claude/<short-description>-<suffix>`)
+- Follow existing code patterns — don't add speculative abstractions
+- Don't skip hooks (`--no-verify`), don't amend existing commits (always new commits)
+- Keep diffs focused on the task — no unrelated "improvements"
+
+**3. Build verification (MANDATORY before commit)**
+- `./node_modules/.bin/next build` — must compile cleanly
+- Static page count should match expected (currently 91) unless new routes were added
+- Fix TypeScript errors by resolving the root cause, NEVER by suppressing with `any` / `@ts-ignore`
+- Do not commit if build is red
+
+**4. Responsive / UI audit (MANDATORY for any UI-touching change)**
+- Verify new UI uses `theme-*` CSS variable classes (not hardcoded colors)
+- Verify mobile breakpoints (`sm:` / `md:` / `lg:` / `xl:`) where layout differs
+- Verify touch targets ≥44px on interactive elements
+- Verify safe-area padding on any new fixed-position element (use `pt-safe` / `pb-safe` / `pl-safe` / `pr-safe` / `top-safe` / `bottom-safe` utility classes)
+- Verify new tables have both desktop grid + mobile card fallback OR `overflow-x-auto` wrapper
+- Verify dark/light theme both render correctly
+
+**5. Git hygiene**
+- `git diff --stat` — review what's staged
+- Stage only intentional files (NEVER `git add -A` blindly — can grab `package-lock.json` drift, `.env`, node_modules leak, etc.)
+- Commit message follows existing style (conventional prefix: `feat:`, `fix:`, `docs:`, `security:`, `chore:`, etc.)
+- `git push -u origin <branch>` with retry on network errors
+
+**6. PR flow**
+- Open PR via `mcp__github__create_pull_request`
+- Wait for Vercel preview + CodeQL + Analyze checks to turn green (use `mcp__github__pull_request_read` with `method: get_status` and `get_check_runs`)
+- Address any CodeQL findings immediately — don't ignore security flags
+- Merge ONLY after John says so OR explicit pre-authorization was given in the current task
+
+**7. Post-merge cleanup**
+- `git checkout main && git pull origin main`
+- Delete local feature branch: `git branch -D <branch>`
+- Delete remote feature branch: `git push origin --delete <branch>` (may fail in sandbox — report to John if so)
+- Verify `git branch -a` shows only expected branches
+
+**8. Memory maintenance**
+- If architectural decisions were made, update CLAUDE.md in a separate `docs:` commit
+- If long-lived features were added, add a one-line entry to the State section (not a 50-line changelog)
+- Periodically compress the State section — git history is the source of truth for detail
+
+**9. Signoff**
+- Signal completion ONLY when fully done (no outstanding errors, no half-finished TODOs)
+- Follow Session Signoff Style rules below (checklist + rainbow)
+
+### Claude's additional recommendations (John to confirm before adding)
+- [ ] After any risky change, fetch recent Sentry errors via `/api/admin/dev/errors` to verify no new errors
+- [ ] Smoke-test via `/admin/dev/webhook-test` after webhook-related changes
+- [ ] Run `npx prisma generate` after schema changes before building
+- [ ] Check `package.json` vs `package-lock.json` consistency before committing (avoid lock drift)
+- [ ] For cross-cutting refactors, spawn a parallel Explore subagent to sanity-check the scope before touching files
+- [ ] Keep TodoWrite updated in real-time — mark items completed the instant they're done, not in batches
 
 ## Session Signoff Style (user preference)
 
