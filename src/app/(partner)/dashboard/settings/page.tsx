@@ -14,6 +14,8 @@ interface SettingsData {
   email: string;
   phone: string;
   mobilePhone: string;
+  emailOptIn: boolean;
+  smsOptIn: boolean;
   street: string;
   street2: string;
   city: string;
@@ -36,6 +38,7 @@ interface SettingsData {
 const EMPTY: SettingsData = {
   firstName: "", lastName: "", companyName: "", tin: "",
   email: "", phone: "", mobilePhone: "",
+  emailOptIn: false, smsOptIn: false,
   street: "", street2: "", city: "", state: "", zip: "",
   payoutMethod: "", bankName: "", accountType: "", routingNumber: "",
   accountNumber: "", beneficiaryName: "",
@@ -269,6 +272,69 @@ export default function AccountSettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="border-t border-[var(--app-border)] my-6" />
+
+        {/* ── Communication Preferences (Phase 15a/15b) ── */}
+        <div className="mb-6">
+          <div className="font-body text-[12px] font-semibold text-[var(--app-text-secondary)] tracking-wider uppercase mb-2">
+            Communication Preferences
+          </div>
+          <div className="font-body text-[12px] text-[var(--app-text-muted)] mb-4">
+            Choose how Fintella may contact you. You can change these at any time.
+            Transactional account events (agreement signed, payouts) may still
+            be sent for compliance reasons even if you opt out.
+          </div>
+
+          <label className="flex items-start gap-3 p-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-input-bg)] cursor-pointer hover:bg-[var(--app-hover)] transition-colors mb-3">
+            <input
+              type="checkbox"
+              checked={form.emailOptIn}
+              onChange={(e) => {
+                setForm((prev) => ({ ...prev, emailOptIn: e.target.checked }));
+                if (message) setMessage(null);
+              }}
+              className="mt-0.5 h-5 w-5 accent-brand-gold shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="font-body text-[13px] font-medium text-[var(--app-text)]">
+                Email updates
+              </div>
+              <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
+                Onboarding, agreement notifications, commission alerts, and
+                Fintella product updates sent to {form.email || "your email"}.
+              </div>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 p-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-input-bg)] cursor-pointer hover:bg-[var(--app-hover)] transition-colors">
+            <input
+              type="checkbox"
+              checked={form.smsOptIn}
+              onChange={(e) => {
+                setForm((prev) => ({ ...prev, smsOptIn: e.target.checked }));
+                if (message) setMessage(null);
+              }}
+              className="mt-0.5 h-5 w-5 accent-brand-gold shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="font-body text-[13px] font-medium text-[var(--app-text)]">
+                SMS / text messages
+              </div>
+              <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
+                Short transactional texts (welcome, agreement ready, account
+                active) sent to your mobile number above. Standard message and
+                data rates may apply. Reply <strong>STOP</strong> to any text
+                to opt out instantly.
+              </div>
+              {!builtMobile && form.smsOptIn && (
+                <div className="font-body text-[11px] text-yellow-500 mt-1.5">
+                  Add a mobile number above so we have somewhere to text.
+                </div>
+              )}
+            </div>
+          </label>
         </div>
 
         <div className="border-t border-[var(--app-border)] my-6" />
