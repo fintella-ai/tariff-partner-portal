@@ -1,0 +1,47 @@
+# Dependabot configuration
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Primary purpose of this file: ignore major-version bumps of `next`.
+# Phase 18b (Next 14 → 16) is a planned, deliberate migration that requires
+# React 18 → 19, middleware.ts → proxy.ts rename, Turbopack-as-default
+# testing, and dedicated verification. Automatic Dependabot PRs for that
+# jump are unsafe — they have no way to hit the required migration steps.
+#
+# See PR #56 (closed) for the failed auto-bump attempt that triggered this
+# config, and CLAUDE.md "Remaining Phases" → Phase 18b for the deferral
+# rationale and CVE audit.
+#
+# Note: prior to this file, Dependabot was enabled via GitHub UI only.
+# If additional ecosystem settings (e.g. github-actions, docker) were set
+# in the UI, they may need to be re-added here — this file does not
+# implicitly cover ecosystems it doesn't list.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    ignore:
+      # Next.js major bumps are handled manually as part of Phase 18b.
+      # Minor + patch bumps within the current major are still allowed
+      # so security fixes on 14.2.x continue to flow automatically.
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      # React majors piggyback on Next majors (Next 15 requires React 19).
+      # Must be upgraded together in the planned 18b session.
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions workflows (e.g. delete-merged-branches.yml) get their
+  # action versions kept current automatically.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
