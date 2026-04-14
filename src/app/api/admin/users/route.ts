@@ -117,16 +117,39 @@ export async function POST(req: NextRequest) {
       const { userId } = body;
       if (!userId) return NextResponse.json({ error: "userId is required" }, { status: 400 });
 
-      // Prevent deleting self
+      // Prevent deleting self — the only hard footgun guard. A super_admin
+      // CAN delete another super_admin (intentional — needed to clean up
+      // orphaned accounts like the legacy `admin@trln.com` row left over
+      // from the pre-rebrand TRLN deployment). The endpoint is already
+      // gated to `role === "super_admin"` at the top of this handler, so
+      // only super admins can reach this branch in the first place.
       const currentUser = await prisma.user.findUnique({ where: { email: session.user.email! } });
       if (currentUser?.id === userId) {
         return NextResponse.json({ error: "You cannot delete your own account" }, { status: 400 });
       }
 
-      // Prevent deleting super_admin
+      // Last-super-admin guard: refuse to delete the final remaining
+      // super_admin in the system. Without this, an admin could lock
+      // themselves and everyone else out of the user-management surface
+      // (no super_admin would mean no one can promote a replacement).
+      // This is a tighter check than the self-delete guard above —
+      // self-delete is blocked even when other super_admins exist; this
+      // additional check blocks deletion of the LAST super_admin even
+      // when the deleter is themselves a super_admin.
       const target = await prisma.user.findUnique({ where: { id: userId } });
       if (target?.role === "super_admin") {
-        return NextResponse.json({ error: "Cannot delete a super admin" }, { status: 400 });
+        const superAdminCount = await prisma.user.count({
+          where: { role: "super_admin" },
+        });
+        if (superAdminCount <= 1) {
+          return NextResponse.json(
+            {
+              error:
+                "Cannot delete the last remaining super admin. Promote another user to super_admin first (via direct DB access — the portal UI does not allow super_admin promotion).",
+            },
+            { status: 400 }
+          );
+        }
       }
 
       await prisma.user.delete({ where: { id: userId } });

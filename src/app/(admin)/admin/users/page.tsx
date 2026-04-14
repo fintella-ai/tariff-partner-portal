@@ -152,15 +152,43 @@ export default function AdminUsersPage() {
                 <div key={h} className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{h}</div>
               ))}
             </div>
-            {users.map((u) => (
+            {users.map((u) => {
+              // Self-protection: the logged-in user cannot delete themselves
+              // or change their own role from this UI. Backend enforces this
+              // too (lines 81-84 + 121-124 of /api/admin/users/route.ts), but
+              // hiding the controls also clears up the visual ambiguity.
+              const isSelf = u.email === session?.user?.email;
+              const isSuperAdminRow = u.role === "super_admin";
+              return (
               <div key={u.id} className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors">
                 <div>
-                  <div className="font-body text-[13px] text-[var(--app-text)] font-medium">{u.name || u.email}</div>
+                  <div className="font-body text-[13px] text-[var(--app-text)] font-medium">
+                    {u.name || u.email}
+                    {isSelf && (
+                      <span className="ml-2 font-body text-[10px] text-brand-gold">(you)</span>
+                    )}
+                  </div>
                   <div className="font-body text-[11px] text-[var(--app-text-muted)]">{u.email}</div>
                 </div>
                 <div>
-                  {u.role === "super_admin" ? (
-                    <span className="inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase bg-brand-gold/10 text-brand-gold border border-brand-gold/20">
+                  {isSelf || isSuperAdminRow ? (
+                    // Show the role badge for either the logged-in user (no
+                    // self-edit) OR any super_admin row. Super admins still
+                    // can't be PROMOTED to via this UI (the API at line 87-89
+                    // blocks `userRole === "super_admin"` in update_role),
+                    // but they can be DELETED entirely by another super_admin
+                    // — see the Delete button below.
+                    <span
+                      className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${
+                        isSuperAdminRow
+                          ? "bg-brand-gold/10 text-brand-gold border border-brand-gold/20"
+                          : u.role === "admin"
+                          ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                          : u.role === "accounting"
+                          ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                          : "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                      }`}
+                    >
                       {ROLE_LABELS[u.role as AdminRole] || u.role}
                     </span>
                   ) : (
@@ -187,7 +215,7 @@ export default function AdminUsersPage() {
                   {new Date(u.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </div>
                 <div>
-                  {u.role !== "super_admin" && (
+                  {!isSelf && !isSuperAdminRow && (
                     resetId === u.id ? (
                       <div className="flex gap-1">
                         <input
@@ -220,15 +248,27 @@ export default function AdminUsersPage() {
                   )}
                 </div>
                 <div>
-                  {u.role !== "super_admin" && (
+                  {!isSelf && (
                     <button
                       onClick={async () => {
-                        if (!confirm(`Delete admin user ${u.name || u.email}? This cannot be undone.`)) return;
-                        await fetch("/api/admin/users", {
+                        // Stricter confirmation when deleting another super
+                        // admin — these have full system access and the
+                        // delete is irreversible. Only used for cleaning up
+                        // orphaned/duplicate super admin accounts.
+                        const confirmText = isSuperAdminRow
+                          ? `⚠️ DELETE SUPER ADMIN ⚠️\n\nYou are about to delete a super admin account:\n  ${u.email}\n\nSuper admins have full system access. This is irreversible. Only proceed if this is an orphaned or duplicate account.\n\nContinue?`
+                          : `Delete admin user ${u.name || u.email}? This cannot be undone.`;
+                        if (!confirm(confirmText)) return;
+                        const res = await fetch("/api/admin/users", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ action: "delete", userId: u.id }),
                         });
+                        if (!res.ok) {
+                          const d = await res.json().catch(() => ({}));
+                          alert(d.error || "Failed to delete user");
+                          return;
+                        }
                         fetchUsers();
                       }}
                       className="font-body text-[11px] text-red-400/60 hover:text-red-400 transition-colors"
@@ -238,7 +278,8 @@ export default function AdminUsersPage() {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Mobile cards */}
