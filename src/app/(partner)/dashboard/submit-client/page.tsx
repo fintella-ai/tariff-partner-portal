@@ -18,11 +18,21 @@ export default function SubmitClientPage() {
   const [agreementSigned, setAgreementSigned] = useState<boolean | null>(null);
 
   // ── Fetch agreement status ────────────────────────────────────────────────
+  // Gate is satisfied only when BOTH the agreement is signed/approved AND
+  // the partner row itself is active. Post-#76 the SignWell webhook flips
+  // Partner.status automatically on document_completed, so the happy path
+  // converges — but checking both guards against any path that marks the
+  // agreement signed without the webhook firing (e.g. manual admin doc
+  // upload with a race) and against stale local state.
   useEffect(() => {
     fetch("/api/agreement")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
-        setAgreementSigned(data.agreement?.status === "signed" || data.agreement?.status === "approved");
+        const agreementOk =
+          data.agreement?.status === "signed" ||
+          data.agreement?.status === "approved";
+        const partnerOk = data.partnerStatus === "active";
+        setAgreementSigned(agreementOk && partnerOk);
       })
       .catch(() => {
         // If API fails, default to allowing access (demo mode)

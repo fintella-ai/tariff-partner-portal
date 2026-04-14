@@ -13,8 +13,11 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Impersonation is a privilege-escalation surface — restrict to the two
+  // most-privileged roles only. accounting + partner_support must not be
+  // able to assume a partner's identity, even briefly.
   const role = (session.user as any).role;
-  if (!["super_admin", "admin", "accounting", "partner_support"].includes(role)) {
+  if (!["super_admin", "admin"].includes(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -32,7 +35,11 @@ export async function POST(req: NextRequest) {
       where: { expiresAt: { lt: new Date() } },
     }).catch(() => {});
 
-    // Generate a single-use token (expires in 15 minutes)
+    // Generate a single-use token. Expiry is deliberately tight (60s) per
+    // CLAUDE.md — admin clicks "View as Partner", the new tab opens the
+    // token URL immediately, and the token is consumed on first read. A
+    // longer window just widens the attack surface if the token leaks.
+    const TOKEN_TTL_SECONDS = 60;
     const token = crypto.randomBytes(32).toString("hex");
     await prisma.impersonationToken.create({
       data: {
@@ -40,7 +47,7 @@ export async function POST(req: NextRequest) {
         partnerCode: partner.partnerCode,
         email: partner.email,
         name: `${partner.firstName} ${partner.lastName}`,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+        expiresAt: new Date(Date.now() + TOKEN_TTL_SECONDS * 1000),
       },
     });
 
@@ -48,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       url: `${baseUrl}/impersonate?token=${token}`,
-      expiresIn: 900,
+      expiresIn: TOKEN_TTL_SECONDS,
     });
   } catch {
     return NextResponse.json({ error: "Failed to create impersonation token" }, { status: 500 });

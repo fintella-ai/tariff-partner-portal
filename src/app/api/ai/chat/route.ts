@@ -91,7 +91,11 @@ export async function POST(req: NextRequest) {
     // Call Anthropic (or mock)
     const result = await generateResponse(userContext, history);
 
-    // Persist assistant reply
+    // Persist assistant reply. We now record cache reads and cache writes
+    // as two separate token counts so daily-usage cost math can price them
+    // at their distinct rates (~$0.30/MTok vs ~$3.75/MTok on Sonnet 4.6).
+    // `cachedTokens` is kept in sync with `cacheReadTokens` for back-compat
+    // with any historical admin views that still read the old column.
     const assistantMessage = await prisma.aiMessage.create({
       data: {
         conversationId: conversation.id,
@@ -99,7 +103,9 @@ export async function POST(req: NextRequest) {
         content: result.content,
         inputTokens: result.inputTokens,
         outputTokens: result.outputTokens,
-        cachedTokens: result.cachedTokens,
+        cachedTokens: result.cacheReadTokens,
+        cacheReadTokens: result.cacheReadTokens,
+        cacheCreationTokens: result.cacheCreationTokens,
       },
     });
 
@@ -115,7 +121,8 @@ export async function POST(req: NextRequest) {
         userId,
         result.inputTokens,
         result.outputTokens,
-        result.cachedTokens
+        result.cacheReadTokens,
+        result.cacheCreationTokens
       );
     }
 

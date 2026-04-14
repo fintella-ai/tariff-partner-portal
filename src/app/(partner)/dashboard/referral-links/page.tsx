@@ -40,12 +40,18 @@ export default function ReferralLinksPage() {
   const [sending, setSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState(false);
 
-  // Check agreement status
+  // Check agreement status — gate requires BOTH a signed agreement AND an
+  // active Partner row. Post-#76 the SignWell webhook keeps these in sync
+  // automatically; checking both here is defense-in-depth.
   useEffect(() => {
     fetch("/api/agreement")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
-        setAgreementSigned(data.agreement?.status === "signed" || data.agreement?.status === "approved");
+        const agreementOk =
+          data.agreement?.status === "signed" ||
+          data.agreement?.status === "approved";
+        const partnerOk = data.partnerStatus === "active";
+        setAgreementSigned(agreementOk && partnerOk);
       })
       .catch(() => setAgreementSigned(true));
   }, []);

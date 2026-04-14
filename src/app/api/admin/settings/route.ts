@@ -36,6 +36,12 @@ export async function GET(req: NextRequest) {
 /**
  * PUT /api/admin/settings
  * Update portal settings. Accepts partial updates.
+ *
+ * Write access is restricted to super_admin only. Settings controls firm
+ * branding, logos, agreement templates, commission rates, navigation, and
+ * home-page content — all of which are portal-wide config surfaces that
+ * should not be editable by narrower roles. GET remains broader so admin
+ * pages can render the current values.
  */
 export async function PUT(req: NextRequest) {
   const session = await auth();
@@ -43,7 +49,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const role = (session.user as any).role;
-  if (!["super_admin", "admin", "accounting", "partner_support"].includes(role)) {
+  if (role !== "super_admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

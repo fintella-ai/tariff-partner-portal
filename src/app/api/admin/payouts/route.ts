@@ -139,8 +139,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Write operations on payouts (create_batch / approve_batch / process_batch
+  // / approve_single) move money and flip CommissionLedger status. Restricted
+  // to the roles that actually own that flow. partner_support can still see
+  // the payouts page via the GET handler above but cannot trigger any write.
   const role = (session.user as any).role;
-  if (!["super_admin", "admin", "accounting", "partner_support"].includes(role))
+  if (!["super_admin", "admin", "accounting"].includes(role))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   try {

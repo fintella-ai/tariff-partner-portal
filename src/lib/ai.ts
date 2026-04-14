@@ -18,10 +18,15 @@ const DAILY_MESSAGE_LIMIT = parseInt(process.env.AI_DAILY_MESSAGE_LIMIT || "50",
 const MAX_OUTPUT_TOKENS = 1024;
 
 // Rough Sonnet 4.6 pricing (USD per token). Update if Anthropic changes prices.
-// Input: $3/MTok, Output: $15/MTok, Cached read: $0.30/MTok, Cache write: $3.75/MTok
+// Input: $3/MTok, Output: $15/MTok, Cached read: $0.30/MTok, Cache write: $3.75/MTok.
+// Cache WRITE (ephemeral block creation) is ~12x more expensive than cache READ
+// (hit), and the Anthropic API returns them as two separate token counts —
+// cache_read_input_tokens vs cache_creation_input_tokens. They must be priced
+// separately, otherwise we silently undercount real spend on first-hit calls.
 const PRICE_INPUT = 3 / 1_000_000;
 const PRICE_OUTPUT = 15 / 1_000_000;
 const PRICE_CACHE_READ = 0.3 / 1_000_000;
+const PRICE_CACHE_WRITE = 3.75 / 1_000_000;
 
 export const AI_CONFIG = {
   model: ANTHROPIC_MODEL,
@@ -275,13 +280,18 @@ export async function recordUsage(
   userId: string,
   inputTokens: number,
   outputTokens: number,
-  cachedTokens: number
+  cacheReadTokens: number,
+  cacheCreationTokens: number
 ) {
   const today = new Date().toISOString().slice(0, 10);
+  // Cost is the sum of four distinct token types. Cache reads ($0.30/MTok)
+  // and cache writes ($3.75/MTok) MUST be accounted separately — combining
+  // them understates real spend on any call that creates new cache blocks.
   const cost =
     inputTokens * PRICE_INPUT +
     outputTokens * PRICE_OUTPUT +
-    cachedTokens * PRICE_CACHE_READ;
+    cacheReadTokens * PRICE_CACHE_READ +
+    cacheCreationTokens * PRICE_CACHE_WRITE;
 
   await prisma.aiUsageDay.upsert({
     where: { userId_date: { userId, date: today } },
@@ -310,7 +320,10 @@ export interface GenerateResult {
   content: string;
   inputTokens: number;
   outputTokens: number;
-  cachedTokens: number;
+  /** Tokens served from the Anthropic prompt cache (cache hit — cheap). */
+  cacheReadTokens: number;
+  /** Tokens written to the prompt cache as part of this request (cache miss — expensive). */
+  cacheCreationTokens: number;
   mocked: boolean;
 }
 
@@ -338,7 +351,8 @@ In the meantime, you can:
       content: mockReply,
       inputTokens: 0,
       outputTokens: 0,
-      cachedTokens: 0,
+      cacheReadTokens: 0,
+      cacheCreationTokens: 0,
       mocked: true,
     };
   }
@@ -378,14 +392,17 @@ In the meantime, you can:
         ? textBlock.text
         : "I don't have a response right now — please try again.";
 
+    // The Anthropic API returns two separate cache token counts: tokens
+    // served from an existing cache block (cheap) and tokens written as
+    // part of creating a new cache block (expensive). They are NOT mutually
+    // exclusive — a single response can both read from an existing block
+    // and create a new one, so we must record both independently.
     return {
       content,
       inputTokens: response.usage.input_tokens || 0,
       outputTokens: response.usage.output_tokens || 0,
-      cachedTokens:
-        (response.usage as any).cache_read_input_tokens ||
-        (response.usage as any).cache_creation_input_tokens ||
-        0,
+      cacheReadTokens: (response.usage as any).cache_read_input_tokens || 0,
+      cacheCreationTokens: (response.usage as any).cache_creation_input_tokens || 0,
       mocked: false,
     };
   } catch (err: any) {

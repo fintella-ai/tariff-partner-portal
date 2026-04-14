@@ -51,6 +51,17 @@ export async function GET(req: NextRequest) {
       embeddedSigningUrl = await getEmbeddedSigningUrl(agreement.signwellDocumentId);
     }
 
+    // Also return Partner.status so the partner-side gates at
+    // /dashboard/submit-client and /dashboard/referral-links can enforce
+    // "agreement signed AND partner active" as a defense-in-depth check.
+    // Post-#76 the SignWell webhook flips Partner.status automatically, so
+    // in the happy path both fields converge — but this guards against any
+    // future path that marks an agreement signed without the webhook firing.
+    const partnerRow = await prisma.partner.findUnique({
+      where: { partnerCode },
+      select: { status: true },
+    });
+
     return NextResponse.json({
       agreement: agreement
         ? {
@@ -64,6 +75,7 @@ export async function GET(req: NextRequest) {
             signwellConfigured: isSignWellConfigured(),
           }
         : null,
+      partnerStatus: partnerRow?.status || null,
       signwellConfigured: isSignWellConfigured(),
     });
   } catch {
