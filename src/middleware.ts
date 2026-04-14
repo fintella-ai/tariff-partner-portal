@@ -6,7 +6,7 @@ export default auth((req) => {
   const session = req.auth;
 
   // Public pages — accessible to anyone, no redirects
-  if (pathname.startsWith("/docs/") || pathname.startsWith("/signup") || pathname.startsWith("/impersonate") || pathname.startsWith("/getstarted")) {
+  if (pathname.startsWith("/docs/") || pathname.startsWith("/signup") || pathname.startsWith("/impersonate") || pathname.startsWith("/getstarted") || pathname === "/privacy" || pathname === "/terms") {
     return NextResponse.next();
   }
 
