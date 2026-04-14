@@ -211,7 +211,14 @@ model CommissionLedger {
   dealName       String?
   tier           String   // "l1", "l2", "l3"
   amount         Float
-  status         String   @default("pending") // pending, due, paid
+  // Status lifecycle (three phase):
+  //   pending — deal has closed_won but firm has not yet paid Fintella the override.
+  //             Created automatically by the /api/webhook/referral PATCH handler
+  //             when Frost Law first marks the deal closed_won.
+  //   due     — admin has confirmed payment via "Mark Payment Received" on
+  //             /admin/deals. Ready to be batched into a PayoutBatch.
+  //   paid    — the payout batch has been processed.
+  status         String   @default("pending")
   periodMonth    String?  // "2025-03" format
   payoutDate     DateTime?
   payoutMethod   String?
@@ -222,6 +229,11 @@ model CommissionLedger {
 
   batch PayoutBatch? @relation(fields: [batchId], references: [id])
 
+  // Belt-and-suspenders: only one ledger row per (deal, partner, tier). Prevents
+  // duplicates if the webhook retries or if a deal somehow hits closed_won twice.
+  // The webhook's idempotency check + this constraint together guarantee at-most-one
+  // ledger row per partner-per-tier-per-deal regardless of replay patterns.
+  @@unique([dealId, partnerCode, tier])
   @@index([partnerCode])
   @@index([status])
   @@index([batchId])

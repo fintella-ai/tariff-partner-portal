@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { computeDealCommissions } from "@/lib/commission";
 
 /**
  * ═════════════════════════════════════════════════════════════════════════════
@@ -686,9 +687,128 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const updated = await prisma.deal.update({
-      where: { id: dealId },
-      data,
+    // ─── Auto-create CommissionLedger on first closed_won transition ───
+    // When a deal first transitions to closed_won via this webhook, we
+    // materialize the L1/L2/L3 commissions as "pending" ledger rows.
+    // Partners immediately see expected commissions in their dashboard;
+    // admin later flips the rows from pending → due by clicking
+    // "Mark Payment Received" on /admin/deals once the firm has wired
+    // Fintella the override.
+    //
+    // Guarded by: (a) the stage must be closed_won AND the deal's prior
+    // externalStage was NOT closed_won — so replays / repeat PATCHes
+    // don't duplicate; (b) the (dealId, partnerCode, tier) unique index
+    // on CommissionLedger as belt-and-suspender.
+    const stageNormalized = stage
+      ? String(stage).toLowerCase().replace(/[\s\-_]/g, "")
+      : "";
+    const priorStageNormalized = deal.externalStage
+      ? deal.externalStage.toLowerCase().replace(/[\s\-_]/g, "")
+      : "";
+    const isClosedWonTransition =
+      stageNormalized === "closedwon" && priorStageNormalized !== "closedwon";
+
+    // Compute ledger entries OUTSIDE the transaction so any DB read errors
+    // surface before we start writing. Effective firm fee is the value
+    // in this PATCH if provided, else the existing deal row.
+    let entriesToCreate: Array<{ partnerCode: string; tier: string; amount: number }> = [];
+    let ledgerSkipReason: string | null = null;
+    let effectiveFirmFee = 0;
+
+    if (isClosedWonTransition) {
+      effectiveFirmFee =
+        typeof data.firmFeeAmount === "number" && data.firmFeeAmount > 0
+          ? data.firmFeeAmount
+          : deal.firmFeeAmount || 0;
+
+      if (effectiveFirmFee <= 0) {
+        ledgerSkipReason = "no_firm_fee_on_deal_or_in_payload";
+      } else {
+        const existingForDeal = await prisma.commissionLedger.findFirst({
+          where: { dealId },
+        });
+        if (existingForDeal) {
+          ledgerSkipReason = "ledger_already_exists";
+        } else {
+          const computed = await computeDealCommissions(prisma, {
+            partnerCode: deal.partnerCode,
+            firmFeeAmount: effectiveFirmFee,
+          });
+          entriesToCreate = computed.entries;
+          if (entriesToCreate.length === 0) {
+            ledgerSkipReason = "waterfall_returned_zero_entries";
+          }
+        }
+      }
+    }
+
+    // Single transaction: deal update + optional ledger creates + optional audit note
+    const updated = await prisma.$transaction(async (tx) => {
+      const d = await tx.deal.update({ where: { id: dealId }, data });
+
+      if (entriesToCreate.length > 0) {
+        for (const entry of entriesToCreate) {
+          await tx.commissionLedger.create({
+            data: {
+              partnerCode: entry.partnerCode,
+              dealId: d.id,
+              dealName: d.dealName,
+              tier: entry.tier,
+              amount: entry.amount,
+              status: "pending",
+              periodMonth: new Date().toISOString().slice(0, 7),
+            },
+          });
+        }
+
+        // Mirror computed amounts onto the Deal row so admin views stay in
+        // sync with the ledger. Only overwrite the fields we actually have
+        // data for (don't clobber a non-zero existing value with 0).
+        const l1Amount =
+          entriesToCreate.find((e) => e.tier === "l1")?.amount || 0;
+        const l2Amount =
+          entriesToCreate.find((e) => e.tier === "l2")?.amount || 0;
+        const dealFieldUpdate: Record<string, any> = {};
+        if (l1Amount > 0) {
+          dealFieldUpdate.l1CommissionAmount = l1Amount;
+          dealFieldUpdate.l1CommissionStatus = "pending";
+        }
+        if (l2Amount > 0) {
+          dealFieldUpdate.l2CommissionAmount = l2Amount;
+          dealFieldUpdate.l2CommissionStatus = "pending";
+        }
+        if (Object.keys(dealFieldUpdate).length > 0) {
+          await tx.deal.update({
+            where: { id: d.id },
+            data: dealFieldUpdate,
+          });
+        }
+
+        const totalCommission = entriesToCreate.reduce(
+          (s, e) => s + e.amount,
+          0
+        );
+        await tx.dealNote.create({
+          data: {
+            dealId: d.id,
+            content:
+              `Deal auto-transitioned to closed_won via Frost Law webhook. ` +
+              `Firm fee: $${effectiveFirmFee.toFixed(2)}. ` +
+              `Pending commissions created: ${entriesToCreate.length} entries totaling $${totalCommission.toFixed(2)} ` +
+              `(${entriesToCreate
+                .map(
+                  (e) =>
+                    `${e.tier.toUpperCase()} ${e.partnerCode} $${e.amount.toFixed(2)}`
+                )
+                .join(", ")}). ` +
+              `Admin must click "Mark Payment Received" on /admin/deals once Frost Law sends the override to Fintella.`,
+            authorName: "Frost Law Webhook",
+            authorEmail: "webhook@fintella.partners",
+          },
+        });
+      }
+
+      return d;
     });
 
     return NextResponse.json({
@@ -696,8 +816,39 @@ export async function PATCH(req: NextRequest) {
       dealId: updated.id,
       dealName: updated.dealName,
       fieldsUpdated: Object.keys(data),
+      ledger: isClosedWonTransition
+        ? {
+            created: entriesToCreate.length,
+            totalAmount: entriesToCreate.reduce((s, e) => s + e.amount, 0),
+            status: entriesToCreate.length > 0 ? "pending" : null,
+            skipReason: ledgerSkipReason,
+          }
+        : undefined,
     });
   } catch (err: any) {
+    // Unique-constraint violation on (dealId, partnerCode, tier) means a
+    // concurrent PATCH already inserted — idempotent recovery.
+    if (
+      err?.code === "P2002" &&
+      Array.isArray(err?.meta?.target) &&
+      err.meta.target.includes("dealId") &&
+      err.meta.target.includes("partnerCode") &&
+      err.meta.target.includes("tier")
+    ) {
+      console.warn(
+        "[Webhook/Referral PATCH] Race on ledger unique constraint — treating as idempotent success"
+      );
+      const updatedDeal = await prisma.deal.findUnique({
+        where: { id: (err?.meta?.dealId as string) || "" },
+      }).catch(() => null);
+      return NextResponse.json({
+        updated: true,
+        dealId: updatedDeal?.id,
+        dealName: updatedDeal?.dealName,
+        fieldsUpdated: [],
+        ledger: { created: 0, status: "pending", skipReason: "race_on_unique_constraint" },
+      });
+    }
     console.error("[Webhook/Referral PATCH] Error:", err);
     return NextResponse.json(
       { error: "Webhook update failed" },
