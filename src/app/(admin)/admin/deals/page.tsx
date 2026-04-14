@@ -53,6 +53,10 @@ type Deal = {
   firmFeeRate: number | null;
   firmFeeAmount: number;
   l1CommissionRate: number | null;
+  // Resolved at API time: deal.l1CommissionRate ?? submitting partner's
+  // standard commissionRate. Lets the table render the correct % per row
+  // without a client-side partnerCode→rate join.
+  effectiveCommissionRate: number | null;
   l1CommissionAmount: number;
   l1CommissionStatus: string;
   l2CommissionAmount: number;
@@ -384,7 +388,13 @@ export default function AdminDealsPage() {
               </div>
               <div className="font-body text-[13px] text-[var(--app-text-secondary)] text-center">{fmt$(deal.firmFeeAmount)}</div>
               <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">
-                {deal.l1CommissionRate != null ? `${(deal.l1CommissionRate * 100).toFixed(0)}%` : "—"}
+                {/* Per-row Commission % — resolved server-side as
+                    deal.l1CommissionRate ?? submittingPartner.commissionRate
+                    so each deal shows the correct rate even with mixed-tier
+                    partners across the table. */}
+                {deal.effectiveCommissionRate != null
+                  ? `${(deal.effectiveCommissionRate * 100).toFixed(0)}%`
+                  : "—"}
               </div>
               <div className="font-display text-[14px] font-semibold text-brand-gold text-center">{fmt$(deal.l1CommissionAmount)}</div>
               <div className="font-body text-[12px] text-[var(--app-text-muted)] text-right">{fmtDate(deal.createdAt)}</div>

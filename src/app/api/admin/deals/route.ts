@@ -37,19 +37,44 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Get all partners for name resolution
+    // Get all partners for name resolution AND for the per-row Commission %
+    // column on the admin deals table. The submitting partner's commissionRate
+    // is the rate they earn on their own direct deals (and the L1 row of the
+    // table treats every deal as a direct deal — overrides for L2/L3 deals
+    // are handled separately in /admin/payouts EP calculations).
     const partners = await prisma.partner.findMany({
-      select: { id: true, partnerCode: true, firstName: true, lastName: true },
+      select: {
+        id: true,
+        partnerCode: true,
+        firstName: true,
+        lastName: true,
+        commissionRate: true,
+        tier: true,
+      },
     });
-    const partnerMap: Record<string, { name: string; id: string }> = {};
+    const partnerMap: Record<string, { name: string; id: string; commissionRate: number; tier: string }> = {};
     for (const p of partners) {
-      partnerMap[p.partnerCode] = { name: `${p.firstName} ${p.lastName}`, id: p.id };
+      partnerMap[p.partnerCode] = {
+        name: `${p.firstName} ${p.lastName}`,
+        id: p.id,
+        commissionRate: p.commissionRate,
+        tier: p.tier,
+      };
     }
 
     const dealsWithPartnerNames = deals.map((d) => ({
       ...d,
       partnerName: partnerMap[d.partnerCode]?.name || d.partnerCode,
       partnerId: partnerMap[d.partnerCode]?.id || null,
+      // Per-deal effective commission rate: prefer the value stored on the
+      // Deal row (set when a custom rate was negotiated), else fall back to
+      // the submitting partner's standard commissionRate. Returned as a
+      // resolved field so the page doesn't have to maintain its own join
+      // map between deals and partners.
+      effectiveCommissionRate:
+        d.l1CommissionRate ??
+        partnerMap[d.partnerCode]?.commissionRate ??
+        null,
     }));
 
     // Summary stats
