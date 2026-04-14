@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   const to = typeof body.to === "string" ? body.to.trim() : "";
-  if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+  if (!isValidEmail(to)) {
     return NextResponse.json(
       { error: "Valid `to` email address is required" },
       { status: 400 }
@@ -123,4 +123,32 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+/**
+ * Linear-time email shape check. Deliberately NOT a regex — the obvious
+ * `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` formulation has nested repetition that
+ * triggers CodeQL's `js/polynomial-redos` rule because it can backtrack
+ * on adversarial inputs. This iterative version is O(n) regardless of
+ * the input shape.
+ *
+ * Not intended as full RFC 5322 validation — just rejects obviously
+ * malformed strings before we hand off to SendGrid (which does the
+ * real validation server-side and returns a clear error message anyway).
+ */
+function isValidEmail(s: string): boolean {
+  if (!s || s.length === 0 || s.length > 320) return false; // RFC 5321 max
+  if (s.indexOf(" ") !== -1 || s.indexOf("\t") !== -1) return false;
+  const at = s.indexOf("@");
+  if (at <= 0) return false; // need at least one char before @
+  if (at !== s.lastIndexOf("@")) return false; // exactly one @
+  const local = s.slice(0, at);
+  const domain = s.slice(at + 1);
+  if (local.length === 0 || local.length > 64) return false;
+  if (domain.length === 0 || domain.length > 253) return false;
+  // Domain must contain at least one dot and the dot must not be at
+  // either end (rejects `user@.com` and `user@example.`)
+  const dot = domain.indexOf(".");
+  if (dot <= 0 || dot === domain.length - 1) return false;
+  return true;
 }
