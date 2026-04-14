@@ -210,6 +210,248 @@ async function main() {
   }
   console.log("✓ " + (1 + conferencePast.length) + " conference entries seeded (1 active + " + conferencePast.length + " past)");
 
+  // ── Email Templates (Communications Hub) ───────────────────────────────
+  // Seeds 7 templates: 4 wired (welcome, agreement_ready, agreement_signed,
+  // signup_notification — match the helper names in src/lib/sendgrid.ts and
+  // drive real partner emails) + 3 drafts (deal_status_update,
+  // commission_payment_notification, monthly_newsletter — placeholders for
+  // future automation, marked isDraft=true so the UI shows the badge).
+  // Upsert with `update: {}` so re-running the seed never overwrites
+  // admin edits — only fills in missing rows on a fresh DB.
+  const emailTemplates = [
+    {
+      key: "welcome",
+      name: "Welcome New Partner",
+      category: "Onboarding",
+      subject: "Welcome to Fintella",
+      preheader: "Welcome to Fintella. Your partner code is {partnerCode}.",
+      heading: "Welcome to Fintella, {firstName}",
+      bodyHtml:
+        "<p>Your partner account is now created. Your partner code is " +
+        "<strong style=\"font-family:'Courier New',monospace;background:#f5f5f5;padding:2px 6px;border-radius:3px;color:#c4a050;\">{partnerCode}</strong>.</p>" +
+        "<p>Next step: your partnership agreement is on its way. Once it's signed " +
+        "you'll be able to start submitting clients and tracking commissions " +
+        "from your dashboard.</p>" +
+        "<p>If you have any questions, just reply to this email.</p>",
+      bodyText:
+        "Your partner account is now created. Your partner code is {partnerCode}.\n\n" +
+        "Next step: your partnership agreement is on its way. Once it's signed you'll be able to start submitting clients and tracking commissions from your dashboard.\n\n" +
+        "If you have any questions, just reply to this email.",
+      ctaLabel: "Open your dashboard",
+      ctaUrl: "{portalUrl}/login",
+      enabled: true,
+      isDraft: false,
+      description:
+        "Fired immediately after a partner completes signup, before the agreement is signed. Always sent (transactional / onboarding).",
+      variables: JSON.stringify([
+        "firstName",
+        "lastName",
+        "partnerCode",
+        "portalUrl",
+      ]),
+    },
+    {
+      key: "agreement_ready",
+      name: "Partnership Agreement — Ready to Sign",
+      category: "Onboarding",
+      subject: "Fintella partnership agreement — ready to sign",
+      preheader: "Your Fintella partnership agreement is ready for signature.",
+      heading: "Your partnership agreement is ready to sign",
+      bodyHtml:
+        "<p>Hi {firstName},</p>" +
+        "<p>Your Fintella partnership agreement is ready for your signature. " +
+        "Click the button below to review and sign — it should take under two minutes.</p>" +
+        "<p>Once it's signed, your account activates immediately and you can " +
+        "start submitting clients.</p>",
+      bodyText:
+        "Hi {firstName},\n\n" +
+        "Your Fintella partnership agreement is ready for your signature. Use the link below to review and sign — it should take under two minutes.\n\n" +
+        "Once it's signed, your account activates immediately and you can start submitting clients.",
+      ctaLabel: "Review & sign agreement",
+      ctaUrl: "{signingUrl}",
+      enabled: true,
+      isDraft: false,
+      description:
+        "Fired by /api/admin/agreement/[partnerCode] when an admin sends a SignWell agreement to a partner. The {signingUrl} variable is the embedded SignWell link returned by the API.",
+      variables: JSON.stringify([
+        "firstName",
+        "lastName",
+        "partnerCode",
+        "signingUrl",
+        "portalUrl",
+      ]),
+    },
+    {
+      key: "agreement_signed",
+      name: "Welcome Aboard — Agreement Signed",
+      category: "Onboarding",
+      subject: "Fintella: your partner account is active",
+      preheader: "Your partnership agreement has been signed. Welcome aboard.",
+      heading: "Your partner account is now active",
+      bodyHtml:
+        "<p>Hi {firstName},</p>" +
+        "<p>Your Fintella partnership agreement has been signed and your account " +
+        "is now <strong>active</strong>. You can submit clients, generate referral " +
+        "links, and track commissions from your dashboard.</p>" +
+        "<p>Welcome aboard.</p>",
+      bodyText:
+        "Hi {firstName},\n\n" +
+        "Your Fintella partnership agreement has been signed and your account is now ACTIVE. You can submit clients, generate referral links, and track commissions from your dashboard.\n\n" +
+        "Welcome aboard.",
+      ctaLabel: "Go to dashboard",
+      ctaUrl: "{portalUrl}/dashboard",
+      enabled: true,
+      isDraft: false,
+      description:
+        "Fired by the SignWell webhook on document_completed (after a partner signs their partnership agreement). Confirms activation and points them at the dashboard.",
+      variables: JSON.stringify([
+        "firstName",
+        "lastName",
+        "partnerCode",
+        "portalUrl",
+      ]),
+    },
+    {
+      key: "signup_notification",
+      name: "New Partner in Your Downline",
+      category: "Recruitment",
+      subject: "New downline partner: {recruitName}",
+      preheader: "{recruitName} joined your downline at {commissionRatePct}.",
+      heading: "A new partner just joined your downline",
+      bodyHtml:
+        "<p>Hi {inviterName},</p>" +
+        "<p><strong>{recruitName}</strong> has signed up as your " +
+        "{recruitTierUpper} partner at {commissionRatePct} commission.</p>" +
+        "<p>Next step: upload their countersigned partnership agreement from your " +
+        "Downline page so we can activate their account.</p>",
+      bodyText:
+        "Hi {inviterName},\n\n" +
+        "{recruitName} has signed up as your {recruitTierUpper} partner at {commissionRatePct} commission.\n\n" +
+        "Next step: upload their countersigned partnership agreement from your Downline page so we can activate their account.",
+      ctaLabel: "Open downline",
+      ctaUrl: "{portalUrl}/dashboard/downline",
+      enabled: true,
+      isDraft: false,
+      description:
+        "Fired to the L1 inviter when a recruit completes signup via their invite link. Reminds them to upload the signed partnership agreement from the Downline page.",
+      variables: JSON.stringify([
+        "inviterName",
+        "inviterCode",
+        "recruitName",
+        "recruitTier",
+        "recruitTierUpper",
+        "commissionRate",
+        "commissionRatePct",
+        "portalUrl",
+      ]),
+    },
+    // ─── Drafts (not yet wired) ────────────────────────────────────────────
+    {
+      key: "deal_status_update",
+      name: "Deal Status Update",
+      category: "Deal Updates",
+      subject: "Update on your referred client",
+      preheader: "Status update on a deal you submitted.",
+      heading: "Update on your referred client",
+      bodyHtml:
+        "<p>Hi {firstName},</p>" +
+        "<p>We wanted to provide you with an update on the status of your referred " +
+        "client <strong>{dealName}</strong>. The deal has moved to the " +
+        "<strong>{newStage}</strong> stage.</p>" +
+        "<p>You can view the latest details in your dashboard.</p>",
+      bodyText:
+        "Hi {firstName},\n\n" +
+        "We wanted to provide you with an update on the status of your referred client {dealName}. The deal has moved to the {newStage} stage.\n\n" +
+        "You can view the latest details in your dashboard.",
+      ctaLabel: "View deal",
+      ctaUrl: "{portalUrl}/dashboard/deals",
+      enabled: true,
+      isDraft: true,
+      description:
+        "DRAFT — not yet wired to any code path. Future automation will fire this when /api/webhook/referral PATCH advances a deal stage. Track the wiring work in a follow-up PR.",
+      variables: JSON.stringify([
+        "firstName",
+        "lastName",
+        "partnerCode",
+        "dealName",
+        "newStage",
+        "portalUrl",
+      ]),
+    },
+    {
+      key: "commission_payment_notification",
+      name: "Commission Payment Processed",
+      category: "Commissions",
+      subject: "Your commission has been processed",
+      preheader: "Commission of {amount} has been processed.",
+      heading: "Your commission payment is on its way",
+      bodyHtml:
+        "<p>Hi {firstName},</p>" +
+        "<p>Great news — your commission payment of <strong>{amount}</strong> " +
+        "for deal <strong>{dealName}</strong> has been processed and should arrive " +
+        "in your account within 2-3 business days.</p>" +
+        "<p>You can see the full payment history in your commissions dashboard.</p>",
+      bodyText:
+        "Hi {firstName},\n\n" +
+        "Great news — your commission payment of {amount} for deal {dealName} has been processed and should arrive in your account within 2-3 business days.\n\n" +
+        "You can see the full payment history in your commissions dashboard.",
+      ctaLabel: "View commissions",
+      ctaUrl: "{portalUrl}/dashboard/commissions",
+      enabled: true,
+      isDraft: true,
+      description:
+        "DRAFT — not yet wired to any code path. Future automation will fire this when a CommissionLedger entry flips to status=paid via the payouts batch process. Currently deferred per CLAUDE.md (Phase 15a-followup).",
+      variables: JSON.stringify([
+        "firstName",
+        "lastName",
+        "partnerCode",
+        "amount",
+        "dealName",
+        "portalUrl",
+      ]),
+    },
+    {
+      key: "monthly_newsletter",
+      name: "Monthly Partner Newsletter",
+      category: "Company Updates",
+      subject: "Fintella Monthly Update — {month}",
+      preheader: "Your {month} update from Fintella.",
+      heading: "Fintella Monthly Update — {month}",
+      bodyHtml:
+        "<p>Hi {firstName},</p>" +
+        "<p>Here's your monthly update from Fintella. This month we have some " +
+        "exciting news including new features, upcoming events, and program updates.</p>" +
+        "<p><em>(Newsletter content goes here. Edit this template in the " +
+        "Communications Hub to customize the body before each monthly send.)</em></p>",
+      bodyText:
+        "Hi {firstName},\n\n" +
+        "Here's your monthly update from Fintella. This month we have some exciting news including new features, upcoming events, and program updates.\n\n" +
+        "(Newsletter content goes here. Edit this template in the Communications Hub to customize the body before each monthly send.)",
+      ctaLabel: "Open dashboard",
+      ctaUrl: "{portalUrl}/dashboard",
+      enabled: true,
+      isDraft: true,
+      description:
+        "DRAFT — not yet wired to any automation. A future PR will add a scheduled send (1st of each month) that fires this template to all active partners. For now, it's editable and persisted but only an admin manual trigger could send it.",
+      variables: JSON.stringify([
+        "firstName",
+        "lastName",
+        "month",
+        "year",
+        "portalUrl",
+      ]),
+    },
+  ];
+
+  for (const t of emailTemplates) {
+    await prisma.emailTemplate.upsert({
+      where: { key: t.key },
+      update: {}, // never overwrite admin edits
+      create: t,
+    });
+  }
+  console.log("✓ " + emailTemplates.length + " email templates seeded (4 wired + 3 drafts)");
+
   // ── Portal Settings ───────────────────────────────────────────────────
   await prisma.portalSettings.upsert({
     where: { id: "global" },

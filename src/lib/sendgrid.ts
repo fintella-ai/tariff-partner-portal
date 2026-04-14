@@ -52,6 +52,16 @@ export interface SendEmailInput {
   partnerCode?: string | null;
   /** Override the default reply-to. */
   replyTo?: string;
+  /**
+   * Override the default From email (env var SENDGRID_FROM_EMAIL). Used by
+   * EmailTemplate rows that have a per-template `fromEmail` override set.
+   */
+  fromEmail?: string;
+  /**
+   * Override the default From name (env var SENDGRID_FROM_NAME). Used by
+   * EmailTemplate rows that have a per-template `fromName` override set.
+   */
+  fromName?: string;
 }
 
 export interface SendEmailResult {
@@ -69,13 +79,18 @@ export interface SendEmailResult {
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   const text = input.text;
   const bodyPreview = text.slice(0, 300);
+  // Effective From / Reply-To: per-template overrides take precedence over
+  // env-var defaults. EmailTemplate rows in the DB can set their own
+  // fromEmail / fromName / replyTo without touching Vercel env vars.
+  const effectiveFromEmail = input.fromEmail || SENDGRID_FROM_EMAIL;
+  const effectiveFromName = input.fromName || SENDGRID_FROM_NAME;
 
   // ── Demo mode: log it and short-circuit ───────────────────────────────────
   if (!SENDGRID_API_KEY) {
     await logEmail({
       partnerCode: input.partnerCode ?? null,
       toEmail: input.to,
-      fromEmail: SENDGRID_FROM_EMAIL,
+      fromEmail: effectiveFromEmail,
       subject: input.subject,
       bodyPreview,
       template: input.template,
@@ -95,10 +110,10 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
           subject: input.subject,
         },
       ],
-      from: { email: SENDGRID_FROM_EMAIL, name: SENDGRID_FROM_NAME },
+      from: { email: effectiveFromEmail, name: effectiveFromName },
       reply_to: input.replyTo
         ? { email: input.replyTo }
-        : { email: SENDGRID_FROM_EMAIL, name: SENDGRID_FROM_NAME },
+        : { email: effectiveFromEmail, name: effectiveFromName },
       content: [
         { type: "text/plain", value: text },
         { type: "text/html", value: input.html },
@@ -123,7 +138,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       await logEmail({
         partnerCode: input.partnerCode ?? null,
         toEmail: input.to,
-        fromEmail: SENDGRID_FROM_EMAIL,
+        fromEmail: effectiveFromEmail,
         subject: input.subject,
         bodyPreview,
         template: input.template,
@@ -140,7 +155,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     await logEmail({
       partnerCode: input.partnerCode ?? null,
       toEmail: input.to,
-      fromEmail: SENDGRID_FROM_EMAIL,
+      fromEmail: effectiveFromEmail,
       subject: input.subject,
       bodyPreview,
       template: input.template,
@@ -154,7 +169,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     await logEmail({
       partnerCode: input.partnerCode ?? null,
       toEmail: input.to,
-      fromEmail: SENDGRID_FROM_EMAIL,
+      fromEmail: effectiveFromEmail,
       subject: input.subject,
       bodyPreview,
       template: input.template,
@@ -281,6 +296,74 @@ function escapeAttr(s: string): string {
   return escapeHtml(s);
 }
 
+// ─── Template lookup + variable interpolation ────────────────────────────────
+//
+// Each `sendXxxEmail()` helper below first tries to load its template by `key`
+// from the `EmailTemplate` table. If the row exists and is enabled, the helper
+// uses the persisted subject/heading/bodyHtml/bodyText/cta with `{variable}`
+// interpolation against a vars map the caller builds from its inputs. If the
+// row is missing, disabled, or the DB lookup throws (e.g. Neon hiccup), the
+// helper falls back to the existing hardcoded content so partner-facing flows
+// never break on a template-table outage.
+//
+// Per-template `fromEmail`, `fromName`, and `replyTo` overrides flow through
+// to `sendEmail()` and take precedence over the env-var defaults — that's how
+// the Communications Hub edit form lets admins set per-template senders
+// without touching Vercel env vars.
+
+interface TemplateLookup {
+  subject: string;
+  preheader: string | null;
+  heading: string;
+  bodyHtml: string;
+  bodyText: string;
+  ctaLabel: string | null;
+  ctaUrl: string | null;
+  fromEmail: string | null;
+  fromName: string | null;
+  replyTo: string | null;
+}
+
+async function loadTemplate(key: string): Promise<TemplateLookup | null> {
+  try {
+    const tpl = await prisma.emailTemplate.findUnique({ where: { key } });
+    if (!tpl || !tpl.enabled) return null;
+    return {
+      subject: tpl.subject,
+      preheader: tpl.preheader,
+      heading: tpl.heading,
+      bodyHtml: tpl.bodyHtml,
+      bodyText: tpl.bodyText,
+      ctaLabel: tpl.ctaLabel,
+      ctaUrl: tpl.ctaUrl,
+      fromEmail: tpl.fromEmail,
+      fromName: tpl.fromName,
+      replyTo: tpl.replyTo,
+    };
+  } catch (err) {
+    console.warn(`[SendGrid] template lookup failed for key=${key}, falling back to hardcoded:`, err);
+    return null;
+  }
+}
+
+/**
+ * Linear-time {variable} interpolation. `escape` is applied to each value
+ * before substitution — pass `escapeHtml` for HTML fields and an identity
+ * function for plain text / pre-trusted URL fields. Unknown variables are
+ * left intact so the admin can spot typos in their template.
+ */
+function interpolate(
+  template: string,
+  vars: Record<string, string>,
+  escape: (s: string) => string = (s) => s
+): string {
+  return template.replace(/\{(\w+)\}/g, (m, k) => {
+    const v = vars[k];
+    if (v === undefined || v === null) return m;
+    return escape(String(v));
+  });
+}
+
 // ─── Template helpers ────────────────────────────────────────────────────────
 
 export interface PartnerEmailContext {
@@ -297,12 +380,49 @@ function partnerDisplayName(p: PartnerEmailContext): string {
 /**
  * Welcome email — fired on partner signup, before the agreement is signed.
  * Always sent (transactional / onboarding).
+ *
+ * Looks up the `welcome` template from EmailTemplate first; falls back to
+ * the hardcoded content below if the row is missing, disabled, or the DB
+ * lookup throws.
  */
 export async function sendWelcomeEmail(
   partner: PartnerEmailContext
 ): Promise<SendEmailResult> {
   const name = partnerDisplayName(partner);
-  // Heading is plain text; the HTML shell escapes it via buildHtml.
+  const vars: Record<string, string> = {
+    firstName: partner.firstName || name,
+    lastName: partner.lastName || "",
+    partnerCode: partner.partnerCode,
+    portalUrl: PORTAL_URL,
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+  };
+
+  const tpl = await loadTemplate("welcome");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || undefined,
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : undefined,
+    });
+    return sendEmail({
+      to: partner.email,
+      toName: name,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "welcome",
+      partnerCode: partner.partnerCode,
+      replyTo: tpl.replyTo || undefined,
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
   const heading = `Welcome to ${FIRM_SHORT}, ${name}`;
   const bodyHtml = `
     <p>Your partner account is now created. Your partner code is
@@ -339,12 +459,50 @@ If you have any questions, just reply to this email.`;
  * Agreement-ready email — fired immediately after a SignWell document is sent
  * to the partner. Includes the embedded signing link when available, otherwise
  * directs them to log in.
+ *
+ * Looks up the `agreement_ready` template from EmailTemplate first; falls
+ * back to hardcoded content if the row is missing.
  */
 export async function sendAgreementReadyEmail(
   partner: PartnerEmailContext,
   signingUrl: string | null
 ): Promise<SendEmailResult> {
   const name = partnerDisplayName(partner);
+  const vars: Record<string, string> = {
+    firstName: partner.firstName || name,
+    lastName: partner.lastName || "",
+    partnerCode: partner.partnerCode,
+    signingUrl: signingUrl || `${PORTAL_URL}/dashboard`,
+    portalUrl: PORTAL_URL,
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+  };
+
+  const tpl = await loadTemplate("agreement_ready");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || undefined,
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : undefined,
+    });
+    return sendEmail({
+      to: partner.email,
+      toName: name,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "agreement_ready",
+      partnerCode: partner.partnerCode,
+      replyTo: tpl.replyTo || undefined,
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
   const heading = "Your partnership agreement is ready to sign";
   const bodyHtml = `
     <p>Hi ${escapeHtml(name)},</p>
@@ -380,11 +538,48 @@ Once it's signed, your account activates immediately and you can start submittin
 /**
  * Agreement-signed email — fired from the SignWell webhook on
  * `document_completed`. Confirms activation and points them at the dashboard.
+ *
+ * Looks up the `agreement_signed` template from EmailTemplate first; falls
+ * back to hardcoded content if the row is missing.
  */
 export async function sendAgreementSignedEmail(
   partner: PartnerEmailContext
 ): Promise<SendEmailResult> {
   const name = partnerDisplayName(partner);
+  const vars: Record<string, string> = {
+    firstName: partner.firstName || name,
+    lastName: partner.lastName || "",
+    partnerCode: partner.partnerCode,
+    portalUrl: PORTAL_URL,
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+  };
+
+  const tpl = await loadTemplate("agreement_signed");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || undefined,
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : undefined,
+    });
+    return sendEmail({
+      to: partner.email,
+      toName: name,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "agreement_signed",
+      partnerCode: partner.partnerCode,
+      replyTo: tpl.replyTo || undefined,
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
   const heading = "Your partner account is now active";
   const bodyHtml = `
     <p>Hi ${escapeHtml(name)},</p>
@@ -421,6 +616,9 @@ Welcome aboard.`;
  * L1 inviter notification — fired when a recruit completes signup via an
  * invite link. Tells the L1 a new downline partner just joined and reminds
  * them to upload the signed agreement.
+ *
+ * Looks up the `signup_notification` template from EmailTemplate first;
+ * falls back to hardcoded content if the row is missing.
  */
 export async function sendInviterSignupNotificationEmail(opts: {
   inviterEmail: string;
@@ -431,6 +629,44 @@ export async function sendInviterSignupNotificationEmail(opts: {
   commissionRate: number; // 0.10..0.25
 }): Promise<SendEmailResult> {
   const ratePct = Math.round(opts.commissionRate * 100);
+  const vars: Record<string, string> = {
+    inviterName: opts.inviterName,
+    inviterCode: opts.inviterCode,
+    recruitName: opts.recruitName,
+    recruitTier: opts.recruitTier,
+    recruitTierUpper: opts.recruitTier.toUpperCase(),
+    commissionRate: String(opts.commissionRate),
+    commissionRatePct: `${ratePct}%`,
+    portalUrl: PORTAL_URL,
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+  };
+
+  const tpl = await loadTemplate("signup_notification");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || undefined,
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : undefined,
+    });
+    return sendEmail({
+      to: opts.inviterEmail,
+      toName: opts.inviterName,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "signup_notification",
+      partnerCode: opts.inviterCode,
+      replyTo: tpl.replyTo || undefined,
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
   const heading = "A new partner just joined your downline";
   const bodyHtml = `
     <p>Hi ${escapeHtml(opts.inviterName)},</p>

@@ -606,6 +606,48 @@ model AiUsageDay {
   @@index([date])
 }
 
+// ─── EMAIL TEMPLATES ─────────────────────────────────────────────────────────
+// Editable transactional email templates. Each row is a template that the
+// admin Communications Hub can edit. The `key` field is what `src/lib/sendgrid.ts`
+// looks up at send time — for the four wired templates (welcome, agreement_ready,
+// agreement_signed, signup_notification) the key matches the existing helper
+// names in the lib, and editing the row in the DB changes what gets sent on
+// the next real partner event. Templates with `isDraft = true` are placeholder
+// stubs in the UI that aren't yet wired to any code path (deal_status_update,
+// commission_payment_notification, monthly_newsletter — added per the
+// admin/communications mock UI that John wanted persisted).
+//
+// Variable interpolation: subject / heading / bodyHtml / bodyText / ctaLabel /
+// ctaUrl / preheader all support {variable} substitution. Each template
+// declares its supported variables in the `variables` JSON field as a hint to
+// the admin Edit form. HTML fields are HTML-escaped on substitution; plain
+// text fields are not.
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  key         String   @unique             // welcome, agreement_ready, ... (matches sendgrid.ts lookup keys)
+  name        String                       // display name in the Communications Hub UI
+  category    String                       // Onboarding, Deal Updates, Commissions, Company Updates, etc.
+  subject     String                       // email subject line (supports {variables})
+  preheader   String?                      // hidden preview text shown by inbox clients
+  heading     String                       // h1 heading inside the email body shell
+  bodyHtml    String                       // HTML body content (wrapped in shell at send time)
+  bodyText    String                       // plain text body content (wrapped at send time)
+  ctaLabel    String?                      // CTA button label (optional)
+  ctaUrl      String?                      // CTA button URL (optional, supports {variables})
+  fromEmail   String?                      // override SENDGRID_FROM_EMAIL env var per template
+  fromName    String?                      // override SENDGRID_FROM_NAME env var per template
+  replyTo     String?                      // reply-to header (defaults to from address)
+  enabled     Boolean  @default(true)      // soft-disable without deleting; disabled templates fall back to hardcoded
+  isDraft     Boolean  @default(false)     // unwired placeholder for future automation work
+  description String?                      // admin-facing notes about when this template fires
+  variables   String?                      // JSON array of variable names available for interpolation
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+  @@index([category])
+}
+
 // ─── EMAIL LOG (Phase 15a — SendGrid) ────────────────────────────────────────
 // Every outbound transactional email is logged here, whether it went out via
 // the real SendGrid API or was a demo/no-op send. Surfaces in the admin
