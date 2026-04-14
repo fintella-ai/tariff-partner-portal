@@ -132,6 +132,18 @@ const FIELDS = [
     fields: ["affiliate_notes"],
     desc: "Any additional notes or comments from the form submission.",
   },
+  {
+    category: "Idempotency",
+    colorVar: "--doc-blue",
+    fields: ["idempotencyKey", "idempotency_key"],
+    desc: "Optional. Any unique string (e.g. your internal form submission ID). If you POST the same key twice, the second call returns 200 with the original dealId and no duplicate is created. Strongly recommended on every POST to make retries safe.",
+  },
+  {
+    category: "Event Type",
+    colorVar: "--doc-text-muted",
+    fields: ["event"],
+    desc: "Optional. If present, must be one of: referral.submitted, referral.stage_updated, referral.closed. Leave unset to match existing payloads.",
+  },
 ];
 
 const STEPS = [
@@ -163,10 +175,13 @@ export default function WebhookGuidePage() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {[
                 { href: "#overview", label: "Overview" },
+                { href: "#security", label: "Security" },
                 { href: "#deal-creation", label: "Deal Creation (POST)" },
                 { href: "#store-deal-id", label: "Store Deal ID" },
                 { href: "#update-deal", label: "Updating a Deal (PATCH)" },
                 { href: "#closing-deal", label: "Closing a Deal" },
+                { href: "#curl-examples", label: "cURL Examples" },
+                { href: "#error-handling", label: "Error Handling" },
                 { href: "#health-check", label: "Health Check" },
               ].map((item) => (
                 <a
@@ -201,9 +216,11 @@ export default function WebhookGuidePage() {
             <div style={{ marginTop: 20, background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden" }}>
               {[
                 ["Webhook URL", "https://fintella.partners/api/webhook/referral"],
-                ["Methods", "POST (create) · PATCH (update)"],
+                ["Methods", "POST (create) · PATCH (update) · GET (health)"],
                 ["Content-Type", "application/json"],
-                ["Security Header", "x-webhook-secret: [provided separately]"],
+                ["Authentication", "X-Fintella-Api-Key: [provided separately]"],
+                ["Rate Limit", "60 requests / 60 seconds per API key"],
+                ["Idempotency", "optional idempotencyKey field on POST body"],
               ].map(([label, value], i) => (
                 <div key={label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", padding: "14px 20px", borderTop: i > 0 ? "1px solid var(--doc-border-subtle)" : "none", gap: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: "var(--doc-text-muted)", textTransform: "uppercase", letterSpacing: 1, width: 150, flexShrink: 0 }}>{label}</div>
@@ -212,8 +229,82 @@ export default function WebhookGuidePage() {
               ))}
             </div>
             <InfoBox>
-              The security header is required on all requests. The secret token will be provided separately via secure channel.
+              The API key will be provided via a secure channel (never in docs, never in email). The full security contract — auth schemes, rate limits, HMAC, idempotency — is documented in the next section.
             </InfoBox>
+          </Section>
+          </div>
+
+          {/* ═══ SECURITY & RELIABILITY ═══ */}
+          <div id="security" style={{ scrollMarginTop: 20 }}>
+          <Section title="Security & Reliability">
+            <p style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 16 }}>
+              The webhook applies four independent protections in front of every request: API-key auth, per-key rate limiting, optional HMAC signature verification, and idempotency enforcement. Here is the full contract so you can implement it correctly on first attempt.
+            </p>
+
+            {/* Auth block */}
+            <div style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", borderLeftWidth: 3, borderLeftColor: "var(--doc-gold)", marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--doc-gold)", marginBottom: 10 }}>1. API Key Authentication</div>
+              <p style={{ fontSize: 13, color: "var(--doc-text-secondary)", lineHeight: 1.6, marginTop: 0, marginBottom: 10 }}>
+                Send the shared API key on every request as an HTTP header. Two header names are accepted — use whichever is easier for your side:
+              </p>
+              <ul style={{ fontSize: 13, color: "var(--doc-text-secondary)", lineHeight: 1.7, marginTop: 0, marginBottom: 10, paddingLeft: 20 }}>
+                <li>Preferred: <Code>X-Fintella-Api-Key: &lt;key&gt;</Code></li>
+                <li>Legacy (still accepted): <Code>x-webhook-secret: &lt;key&gt;</Code> or <Code>Authorization: Bearer &lt;key&gt;</Code></li>
+              </ul>
+              <p style={{ fontSize: 13, color: "var(--doc-text-secondary)", lineHeight: 1.6, marginTop: 0, marginBottom: 0 }}>
+                A request with no valid key returns <Code>401 Unauthorized</Code>. Never log, screenshot, or paste the key in tickets or chat.
+              </p>
+            </div>
+
+            {/* Rate limit block */}
+            <div style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", borderLeftWidth: 3, borderLeftColor: "var(--doc-orange)", marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--doc-orange)", marginBottom: 10 }}>2. Rate Limit</div>
+              <p style={{ fontSize: 13, color: "var(--doc-text-secondary)", lineHeight: 1.6, marginTop: 0, marginBottom: 10 }}>
+                <strong style={{ color: "var(--doc-text)" }}>60 requests per 60 seconds per API key</strong>, sliding window. If you exceed this you receive:
+              </p>
+              <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 8, padding: "10px 14px", fontSize: 12, lineHeight: 1.5, color: "var(--doc-pre-text)", overflowX: "auto", margin: "0 0 10px" }}>
+{`HTTP/1.1 429 Too Many Requests
+Retry-After: 17
+
+{ "error": "Too many requests", "retryAfter": 17 }`}
+              </pre>
+              <p style={{ fontSize: 13, color: "var(--doc-text-secondary)", lineHeight: 1.6, marginTop: 0, marginBottom: 0 }}>
+                Respect the <Code>Retry-After</Code> header (value is in seconds). For bulk backfills please coordinate with us directly rather than hammering the endpoint.
+              </p>
+            </div>
+
+            {/* Idempotency block */}
+            <div style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", borderLeftWidth: 3, borderLeftColor: "var(--doc-blue)", marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--doc-blue)", marginBottom: 10 }}>3. Idempotency</div>
+              <p style={{ fontSize: 13, color: "var(--doc-text-secondary)", lineHeight: 1.6, marginTop: 0, marginBottom: 10 }}>
+                Add an optional top-level <Code>idempotencyKey</Code> field to every POST body. Any unique string works — your internal form submission UUID, a hash of the payload, or a random token you generate once per submission:
+              </p>
+              <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 8, padding: "10px 14px", fontSize: 12, lineHeight: 1.5, color: "var(--doc-pre-text)", overflowX: "auto", margin: "0 0 10px" }}>
+{`{
+  "idempotencyKey": "fl-ref-20260414-abc123",
+  "utm_content": "PTNABC123",
+  "first_name": "Jane",
+  ...
+}`}
+              </pre>
+              <p style={{ fontSize: 13, color: "var(--doc-text-secondary)", lineHeight: 1.6, marginTop: 0, marginBottom: 0 }}>
+                The <em>first</em> POST with a new key returns <Code>201 Created</Code> with the new <Code>dealId</Code>. Any <em>subsequent</em> POST with the <strong style={{ color: "var(--doc-text)" }}>same</strong> key returns <Code>200 OK</Code> with <Code>idempotent: true</Code> pointing at the original deal — no duplicate is created. This makes retries on network error completely safe. <strong style={{ color: "var(--doc-gold)" }}>We strongly recommend sending it on every POST.</strong>
+              </p>
+            </div>
+
+            {/* HMAC block */}
+            <div style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", borderLeftWidth: 3, borderLeftColor: "var(--doc-purple)" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--doc-purple)", marginBottom: 10 }}>4. HMAC Signature (optional, not yet enforced)</div>
+              <p style={{ fontSize: 13, color: "var(--doc-text-secondary)", lineHeight: 1.6, marginTop: 0, marginBottom: 10 }}>
+                For defense in depth against API-key leaks, you can optionally include an HMAC-SHA256 signature of the request body. Compute it with a shared secret we provide (separate from the API key) and send it in the header:
+              </p>
+              <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 8, padding: "10px 14px", fontSize: 12, lineHeight: 1.5, color: "var(--doc-pre-text)", overflowX: "auto", margin: "0 0 10px" }}>
+{`X-Fintella-Signature: sha256=<hex digest of HMAC-SHA256(rawBody, secret)>`}
+              </pre>
+              <p style={{ fontSize: 13, color: "var(--doc-text-secondary)", lineHeight: 1.6, marginTop: 0, marginBottom: 0 }}>
+                Currently this is <strong style={{ color: "var(--doc-yellow)" }}>accepted and verified but not enforced</strong> — mismatches are logged in our error tracker only. We will flip to hard enforcement once your side is ready. Coordinate before sending live signed traffic.
+              </p>
+            </div>
           </Section>
           </div>
 
@@ -270,9 +361,11 @@ export default function WebhookGuidePage() {
           {/* POST Responses */}
           <Section title="POST Responses">
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <ResponseBlock color="var(--doc-green)" label="201 Created" body={`{\n  "received": true,\n  "dealId": "clx1234...",\n  "dealName": "Acme Imports LLC",\n  "partnerCode": "PTNABC123"\n}`} />
+              <ResponseBlock color="var(--doc-green)" label="201 Created (new deal)" body={`{\n  "received": true,\n  "dealId": "clx1234...",\n  "dealName": "Acme Imports LLC",\n  "partnerCode": "PTNABC123"\n}`} />
+              <ResponseBlock color="var(--doc-blue)" label="200 OK (idempotent replay — same idempotencyKey as a prior POST)" body={`{\n  "received": true,\n  "dealId": "clx1234...",\n  "dealName": "Acme Imports LLC",\n  "partnerCode": "PTNABC123",\n  "idempotent": true\n}`} />
               <ResponseBlock color="var(--doc-yellow)" label="400 Validation Error" body={`{\n  "error": "At least one of: name, email, or company is required"\n}`} />
-              <ResponseBlock color="var(--doc-red)" label="401 Unauthorized" body={`{\n  "error": "Unauthorized"\n}`} />
+              <ResponseBlock color="var(--doc-red)" label="401 Unauthorized (missing or wrong API key)" body={`{\n  "error": "Unauthorized"\n}`} />
+              <ResponseBlock color="var(--doc-orange)" label="429 Too Many Requests (rate limit)" body={`{\n  "error": "Too many requests",\n  "retryAfter": 17\n}`} />
             </div>
           </Section>
 
@@ -432,6 +525,128 @@ export default function WebhookGuidePage() {
           </div>
           </div>
 
+          {/* ═══ CURL EXAMPLES ═══ */}
+          <div id="curl-examples" style={{ scrollMarginTop: 20 }}>
+          <Section title="cURL Examples">
+            <p style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 16 }}>
+              Three end-to-end examples. Replace <Code>$FINTELLA_KEY</Code> with the API key we provided.
+            </p>
+
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-green)", marginBottom: 8 }}>1. New referral (POST)</div>
+            <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "14px 20px", fontSize: 12, lineHeight: 1.6, color: "var(--doc-pre-text)", overflowX: "auto", margin: "0 0 20px" }}>
+{`curl -X POST https://fintella.partners/api/webhook/referral \\
+  -H "Content-Type: application/json" \\
+  -H "X-Fintella-Api-Key: $FINTELLA_KEY" \\
+  -d '{
+    "idempotencyKey": "fl-ref-20260414-abc123",
+    "utm_content": "PTNABC123",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "email": "jane@acmeimports.com",
+    "phone": "(555) 123-4567",
+    "legal_entity_name": "Acme Imports LLC",
+    "service_of_interest": "Tariff Refund Support",
+    "city": "Phoenix",
+    "state": "AZ",
+    "imports_goods": "Yes",
+    "import_countries": "China, Vietnam",
+    "annual_import_value": "$1M - $5M"
+  }'
+
+# → 201 Created
+# { "received": true, "dealId": "clx8f9abc123", "dealName": "Acme Imports LLC", "partnerCode": "PTNABC123" }`}
+            </pre>
+
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-orange)", marginBottom: 8 }}>2. Stage update (PATCH)</div>
+            <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "14px 20px", fontSize: 12, lineHeight: 1.6, color: "var(--doc-pre-text)", overflowX: "auto", margin: "0 0 20px" }}>
+{`curl -X PATCH https://fintella.partners/api/webhook/referral \\
+  -H "Content-Type: application/json" \\
+  -H "X-Fintella-Api-Key: $FINTELLA_KEY" \\
+  -d '{
+    "dealId": "clx8f9abc123",
+    "dealstage": "Contract Sent",
+    "estimated_refund_amount": 250000,
+    "firm_fee_rate": 20
+  }'
+
+# → 200 OK
+# { "updated": true, "dealId": "clx8f9abc123", "dealName": "Acme Imports LLC",
+#   "fieldsUpdated": ["externalStage", "estimatedRefundAmount", "firmFeeRate"] }`}
+            </pre>
+
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-green)", marginBottom: 8 }}>3. Closed won (PATCH)</div>
+            <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "14px 20px", fontSize: 12, lineHeight: 1.6, color: "var(--doc-pre-text)", overflowX: "auto", margin: "0 0 0" }}>
+{`curl -X PATCH https://fintella.partners/api/webhook/referral \\
+  -H "Content-Type: application/json" \\
+  -H "X-Fintella-Api-Key: $FINTELLA_KEY" \\
+  -d '{
+    "dealId": "clx8f9abc123",
+    "dealstage": "Closed Won",
+    "estimated_refund_amount": 300000,
+    "firm_fee_rate": 20,
+    "firm_fee_amount": 60000
+  }'
+
+# → 200 OK
+# closeDate is automatically stamped when stage normalizes to "closedwon" or "closedlost"`}
+            </pre>
+            <InfoBox>
+              A testing sandbox is available on request — ask us and we will issue a preview-only API key that points at an isolated deal table.
+            </InfoBox>
+          </Section>
+          </div>
+
+          {/* ═══ ERROR HANDLING & RETRY ═══ */}
+          <div id="error-handling" style={{ scrollMarginTop: 20 }}>
+          <Section title="Error Handling & Retry Strategy">
+            <p style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 16 }}>
+              The webhook returns standard HTTP status codes. Handle them as follows:
+            </p>
+
+            <div style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
+              {[
+                ["201", "Created", "New deal successfully created. Store the returned dealId.", "var(--doc-green)"],
+                ["200", "OK", "Either an idempotent replay of a prior POST, or a successful PATCH update.", "var(--doc-blue)"],
+                ["400", "Bad Request", "Invalid JSON, missing required fields, or invalid event type. Do NOT retry — fix the payload.", "var(--doc-yellow)"],
+                ["401", "Unauthorized", "Missing or wrong API key. Do NOT retry — check your X-Fintella-Api-Key header.", "var(--doc-red)"],
+                ["404", "Not Found", "PATCH with an unknown dealId. Do NOT retry — verify the dealId you're updating.", "var(--doc-red)"],
+                ["429", "Too Many Requests", "Rate limit exceeded. Respect the Retry-After header and retry after the indicated number of seconds.", "var(--doc-orange)"],
+                ["5xx", "Server Error", "Our side is having a problem. Retry with exponential backoff (see schedule below). Max 5 attempts.", "var(--doc-purple)"],
+              ].map(([code, name, desc, color], i) => (
+                <div key={code} style={{ padding: "14px 20px", borderTop: i > 0 ? "1px solid var(--doc-border-subtle)" : "none" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: color }} />
+                    <span style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 700, color }}>{code}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-text)" }}>{name}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--doc-text-secondary)", lineHeight: 1.5, paddingLeft: 18 }}>{desc}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-text)", marginBottom: 8 }}>Recommended retry schedule for 5xx and 429:</div>
+            <div style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden", marginBottom: 16 }}>
+              {[
+                ["Attempt 1", "immediately"],
+                ["Attempt 2", "after 30 seconds"],
+                ["Attempt 3", "after 2 minutes"],
+                ["Attempt 4", "after 10 minutes"],
+                ["Attempt 5", "after 1 hour"],
+                ["Give up", "log + alert your ops channel"],
+              ].map(([step, delay], i) => (
+                <div key={step} style={{ display: "flex", padding: "10px 20px", borderTop: i > 0 ? "1px solid var(--doc-border-subtle)" : "none", fontSize: 13 }}>
+                  <div style={{ width: 120, color: "var(--doc-text-muted)", flexShrink: 0 }}>{step}</div>
+                  <div style={{ fontFamily: "monospace", color: "var(--doc-text-secondary)" }}>{delay}</div>
+                </div>
+              ))}
+            </div>
+
+            <InfoBox>
+              <strong style={{ color: "var(--doc-gold)" }}>Never retry 4xx errors except 429.</strong> A 400/401/404 means the request itself is malformed — retrying will just produce the same error. Fix the payload or credentials first.
+            </InfoBox>
+          </Section>
+          </div>
+
           {/* ═══ HEALTH CHECK ═══ */}
           <div id="health-check" style={{ scrollMarginTop: 20 }}>
           <Section title="Health Check">
@@ -444,9 +659,9 @@ export default function WebhookGuidePage() {
           </div>
 
           {/* Footer */}
-          <div style={{ borderTop: "1px solid var(--doc-border)", paddingTop: 20, marginTop: 48, display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--doc-text-faint)" }}>
+          <div style={{ borderTop: "1px solid var(--doc-border)", paddingTop: 20, marginTop: 48, display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 8, fontSize: 11, color: "var(--doc-text-faint)" }}>
             <span>Fintella Partner Portal &mdash; Webhook Integration Guide</span>
-            <span>April 2026</span>
+            <span>Last updated: April 14, 2026</span>
           </div>
         </div>
       </div>
