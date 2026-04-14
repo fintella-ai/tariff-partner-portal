@@ -27,29 +27,55 @@ interface VideoModalProps {
  *  - vimeo.com/XXX            -> player.vimeo.com/video/XXX
  */
 function toEmbedUrl(url: string): string {
-  // Already an embed URL — pass through.
-  if (url.includes("/embed/") || url.includes("player.vimeo.com")) {
+  // Parse the URL so we can match on hostname explicitly rather than via
+  // substring checks. Substring matching against the full URL is fragile —
+  // an attacker could craft `https://attacker.com/?fake=/embed/foo` which
+  // contains "/embed/" but is NOT a YouTube embed URL, and would bypass
+  // a naive `url.includes("/embed/")` check. The parsed-URL approach is
+  // what CodeQL's `js/incomplete-url-substring-sanitization` rule wants.
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    // Not a valid URL (could be a relative path, a file path, an HLS
+    // playlist string, etc.) — return as-is for the iframe to handle.
+    return url;
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  const path = parsed.pathname;
+
+  // Already an embed URL on a known provider — pass through.
+  const isYoutubeEmbed =
+    (host === "youtube.com" || host === "www.youtube.com") &&
+    path.startsWith("/embed/");
+  const isVimeoEmbed = host === "player.vimeo.com";
+  if (isYoutubeEmbed || isVimeoEmbed) {
     return url;
   }
 
   // Standard YouTube watch URL: youtube.com/watch?v=VIDEO_ID
-  const ytWatchMatch = url.match(
-    /(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]+)/
-  );
-  if (ytWatchMatch) {
-    return `https://www.youtube.com/embed/${ytWatchMatch[1]}`;
+  if (host === "youtube.com" || host === "www.youtube.com") {
+    const v = parsed.searchParams.get("v");
+    if (v && /^[A-Za-z0-9_-]+$/.test(v)) {
+      return `https://www.youtube.com/embed/${v}`;
+    }
   }
 
   // Short YouTube share URL: youtu.be/VIDEO_ID
-  const ytShortMatch = url.match(/youtu\.be\/([A-Za-z0-9_-]+)/);
-  if (ytShortMatch) {
-    return `https://www.youtube.com/embed/${ytShortMatch[1]}`;
+  if (host === "youtu.be") {
+    const id = path.replace(/^\//, "");
+    if (id && /^[A-Za-z0-9_-]+$/.test(id)) {
+      return `https://www.youtube.com/embed/${id}`;
+    }
   }
 
   // Vimeo URL: vimeo.com/VIDEO_ID
-  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-  if (vimeoMatch) {
-    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  if (host === "vimeo.com" || host === "www.vimeo.com") {
+    const idMatch = path.match(/^\/(\d+)/);
+    if (idMatch) {
+      return `https://player.vimeo.com/video/${idMatch[1]}`;
+    }
   }
 
   // Unrecognized — use as-is (could be a direct MP4, HLS, etc.).
