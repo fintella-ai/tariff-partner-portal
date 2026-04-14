@@ -52,6 +52,7 @@ type Deal = {
   estimatedRefundAmount: number;
   firmFeeRate: number | null;
   firmFeeAmount: number;
+  l1CommissionRate: number | null;
   l1CommissionAmount: number;
   l1CommissionStatus: string;
   l2CommissionAmount: number;
@@ -327,14 +328,15 @@ export default function AdminDealsPage() {
 
       {/* ═══ DESKTOP TABLE ═══ */}
       <div className="card hidden md:block overflow-x-auto">
-        <div className="min-w-[1040px]">
-        {/* Header — Partner / Stage / Refund / Firm Fee / Commission are
-            center-aligned per design. Deal name stays left-aligned (long
-            text + secondary subline) and Date stays right-aligned (terse).
-            Column gap bumped to gap-6 (24px) so $128,000-style values
-            don't bleed into adjacent columns. min-w bumped 920→1040 to
-            absorb the extra horizontal gap budget. */}
-        <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.6fr] gap-6 px-5 py-3 border-b border-[var(--app-border)]">
+        <div className="min-w-[1240px]">
+        {/* Header — 9 columns: Deal / Partner / Stage / Refund / Firm Fee % /
+            Firm Fee / Commission % / Commission / Date. The two rate columns
+            (Firm Fee % + Commission %) sit immediately before their dollar-
+            amount counterparts so the eye reads "20% × $X = $Y" left to right.
+            All center-aligned except Deal (left, long name) and Date (right,
+            terse trailing metadata). gap-6 + min-w-[1240px] (was 1040) to
+            absorb the two new columns. */}
+        <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.55fr_0.8fr_0.65fr_0.8fr_0.6fr] gap-6 px-5 py-3 border-b border-[var(--app-border)]">
           <button onClick={() => toggleSort("dealName")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-left hover:text-[var(--app-text-secondary)]">
             Deal{sortIcon("dealName")}
           </button>
@@ -345,9 +347,15 @@ export default function AdminDealsPage() {
           <button onClick={() => toggleSort("estimatedRefundAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)] w-full">
             Refund{sortIcon("estimatedRefundAmount")}
           </button>
+          <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center" title="Firm fee rate as a percentage of the deal refund">
+            Firm Fee (%)
+          </div>
           <button onClick={() => toggleSort("firmFeeAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)] w-full">
             Firm Fee{sortIcon("firmFeeAmount")}
           </button>
+          <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center" title="Commission rate as a percentage of the firm fee (per the partner's tier)">
+            Commission (%)
+          </div>
           <button onClick={() => toggleSort("l1CommissionAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)] w-full">
             Commission{sortIcon("l1CommissionAmount")}
           </button>
@@ -359,7 +367,7 @@ export default function AdminDealsPage() {
         {sorted.map((deal, idx) => (
           <div key={deal.id} id={`deal-${deal.id}`}>
             <div
-              className={`grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.6fr] gap-6 px-5 py-3.5 border-b border-[var(--app-border)] hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
+              className={`grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.55fr_0.8fr_0.65fr_0.8fr_0.6fr] gap-6 px-5 py-3.5 border-b border-[var(--app-border)] hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
               onClick={() => toggleExpand(deal)}
             >
               <div>
@@ -371,7 +379,13 @@ export default function AdminDealsPage() {
               </div>
               <div className="text-center"><StageBadge stage={deal.stage} /></div>
               <div className="font-body text-[13px] text-[var(--app-text)] text-center">{fmt$(deal.estimatedRefundAmount)}</div>
+              <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">
+                {deal.firmFeeRate != null ? `${(deal.firmFeeRate * 100).toFixed(0)}%` : "—"}
+              </div>
               <div className="font-body text-[13px] text-[var(--app-text-secondary)] text-center">{fmt$(deal.firmFeeAmount)}</div>
+              <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">
+                {deal.l1CommissionRate != null ? `${(deal.l1CommissionRate * 100).toFixed(0)}%` : "—"}
+              </div>
               <div className="font-display text-[14px] font-semibold text-brand-gold text-center">{fmt$(deal.l1CommissionAmount)}</div>
               <div className="font-body text-[12px] text-[var(--app-text-muted)] text-right">{fmtDate(deal.createdAt)}</div>
             </div>
