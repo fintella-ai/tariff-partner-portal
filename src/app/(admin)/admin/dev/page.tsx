@@ -54,6 +54,57 @@ export default function DevPage() {
   const [errors, setErrors] = useState<ErrorsData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ── Send Test Email panel state ──
+  const userEmail = (session?.user as any)?.email || "";
+  const [testEmailTo, setTestEmailTo] = useState("");
+  const [testEmailSending, setTestEmailSending] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState<{
+    ok: boolean;
+    status: string;
+    messageId: string | null;
+    error?: string;
+    sentAt?: string;
+    to?: string;
+  } | null>(null);
+
+  // Default the recipient to the logged-in admin's email once the session loads
+  useEffect(() => {
+    if (userEmail && !testEmailTo) setTestEmailTo(userEmail);
+  }, [userEmail, testEmailTo]);
+
+  const handleSendTestEmail = async () => {
+    if (!testEmailTo.trim()) return;
+    setTestEmailSending(true);
+    setTestEmailResult(null);
+    try {
+      const res = await fetch("/api/admin/dev/test-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: testEmailTo.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setTestEmailResult({
+          ok: false,
+          status: "failed",
+          messageId: null,
+          error: data.error || `HTTP ${res.status}`,
+        });
+      } else {
+        setTestEmailResult(data);
+      }
+    } catch (err: any) {
+      setTestEmailResult({
+        ok: false,
+        status: "failed",
+        messageId: null,
+        error: err?.message || "Network error",
+      });
+    } finally {
+      setTestEmailSending(false);
+    }
+  };
+
   useEffect(() => {
     if (!isSuperAdmin) { setLoading(false); return; }
     Promise.all([
@@ -165,6 +216,93 @@ export default function DevPage() {
             Documentation ↗
           </a>
         </div>
+      </div>
+
+      {/* ─── SEND TEST EMAIL (SendGrid diagnostic) ─── */}
+      <div className="card p-5 sm:p-6 mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg">✉️</span>
+          <div className="font-body font-semibold text-sm">Send Test Email</div>
+        </div>
+        <p className="font-body text-[12px] theme-text-muted mb-4 leading-relaxed">
+          Diagnostic SendGrid send. Calls the same <code className="font-mono text-[11px] theme-text-secondary">sendEmail()</code> code path as every transactional email and writes the result to <code className="font-mono text-[11px] theme-text-secondary">EmailLog</code> with <code className="font-mono text-[11px] theme-text-secondary">template=&quot;test&quot;</code>. Use this to verify <code className="font-mono text-[11px] theme-text-secondary">SENDGRID_API_KEY</code> auth + From-domain authorization without running a full signup.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-2 mb-3">
+          <input
+            type="email"
+            value={testEmailTo}
+            onChange={(e) => setTestEmailTo(e.target.value)}
+            placeholder="recipient@example.com"
+            className="flex-1 bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] outline-none focus:border-brand-gold/40 transition-colors placeholder:text-[var(--app-text-muted)]"
+            disabled={testEmailSending}
+          />
+          <button
+            onClick={handleSendTestEmail}
+            disabled={testEmailSending || !testEmailTo.trim()}
+            className="btn-gold text-[12px] px-5 py-2.5 disabled:opacity-50 min-h-[44px]"
+          >
+            {testEmailSending ? "Sending..." : "Send Test Email"}
+          </button>
+        </div>
+
+        {testEmailResult && (
+          <div
+            className="rounded-lg p-3 mt-2 font-body text-[12px] leading-relaxed"
+            style={{
+              background: testEmailResult.ok
+                ? "rgba(34,197,94,0.06)"
+                : "rgba(239,68,68,0.06)",
+              border: testEmailResult.ok
+                ? "1px solid rgba(34,197,94,0.25)"
+                : "1px solid rgba(239,68,68,0.25)",
+            }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: testEmailResult.ok ? "#22c55e" : "#ef4444",
+                }}
+              />
+              <span
+                className="font-semibold"
+                style={{ color: testEmailResult.ok ? "#22c55e" : "#ef4444" }}
+              >
+                {testEmailResult.status.toUpperCase()}
+              </span>
+              {testEmailResult.to && (
+                <span className="theme-text-muted text-[11px]">
+                  → {testEmailResult.to}
+                </span>
+              )}
+            </div>
+            {testEmailResult.status === "sent" && testEmailResult.messageId && (
+              <div className="theme-text-secondary">
+                Message ID:{" "}
+                <code className="font-mono text-[11px] theme-text-secondary select-all">
+                  {testEmailResult.messageId}
+                </code>
+              </div>
+            )}
+            {testEmailResult.status === "demo" && (
+              <div className="theme-text-secondary">
+                <code className="font-mono text-[11px]">SENDGRID_API_KEY</code> is not set in this environment — the send was a no-op but an EmailLog row was still written with <code className="font-mono text-[11px]">status=&quot;demo&quot;</code>.
+              </div>
+            )}
+            {testEmailResult.status === "failed" && testEmailResult.error && (
+              <div className="theme-text-secondary mt-1 break-words">
+                <span className="text-red-400">Error:</span>{" "}
+                {testEmailResult.error}
+              </div>
+            )}
+            <div className="theme-text-muted text-[11px] mt-2">
+              Open <code className="font-mono">/admin/partners/&lt;your partner&gt;</code> → Communication Log → Email tab to see the full EmailLog row, or check the inbox of <code className="font-mono">{testEmailResult.to}</code> for the actual delivery.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ─── RECENT COMMITS ─── */}
