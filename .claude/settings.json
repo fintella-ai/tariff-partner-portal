@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "//": "Claude Code project settings. Created per Day 1 BLOCK 8 of the 2-day launch plan. Most functional file exclusions come from .gitignore (Claude Code respects it by default); this file documents Claude-specific intent and collects future project-level configuration in one place.",
+  "ignorePatterns": [
+    "node_modules/**",
+    ".next/**",
+    "coverage/**",
+    ".vercel/**",
+    "out/**",
+    "prisma/dev.db",
+    "prisma/dev.db-journal"
+  ],
+  "permissions": {
+    "//": "Leaving the allow/deny lists empty — role-based permission boundaries for the deployed portal are enforced at the API route level (see CLAUDE.md → Admin role matrix).",
+    "allow": [],
+    "deny": []
+  }
+}
