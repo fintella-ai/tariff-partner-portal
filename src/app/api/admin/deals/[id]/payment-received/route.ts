@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { calcWaterfallCommissions, type PartnerChainNode } from "@/lib/commission";
+import { computeDealCommissions } from "@/lib/commission";
 
 /**
  * POST /api/admin/deals/[id]/payment-received
@@ -65,105 +65,164 @@ export async function POST(
       );
     }
 
-    // Walk the partner chain upward from the submitter so we know who earns what.
-    const submitter = await prisma.partner.findUnique({
-      where: { partnerCode: deal.partnerCode },
+    // Two-phase ledger handling:
+    //
+    //   1. If CommissionLedger already has entries for this deal (created by
+    //      the webhook PATCH when the deal first transitioned to closed_won),
+    //      flip any "pending" rows to "due" and stamp the deal. This is the
+    //      happy path going forward.
+    //
+    //   2. Otherwise fall back to CREATING entries with status="due" directly.
+    //      This covers deals that closed BEFORE the two-phase path shipped,
+    //      and deals that somehow reached closed_won without going through
+    //      the webhook (e.g. admin manual stage edit in /admin/deals).
+    const existingPending = await prisma.commissionLedger.findMany({
+      where: { dealId: deal.id, status: "pending" },
     });
-    if (!submitter) {
-      return NextResponse.json(
-        { error: `Submitting partner ${deal.partnerCode} not found` },
-        { status: 400 }
-      );
-    }
 
-    const chain: PartnerChainNode[] = [
-      { partnerCode: submitter.partnerCode, tier: submitter.tier, commissionRate: submitter.commissionRate },
-    ];
+    let result;
 
-    if (submitter.tier === "l3" && submitter.referredByPartnerCode) {
-      const l2 = await prisma.partner.findUnique({
-        where: { partnerCode: submitter.referredByPartnerCode },
+    if (existingPending.length > 0) {
+      // ── Path 1 — flip existing pending rows to due ──
+      result = await prisma.$transaction(async (tx) => {
+        const updatedDeal = await tx.deal.update({
+          where: { id: params.id },
+          data: {
+            paymentReceivedAt: new Date(),
+            paymentReceivedBy: adminEmail,
+            l1CommissionStatus: existingPending.some((e) => e.tier === "l1")
+              ? "due"
+              : deal.l1CommissionStatus,
+            l2CommissionStatus: existingPending.some((e) => e.tier === "l2")
+              ? "due"
+              : deal.l2CommissionStatus,
+          },
+        });
+
+        await tx.commissionLedger.updateMany({
+          where: { dealId: deal.id, status: "pending" },
+          data: { status: "due" },
+        });
+
+        const totalCommission = existingPending.reduce(
+          (s, e) => s + e.amount,
+          0
+        );
+        const noteBody =
+          `Payment received from Frost Law confirmed by ${adminName} (${adminEmail}). ` +
+          `${existingPending.length} pending commission ${existingPending.length === 1 ? "entry" : "entries"} ` +
+          `flipped to "due" (total $${totalCommission.toFixed(2)}): ` +
+          existingPending
+            .map(
+              (e) =>
+                `${e.tier.toUpperCase()} ${e.partnerCode} $${e.amount.toFixed(2)}`
+            )
+            .join(", ") +
+          ".";
+
+        await tx.dealNote.create({
+          data: {
+            dealId: deal.id,
+            content: noteBody,
+            authorName: adminName,
+            authorEmail: adminEmail,
+          },
+        });
+
+        return {
+          updatedDeal,
+          ledgerCount: existingPending.length,
+          totalCommission,
+          mode: "flipped_pending",
+          ledger: existingPending,
+        };
       });
-      if (l2) {
-        chain.push({ partnerCode: l2.partnerCode, tier: l2.tier, commissionRate: l2.commissionRate });
-        if (l2.referredByPartnerCode) {
-          const l1 = await prisma.partner.findUnique({
-            where: { partnerCode: l2.referredByPartnerCode },
-          });
-          if (l1) chain.push({ partnerCode: l1.partnerCode, tier: l1.tier, commissionRate: l1.commissionRate });
-        }
+    } else {
+      // ── Path 2 — fallback: create fresh with status="due" ──
+      const computed = await computeDealCommissions(prisma, {
+        partnerCode: deal.partnerCode,
+        firmFeeAmount: deal.firmFeeAmount,
+      });
+
+      if (computed.entries.length === 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Unable to compute commissions — check the partner chain (referredByPartnerCode) and firmFeeAmount on the deal.",
+          },
+          { status: 400 }
+        );
       }
-    } else if (submitter.tier === "l2" && submitter.referredByPartnerCode) {
-      const l1 = await prisma.partner.findUnique({
-        where: { partnerCode: submitter.referredByPartnerCode },
+
+      result = await prisma.$transaction(async (tx) => {
+        const updatedDeal = await tx.deal.update({
+          where: { id: params.id },
+          data: {
+            paymentReceivedAt: new Date(),
+            paymentReceivedBy: adminEmail,
+            l1CommissionStatus: computed.entries.some((e) => e.tier === "l1")
+              ? "due"
+              : deal.l1CommissionStatus,
+            l2CommissionStatus: computed.entries.some((e) => e.tier === "l2")
+              ? "due"
+              : deal.l2CommissionStatus,
+          },
+        });
+
+        const createdLedger = await Promise.all(
+          computed.entries.map((entry) =>
+            tx.commissionLedger.create({
+              data: {
+                partnerCode: entry.partnerCode,
+                dealId: deal.id,
+                dealName: deal.dealName,
+                tier: entry.tier,
+                amount: entry.amount,
+                status: "due",
+                periodMonth: new Date().toISOString().slice(0, 7),
+              },
+            })
+          )
+        );
+
+        const noteBody =
+          `Payment received from Frost Law confirmed by ${adminName} (${adminEmail}). ` +
+          `Firm fee: $${deal.firmFeeAmount.toFixed(2)}. ` +
+          `Commissions created directly as "due" (fallback — no pending ledger existed, likely because the deal closed before the webhook two-phase path shipped or was closed via admin stage edit): ` +
+          `${computed.entries.length} entries totaling $${computed.totalAmount.toFixed(2)} ` +
+          `(${computed.entries
+            .map(
+              (e) =>
+                `${e.tier.toUpperCase()} ${e.partnerCode} $${e.amount.toFixed(2)}`
+            )
+            .join(", ")}).`;
+
+        await tx.dealNote.create({
+          data: {
+            dealId: deal.id,
+            content: noteBody,
+            authorName: adminName,
+            authorEmail: adminEmail,
+          },
+        });
+
+        return {
+          updatedDeal,
+          ledgerCount: createdLedger.length,
+          totalCommission: computed.totalAmount,
+          mode: "created_fresh",
+          ledger: createdLedger,
+        };
       });
-      if (l1) chain.push({ partnerCode: l1.partnerCode, tier: l1.tier, commissionRate: l1.commissionRate });
     }
-
-    const waterfall = calcWaterfallCommissions(deal.firmFeeAmount, chain);
-
-    // Build ledger entries to create — only non-zero amounts.
-    const ledgerToCreate: Array<{ partnerCode: string; tier: string; amount: number }> = [];
-    const l1Node = chain.find((n) => n.tier === "l1");
-    const l2Node = chain.find((n) => n.tier === "l2");
-    const l3Node = chain.find((n) => n.tier === "l3");
-    if (l1Node && waterfall.l1Amount > 0) ledgerToCreate.push({ partnerCode: l1Node.partnerCode, tier: "l1", amount: waterfall.l1Amount });
-    if (l2Node && waterfall.l2Amount > 0) ledgerToCreate.push({ partnerCode: l2Node.partnerCode, tier: "l2", amount: waterfall.l2Amount });
-    if (l3Node && waterfall.l3Amount > 0) ledgerToCreate.push({ partnerCode: l3Node.partnerCode, tier: "l3", amount: waterfall.l3Amount });
-
-    // Single atomic transaction — Deal stamp + ledger writes + audit note.
-    const result = await prisma.$transaction(async (tx) => {
-      const updatedDeal = await tx.deal.update({
-        where: { id: params.id },
-        data: {
-          paymentReceivedAt: new Date(),
-          paymentReceivedBy: adminEmail,
-          l1CommissionStatus: waterfall.l1Amount > 0 ? "due" : deal.l1CommissionStatus,
-          l2CommissionStatus: waterfall.l2Amount > 0 ? "due" : deal.l2CommissionStatus,
-        },
-      });
-
-      const createdLedger = await Promise.all(
-        ledgerToCreate.map((entry) =>
-          tx.commissionLedger.create({
-            data: {
-              partnerCode: entry.partnerCode,
-              dealId: deal.id,
-              dealName: deal.dealName,
-              tier: entry.tier,
-              amount: entry.amount,
-              status: "due",
-              periodMonth: new Date().toISOString().slice(0, 7),
-            },
-          })
-        )
-      );
-
-      const totalCommission = ledgerToCreate.reduce((s, e) => s + e.amount, 0);
-      const noteBody =
-        `Payment received from Frost Law confirmed by ${adminName} (${adminEmail}). ` +
-        `Firm fee: $${deal.firmFeeAmount.toFixed(2)}. ` +
-        `Commissions queued for payout: ${ledgerToCreate.length} entries totaling $${totalCommission.toFixed(2)} ` +
-        `(${ledgerToCreate.map((e) => `${e.tier.toUpperCase()} ${e.partnerCode} $${e.amount.toFixed(2)}`).join(", ")}).`;
-
-      await tx.dealNote.create({
-        data: {
-          dealId: deal.id,
-          content: noteBody,
-          authorName: adminName,
-          authorEmail: adminEmail,
-        },
-      });
-
-      return { updatedDeal, createdLedger, totalCommission };
-    });
 
     return NextResponse.json({
       success: true,
       deal: result.updatedDeal,
-      ledgerCount: result.createdLedger.length,
+      ledgerCount: result.ledgerCount,
       totalCommission: result.totalCommission,
-      ledger: result.createdLedger,
+      mode: result.mode,
+      ledger: result.ledger,
     });
   } catch (e) {
     console.error("payment-received error:", e);
