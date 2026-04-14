@@ -327,23 +327,28 @@ export default function AdminDealsPage() {
 
       {/* ═══ DESKTOP TABLE ═══ */}
       <div className="card hidden md:block overflow-x-auto">
-        <div className="min-w-[920px]">
-        {/* Header */}
-        <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.6fr] gap-3 px-5 py-3 border-b border-[var(--app-border)]">
+        <div className="min-w-[1040px]">
+        {/* Header — Partner / Stage / Refund / Firm Fee / Commission are
+            center-aligned per design. Deal name stays left-aligned (long
+            text + secondary subline) and Date stays right-aligned (terse).
+            Column gap bumped to gap-6 (24px) so $128,000-style values
+            don't bleed into adjacent columns. min-w bumped 920→1040 to
+            absorb the extra horizontal gap budget. */}
+        <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.6fr] gap-6 px-5 py-3 border-b border-[var(--app-border)]">
           <button onClick={() => toggleSort("dealName")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-left hover:text-[var(--app-text-secondary)]">
             Deal{sortIcon("dealName")}
           </button>
-          <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider">Partner</div>
+          <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center">Partner</div>
           <button onClick={() => toggleSort("stage")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)] w-full">
             Stage{sortIcon("stage")}
           </button>
-          <button onClick={() => toggleSort("estimatedRefundAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-left hover:text-[var(--app-text-secondary)]">
+          <button onClick={() => toggleSort("estimatedRefundAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)] w-full">
             Refund{sortIcon("estimatedRefundAmount")}
           </button>
-          <button onClick={() => toggleSort("firmFeeAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-left hover:text-[var(--app-text-secondary)]">
+          <button onClick={() => toggleSort("firmFeeAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)] w-full">
             Firm Fee{sortIcon("firmFeeAmount")}
           </button>
-          <button onClick={() => toggleSort("l1CommissionAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-left hover:text-[var(--app-text-secondary)]">
+          <button onClick={() => toggleSort("l1CommissionAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)] w-full">
             Commission{sortIcon("l1CommissionAmount")}
           </button>
           <button onClick={() => toggleSort("createdAt")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-right hover:text-[var(--app-text-secondary)]">
@@ -354,18 +359,20 @@ export default function AdminDealsPage() {
         {sorted.map((deal, idx) => (
           <div key={deal.id} id={`deal-${deal.id}`}>
             <div
-              className={`grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.6fr] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
+              className={`grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.6fr] gap-6 px-5 py-3.5 border-b border-[var(--app-border)] hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
               onClick={() => toggleExpand(deal)}
             >
               <div>
                 <div className="font-body text-[13px] text-[var(--app-text)] font-medium truncate">{deal.dealName}</div>
                 <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">{deal.clientName || deal.clientEmail || "—"}</div>
               </div>
-              <PartnerLink partnerId={deal.partnerId} className="font-body text-[12px] text-[var(--app-text-secondary)] truncate block">{deal.partnerName}</PartnerLink>
+              <div className="text-center">
+                <PartnerLink partnerId={deal.partnerId} className="font-body text-[12px] text-[var(--app-text-secondary)] truncate inline-block max-w-full">{deal.partnerName}</PartnerLink>
+              </div>
               <div className="text-center"><StageBadge stage={deal.stage} /></div>
-              <div className="font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</div>
-              <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{fmt$(deal.firmFeeAmount)}</div>
-              <div className="font-display text-[14px] font-semibold text-brand-gold">{fmt$(deal.l1CommissionAmount)}</div>
+              <div className="font-body text-[13px] text-[var(--app-text)] text-center">{fmt$(deal.estimatedRefundAmount)}</div>
+              <div className="font-body text-[13px] text-[var(--app-text-secondary)] text-center">{fmt$(deal.firmFeeAmount)}</div>
+              <div className="font-display text-[14px] font-semibold text-brand-gold text-center">{fmt$(deal.l1CommissionAmount)}</div>
               <div className="font-body text-[12px] text-[var(--app-text-muted)] text-right">{fmtDate(deal.createdAt)}</div>
             </div>
 

@@ -137,16 +137,22 @@ export default function DealsPage() {
         ) : (
           /* ── Desktop/Tablet: Grid table (horizontal scroll on narrow viewports) ── */
           <div className="overflow-x-auto">
-            <div className="min-w-[820px]">
-            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_0.7fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
+            <div className="min-w-[940px]">
+            {/* Header — Stage / Est. Refund / Firm Fee / Commission / Status
+                are center-aligned per design (matches /admin/deals layout).
+                Client / Deal stays left (long name + date subline). Column
+                gap bumped from gap-4 to gap-6 (24px) to give wider values
+                like $128,000 room without bleeding into adjacent columns;
+                min-w bumped 820→940 to absorb the extra horizontal gap. */}
+            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_0.7fr] gap-6 px-6 py-3 border-b border-[var(--app-border)]">
               {["Client / Deal", "Stage", "Est. Refund", "Firm Fee", "Commission", "Status"].map((h) => (
-                <div key={h} className={`font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] ${h === "Status" || h === "Stage" ? "text-center" : ""}`}>{h}</div>
+                <div key={h} className={`font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] ${h === "Client / Deal" ? "" : "text-center"}`}>{h}</div>
               ))}
             </div>
             {deals.map((deal, idx) => (
               <div key={deal.id}>
                 <div
-                  className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_0.7fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] items-center hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
+                  className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_0.7fr] gap-6 px-6 py-4 border-b border-[var(--app-border)] items-center hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
                   onClick={() => toggleExpand(deal.id)}
                 >
                   <div>
@@ -154,9 +160,9 @@ export default function DealsPage() {
                     <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">{fmtDate(deal.createdAt)}</div>
                   </div>
                   <div className="text-center"><StageBadge stage={deal.stage} /></div>
-                  <div className="font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</div>
-                  <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{fmt$(deal.firmFeeAmount)}</div>
-                  <div className="font-display text-[15px] font-semibold text-brand-gold">{fmt$(deal.l1CommissionAmount)}</div>
+                  <div className="font-body text-[13px] text-[var(--app-text)] text-center">{fmt$(deal.estimatedRefundAmount)}</div>
+                  <div className="font-body text-[13px] text-[var(--app-text-secondary)] text-center">{fmt$(deal.firmFeeAmount)}</div>
+                  <div className="font-display text-[15px] font-semibold text-brand-gold text-center">{fmt$(deal.l1CommissionAmount)}</div>
                   <div className="text-center"><StatusBadge status={deal.l1CommissionStatus} /></div>
                 </div>
 
