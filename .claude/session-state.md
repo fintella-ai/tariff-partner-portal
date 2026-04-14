@@ -14,80 +14,117 @@
 
 ## 🕒 Last updated
 
-`2026-04-13T16:45:00Z` — by session `01KrpjXE9kuhr7gceNDuMqjs`
+`2026-04-14T03:35:00Z` — by session `01KrpjXE9kuhr7gceNDuMqjs` (continued)
 
 ## 🌿 Git state at last checkpoint
 
-- **Branch**: `claude/tech-debt-docs-cleanup-mzWSp` (active — this PR)
-- **Concurrently open PR**: `#53` on branch `claude/admin-seed-hygiene-mzWSp` (admin seed hygiene — still running CI at last check, will auto-merge when green)
-- **Base commit on main**: `4761b97` — PR #52 merged (Session Continuity Protocol)
-- **Working tree**: in-progress edits on CLAUDE.md (tech debt entry cleanup) + this session-state.md
-- **Last clean commit on main**: `4761b97 Merge pull request #52 from fintella-ai/claude/session-continuity-protocol-mzWSp`
+- **Branch**: `claude/session-state-pr-sweep-mzWSp` (active — this PR is just the state update)
+- **Base commit on main**: `32ab56f chore(deps-dev): bump postcss from 8.5.8 to 8.5.9 (#67)`
+- **Working tree**: clean except for this `.claude/session-state.md` refresh
+- **Worktree path**: `/Users/johnorlandorobotax/tariff-partner-portal-phase12` (git worktree off `origin/main`; original checkout at `/Users/johnorlandorobotax/tariff-partner-portal` is on stale `master` with 5 unrelated dirty files — untouched, owner's call)
+- **Build**: 95/95 static pages, clean (only pre-existing global-error.tsx Sentry warnings)
+- **Production deployment**: in progress on Vercel (auto-triggered by #67 merge)
 
 ## ✅ What's done (this session, in merge order)
 
 | # | PR | What shipped |
 |---|---|---|
-| 1 | **#46** | Phase 15a — SendGrid transactional email + `EmailLog` + CodeQL fix |
-| 2 | **#47** | Phase 15b — Twilio SMS + TCPA opt-in gate + `SmsLog` + signup `mobilePhone` bug fix |
-| 3 | **#48** | Phase 15b-fu #1 — partner-side email + SMS opt-in toggles in `/dashboard/settings` |
-| 4 | **#49** | Responsive pass-2 — 8 touch target / table overflow / tier card / settings grid fixes |
-| 5 | **#50** | Phase 15b-fu #2 — Twilio inbound STOP/START webhook + `SmsLog.direction` field |
-| 6 | **#51** | Phase 15c — Twilio Voice click-to-call foundation + `CallLog` + admin dialer button |
-| 7 | **#52** | Session Continuity Protocol — `.claude/session-state.md` + CLAUDE.md protocol section |
-| 8 | **#53** | Security — seed scripts refuse to create default-password admin in production (IN FLIGHT, will auto-merge) |
+| 1 | **#69** | `fix(seed)`: wire conference data into `seed-all.js` so fresh DBs get Live Weekly content (filled the only real Phase 12 gap — standalone `seed-conference.ts` was never invoked by the build) |
+| 2 | **#60** | `chore(deps-dev)`: bump autoprefixer 10.4.27 → 10.5.0 (minor, safe) |
+| 3 | **#67** | `chore(deps-dev)`: bump postcss 8.5.8 → 8.5.9 (patch, safe) |
 
-**Phase 15 is fully shipped end-to-end** (modulo the deferred recording consent prompt).
-**Session Continuity Protocol is active** — the failsafe protects every future long session.
-**Super admin seed hygiene** — hardened against the rebrand foot-gun that created `admin@fintella.partners` with default password `admin123`.
+**Dependabot PRs CLOSED this session (8 total — all major bumps, defer to dedicated migration window):**
 
-**Tech debt cleanup** (this session, non-PR actions):
-- Deleted local stale branch `claude/tariff-partner-portal-Pmu1K` (remote was already auto-deleted by `.github/workflows/delete-merged-branches.yml`)
-- Confirmed PR #33 was already closed/merged (merged 2026-04-11T05:53:13Z)
-- Removing the now-stale `close stale PR #33 and delete claude/tariff-partner-portal-Pmu1K` note from CLAUDE.md Tech Debt section (in this PR)
+| PR | Bump | Reason |
+|---|---|---|
+| #59 | `@prisma/client` 5.20 → 7.7 | Major, breaks build per CLAUDE.md |
+| #61 | `@vercel/analytics` 1.6 → 2.0 | Major |
+| #62 | `tailwindcss` 3.4 → 4.2 | Major |
+| #63 | `bcryptjs` 2.4.3 → 3.0.3 | Major (ESM-default rewrite + new $2b$ hash format, hits auth + seed-admin paths) |
+| #64 | `@vercel/speed-insights` 1.3 → 2.0 | Major |
+| #65 | `prisma` 5.20 → 7.7 | Major |
+| #66 | `typescript` 5.9 → 6.0 | Major |
+| #68 | `@types/node` 20 → 25 | Major (skips 4 majors) |
+
+All 8 closed with the standard "major version bump — dedicated migration session required" comment, tracked toward Phase 18b (Next.js 14 → 16) or its own focused PR.
+
+**PRs from the original "needing merge" list that turned out to be already done — no action required:**
+- **#11**, **#12**, **#13** — webhook trio, all already MERGED on `main` before this session started. The infra baseline was stale.
+- **#55** — was a duplicate Phase 15a PR; CLOSED long ago (real Phase 15a shipped as PR #46).
 
 ## 🔄 What's in flight
 
-- **Current task**: docs cleanup — removing stale CLAUDE.md tech debt entry about PR #33 and the Pmu1K branch (both already resolved) + refreshing this session-state.md with current state
-- **Branch**: `claude/tech-debt-docs-cleanup-mzWSp`
-- **Uncommitted**: `CLAUDE.md` (1 line removed), this `.claude/session-state.md` (full refresh)
-- **Next step after commit**: build-verify, push, open PR, enable auto-merge
+- **Current task**: opening this state-update PR (`claude/session-state-pr-sweep-mzWSp`) to record the sweep results per the Session Continuity Protocol. Once merged, the next session starts with an accurate map.
+- **Uncommitted**: just this `.claude/session-state.md` refresh.
+- **Next step after merge**: queue Day 2 BLOCK 3 — Admin "Payment Received" workflow.
 
-## 🎯 What's next (queued, waiting on user decision after this PR merges)
+## 🎯 What's next (queued, prioritized)
 
-From the post-Phase-15 recommendation chain:
+Reflects the post-sweep state cross-referenced against `docs/2 day portal plan/fintella-day{1,2}-prompts.md` and the existing CLAUDE.md remaining-phases section. Items are ordered by leverage and unblock-impact.
 
-1. **Operational cleanup John should do in the /admin UI manually** — delete the legacy `admin@trln.com` super_admin row via `/admin/users`. It's still in the DB as an orphan from the pre-rebrand deployment. The new seed-hygiene PR #53 prevents it from being re-created, but doesn't delete it. Zero Claude work required.
-2. **Smoke-test prod** — validate the full Phase 15 chain live (EmailLog + SmsLog + CallLog populating, Communication Log tabs rendering, opt-in toggles working). Manual checks on John's end since the sandbox network blocks `fintella.partners`.
-3. **Phase 15c-followup — recording with state-by-state consent** — flip on `Record=true` in `twilio-voice.ts`, add a TwiML `<Gather>` consent prompt before the bridge, store per-state config. Multi-hour; fresh session recommended. The hooks (`recordingUrl` + "▶ Listen to recording" link) are already wired.
-4. **Phase 14 — HubSpot API integration** — real CRM deal/contact sync, replacing the current demo-mode stubs in `src/lib/hubspot.ts`. Multi-hour; fresh session recommended.
-5. **Phase 16 — Stripe Connect payments/payouts** — actually pay partners. Multi-hour; fresh session recommended.
-6. **Phase 18b — Next.js 14.2.35 → 16 migration** — closes 5 remaining DoS-only CVEs, major migration requiring React 18 → 19 + middleware.ts → proxy.ts + dedicated test session.
+### 🅰 Highest priority — wall-clock blockers John must do in browser (no Claude work)
+1. **Twilio A2P 10DLC registration** (`fintella-day1-prompts.md` BLOCK 1) — TCR campaign approval is **10–15 business days**. Cannot be compressed. Every hour of delay = 1 hour added to launch. **Start immediately at console.twilio.com.**
+2. **SendGrid domain authentication + DNS records** (`fintella-day1-prompts.md` BLOCK 2) — DNS propagation 15min–48hr. Start as soon as Twilio is submitted.
+3. **Vercel env vars batch** (`fintella-day1-prompts.md` BLOCK 3) — once Twilio + SendGrid keys are in hand, set the ~20 env vars in Vercel Project Settings.
+
+### 🅱 Highest-value Claude-only code work (no external dependencies)
+1. **Day 2 BLOCK 3 — Admin "Payment Received" workflow** (`fintella-day2-prompts.md`) — the missing link in the commission chain. Adds:
+   - `POST /api/admin/deals/[dealId]/payment-received` route (admin-gated, transactional flip pending → payable)
+   - `paymentReceivedAt` + `paymentReceivedBy` columns on the `Deal` model (schema migration via `prisma db push`)
+   - Prominent green/gold "Mark Payment Received" button in admin deal detail UI (only when `stage === closedwon` AND pending commissions exist)
+   - `AuditLog` entry (verify the model exists or add it)
+   - Walkthrough verification of payout-batch pipeline picking up new "payable" rows
+   - **No external deps; pure code; multi-hour but single-session-shaped.**
+2. **Day 2 BLOCK 4 — Webhook security hardening** for `/api/webhook/referral`:
+   - X-Fintella-Api-Key header validation (env var `FROST_LAW_API_KEY`)
+   - Idempotency enforcement (add `idempotencyKey` field on `Deal` model if missing)
+   - Basic in-memory rate limiting (60 req/min/key)
+   - Input validation for event types + stages
+   - HMAC signature support — code only, not enforced (Frost Law isn't signing yet)
+3. **Day 2 BLOCK 6 — Frost Law webhook docs refresh** at `/docs/webhook-guide` (the public route already exists). Expand to full payload spec, error code table, idempotency contract, retry guidance, 3 curl examples.
+4. **Day 2 BLOCK 5 — Full regression sweep** (read-only verification of auth, signup, deals, commissions, email/SMS demo gates, AI assistant, admin role gates).
+
+### 🅲 Pre-existing queued items still relevant (from prior session-state)
+1. Operational cleanup John should do in `/admin` UI manually — delete the legacy `admin@trln.com` super_admin row via `/admin/users` (orphan from pre-rebrand deployment; PR #53 prevents recreation but doesn't delete).
+2. Smoke-test prod end-to-end after Phase 15 chain — manual on John's side since sandbox can't reach `fintella.partners`.
+3. **Phase 15c-followup** — recording with state-by-state consent (TwiML `<Gather>` IVR before bridge, per-state config). Hooks already wired in DB.
+4. **Phase 16 — Stripe Connect** payments/payouts. Needed once partners need to actually be paid. Multi-hour, fresh session recommended.
+5. **Phase 18b — Next.js 14.2.35 → 16 migration**. Closes 5 remaining DoS-only CVEs. Major migration — React 18 → 19, middleware.ts → proxy.ts, dedicated test session. **All the closed dependabot PRs above land naturally as part of this window.**
+
+### Plan-vs-reality discrepancies caught this session (so future sessions don't get tripped)
+- `fintella-day1-prompts.md` BLOCK 4 says merge PR #55 — **DO NOT**. It's a stale duplicate of already-shipped Phase 15a (real one is PR #46). Already CLOSED.
+- BLOCK 4 also lists #11/#12/#13 as needing merge — **already done**, ignore.
+- BLOCK 6 "Sentry production config" is **verify-only** — Phase 18a already initialized Sentry; the SDK + configs already exist.
+- BLOCK 8 "trim CLAUDE.md" — there's already a `CLAUDE-trimmed.md` sibling file in `~/Documents/Fintella Partner Portal/2 day portal plan/`, ~80% pre-done; just needs review + drop-in.
+- Day 2 BLOCK 6 webhook docs — the `/docs/webhook-guide` route already exists; this is a content refresh, not a create.
 
 ## 🧠 Context that matters for resuming
 
-- **Pre-launch status**: per CLAUDE.md, no real customers in any environment. Freely destructive DB operations are safe. Smoke tests go directly against `fintella.partners`.
-- **Workflow rule**: never open a PR without explicit user permission. Never merge without explicit user go-ahead.
-- **Build command**: `./node_modules/.bin/next build` — expects **95/95 static pages** at this point in the timeline (after PR #53 merges, still 95 — no new routes).
-- **Admin login**: John is logged in as `admin@fintella.partners` with his own password (he rotated it from the default `admin123` during this session). The legacy `admin@trln.com` super_admin row still exists in the DB as an orphan — John should delete it via `/admin/users`.
-- **Seed scripts hardened (PR #53)**: seed-all.js and seed-admin.ts now refuse to create default-password admins in production. Bootstrap new environments via `SEED_ADMIN_EMAIL` + `SEED_ADMIN_PASSWORD` env vars.
-- **Key integration pattern**: all third-party integrations (SendGrid, Twilio SMS, Twilio Voice, SignWell, HubSpot) use raw `fetch()` against the provider REST API. No provider SDKs. Every integration has a demo-mode fallback gated on env vars.
-- **TCPA compliance**: all SMS sends check `Partner.smsOptIn` before the network call. STOP/START inbound webhook is live. Partners can also toggle opt-ins in `/dashboard/settings`.
-- **Voice recording deferred**: intentionally NOT enabled due to state-by-state legal disclosure (CA/WA/FL/IL all-party consent). DB columns + UI hooks are already wired for the followup.
-- **Session is long**: 90+ exchanges by the time this PR goes out. The Session Continuity Protocol (PR #52) is actively in use — that's why this file is being updated at the end of each task.
-- **GitHub MCP is currently disconnected** as of this checkpoint (seen during PR #53's merge wait). The webhook channel works but the action tools are unavailable. Resuming Claude session may need to re-auth or have user restore the connector.
+- **Pre-launch status** (per CLAUDE.md): no real customers in any environment. Freely destructive DB ops are safe. Smoke-test directly against `fintella.partners`.
+- **Branch protection on `main`** is active. Every change goes through a PR. Never merge without explicit John go-ahead. No exceptions.
+- **Build command**: `./node_modules/.bin/next build` — expects **95/95 static pages** as of `32ab56f`. Pre-existing global-error.tsx Sentry warnings are noise, not failure.
+- **Worktree gotcha**: this session is working in a worktree at `/Users/johnorlandorobotax/tariff-partner-portal-phase12` (created off `origin/main`). The original checkout at `/Users/johnorlandorobotax/tariff-partner-portal` is on stale `master` with 5 dirty files of unknown intent — left untouched. If a future session uses the original checkout, it will need to investigate or sync first.
+- **Dependabot ignore rule**: PR #58 added `.github/dependabot.yml` config that ignores major bumps. New majors should NOT be appearing — if any do, that means the ignore rule is misconfigured. Current open dependabot queue after this sweep: **0 PRs**.
+- **Anthropic SDK / AI assistant**: `ANTHROPIC_API_KEY` env var still required for live PartnerOS responses; demo fallback still works without it.
+- **TCPA SMS gate**: every SMS send checks `Partner.smsOptIn` BEFORE the network call. Don't remove this.
+- **Voice recording**: deferred — state-by-state legal disclosure requirements (CA/WA/FL/IL all-party consent). DB columns + UI hooks already wired for the followup.
+- **2-day launch plan source-of-truth**: `~/Documents/Fintella Partner Portal/2 day portal plan/fintella-day{1,2}-prompts.md` (NOT the public claude.ai artifact URL — Cloudflare blocks programmatic fetch).
+- **Memory system**: there are persistent project memories under `~/.claude/projects/-Users-johnorlandorobotax/memory/` — `project_fintella_partner_portal.md`, `project_fintella_infrastructure.md`, `reference_fintella_repo.md`. Read MEMORY.md index first.
 
 ## 📂 Relevant files for the next task
 
-Depends on which queued item the user picks. A few common touch points:
+If the next session starts with **Day 2 BLOCK 3 (Payment Received workflow)**:
 
-- **Smoke-test**: user-facing, no code changes needed. Reference CLAUDE.md for the end-to-end flow. Manual steps:
-  - Visit `fintella.partners/login`
-  - Generate an invite at `/dashboard/referral-links` → fill signup with mobile + both opt-ins → submit
-  - `/admin/partners/<new-partner>` → Communication Log → Email, SMS, Phone tabs should populate
-  - Click new **📞 Call Partner** button → CallLog row with `status="demo"`
-  - `/dashboard/settings` as new partner → Communication Preferences section + toggles
-  - Uncheck SMS opt-in → next test send is `skipped_optout`
-- **Phase 15c-followup recording**: `src/lib/twilio-voice.ts` (`initiateBridgedCall` — add `Record=true` + recordingStatusCallback), `src/app/api/twilio/voice-webhook/route.ts` (add `<Gather>` consent prompt IVR before `<Dial>`), new `prisma/schema.prisma` additions for per-state config.
-- **Phase 14 HubSpot**: `src/lib/hubspot.ts` (replace demo-mode stubs with real API calls).
-- **Phase 16 Stripe**: new `src/lib/stripe.ts`, new API routes for Stripe Connect onboarding flow, new `StripeAccount` Prisma model linked to Partner.
+- `prisma/schema.prisma` → `model Deal` (~line ~140-200; check for `paymentReceivedAt` / `paymentReceivedBy` — likely missing, need to add)
+- `prisma/schema.prisma` → `model CommissionLedger` (verify status field accepts `pending` and `payable`)
+- `prisma/schema.prisma` → check if `AuditLog` model exists; if not, add
+- `src/app/api/admin/deals/[id]/route.ts` — likely the existing admin deal detail endpoint; new payment-received route lives at `src/app/api/admin/deals/[dealId]/payment-received/route.ts`
+- `src/app/(admin)/admin/deals/[id]/page.tsx` — admin deal detail UI; add the "Mark Payment Received" button here
+- `src/lib/auth.ts` → `auth()` — used to gate the new endpoint by admin role
+- `src/lib/commission.ts` → existing waterfall logic (don't duplicate; just verify pending → payable transition is supported)
+- Existing payout-batch flow: search for `PayoutBatch` references to verify the batch creation page picks up "payable" rows automatically
+
+If next session starts with **Day 2 BLOCK 4 (webhook hardening)**:
+- `src/app/api/webhook/referral/route.ts` — existing handler; add API key check, idempotency, rate limit
+- `prisma/schema.prisma` → `model Deal` — check for `idempotencyKey` field, add if missing (unique, optional)
+- `src/app/(admin)/admin/dev/webhook-test/page.tsx` — existing test harness; verify it still works after security additions
