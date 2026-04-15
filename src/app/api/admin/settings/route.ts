@@ -69,6 +69,10 @@ export async function PUT(req: NextRequest) {
     if (body.agreementTemplate20 !== undefined) data.agreementTemplate20 = body.agreementTemplate20;
     if (body.agreementTemplate15 !== undefined) data.agreementTemplate15 = body.agreementTemplate15;
     if (body.agreementTemplate10 !== undefined) data.agreementTemplate10 = body.agreementTemplate10;
+    if (body.agreementTemplateEnterprise !== undefined) data.agreementTemplateEnterprise = body.agreementTemplateEnterprise;
+    if (body.fintellaSignerName !== undefined) data.fintellaSignerName = body.fintellaSignerName;
+    if (body.fintellaSignerEmail !== undefined) data.fintellaSignerEmail = body.fintellaSignerEmail;
+    if (body.fintellaSignerPlaceholder !== undefined) data.fintellaSignerPlaceholder = body.fintellaSignerPlaceholder;
     if (body.maxCommissionRate !== undefined) data.maxCommissionRate = parseFloat(body.maxCommissionRate);
 
     // Commission Rates

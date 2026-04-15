@@ -404,6 +404,14 @@ model PortalSettings {
   agreementTemplate15 String @default("") // 15% agreement template
   agreementTemplate10 String @default("") // 10% agreement template
   agreementTemplateEnterprise String @default("") // Enterprise partner agreement template
+  // Fintella co-signer — the second recipient on every agreement. Lets
+  // Fintella countersign alongside the partner without the sender having
+  // to do it manually in the SignWell dashboard. The placeholder name
+  // must exactly match the second recipient's role in every SignWell
+  // template (defaults to "Fintella").
+  fintellaSignerName        String  @default("")
+  fintellaSignerEmail       String  @default("")
+  fintellaSignerPlaceholder String  @default("Fintella")
   // Navigation visibility + order (JSON strings)
   hiddenNavItems String @default("[]")
   navOrder       String @default("[]")  // ordered array of nav IDs

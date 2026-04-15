@@ -221,15 +221,21 @@ export async function sendForSigning(
     name: options.name,
     subject: options.subject,
     message: options.message,
-    recipients: options.recipients.map((r) => ({
+    recipients: options.recipients.map((r, idx) => ({
       id: r.id,
       email: r.email,
       name: r.name,
       role: r.role,
       placeholder_name: r.role,
+      // Signing order follows recipient array order. When multiple
+      // recipients are passed, partner (index 0) signs first, Fintella
+      // co-signer (index 1) signs second.
+      signing_order: idx + 1,
     })),
     reminders: true,
-    apply_signing_order: false,
+    // Enable strict order so the Fintella co-signer only sees the
+    // document after the partner has signed their half.
+    apply_signing_order: options.recipients.length > 1,
     embedded_signing: true,
     embedded_signing_notifications: true,
   };

@@ -164,6 +164,9 @@ export default function SettingsPage() {
   const [agreementTemplate20, setAgreementTemplate20] = useState("");
   const [agreementTemplate15, setAgreementTemplate15] = useState("");
   const [agreementTemplate10, setAgreementTemplate10] = useState("");
+  const [fintellaSignerName, setFintellaSignerName] = useState("");
+  const [fintellaSignerEmail, setFintellaSignerEmail] = useState("");
+  const [fintellaSignerPlaceholder, setFintellaSignerPlaceholder] = useState("Fintella");
 
   // Ad-hoc "Send Agreement" form — sits under the template config in
   // the Agreements tab so admins can send an agreement to any existing
@@ -217,6 +220,9 @@ export default function SettingsPage() {
       setL3Rate(String(Math.round(settings.l3Rate * 100)));
       setL3Enabled(settings.l3Enabled);
       setAgreementTemplate25(settings.agreementTemplate25 || "");
+      setFintellaSignerName(settings.fintellaSignerName || "");
+      setFintellaSignerEmail(settings.fintellaSignerEmail || "");
+      setFintellaSignerPlaceholder(settings.fintellaSignerPlaceholder || "Fintella");
       setAgreementTemplate20(settings.agreementTemplate20 || "");
       setAgreementTemplate15(settings.agreementTemplate15 || "");
       setAgreementTemplate10(settings.agreementTemplate10 || "");
@@ -315,6 +321,7 @@ export default function SettingsPage() {
       const body = {
         firmName, firmShort, firmSlogan, firmPhone, supportEmail, logoUrl, faviconUrl,
         agreementTemplate25, agreementTemplate20, agreementTemplate15, agreementTemplate10, agreementTemplateEnterprise,
+        fintellaSignerName, fintellaSignerEmail, fintellaSignerPlaceholder,
         l1Rate: parseFloat(l1Rate) / 100,
         l2Rate: parseFloat(l2Rate) / 100,
         l3Rate: parseFloat(l3Rate) / 100,
@@ -1070,6 +1077,29 @@ export default function SettingsPage() {
             <p className="font-body text-[12px] text-[var(--app-text-muted)] leading-relaxed">
               <strong className="text-brand-gold">How it works:</strong> Upload 4 partnership agreement templates to SignWell (one per commission rate). Copy each template ID and paste it here. When partners sign up via recruitment links, the correct agreement is automatically sent based on the rate their recruiter chose.
             </p>
+          </div>
+        </div>
+
+        {/* ─── Fintella co-signer ─── */}
+        <div className="card p-5 sm:p-6">
+          <div className="font-body font-semibold text-sm mb-1">Fintella Co-Signer</div>
+          <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-5">
+            Who countersigns every partnership agreement on Fintella&apos;s side. Added as a second recipient on every SignWell send — the partner signs first, then this person is notified to sign. Leave blank to skip the countersigner and only send to the partner.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className={labelClass}>Signer Name</label>
+              <input className={inputClass} value={fintellaSignerName} onChange={(e) => setFintellaSignerName(e.target.value)} placeholder="Michael Furdock" />
+            </div>
+            <div>
+              <label className={labelClass}>Signer Email</label>
+              <input className={inputClass} type="email" value={fintellaSignerEmail} onChange={(e) => setFintellaSignerEmail(e.target.value)} placeholder="michael@fintella.partners" />
+            </div>
+            <div>
+              <label className={labelClass}>Template Placeholder Name</label>
+              <input className={inputClass} value={fintellaSignerPlaceholder} onChange={(e) => setFintellaSignerPlaceholder(e.target.value)} placeholder="Fintella" />
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Must exactly match the second recipient&apos;s role name in every SignWell template.</p>
+            </div>
           </div>
         </div>
 

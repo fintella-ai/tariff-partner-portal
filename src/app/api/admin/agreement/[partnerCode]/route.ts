@@ -132,19 +132,33 @@ export async function POST(
       country: profile?.country,
     });
 
+    // Build the recipient list. Always include the partner as the primary
+    // signer. If Fintella co-signer settings are configured, include them
+    // as a second recipient so SignWell routes the document to them after
+    // the partner signs — no manual countersign in the SignWell dashboard.
+    const recipients = [
+      {
+        id: partnerCode,
+        email: partnerEmail,
+        name: partnerName,
+        role: "Partner",
+      },
+    ];
+    if (settings?.fintellaSignerEmail && settings?.fintellaSignerName) {
+      recipients.push({
+        id: "fintella_cosigner",
+        email: settings.fintellaSignerEmail,
+        name: settings.fintellaSignerName,
+        role: settings.fintellaSignerPlaceholder || "Fintella",
+      });
+    }
+
     // Send via SignWell
     const { documentId, embeddedSigningUrl } = await sendForSigning({
       name: `${FIRM_SHORT} Partnership Agreement — ${partnerName}`,
       subject: `${FIRM_SHORT} Partnership Agreement`,
       message: `Hi ${partnerName}, please review and sign your ${FIRM_NAME} partnership agreement.`,
-      recipients: [
-        {
-          id: partnerCode,
-          email: partnerEmail,
-          name: partnerName,
-          role: "Partner",
-        },
-      ],
+      recipients,
       templateId: templateId || undefined,
       templateFields,
     });
