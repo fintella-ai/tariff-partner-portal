@@ -217,21 +217,41 @@ export async function sendForSigning(
     return { documentId: mockId, status: "pending", embeddedSigningUrl: null };
   }
 
+  // When sending from a template, SignWell matches recipients to template
+  // placeholders by `placeholder_name`. Do NOT send a custom `id` on the
+  // recipient — that creates a new recipient instead of binding to the
+  // template's existing placeholder, and every field on the template
+  // placeholder reports `with_no_fields` because they're still linked to
+  // the placeholder id we shadowed.
+  //
+  // For ad-hoc file sends (no template), we have no placeholders to match,
+  // so we pass through the caller's id as before.
+  const usingTemplate = !!options.templateId;
   const body: Record<string, any> = {
     name: options.name,
     subject: options.subject,
     message: options.message,
-    recipients: options.recipients.map((r, idx) => ({
-      id: r.id,
-      email: r.email,
-      name: r.name,
-      role: r.role,
-      placeholder_name: r.role,
-      // Signing order follows recipient array order. When multiple
-      // recipients are passed, partner (index 0) signs first, Fintella
-      // co-signer (index 1) signs second.
-      signing_order: idx + 1,
-    })),
+    recipients: options.recipients.map((r, idx) => {
+      const recipient: Record<string, any> = {
+        email: r.email,
+        name: r.name,
+        // Signing order follows recipient array order. When multiple
+        // recipients are passed, partner (index 0) signs first, Fintella
+        // co-signer (index 1) signs second.
+        signing_order: idx + 1,
+      };
+      if (usingTemplate) {
+        // Bind to the template placeholder by name. SignWell will reuse
+        // the template placeholder's id + fields automatically.
+        recipient.placeholder_name = r.role;
+      } else {
+        // Non-template send — expose the caller-supplied id + role.
+        recipient.id = r.id;
+        recipient.role = r.role;
+        recipient.placeholder_name = r.role;
+      }
+      return recipient;
+    }),
     reminders: true,
     // Enable strict order so the Fintella co-signer only sees the
     // document after the partner has signed their half.
