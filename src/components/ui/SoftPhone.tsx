@@ -28,6 +28,14 @@ declare global {
   }
 }
 
+type PartnerOption = {
+  partnerCode: string;
+  firstName: string;
+  lastName: string;
+  mobilePhone: string | null;
+  companyName: string | null;
+};
+
 export default function SoftPhone() {
   const [state, setState] = useState<CallState>("idle");
   const [open, setOpen] = useState(false);
@@ -37,6 +45,11 @@ export default function SoftPhone() {
   const [muted, setMuted] = useState(false);
   const [durationSec, setDurationSec] = useState(0);
   const [missing, setMissing] = useState<string[]>([]);
+  // Dialer UI state — typed digits, partner search query, partner list.
+  const [dialDigits, setDialDigits] = useState("");
+  const [partnerSearch, setPartnerSearch] = useState("");
+  const [partners, setPartners] = useState<PartnerOption[]>([]);
+  const [partnersLoaded, setPartnersLoaded] = useState(false);
   const deviceRef = useRef<any>(null);
   const callRef = useRef<any>(null);
   const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -173,6 +186,65 @@ export default function SoftPhone() {
     };
   }, [call, hangup, state]);
 
+  // Lazy-load the partner directory the first time the dock opens.
+  useEffect(() => {
+    if (!open || partnersLoaded) return;
+    fetch("/api/admin/partners")
+      .then((r) => r.json())
+      .then((data) => {
+        const list: PartnerOption[] = (data.partners || []).map((p: any) => ({
+          partnerCode: p.partnerCode,
+          firstName: p.firstName || "",
+          lastName: p.lastName || "",
+          mobilePhone: p.mobilePhone || null,
+          companyName: p.companyName || null,
+        }));
+        setPartners(list);
+        setPartnersLoaded(true);
+      })
+      .catch(() => setPartnersLoaded(true));
+  }, [open, partnersLoaded]);
+
+  // Normalize a raw typed number to E.164. Pure US-centric for now:
+  //   10 digits → prefix +1
+  //   11 digits starting with 1 → prefix +
+  //   already starts with + → leave alone
+  // Returns null for anything else so the caller can show an error.
+  const toE164 = (raw: string): string | null => {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith("+") && /^\+[1-9]\d{6,14}$/.test(trimmed)) return trimmed;
+    const digits = trimmed.replace(/\D/g, "");
+    if (digits.length === 10) return `+1${digits}`;
+    if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+    return null;
+  };
+
+  const placeDialedCall = () => {
+    const e164 = toE164(dialDigits);
+    if (!e164) {
+      setErrorMsg("Enter a valid 10-digit US number or +E.164 format.");
+      return;
+    }
+    call(e164);
+  };
+
+  const appendDigit = (d: string) => {
+    setDialDigits((v) => (v + d).slice(0, 20));
+  };
+
+  const filteredPartners = partnerSearch.trim()
+    ? partners.filter((p) => {
+        const q = partnerSearch.trim().toLowerCase();
+        return (
+          p.firstName.toLowerCase().startsWith(q) ||
+          p.lastName.toLowerCase().startsWith(q) ||
+          `${p.firstName} ${p.lastName}`.toLowerCase().includes(q) ||
+          p.partnerCode.toLowerCase().includes(q) ||
+          (p.companyName || "").toLowerCase().includes(q)
+        );
+      })
+    : partners.slice(0, 8);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -206,9 +278,12 @@ export default function SoftPhone() {
     );
   }
 
+  const inCall =
+    state === "in-call" || state === "ringing" || state === "connecting";
+
   return (
-    <div className="fixed bottom-6 right-6 z-[951] w-[320px] bg-[var(--app-bg-secondary)] border border-brand-gold/30 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)] bg-gradient-to-r from-brand-gold/10 to-transparent">
+    <div className="fixed bottom-6 right-6 z-[951] w-[340px] max-h-[85vh] bg-[var(--app-bg-secondary)] border border-brand-gold/30 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)] bg-gradient-to-r from-brand-gold/10 to-transparent shrink-0">
         <div>
           <div className="font-body text-[11px] uppercase tracking-[1.5px] text-brand-gold">Softphone</div>
           <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-0.5">
@@ -227,7 +302,7 @@ export default function SoftPhone() {
         </button>
       </div>
 
-      <div className="p-5">
+      <div className="p-5 overflow-y-auto">
         {state === "demo" && (
           <div className="font-body text-[11px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-4">
             Softphone is in demo mode. Missing env vars:{" "}
@@ -237,27 +312,24 @@ export default function SoftPhone() {
           </div>
         )}
 
-        <div className="text-center mb-5">
-          <div className="text-4xl mb-2">
-            {state === "in-call" ? "📞" : state === "ringing" ? "📲" : state === "ended" ? "📴" : "☎️"}
-          </div>
-          <div className="font-display text-lg font-bold text-[var(--app-text)]">
-            {currentName || currentNumber || "Ready"}
-          </div>
-          {currentNumber && currentName && (
-            <div className="font-body text-[12px] text-[var(--app-text-muted)]">{currentNumber}</div>
-          )}
-          {state === "in-call" && (
-            <div className="font-mono text-[13px] text-brand-gold mt-2">{fmtDuration(durationSec)}</div>
-          )}
-          {state === "error" && errorMsg && (
-            <div className="font-body text-[11px] text-red-400 mt-2">{errorMsg}</div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-center gap-3">
-          {(state === "in-call" || state === "ringing" || state === "connecting") && (
-            <>
+        {/* ── IN-CALL VIEW ── */}
+        {inCall && (
+          <>
+            <div className="text-center mb-5">
+              <div className="text-4xl mb-2">
+                {state === "in-call" ? "📞" : state === "ringing" ? "📲" : "☎️"}
+              </div>
+              <div className="font-display text-lg font-bold text-[var(--app-text)]">
+                {currentName || currentNumber}
+              </div>
+              {currentNumber && currentName && (
+                <div className="font-body text-[12px] text-[var(--app-text-muted)]">{currentNumber}</div>
+              )}
+              {state === "in-call" && (
+                <div className="font-mono text-[13px] text-brand-gold mt-2">{fmtDuration(durationSec)}</div>
+              )}
+            </div>
+            <div className="flex items-center justify-center gap-3">
               <button
                 onClick={toggleMute}
                 disabled={state !== "in-call"}
@@ -277,18 +349,109 @@ export default function SoftPhone() {
               >
                 ✖
               </button>
-            </>
-          )}
-          {(state === "ready" || state === "ended" || state === "demo" || state === "error" || state === "idle") && (
-            <div className="font-body text-[11px] text-[var(--app-text-muted)] text-center">
-              {state === "ready" && "Ready to call. Click Call Partner on any profile."}
-              {state === "ended" && "Call ended."}
-              {state === "idle" && "Initializing..."}
-              {state === "error" && "Click Call Partner again to retry."}
-              {state === "demo" && "UI preview only — real calls need Twilio config."}
             </div>
-          )}
-        </div>
+          </>
+        )}
+
+        {/* ── DIALER VIEW (idle / ready / ended / error / demo) ── */}
+        {!inCall && (
+          <div className="flex flex-col gap-4">
+            {/* Typed number display */}
+            <div>
+              <input
+                type="tel"
+                value={dialDigits}
+                onChange={(e) => setDialDigits(e.target.value)}
+                placeholder="(555) 555-5555 or +14155550100"
+                className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-3 py-3 text-center font-mono text-[16px] text-[var(--app-text)] outline-none focus:border-brand-gold/40"
+              />
+              {errorMsg && state !== "error" && (
+                <div className="font-body text-[10px] text-red-400 mt-1 text-center">{errorMsg}</div>
+              )}
+            </div>
+
+            {/* Keypad */}
+            <div className="grid grid-cols-3 gap-2">
+              {["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"].map((k) => (
+                <button
+                  key={k}
+                  onClick={() => appendDigit(k)}
+                  className="h-11 rounded-lg font-display text-[18px] font-bold text-[var(--app-text)] bg-[var(--app-input-bg)] border border-[var(--app-border)] hover:bg-brand-gold/10 hover:border-brand-gold/30 transition-colors active:scale-95"
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDialDigits((v) => v.slice(0, -1))}
+                disabled={!dialDigits}
+                className="flex-1 h-11 rounded-lg font-body text-[12px] text-[var(--app-text-muted)] bg-[var(--app-input-bg)] border border-[var(--app-border)] hover:text-[var(--app-text-secondary)] disabled:opacity-30 transition-colors"
+              >
+                ⌫ Delete
+              </button>
+              <button
+                onClick={placeDialedCall}
+                disabled={!dialDigits || state === "demo"}
+                className="flex-[2] h-11 rounded-lg font-display font-bold text-[13px] bg-gradient-to-br from-brand-gold to-[#e8c060] text-brand-dark shadow-lg shadow-brand-gold/20 hover:scale-[1.01] active:scale-95 disabled:opacity-40 disabled:hover:scale-100 transition-all"
+              >
+                📞 Call
+              </button>
+            </div>
+
+            {/* Partner search + directory */}
+            <div className="border-t border-[var(--app-border)] pt-3">
+              <input
+                type="text"
+                value={partnerSearch}
+                onChange={(e) => setPartnerSearch(e.target.value)}
+                placeholder="🔍 Search partners by name or code..."
+                className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-3 py-2 font-body text-[12px] text-[var(--app-text)] outline-none focus:border-brand-gold/40 mb-2"
+              />
+              <div className="max-h-48 overflow-y-auto flex flex-col gap-1">
+                {filteredPartners.length === 0 && (
+                  <div className="font-body text-[11px] text-[var(--app-text-muted)] text-center py-3">
+                    {partnersLoaded ? "No partners match." : "Loading partners..."}
+                  </div>
+                )}
+                {filteredPartners.map((p) => (
+                  <button
+                    key={p.partnerCode}
+                    onClick={() => {
+                      if (!p.mobilePhone) {
+                        setErrorMsg(`${p.firstName} ${p.lastName} has no mobile number on file.`);
+                        return;
+                      }
+                      const fullName = `${p.firstName} ${p.lastName}`.trim();
+                      call(p.mobilePhone, fullName);
+                    }}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-left hover:bg-brand-gold/10 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-body text-[12px] font-medium text-[var(--app-text)] truncate">
+                        {p.firstName} {p.lastName}
+                      </div>
+                      <div className="font-body text-[10px] text-[var(--app-text-muted)] truncate">
+                        {p.mobilePhone || "no mobile"} · {p.partnerCode}
+                      </div>
+                    </div>
+                    <span className="text-[13px] shrink-0">{p.mobilePhone ? "📞" : "⦸"}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="font-body text-[10px] text-[var(--app-text-faint)] text-center">
+              {state === "ready" && "Type a number or pick a partner to call."}
+              {state === "ended" && "Last call ended. Dial another number."}
+              {state === "idle" && "Initializing device..."}
+              {state === "error" && (errorMsg || "Error — try again.")}
+              {state === "demo" && "Demo mode — UI preview only."}
+              {state === "registering" && "Connecting to Twilio..."}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
