@@ -179,6 +179,79 @@ export default function AdminTrainingPage() {
   const [formQuestion, setFormQuestion] = useState("");
   const [formAnswer, setFormAnswer] = useState("");
 
+  // Inline save error surfaced in each form — replaces the old silent
+  // catch blocks that swallowed 4xx responses and made new resources
+  // "disappear".
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Max file size before we refuse to embed — base64 bloats ~33% and
+  // Vercel serverless caps request bodies around 4.5MB. Anything bigger
+  // has to be hosted externally (YouTube, Vimeo, CDN) and pasted as a URL.
+  const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error);
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+
+  const handleVideoFile = async (file: File | undefined) => {
+    if (!file) return;
+    setSaveError(null);
+    if (!file.type.startsWith("video/")) {
+      setSaveError("That file doesn't look like a video. Paste a YouTube/Vimeo URL instead, or pick a .mp4/.webm file.");
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setSaveError(`Video is ${(file.size / 1024 / 1024).toFixed(1)}MB — too large to embed (max 4MB). Host it on YouTube, Vimeo, or your CDN and paste the URL instead.`);
+      return;
+    }
+    setUploading(true);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setFormVideoUrl(dataUrl);
+    } catch {
+      setSaveError("Failed to read video file.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleResourceFile = async (file: File | undefined) => {
+    if (!file) return;
+    setSaveError(null);
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setSaveError(`File is ${(file.size / 1024 / 1024).toFixed(1)}MB — too large to embed (max 4MB). Host it on your CDN and paste the URL instead.`);
+      return;
+    }
+    setUploading(true);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setFormFileUrl(dataUrl);
+      // Auto-fill file size with human-readable value
+      const kb = file.size / 1024;
+      setFormFileSize(kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`);
+      // Guess file type from extension
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (ext) {
+        const typeMap: Record<string, string> = {
+          pdf: "pdf", doc: "document", docx: "document", xls: "spreadsheet",
+          xlsx: "spreadsheet", ppt: "presentation", pptx: "presentation",
+          mp4: "video", mov: "video", webm: "video",
+          png: "image", jpg: "image", jpeg: "image", gif: "image", svg: "image",
+        };
+        if (typeMap[ext]) setFormFileType(typeMap[ext]);
+      }
+    } catch {
+      setSaveError("Failed to read file.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // ─── DATA FETCHING ──────────────────────────────────────────────────────
 
   /** Fetch modules from admin API with demo fallback */
@@ -274,6 +347,7 @@ export default function AdminTrainingPage() {
     setFormModuleId("");
     setFormQuestion("");
     setFormAnswer("");
+    setSaveError(null);
   };
 
   /** Open the add form with blank fields */
@@ -329,24 +403,28 @@ export default function AdminTrainingPage() {
       published: formPublished,
     };
 
+    setSaveError(null);
     try {
-      if (editingItem) {
-        await fetch(`/api/admin/training/modules/${editingItem.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      } else {
-        await fetch("/api/admin/training/modules", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+      const res = editingItem
+        ? await fetch(`/api/admin/training/modules/${editingItem.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          })
+        : await fetch("/api/admin/training/modules", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveError(data.error || `Save failed (HTTP ${res.status}).`);
+        return;
       }
       resetForm();
       await fetchModules();
-    } catch {
-      // Silently fail — demo mode will keep showing existing data
+    } catch (e: any) {
+      setSaveError(e?.message || "Network error while saving module.");
     }
   };
 
@@ -363,24 +441,36 @@ export default function AdminTrainingPage() {
       published: formPublished,
     };
 
+    setSaveError(null);
+    if (!formTitle.trim()) {
+      setSaveError("Title is required.");
+      return;
+    }
+    if (!formFileUrl.trim()) {
+      setSaveError("File URL is required. Paste a URL or click Upload to embed a local file.");
+      return;
+    }
     try {
-      if (editingItem) {
-        await fetch(`/api/admin/training/resources/${editingItem.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      } else {
-        await fetch("/api/admin/training/resources", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+      const res = editingItem
+        ? await fetch(`/api/admin/training/resources/${editingItem.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          })
+        : await fetch("/api/admin/training/resources", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveError(data.error || `Save failed (HTTP ${res.status}).`);
+        return;
       }
       resetForm();
       await fetchResources();
-    } catch {
-      // Silently fail
+    } catch (e: any) {
+      setSaveError(e?.message || "Network error while saving resource.");
     }
   };
 
@@ -605,18 +695,52 @@ export default function AdminTrainingPage() {
                     ))}
                   </select>
                 </div>
-                {/* Video URL */}
-                <div>
+                {/* Video URL — paste YouTube/Vimeo or upload a local file */}
+                <div className="sm:col-span-2">
                   <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
-                    Video URL
+                    Video URL or Upload
                   </label>
-                  <input
-                    type="text"
-                    value={formVideoUrl}
-                    onChange={(e) => setFormVideoUrl(e.target.value)}
-                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
-                    placeholder="https://..."
-                  />
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleVideoFile(e.dataTransfer.files[0]);
+                    }}
+                    className="border border-dashed border-[var(--app-border)] rounded-lg p-3 bg-[var(--app-card-bg)]"
+                  >
+                    <input
+                      type="text"
+                      value={formVideoUrl.startsWith("data:") ? "[embedded video]" : formVideoUrl}
+                      onChange={(e) => setFormVideoUrl(e.target.value)}
+                      className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none mb-2"
+                      placeholder="https://youtube.com/... — or drag & drop a video file below"
+                      disabled={formVideoUrl.startsWith("data:")}
+                    />
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <label className="cursor-pointer font-body text-[11px] text-brand-gold border border-brand-gold/30 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors">
+                        {uploading ? "Uploading..." : "Upload / Drag video"}
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          onChange={(e) => handleVideoFile(e.target.files?.[0])}
+                        />
+                      </label>
+                      {formVideoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setFormVideoUrl("")}
+                          className="font-body text-[11px] text-red-400/70 hover:text-red-400"
+                        >
+                          Clear
+                        </button>
+                      )}
+                      <span className="font-body text-[10px] text-[var(--app-text-faint)]">
+                        Max 4MB embedded. For larger videos, host on YouTube or Vimeo and paste the URL.
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 {/* Duration */}
                 <div>
@@ -687,6 +811,11 @@ export default function AdminTrainingPage() {
                   placeholder="Module content in markdown..."
                 />
               </div>
+              {saveError && (
+                <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 font-body text-[12px] text-red-400">
+                  {saveError}
+                </div>
+              )}
               {/* Actions */}
               <div className="flex gap-3 mt-5">
                 <button
@@ -999,18 +1128,51 @@ export default function AdminTrainingPage() {
                     ))}
                   </select>
                 </div>
-                {/* File URL */}
-                <div>
+                {/* File URL — paste a link or upload / drag-drop a file */}
+                <div className="sm:col-span-2">
                   <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
-                    File URL
+                    File URL or Upload
                   </label>
-                  <input
-                    type="text"
-                    value={formFileUrl}
-                    onChange={(e) => setFormFileUrl(e.target.value)}
-                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
-                    placeholder="/docs/file.pdf"
-                  />
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResourceFile(e.dataTransfer.files[0]);
+                    }}
+                    className="border border-dashed border-[var(--app-border)] rounded-lg p-3 bg-[var(--app-card-bg)]"
+                  >
+                    <input
+                      type="text"
+                      value={formFileUrl.startsWith("data:") ? "[embedded file]" : formFileUrl}
+                      onChange={(e) => setFormFileUrl(e.target.value)}
+                      className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none mb-2"
+                      placeholder="https://example.com/file.pdf — or drag & drop a file below"
+                      disabled={formFileUrl.startsWith("data:")}
+                    />
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <label className="cursor-pointer font-body text-[11px] text-brand-gold border border-brand-gold/30 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors">
+                        {uploading ? "Uploading..." : "Upload / Drag file"}
+                        <input
+                          type="file"
+                          className="hidden"
+                          onChange={(e) => handleResourceFile(e.target.files?.[0])}
+                        />
+                      </label>
+                      {formFileUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setFormFileUrl("")}
+                          className="font-body text-[11px] text-red-400/70 hover:text-red-400"
+                        >
+                          Clear
+                        </button>
+                      )}
+                      <span className="font-body text-[10px] text-[var(--app-text-faint)]">
+                        Max 4MB embedded. For larger files, host on your CDN and paste the URL.
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 {/* File Size */}
                 <div>
@@ -1088,6 +1250,11 @@ export default function AdminTrainingPage() {
                   />
                 </button>
               </div>
+              {saveError && (
+                <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 font-body text-[12px] text-red-400">
+                  {saveError}
+                </div>
+              )}
               {/* Actions */}
               <div className="flex gap-3 mt-5">
                 <button
