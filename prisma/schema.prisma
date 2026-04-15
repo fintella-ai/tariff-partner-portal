@@ -446,6 +446,7 @@ model Deal {
   productType           String?   // "ieepa", "section301", "other"
   importedProducts      String?   // description of goods
   estimatedRefundAmount Float     @default(0)
+  actualRefundAmount    Float?    // set when Frost Law confirms the actual refund check the client received (post closed_won)
   firmFeeRate           Float?    // negotiated per deal
   firmFeeAmount         Float     @default(0)
   // Commissions

@@ -681,7 +681,7 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    // Estimated refund amount
+    // Estimated refund amount (initial deal size estimate from submission)
     const refundAmount =
       body.estimated_refund_amount ||
       body.estimatedRefundAmount ||
@@ -692,6 +692,19 @@ export async function PATCH(req: NextRequest) {
     if (refundAmount !== undefined) {
       const parsed = parseFloat(String(refundAmount).replace(/[,$]/g, ""));
       if (!isNaN(parsed)) data.estimatedRefundAmount = parsed;
+    }
+
+    // Actual refund amount — set after Frost Law confirms the refund check
+    // the client actually received. Typically sent alongside the
+    // closed_won transition payload, but acceptable to update later.
+    const actualRefund =
+      body.actual_refund_amount ??
+      body.actualRefundAmount ??
+      body.actual_refund ??
+      body.actualRefund;
+    if (actualRefund !== undefined && actualRefund !== null && actualRefund !== "") {
+      const parsed = parseFloat(String(actualRefund).replace(/[,$]/g, ""));
+      if (!isNaN(parsed)) data.actualRefundAmount = parsed;
     }
 
     // Firm fee rate (as decimal: 0.20 = 20%, or as percentage: 20)
@@ -1055,6 +1068,7 @@ export async function GET() {
       ],
       financials: [
         "estimated_refund_amount",
+        "actual_refund_amount",
         "firm_fee_rate",
         "firm_fee_amount",
         "l1_commission_rate",

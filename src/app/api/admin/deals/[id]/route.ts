@@ -69,6 +69,10 @@ export async function PUT(
     if (body.productType !== undefined) data.productType = body.productType || null;
     if (body.importedProducts !== undefined) data.importedProducts = body.importedProducts || null;
     if (body.estimatedRefundAmount !== undefined) data.estimatedRefundAmount = parseFloat(body.estimatedRefundAmount) || 0;
+    if (body.actualRefundAmount !== undefined) {
+      const v = body.actualRefundAmount;
+      data.actualRefundAmount = v === null || v === "" ? null : (parseFloat(v) || 0);
+    }
     if (body.firmFeeRate !== undefined) data.firmFeeRate = body.firmFeeRate != null ? parseFloat(body.firmFeeRate) : null;
     if (body.firmFeeAmount !== undefined) data.firmFeeAmount = parseFloat(body.firmFeeAmount) || 0;
     if (body.l1CommissionAmount !== undefined) data.l1CommissionAmount = parseFloat(body.l1CommissionAmount) || 0;
