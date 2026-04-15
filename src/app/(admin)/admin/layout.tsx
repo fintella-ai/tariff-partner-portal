@@ -8,7 +8,13 @@ import { useDevice } from "@/lib/useDevice";
 import NotificationBell from "@/components/ui/NotificationBell";
 import { getVisibleNav, getPermissions, ROLE_LABELS, type AdminRole } from "@/lib/permissions";
 
-const ADMIN_NAV_ITEMS = [
+type NavLeaf = { id: string; href: string; icon: string; label: string };
+type NavGroup = { id: string; icon: string; label: string; children: NavLeaf[] };
+type NavItem = NavLeaf | NavGroup;
+
+const isGroup = (n: NavItem): n is NavGroup => (n as NavGroup).children !== undefined;
+
+const ADMIN_NAV_ITEMS: NavItem[] = [
   { id: "partners", href: "/admin/partners", icon: "\u{1F465}", label: "Partners" },
   { id: "deals", href: "/admin/deals", icon: "\u{1F4BC}", label: "Deals" },
   { id: "communications", href: "/admin/communications", icon: "\u{1F4E7}", label: "Communications" },
@@ -17,9 +23,20 @@ const ADMIN_NAV_ITEMS = [
   { id: "documents", href: "/admin/documents", icon: "\u{1F4C4}", label: "Documents" },
   { id: "support", href: "/admin/support", icon: "\u{1F3AB}", label: "Support" },
   { id: "chat", href: "/admin/chat", icon: "\u{1F4AC}", label: "Live Chat" },
-  { id: "payouts", href: "/admin/payouts", icon: "\u{1F4B3}", label: "Payouts" },
-  { id: "revenue", href: "/admin/revenue", icon: "\u{1F4B5}", label: "Revenue" },
-  { id: "reports", href: "/admin/reports", icon: "\u{1F4CA}", label: "Reports" },
+  // Reports group — rolls up finance / analytics pages so the flat nav
+  // doesn't have three adjacent items that all answer "how much money"
+  // questions. Kept as a group even though Revenue + Payouts are still
+  // first-class pages with their own permission gates.
+  {
+    id: "reports",
+    icon: "\u{1F4CA}",
+    label: "Reports",
+    children: [
+      { id: "reports", href: "/admin/reports", icon: "\u{1F4C8}", label: "Reports" },
+      { id: "revenue", href: "/admin/revenue", icon: "\u{1F4B5}", label: "Revenue" },
+      { id: "payouts", href: "/admin/payouts", icon: "\u{1F4B3}", label: "Payouts" },
+    ],
+  },
   { id: "settings", href: "/admin/settings", icon: "\u2699\uFE0F", label: "Settings" },
   { id: "users", href: "/admin/users", icon: "\u{1F6E1}\uFE0F", label: "Admin Users" },
   { id: "dev", href: "/admin/dev", icon: "\u{1F6E0}\uFE0F", label: "Development" },
@@ -48,7 +65,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const userRole = (user?.role || "admin") as AdminRole;
   const visibleNavIds = getVisibleNav(userRole);
   const permissions = getPermissions(userRole);
-  const filteredNav = ADMIN_NAV_ITEMS.filter((item) => visibleNavIds.includes(item.id));
+
+  // Filter nav by role. For groups, keep the group if at least one child is
+  // visible, and narrow the children to just the visible ones.
+  const filteredNav: NavItem[] = ADMIN_NAV_ITEMS.flatMap((item): NavItem[] => {
+    if (isGroup(item)) {
+      const visibleChildren = item.children.filter((c) => visibleNavIds.includes(c.id));
+      if (visibleChildren.length === 0) return [];
+      return [{ ...item, children: visibleChildren }];
+    }
+    return visibleNavIds.includes(item.id) ? [item] : [];
+  });
+
+  // Track which groups are open. Auto-open any group whose child matches
+  // the current pathname so navigating directly to /admin/revenue expands
+  // Reports without a manual click.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    const next: Record<string, boolean> = {};
+    for (const item of filteredNav) {
+      if (isGroup(item)) {
+        if (item.children.some((c) => pathname === c.href || pathname.startsWith(c.href + "/"))) {
+          next[item.id] = true;
+        }
+      }
+    }
+    setOpenGroups((prev) => ({ ...prev, ...next }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -92,6 +136,63 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {collapsed && <div className="mb-3" />}
 
       {filteredNav.map((item) => {
+        if (isGroup(item)) {
+          const childActive = item.children.some(
+            (c) => pathname === c.href || pathname.startsWith(c.href + "/")
+          );
+          const open = collapsed ? true : !!openGroups[item.id];
+          return (
+            <div key={item.id} className="flex flex-col">
+              <button
+                onClick={() => {
+                  if (collapsed) {
+                    // When collapsed, clicking a group nav to its first child
+                    // so the user still has a usable click target.
+                    navigate(item.children[0]!.href);
+                    return;
+                  }
+                  setOpenGroups((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
+                }}
+                title={collapsed ? item.label : undefined}
+                className={`flex items-center ${collapsed ? "justify-center" : "gap-3"} w-full text-left ${collapsed ? "px-2" : "px-4"} py-3.5 rounded-lg font-body text-sm transition-all min-h-[48px] ${
+                  childActive
+                    ? "text-brand-gold"
+                    : "theme-text-secondary hover:bg-brand-gold/5"
+                }`}
+              >
+                <span className="text-base">{item.icon}</span>
+                {!collapsed && (
+                  <>
+                    <span className="flex-1">{item.label}</span>
+                    <span className={`text-[10px] transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
+                  </>
+                )}
+              </button>
+              {open && !collapsed && (
+                <div className="ml-3 border-l border-[var(--app-border)] pl-2 flex flex-col">
+                  {item.children.map((c) => {
+                    const isActive = pathname === c.href || pathname.startsWith(c.href + "/");
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => navigate(c.href)}
+                        className={`flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg font-body text-[13px] transition-all min-h-[40px] ${
+                          isActive
+                            ? "bg-brand-gold/10 text-brand-gold"
+                            : "theme-text-secondary hover:bg-brand-gold/5"
+                        }`}
+                      >
+                        <span className="text-sm">{c.icon}</span>
+                        <span>{c.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        }
+
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <button
