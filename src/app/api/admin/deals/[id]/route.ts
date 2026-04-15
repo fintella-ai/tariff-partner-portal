@@ -47,10 +47,24 @@ export async function PUT(
     const body = await req.json();
     const data: Record<string, any> = {};
 
+    const strOrNull = (v: any) =>
+      v === undefined || v === null || String(v).trim() === "" ? null : String(v).trim();
+
     if (body.dealName !== undefined) data.dealName = body.dealName;
-    if (body.clientName !== undefined) data.clientName = body.clientName || null;
-    if (body.clientEmail !== undefined) data.clientEmail = body.clientEmail || null;
-    if (body.clientPhone !== undefined) data.clientPhone = body.clientPhone || null;
+    if (body.clientFirstName !== undefined) data.clientFirstName = strOrNull(body.clientFirstName);
+    if (body.clientLastName !== undefined) data.clientLastName = strOrNull(body.clientLastName);
+    if (body.clientName !== undefined) data.clientName = strOrNull(body.clientName);
+    if (body.clientEmail !== undefined) data.clientEmail = strOrNull(body.clientEmail);
+    if (body.clientPhone !== undefined) data.clientPhone = strOrNull(body.clientPhone);
+    if (body.clientTitle !== undefined) data.clientTitle = strOrNull(body.clientTitle);
+    if (body.serviceOfInterest !== undefined) data.serviceOfInterest = strOrNull(body.serviceOfInterest);
+    if (body.legalEntityName !== undefined) data.legalEntityName = strOrNull(body.legalEntityName);
+    if (body.businessCity !== undefined) data.businessCity = strOrNull(body.businessCity);
+    if (body.businessState !== undefined) data.businessState = strOrNull(body.businessState);
+    if (body.importsGoods !== undefined) data.importsGoods = strOrNull(body.importsGoods);
+    if (body.importCountries !== undefined) data.importCountries = strOrNull(body.importCountries);
+    if (body.annualImportValue !== undefined) data.annualImportValue = strOrNull(body.annualImportValue);
+    if (body.importerOfRecord !== undefined) data.importerOfRecord = strOrNull(body.importerOfRecord);
     if (body.stage !== undefined) data.stage = body.stage;
     if (body.productType !== undefined) data.productType = body.productType || null;
     if (body.importedProducts !== undefined) data.importedProducts = body.importedProducts || null;

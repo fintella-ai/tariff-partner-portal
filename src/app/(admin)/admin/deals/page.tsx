@@ -99,6 +99,34 @@ export default function AdminDealsPage() {
   const [editNotes, setEditNotes] = useState("");
   const [dealNotes, setDealNotes] = useState<Record<string, any[]>>({});
 
+  // Editable client-submission fields (super_admin / admin / partner_support
+  // may need to correct these manually when the referral form came in with
+  // typos or stale info — e.g. wrong email, wrong legal entity name).
+  type ClientEdits = {
+    clientFirstName: string;
+    clientLastName: string;
+    clientEmail: string;
+    clientPhone: string;
+    clientTitle: string;
+    serviceOfInterest: string;
+    legalEntityName: string;
+    businessCity: string;
+    businessState: string;
+    importsGoods: string;
+    importCountries: string;
+    annualImportValue: string;
+    importerOfRecord: string;
+  };
+  const emptyClientEdits: ClientEdits = {
+    clientFirstName: "", clientLastName: "", clientEmail: "", clientPhone: "",
+    clientTitle: "", serviceOfInterest: "", legalEntityName: "",
+    businessCity: "", businessState: "", importsGoods: "", importCountries: "",
+    annualImportValue: "", importerOfRecord: "",
+  };
+  const [editClient, setEditClient] = useState<ClientEdits>(emptyClientEdits);
+  const setClientField = (k: keyof ClientEdits) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setEditClient((prev) => ({ ...prev, [k]: e.target.value }));
+
   const fetchDeals = useCallback(async () => {
     try {
       const params = new URLSearchParams();
@@ -165,6 +193,21 @@ export default function AdminDealsPage() {
       setEditL1Status(deal.l1CommissionStatus);
       setEditL2Status(deal.l2CommissionStatus);
       setEditNotes(deal.notes || "");
+      setEditClient({
+        clientFirstName: deal.clientFirstName || "",
+        clientLastName: deal.clientLastName || "",
+        clientEmail: deal.clientEmail || "",
+        clientPhone: deal.clientPhone || "",
+        clientTitle: deal.clientTitle || "",
+        serviceOfInterest: deal.serviceOfInterest || "",
+        legalEntityName: deal.legalEntityName || "",
+        businessCity: deal.businessCity || "",
+        businessState: deal.businessState || "",
+        importsGoods: deal.importsGoods || "",
+        importCountries: deal.importCountries || "",
+        annualImportValue: deal.annualImportValue || "",
+        importerOfRecord: deal.importerOfRecord || "",
+      });
       // Fetch deal notes
       fetchDealNotes(deal.id);
     }
@@ -190,6 +233,13 @@ export default function AdminDealsPage() {
           l1CommissionStatus: editL1Status,
           l2CommissionStatus: editL2Status,
           notes: editNotes,
+          ...editClient,
+          // Keep composite clientName in sync with first/last edits so legacy
+          // consumers reading deal.clientName still show the corrected name.
+          clientName: [editClient.clientFirstName, editClient.clientLastName]
+            .filter(Boolean)
+            .join(" ")
+            .trim(),
         }),
       });
       setExpandedId(null);
@@ -433,24 +483,30 @@ export default function AdminDealsPage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2.5">
-                    {[
-                      { label: "Contact Name", value: [deal.clientFirstName, deal.clientLastName].filter(Boolean).join(" ") || deal.clientName },
-                      { label: "Email", value: deal.clientEmail },
-                      { label: "Phone", value: deal.clientPhone },
-                      { label: "Business Title", value: deal.clientTitle },
-                      { label: "Service of Interest", value: deal.serviceOfInterest },
-                      { label: "Legal Entity", value: deal.legalEntityName },
-                      { label: "City", value: deal.businessCity },
-                      { label: "State", value: deal.businessState },
-                      { label: "Imports Goods to U.S.", value: deal.importsGoods },
-                      { label: "Import Countries", value: deal.importCountries },
-                      { label: "Annual Import Value", value: deal.annualImportValue },
-                      { label: "Importer of Record", value: deal.importerOfRecord },
-                    ].map((f) => (
-                      <div key={f.label}>
-                        <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">{f.label}</div>
-                        <div className="font-body text-[13px] text-[var(--app-text-secondary)] mt-0.5">{f.value || "—"}</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3">
+                    {([
+                      { label: "First Name", key: "clientFirstName" },
+                      { label: "Last Name", key: "clientLastName" },
+                      { label: "Email", key: "clientEmail" },
+                      { label: "Phone", key: "clientPhone" },
+                      { label: "Business Title", key: "clientTitle" },
+                      { label: "Service of Interest", key: "serviceOfInterest" },
+                      { label: "Legal Entity", key: "legalEntityName" },
+                      { label: "City", key: "businessCity" },
+                      { label: "State", key: "businessState" },
+                      { label: "Imports Goods to U.S.", key: "importsGoods" },
+                      { label: "Import Countries", key: "importCountries" },
+                      { label: "Annual Import Value", key: "annualImportValue" },
+                      { label: "Importer of Record", key: "importerOfRecord" },
+                    ] as const).map((f) => (
+                      <div key={f.key}>
+                        <label className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">{f.label}</label>
+                        <input
+                          className={`${inputClass} w-full`}
+                          value={editClient[f.key]}
+                          onChange={setClientField(f.key)}
+                          placeholder="—"
+                        />
                       </div>
                     ))}
                   </div>
@@ -638,23 +694,30 @@ export default function AdminDealsPage() {
                 {/* Form submission data */}
                 <div className="mb-3 pb-3 border-b border-[var(--app-border)]">
                   <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-2">Submission Details</div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    {[
-                      { label: "Contact", value: [deal.clientFirstName, deal.clientLastName].filter(Boolean).join(" ") || deal.clientName },
-                      { label: "Email", value: deal.clientEmail },
-                      { label: "Phone", value: deal.clientPhone },
-                      { label: "Title", value: deal.clientTitle },
-                      { label: "Service", value: deal.serviceOfInterest },
-                      { label: "Business", value: deal.legalEntityName },
-                      { label: "Location", value: [deal.businessCity, deal.businessState].filter(Boolean).join(", ") },
-                      { label: "Imports", value: deal.importsGoods },
-                      { label: "Countries", value: deal.importCountries },
-                      { label: "Import Value", value: deal.annualImportValue },
-                      { label: "Importer", value: deal.importerOfRecord },
-                    ].map((f) => (
-                      <div key={f.label}>
-                        <div className="font-body text-[9px] text-[var(--app-text-faint)] uppercase">{f.label}</div>
-                        <div className="font-body text-[12px] text-[var(--app-text-secondary)]">{f.value || "—"}</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
+                    {([
+                      { label: "First Name", key: "clientFirstName" },
+                      { label: "Last Name", key: "clientLastName" },
+                      { label: "Email", key: "clientEmail" },
+                      { label: "Phone", key: "clientPhone" },
+                      { label: "Title", key: "clientTitle" },
+                      { label: "Service", key: "serviceOfInterest" },
+                      { label: "Legal Entity", key: "legalEntityName" },
+                      { label: "City", key: "businessCity" },
+                      { label: "State", key: "businessState" },
+                      { label: "Imports", key: "importsGoods" },
+                      { label: "Countries", key: "importCountries" },
+                      { label: "Import Value", key: "annualImportValue" },
+                      { label: "Importer", key: "importerOfRecord" },
+                    ] as const).map((f) => (
+                      <div key={f.key}>
+                        <label className="font-body text-[9px] text-[var(--app-text-faint)] uppercase block mb-0.5">{f.label}</label>
+                        <input
+                          className={`${inputClass} w-full !py-1.5 !text-[12px]`}
+                          value={editClient[f.key]}
+                          onChange={setClientField(f.key)}
+                          placeholder="—"
+                        />
                       </div>
                     ))}
                   </div>
