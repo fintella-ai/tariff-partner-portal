@@ -407,6 +407,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className={`flex-1 overflow-y-auto ${device.padding}`}
         style={{ paddingTop: device.isTablet ? 72 : undefined }}
       >
+        {/* ── STICKY TOP CTA BAR ──
+            Submit Client + Referral Links pinned to the top of the
+            scrollable content area. Uses position: sticky inside the
+            scroll container so it stays visible when the user scrolls
+            down the welcome + module content below. Centered with the
+            NotificationBell still floating in its top-right fixed
+            corner. Shown on both mobile and desktop. */}
+        <div
+          className="sticky top-0 z-40 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3 mb-5 bg-[var(--app-bg)]/85 backdrop-blur-md border-b border-[var(--app-border)]"
+        >
+          <div className="flex items-center justify-center gap-2 sm:gap-3 max-w-xl mx-auto">
+            <button
+              onClick={() => navigate("/dashboard/submit-client")}
+              className={`flex-1 sm:flex-none font-body text-[12px] sm:text-[13px] font-semibold tracking-wider border rounded-lg px-4 sm:px-5 py-2.5 transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
+                isActive("/dashboard/submit-client")
+                  ? "bg-brand-gold/15 border-brand-gold/40 text-brand-gold"
+                  : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold hover:bg-brand-gold/10"
+              }`}
+            >
+              💼 Submit Client
+            </button>
+            <button
+              onClick={() => navigate("/dashboard/referral-links")}
+              className={`flex-1 sm:flex-none font-body text-[12px] sm:text-[13px] font-semibold tracking-wider border rounded-lg px-4 sm:px-5 py-2.5 transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
+                isActive("/dashboard/referral-links")
+                  ? "bg-purple-500/15 border-purple-500/40 text-purple-400"
+                  : "bg-purple-500/[0.06] border-purple-500/20 text-purple-400 hover:bg-purple-500/10"
+              }`}
+            >
+              👥 Referral Links
+            </button>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="mb-5 sm:mb-8">
           {device.isMobile && (
@@ -440,24 +474,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </>
           )}
 
-          {/* Mobile: Referral link buttons right at top */}
-          {device.isMobile && (
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => navigate("/dashboard/submit-client")}
-                className="flex-1 font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all text-center bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold"
-              >
-                💼 Submit Client
-              </button>
-              <button
-                onClick={() => navigate("/dashboard/referral-links")}
-                className="flex-1 font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all text-center bg-purple-500/[0.06] border-purple-500/20 text-purple-400"
-              >
-                👥 Referral Links
-              </button>
-            </div>
-          )}
-
           <div className="flex justify-between items-start">
             <div>
               <div className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1">
@@ -481,34 +497,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 )}
               </div>
             </div>
-            {/* Desktop: Submit Client + Referral Links in top right.
-                Support moved into the left sidebar under Documents per
-                partner-portal layout update — top-right stays focused
-                on the two revenue-driving CTAs. */}
-            {!device.isDesktop ? null : (
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => navigate("/dashboard/submit-client")}
-                  className={`font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2.5 transition-all flex items-center gap-1.5 ${
-                    isActive("/dashboard/submit-client")
-                      ? "bg-brand-gold/15 border-brand-gold/30 text-brand-gold"
-                      : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold hover:bg-brand-gold/10"
-                  }`}
-                >
-                  💼 Submit Client
-                </button>
-                <button
-                  onClick={() => navigate("/dashboard/referral-links")}
-                  className={`font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2.5 transition-all flex items-center gap-1.5 ${
-                    isActive("/dashboard/referral-links")
-                      ? "bg-purple-500/15 border-purple-500/30 text-purple-400"
-                      : "bg-purple-500/[0.06] border-purple-500/20 text-purple-400 hover:bg-purple-500/10"
-                  }`}
-                >
-                  👥 Referral Links
-                </button>
-              </div>
-            )}
+            {/* Desktop top-right CTAs moved to the sticky top bar above.
+                Top-right corner is now reserved for the floating
+                NotificationBell only. */}
           </div>
         </div>
 
