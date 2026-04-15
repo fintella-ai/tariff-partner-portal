@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FIRM_SHORT } from "@/lib/constants";
+import { FIRM_SHORT, ALL_PARTY_CONSENT_STATES } from "@/lib/constants";
+
+const PORTAL_URL =
+  process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://fintella.partners";
+const RECORDING_ENABLED = !!process.env.TWILIO_RECORDING_ENABLED;
 
 /**
  * Twilio Voice Webhook (Phase 15c)
@@ -44,15 +48,43 @@ function escapeXml(s: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function buildBridgeTwiml(toPhone: string): string {
+function buildBridgeTwiml(
+  toPhone: string,
+  state: string | null,
+  logId: string | null
+): string {
   // Brief Say + Dial. The Say uses Twilio's polly voice for clearer
   // English than the legacy "alice" voice. callerId defaults to whatever
   // From was set on the original call (TWILIO_FROM_NUMBER) — we don't
   // override it here so caller ID stays consistent.
   const safeNumber = escapeXml(toPhone);
-  return `<Response>
+
+  // All-party consent disclosure: played to the admin before bridging when
+  // TWILIO_RECORDING_ENABLED is set and the partner's state requires it.
+  const needsConsent =
+    RECORDING_ENABLED && !!state && ALL_PARTY_CONSENT_STATES.has(state);
+  const consentSay = needsConsent
+    ? `\n  <Say voice="Polly.Joanna">This call may be recorded for quality and compliance purposes. By continuing, all parties consent to this recording.</Say>`
+    : "";
+
+  // Recording attributes on <Dial>: dual-channel captures admin + partner
+  // separately. recordingStatusCallback fires when Twilio finishes
+  // processing the recording (after the call ends).
+  let recordingAttrs = "";
+  if (RECORDING_ENABLED) {
+    const cbBase = `${PORTAL_URL}/api/twilio/recording-webhook`;
+    const cbUrl = logId
+      ? `${cbBase}?logId=${encodeURIComponent(logId)}`
+      : cbBase;
+    recordingAttrs =
+      ` record="record-from-answer-dual"` +
+      ` recordingStatusCallback="${escapeXml(cbUrl)}"` +
+      ` recordingStatusCallbackMethod="POST"`;
+  }
+
+  return `<Response>${consentSay}
   <Say voice="Polly.Joanna">Connecting you to your ${escapeXml(FIRM_SHORT)} partner now.</Say>
-  <Dial timeout="25" answerOnBridge="true">${safeNumber}</Dial>
+  <Dial timeout="25" answerOnBridge="true"${recordingAttrs}>${safeNumber}</Dial>
 </Response>`;
 }
 
@@ -70,7 +102,7 @@ function buildSoftphoneOutboundTwiml(toPhone: string): string {
 }
 
 async function handle(req: NextRequest): Promise<NextResponse> {
-  // Bridged-call path: ?to= query param set by initiateBridgedCall().
+  // Bridged-call path: ?to=, ?logId=, ?state= set by initiateBridgedCall().
   const toQuery = req.nextUrl.searchParams.get("to") || "";
   if (toQuery) {
     if (!/^\+[1-9]\d{6,14}$/.test(toQuery)) {
@@ -78,7 +110,9 @@ async function handle(req: NextRequest): Promise<NextResponse> {
         `<Response><Say voice="Polly.Joanna">Invalid destination number. Goodbye.</Say><Hangup/></Response>`
       );
     }
-    return twiml(buildBridgeTwiml(toQuery));
+    const logId = req.nextUrl.searchParams.get("logId") || null;
+    const state = req.nextUrl.searchParams.get("state") || null;
+    return twiml(buildBridgeTwiml(toQuery, state, logId));
   }
 
   // Softphone outbound path: TwiML App POSTs form-encoded body with

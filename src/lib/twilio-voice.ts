@@ -56,6 +56,9 @@ export interface InitiateCallInput {
   /** Admin user info for the audit trail. */
   initiatedByEmail?: string | null;
   initiatedByName?: string | null;
+  /** US state abbreviation from PartnerProfile.state — used to determine
+   *  whether all-party consent disclosure is required before recording. */
+  partnerState?: string | null;
 }
 
 export interface InitiateCallResult {
@@ -133,7 +136,10 @@ export async function initiateBridgedCall(
     // The voice-webhook URL is what Twilio hits when admin answers. We pass
     // the partner phone + log id as query params so the webhook knows who
     // to bridge to and which CallLog row to update.
-    const voiceWebhookUrl = `${PORTAL_URL}/api/twilio/voice-webhook?to=${encodeURIComponent(to)}&logId=${encodeURIComponent(logRow.id)}`;
+    const stateParam = input.partnerState
+      ? `&state=${encodeURIComponent(input.partnerState)}`
+      : "";
+    const voiceWebhookUrl = `${PORTAL_URL}/api/twilio/voice-webhook?to=${encodeURIComponent(to)}&logId=${encodeURIComponent(logRow.id)}${stateParam}`;
     const statusCallbackUrl = `${PORTAL_URL}/api/twilio/call-status?logId=${encodeURIComponent(logRow.id)}`;
 
     const form = new URLSearchParams();

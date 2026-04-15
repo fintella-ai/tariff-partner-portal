@@ -82,6 +82,27 @@ export const US_STATES = [
   "VA","WA","WV","WI","WY","DC",
 ] as const;
 
+// ─── CALL RECORDING — ALL-PARTY CONSENT STATES ───────────────────────────────
+// These US states require all parties to consent before a call may be recorded.
+// When a partner's PartnerProfile.state is in this set and TWILIO_RECORDING_ENABLED
+// is set, the voice-webhook prepends a consent disclosure before connecting the call.
+export const ALL_PARTY_CONSENT_STATES = new Set([
+  "CA", // California
+  "CT", // Connecticut
+  "DE", // Delaware
+  "FL", // Florida
+  "IL", // Illinois
+  "MA", // Massachusetts
+  "MD", // Maryland
+  "MI", // Michigan
+  "MT", // Montana
+  "NH", // New Hampshire
+  "NV", // Nevada
+  "OR", // Oregon
+  "PA", // Pennsylvania
+  "WA", // Washington
+]);
+
 // ─── DOCUMENT TYPES ─────────────────────────────────────────────────────────
 export const DOC_TYPE_LABELS: Record<string, string> = {
   agreement: "Agreement",

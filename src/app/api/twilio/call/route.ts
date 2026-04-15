@@ -54,11 +54,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Fetch state from PartnerProfile for consent determination.
+    // PartnerProfile shares partnerCode but has no Prisma relation on Partner.
+    const profile = await prisma.partnerProfile
+      .findUnique({ where: { partnerCode }, select: { state: true } })
+      .catch(() => null);
+
     const result = await initiateBridgedCall({
       to: partner.mobilePhone,
       partnerCode: partner.partnerCode,
       initiatedByEmail: (session.user as any).email || null,
       initiatedByName: (session.user as any).name || null,
+      partnerState: profile?.state ?? null,
     });
 
     return NextResponse.json({
