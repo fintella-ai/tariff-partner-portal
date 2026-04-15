@@ -59,6 +59,7 @@ export interface PartnerTemplateContext {
   phone?: string | null;
   mobilePhone?: string | null;
   companyName?: string | null;
+  title?: string | null;
   tin?: string | null;
   commissionRate?: number | null; // 0.25, 0.20, 0.15, 0.10
   street?: string | null;
@@ -67,6 +68,29 @@ export interface PartnerTemplateContext {
   state?: string | null;
   zip?: string | null;
   country?: string | null;
+}
+
+/**
+ * Render a decimal commission rate (0.25) as its written-out English word
+ * form ("twenty-five") so SignWell templates can embed both a numeric and
+ * a textual version of the rate in the contract body. Returns empty string
+ * for an unknown rate so the template field just renders blank.
+ */
+function commissionRateToText(rate: number | null | undefined): string {
+  if (typeof rate !== "number" || !isFinite(rate)) return "";
+  const pct = Math.round(rate * 100);
+  const lookup: Record<number, string> = {
+    10: "ten",
+    15: "fifteen",
+    20: "twenty",
+    25: "twenty-five",
+    30: "thirty",
+    35: "thirty-five",
+    40: "forty",
+    45: "forty-five",
+    50: "fifty",
+  };
+  return lookup[pct] || "";
 }
 
 /**
@@ -98,6 +122,8 @@ export function buildPartnerTemplateFields(
     day: "numeric",
   });
 
+  const commissionText = commissionRateToText(ctx.commissionRate);
+
   const fields: Array<[string, string | null | undefined]> = [
     ["partner_code", ctx.partnerCode],
     ["partner_name", fullName],
@@ -107,9 +133,11 @@ export function buildPartnerTemplateFields(
     ["partner_phone", ctx.phone || ctx.mobilePhone || ""],
     ["partner_mobile", ctx.mobilePhone || ""],
     ["partner_company", ctx.companyName || ""],
+    ["partner_title", ctx.title || ""],
     ["partner_tin", ctx.tin || ""],
     ["partner_commission_rate", ratePct],
     ["partner_commission_rate_pct", ratePct],
+    ["partner_commission_text", commissionText],
     ["partner_street", ctx.street || ""],
     ["partner_street2", ctx.street2 || ""],
     ["partner_city", ctx.city || ""],
@@ -117,6 +145,10 @@ export function buildPartnerTemplateFields(
     ["partner_zip", ctx.zip || ""],
     ["partner_country", ctx.country || "US"],
     ["agreement_date", todayStr],
+    // Alias for templates using a "signed_agreement_date" api_id. Same
+    // value as agreement_date — SignWell will consume whichever the
+    // template actually declares.
+    ["signed_agreement_date", todayStr],
   ];
 
   return fields
