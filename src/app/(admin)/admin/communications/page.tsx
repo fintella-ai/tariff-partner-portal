@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, fmtDateTime } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
 
 /* ------------------------------------------------------------------ */
@@ -487,7 +487,7 @@ export default function CommunicationsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-[var(--app-text-secondary)] whitespace-nowrap">
-                    {fmtDate(e.createdAt)}
+                    {fmtDateTime(e.createdAt)}
                   </td>
                   <td className="px-4 py-3">
                     {!e.read && (
@@ -555,7 +555,7 @@ export default function CommunicationsPage() {
                   <div className="font-body text-xs text-[var(--app-text-muted)]">{e.fromEmail}</div>
                 </div>
                 <span className="font-body text-xs text-[var(--app-text-muted)] whitespace-nowrap">
-                  {fmtDate(e.createdAt)}
+                  {fmtDateTime(e.createdAt)}
                 </span>
               </div>
               <div className={`font-body text-sm font-medium mb-1 ${!e.read ? "text-[var(--app-text)]" : "text-[var(--app-text-secondary)]"}`}>
@@ -623,7 +623,7 @@ export default function CommunicationsPage() {
                   <div className="font-display text-lg font-bold">{selectedEmail.subject}</div>
                   <div className="font-body text-xs text-[var(--app-text-muted)] mt-1">
                     From <span className="text-[var(--app-text-secondary)]">{selectedEmail.fromName || selectedEmail.fromEmail}</span>{" "}
-                    &lt;{selectedEmail.fromEmail}&gt; · {fmtDate(selectedEmail.createdAt)}
+                    &lt;{selectedEmail.fromEmail}&gt; · {fmtDateTime(selectedEmail.createdAt)}
                   </div>
                   <div className="font-body text-xs text-[var(--app-text-muted)] mt-0.5">
                     To <span className="text-[var(--app-text-secondary)]">{selectedEmail.toEmail}</span>

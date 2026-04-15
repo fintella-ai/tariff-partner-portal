@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, fmtDateTime } from "@/lib/format";
 import { getPermissions } from "@/lib/permissions";
 import CountryCodeSelect, { parseMobilePhone, buildMobilePhone } from "@/components/ui/CountryCodeSelect";
 import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
@@ -1303,7 +1303,7 @@ export default function PartnerDetailPage() {
                     <div className="flex items-center gap-2 text-[11px]">
                       <span className="font-body text-[var(--app-text-muted)]">{t.category}</span>
                       <span className="text-[var(--app-text-faint)]">&middot;</span>
-                      <span className="font-body text-[var(--app-text-muted)]">{fmtDate(t.createdAt)}</span>
+                      <span className="font-body text-[var(--app-text-muted)]">{fmtDateTime(t.createdAt)}</span>
                       <span className="text-[var(--app-text-faint)]">&middot;</span>
                       <span className="font-body text-[var(--app-text-muted)]">
                         {t.messages?.length || 0} {t.messages?.length === 1 ? "message" : "messages"}
@@ -1341,7 +1341,7 @@ export default function PartnerDetailPage() {
                   <div className="flex-1 min-w-0">
                     <div className="font-body text-[13px] text-[var(--app-text)]">{n.title}</div>
                     <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">{n.message}</div>
-                    <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDate(n.createdAt)}</div>
+                    <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDateTime(n.createdAt)}</div>
                   </div>
                   {!n.read && <span className="w-2 h-2 rounded-full bg-brand-gold shrink-0 mt-1.5" />}
                 </div>
@@ -1385,7 +1385,7 @@ export default function PartnerDetailPage() {
                       {e.errorMessage && (
                         <div className="font-body text-[10px] text-red-400 mt-1 truncate">{e.errorMessage}</div>
                       )}
-                      <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDate(e.createdAt)}</div>
+                      <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDateTime(e.createdAt)}</div>
                     </div>
                   </div>
                 </div>
@@ -1439,7 +1439,7 @@ export default function PartnerDetailPage() {
                       <div className="font-body text-[11px] text-[var(--app-text-secondary)] mt-1 line-clamp-2 whitespace-pre-wrap">{e.textBody}</div>
                     )}
                     <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">
-                      {fmtDate(e.createdAt)}
+                      {fmtDateTime(e.createdAt)}
                       {e.supportTicketId && (
                         <> · <a href={`/admin/support?ticket=${e.supportTicketId}`} target="_blank" rel="noopener noreferrer" className="text-brand-gold underline">linked ticket</a></>
                       )}
@@ -1499,7 +1499,7 @@ export default function PartnerDetailPage() {
                       {s.errorMessage && (
                         <div className="font-body text-[10px] text-red-400 mt-1 truncate">{s.errorMessage}</div>
                       )}
-                      <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDate(s.createdAt)}</div>
+                      <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDateTime(s.createdAt)}</div>
                     </div>
                   </div>
                 </div>
@@ -1578,7 +1578,7 @@ export default function PartnerDetailPage() {
                       {c.errorMessage && (
                         <div className="font-body text-[10px] text-red-400 mt-1 truncate">{c.errorMessage}</div>
                       )}
-                      <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDate(c.createdAt)}</div>
+                      <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDateTime(c.createdAt)}</div>
                     </div>
                   </div>
                 </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import PartnerLink from "@/components/ui/PartnerLink";
+import { fmtDateTime } from "@/lib/format";
 
 type Ticket = {
   id: string;
@@ -102,13 +103,8 @@ const statusLabel: Record<string, string> = {
   closed: "Closed",
 };
 
-function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function fmtDateTime(d: string) {
-  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-}
+// Ticket list + detail both show full date + time for consistency.
+const fmtDate = fmtDateTime;
 
 export default function SupportTicketsPage() {
   const [tab, setTab] = useState<Tab>("All");
