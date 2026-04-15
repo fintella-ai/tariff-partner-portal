@@ -19,6 +19,9 @@ type Payout = {
   periodMonth: string;
   payoutDate: string | null;
   batchId: string | null;
+  stripeTransferId: string | null;
+  stripeStatus: string | null;
+  stripePayoutsEnabled: boolean;
 };
 
 type PayoutStats = {
@@ -205,6 +208,7 @@ export default function PayoutManagementPage() {
                   <th className="px-4 py-3">Amount</th>
                   <th className="px-4 py-3">Period</th>
                   <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-center">Stripe</th>
                   <th className="px-4 py-3">Action</th>
                 </tr>
               </thead>
@@ -227,6 +231,23 @@ export default function PayoutManagementPage() {
                       <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${statusBadge[p.status]}`}>
                         {statusLabel[p.status]}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {p.stripeTransferId ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20" title={p.stripeTransferId}>
+                          Transferred
+                        </span>
+                      ) : p.stripeStatus === "active" && p.stripePayoutsEnabled ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                          Ready
+                        </span>
+                      ) : p.stripeStatus === "onboarding" || p.stripeStatus === "restricted" ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/20">
+                          Pending
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-[var(--app-text-faint)]">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {p.status === "due" ? (
@@ -267,6 +288,11 @@ export default function PayoutManagementPage() {
                   <div>
                     <div className="font-display text-lg font-bold text-[var(--app-text)]">{fmt$(p.amount)}</div>
                     <div className="text-xs text-[var(--app-text-muted)]">{fmtMonth(p.periodMonth)}</div>
+                    {p.stripeTransferId ? (
+                      <div className="text-[10px] text-green-400 mt-0.5">Stripe transferred</div>
+                    ) : p.stripeStatus === "active" && p.stripePayoutsEnabled ? (
+                      <div className="text-[10px] text-blue-400 mt-0.5">Stripe ready</div>
+                    ) : null}
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full ${statusBadge[p.status]}`}>

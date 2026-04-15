@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendCommissionPaidEmail } from "@/lib/sendgrid";
+import { createTransfer } from "@/lib/stripe";
 
 /**
  * GET /api/admin/payouts
@@ -38,6 +39,17 @@ export async function GET(req: NextRequest) {
       };
     }
 
+    // Load Stripe account status for all partners that appear in commissions
+    const allPartnerCodes = Array.from(new Set(commissions.map((c) => c.partnerCode)));
+    const stripeAccounts = await prisma.stripeAccount.findMany({
+      where: { partnerCode: { in: allPartnerCodes } },
+      select: { partnerCode: true, status: true, payoutsEnabled: true },
+    });
+    const stripeMap: Record<string, { status: string; payoutsEnabled: boolean }> = {};
+    for (const sa of stripeAccounts) {
+      stripeMap[sa.partnerCode] = { status: sa.status, payoutsEnabled: sa.payoutsEnabled };
+    }
+
     const payouts = commissions.map((c) => ({
       id: c.id,
       partnerName: partnerMap[c.partnerCode]?.company || partnerMap[c.partnerCode]?.name || c.partnerCode,
@@ -51,6 +63,9 @@ export async function GET(req: NextRequest) {
       periodMonth: c.periodMonth || "",
       payoutDate: c.payoutDate?.toISOString() || null,
       batchId: c.batchId,
+      stripeTransferId: c.stripeTransferId || null,
+      stripeStatus: stripeMap[c.partnerCode]?.status || null,
+      stripePayoutsEnabled: stripeMap[c.partnerCode]?.payoutsEnabled || false,
     }));
 
     // Summary stats
@@ -104,6 +119,9 @@ export async function GET(req: NextRequest) {
             periodMonth: "",
             payoutDate: null,
             batchId: null,
+            stripeTransferId: null,
+            stripeStatus: stripeMap[ep.partnerCode]?.status || null,
+            stripePayoutsEnabled: stripeMap[ep.partnerCode]?.payoutsEnabled || false,
           });
         }
       }
@@ -162,12 +180,12 @@ export async function POST(req: NextRequest) {
       }
 
       const totalAmount = dueCommissions.reduce((s, c) => s + c.amount, 0);
-      const partnerCodes = new Set(dueCommissions.map((c) => c.partnerCode));
+      const partnerCodes = Array.from(new Set(dueCommissions.map((c) => c.partnerCode)));
 
       const batch = await prisma.payoutBatch.create({
         data: {
           totalAmount,
-          partnerCount: partnerCodes.size,
+          partnerCount: partnerCodes.length,
           status: "draft",
           notes: body.notes || null,
         },
@@ -196,12 +214,64 @@ export async function POST(req: NextRequest) {
         data: { status: "processed", processedDate: new Date() },
       });
 
-      // Snapshot the commissions that are about to flip so we can email
-      // their partners after the write.
-      const toEmail = await prisma.commissionLedger.findMany({
+      // Snapshot the commissions that are about to flip so we can attempt
+      // Stripe Transfers and send emails after the write.
+      const toProcess = await prisma.commissionLedger.findMany({
         where: { batchId: body.batchId, status: { not: "paid" } },
-        select: { partnerCode: true, dealName: true, amount: true },
+        select: { id: true, partnerCode: true, dealName: true, amount: true },
       });
+
+      // ── Stripe Transfers (demo-gated) ────────────────────────────────────
+      // For each commission, attempt a Stripe Transfer to the partner's
+      // connected account if they have one with payouts enabled.
+      // Failures are logged but do NOT block the batch from processing —
+      // admin can follow up manually if a transfer fails.
+      if (process.env.STRIPE_SECRET_KEY) {
+        const batchPartnerCodes = Array.from(new Set(toProcess.map((c) => c.partnerCode)));
+        const stripeAccounts = await prisma.stripeAccount.findMany({
+          where: {
+            partnerCode: { in: batchPartnerCodes },
+            payoutsEnabled: true,
+            status: "active",
+          },
+          select: { partnerCode: true, stripeAccountId: true },
+        });
+        const stripeAccountMap = Object.fromEntries(
+          stripeAccounts.map((a) => [a.partnerCode, a.stripeAccountId])
+        );
+
+        await Promise.all(
+          toProcess.map(async (commission) => {
+            const destination = stripeAccountMap[commission.partnerCode];
+            if (!destination) return; // no connected account — manual payout
+
+            try {
+              const transfer = await createTransfer({
+                amountCents: Math.round(commission.amount * 100),
+                destination,
+                description: `Commission payout — ${commission.dealName || commission.id}`,
+                metadata: {
+                  commissionId: commission.id,
+                  partnerCode: commission.partnerCode,
+                  batchId: body.batchId,
+                },
+              });
+
+              if (transfer?.id) {
+                await prisma.commissionLedger.update({
+                  where: { id: commission.id },
+                  data: { stripeTransferId: transfer.id },
+                });
+              }
+            } catch (err) {
+              console.error(
+                `[payouts] Stripe transfer failed for commission ${commission.id}:`,
+                err
+              );
+            }
+          })
+        );
+      }
 
       // Mark all commissions in batch as paid
       await prisma.commissionLedger.updateMany({
@@ -209,35 +279,37 @@ export async function POST(req: NextRequest) {
         data: { status: "paid", payoutDate: new Date() },
       });
 
-      // Fire-and-forget partner emails. Each entry gets one email from the
-      // commission_payment_notification template. Wrapped in setImmediate
-      // so the HTTP response returns fast even if SendGrid is slow.
-      (async () => {
-        const byCode: Record<string, typeof toEmail> = {};
-        for (const e of toEmail) {
-          (byCode[e.partnerCode] ||= []).push(e);
-        }
-        for (const [partnerCode, entries] of Object.entries(byCode)) {
+      // Send commission paid emails — awaited to avoid Vercel fire-and-forget truncation
+      const byCode: Record<string, typeof toProcess> = {};
+      for (const e of toProcess) {
+        (byCode[e.partnerCode] ||= []).push(e);
+      }
+      await Promise.all(
+        Object.entries(byCode).map(async ([partnerCode, entries]) => {
           try {
             const partner = await prisma.partner.findFirst({
               where: { partnerCode },
               select: { email: true, firstName: true, lastName: true },
             });
-            if (!partner?.email) continue;
-            for (const e of entries) {
-              await sendCommissionPaidEmail({
-                partnerEmail: partner.email,
-                partnerName: `${partner.firstName} ${partner.lastName}`,
-                partnerCode,
-                amount: e.amount,
-                dealName: e.dealName || "(unnamed deal)",
-              });
-            }
+            if (!partner?.email) return;
+            await Promise.all(
+              entries.map((e) =>
+                sendCommissionPaidEmail({
+                  partnerEmail: partner.email!,
+                  partnerName: `${partner.firstName} ${partner.lastName}`,
+                  partnerCode,
+                  amount: e.amount,
+                  dealName: e.dealName || "(unnamed deal)",
+                }).catch((err) =>
+                  console.warn("[payouts] commission paid email failed:", err)
+                )
+              )
+            );
           } catch (err) {
-            console.warn("[payouts] commission paid email failed:", err);
+            console.warn("[payouts] partner email block failed:", err);
           }
-        }
-      })();
+        })
+      );
 
       return NextResponse.json({ batch });
     }
@@ -252,7 +324,7 @@ export async function POST(req: NextRequest) {
         data: { status: "paid", payoutDate: new Date() },
       });
       if (before && before.status !== "paid") {
-        (async () => {
+        await (async () => {
           try {
             const partner = await prisma.partner.findFirst({
               where: { partnerCode: before.partnerCode },
@@ -265,7 +337,9 @@ export async function POST(req: NextRequest) {
                 partnerCode: before.partnerCode,
                 amount: before.amount,
                 dealName: before.dealName || "(unnamed deal)",
-              });
+              }).catch((err) =>
+                console.warn("[payouts] single commission paid email failed:", err)
+              );
             }
           } catch (err) {
             console.warn("[payouts] single commission paid email failed:", err);
