@@ -23,9 +23,6 @@ type Partner = {
   referredByPartnerCode: string | null;
   tier: string;
   commissionRate: number;
-  l1Rate: number | null;
-  l2Rate: number | null;
-  l3Rate: number | null;
   l3Enabled: boolean;
   notes: string | null;
   signupDate: string;
@@ -146,10 +143,6 @@ export default function PartnerDetailPage() {
   const [bankState, setBankState] = useState("");
   const [bankZip, setBankZip] = useState("");
 
-  // Commission overrides
-  const [l1Rate, setL1Rate] = useState("");
-  const [l2Rate, setL2Rate] = useState("");
-  const [l3Rate, setL3Rate] = useState("");
   const [l3Enabled, setL3Enabled] = useState(false);
 
   const fetchPartner = useCallback(async () => {
@@ -208,9 +201,6 @@ export default function PartnerDetailPage() {
       setBankCity(prof?.bankCity || "");
       setBankState(prof?.bankState || "");
       setBankZip(prof?.bankZip || "");
-      setL1Rate(p.l1Rate != null ? String(Math.round(p.l1Rate * 100)) : "");
-      setL2Rate(p.l2Rate != null ? String(Math.round(p.l2Rate * 100)) : "");
-      setL3Rate(p.l3Rate != null ? String(Math.round(p.l3Rate * 100)) : "");
       setL3Enabled(p.l3Enabled);
     } catch {} finally {
       setLoading(false);
@@ -286,9 +276,6 @@ export default function PartnerDetailPage() {
         payoutMethod, bankName, accountType, routingNumber,
         accountNumber, beneficiaryName,
         bankStreet, bankStreet2, bankCity, bankState, bankZip,
-        l1Rate: l1Rate ? parseFloat(l1Rate) / 100 : null,
-        l2Rate: l2Rate ? parseFloat(l2Rate) / 100 : null,
-        l3Rate: l3Rate ? parseFloat(l3Rate) / 100 : null,
         l3Enabled,
       };
       const res = await fetch(`/api/admin/partners/${id}`, {

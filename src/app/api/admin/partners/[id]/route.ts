@@ -154,10 +154,6 @@ export async function PUT(
     if (body.referredByPartnerCode !== undefined) data.referredByPartnerCode = body.referredByPartnerCode || null;
     if (body.notes !== undefined) data.notes = body.notes || null;
 
-    // Commission overrides
-    if (body.l1Rate !== undefined) data.l1Rate = body.l1Rate != null ? parseFloat(body.l1Rate) : null;
-    if (body.l2Rate !== undefined) data.l2Rate = body.l2Rate != null ? parseFloat(body.l2Rate) : null;
-    if (body.l3Rate !== undefined) data.l3Rate = body.l3Rate != null ? parseFloat(body.l3Rate) : null;
     if (body.l3Enabled !== undefined) data.l3Enabled = body.l3Enabled;
 
     // Generate new partner code (preserves old code in history)

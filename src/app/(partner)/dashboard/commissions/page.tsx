@@ -9,29 +9,18 @@ import { useDevice } from "@/lib/useDevice";
 import {
   FIRM_SHORT,
   DEFAULT_FIRM_FEE_RATE,
-  DEFAULT_L1_RATE,
+  MAX_COMMISSION_RATE,
   DEFAULT_L2_RATE,
-  DEFAULT_L3_RATE,
 } from "@/lib/constants";
-
-interface CommissionRates {
-  l1Rate: number;
-  l2Rate: number;
-  l3Rate: number;
-  l3Enabled: boolean;
-}
 
 export default function CommissionsPage() {
   const { data: session } = useSession();
   const device = useDevice();
   const router = useRouter();
 
-  const [rates, setRates] = useState<CommissionRates>({
-    l1Rate: DEFAULT_L1_RATE,
-    l2Rate: DEFAULT_L2_RATE,
-    l3Rate: DEFAULT_L3_RATE,
-    l3Enabled: false,
-  });
+  const [tier, setTier] = useState<string>("l1");
+  const [commissionRate, setCommissionRate] = useState<number>(MAX_COMMISSION_RATE);
+  const [l3Enabled, setL3Enabled] = useState(false);
   const [directDeals, setDirectDeals] = useState<any[]>([]);
   const [downlineDeals, setDownlineDeals] = useState<any[]>([]);
   const [downlinePartners, setDownlinePartners] = useState<any[]>([]);
@@ -53,19 +42,14 @@ export default function CommissionsPage() {
 
   useEffect(() => {
     async function load() {
-      // Try to fetch overrides from API
+      // Fetch partner's tier + commission rate (drives the waterfall)
       try {
         const res = await fetch("/api/commissions");
         if (res.ok) {
           const data = await res.json();
-          if (data.overrides) {
-            setRates({
-              l1Rate: data.overrides.l1Rate ?? DEFAULT_L1_RATE,
-              l2Rate: data.overrides.l2Rate ?? DEFAULT_L2_RATE,
-              l3Rate: data.overrides.l3Rate ?? DEFAULT_L3_RATE,
-              l3Enabled: data.overrides.l3Enabled ?? false,
-            });
-          }
+          if (data.tier) setTier(data.tier);
+          if (typeof data.commissionRate === "number") setCommissionRate(data.commissionRate);
+          if (typeof data.l3Enabled === "boolean") setL3Enabled(data.l3Enabled);
           if (data.ledger) setLedger(data.ledger);
         }
       } catch {
@@ -94,17 +78,26 @@ export default function CommissionsPage() {
     .reduce((s, d) => s + Number(d.l2CommissionAmount || 0), 0);
   const totalL2Pending = totalL2Earned - totalL2Paid;
 
+  // directRate: what this partner earns on their own direct deals
+  // For L1 partners this is always MAX_COMMISSION_RATE (25%).
+  // For L2/L3 partners it is their assigned commissionRate.
+  const directRate = tier === "l1" ? MAX_COMMISSION_RATE : commissionRate;
+
+  // L1 override rate: what an L1 partner earns on their L2 downline's deals.
+  // Varies per L2 (25% - L2's rate), so we use DEFAULT_L2_RATE as a display estimate.
+  const l1OverrideRate = MAX_COMMISSION_RATE - DEFAULT_L2_RATE;
+
   // Pipeline (not yet Closed Won) = projected but not payable
   const pipelineDirectDeals = directDeals.filter((d) => d.stage !== "closedwon");
   const projectedL1 = pipelineDirectDeals.reduce((s, d) => {
     const refund = Number(d.estimatedRefundAmount || 0);
-    return s + refund * DEFAULT_FIRM_FEE_RATE * rates.l1Rate;
+    return s + refund * DEFAULT_FIRM_FEE_RATE * directRate;
   }, 0);
 
   const pipelineDownlineDeals = downlineDeals.filter((d) => d.stage !== "closedwon");
   const projectedL2 = pipelineDownlineDeals.reduce((s, d) => {
     const refund = Number(d.estimatedRefundAmount || 0);
-    return s + refund * DEFAULT_FIRM_FEE_RATE * rates.l2Rate;
+    return s + refund * DEFAULT_FIRM_FEE_RATE * l1OverrideRate;
   }, 0);
 
   // L3 projected — placeholder for when L3 deals exist
@@ -114,7 +107,7 @@ export default function CommissionsPage() {
   const hasAnyProjected = totalProjected > 0;
 
   const hasDownline = downlineDeals.length > 0;
-  const hasL3 = rates.l3Enabled && rates.l3Rate > 0;
+  const hasL3 = l3Enabled;
 
   // Map partner code → name for display
   function getPartnerName(code: string): { name: string; code: string } {
@@ -207,7 +200,7 @@ export default function CommissionsPage() {
         {/* L1 Card */}
         <div className={`${device.cardPadding} border border-brand-gold/20 ${device.borderRadius} bg-brand-gold/[0.03] text-center`}>
           <div className="font-body text-[10px] tracking-[2px] uppercase text-brand-gold/80 mb-3">
-            Direct Referral (L1) — {(rates.l1Rate * 100).toFixed(0)}% of fee
+            Direct Referral ({tier.toUpperCase()}) — {(directRate * 100).toFixed(0)}% of fee
           </div>
           <div className={`font-display ${device.isMobile ? "text-[28px] leading-tight" : "text-[40px]"} font-bold text-brand-gold mb-0.5 break-words`}>
             {fmt$(totalL1Earned)}
@@ -231,7 +224,7 @@ export default function CommissionsPage() {
         {hasDownline && (
           <div className={`${device.cardPadding} border border-purple-500/20 ${device.borderRadius} bg-purple-500/[0.03] text-center`}>
             <div className="font-body text-[10px] tracking-[2px] uppercase text-purple-400/80 mb-3">
-              Downline Referral (L2) — {(rates.l2Rate * 100).toFixed(0)}% of fee
+              Downline Override (L2) — up to {(l1OverrideRate * 100).toFixed(0)}% of fee
             </div>
             <div className={`font-display ${device.isMobile ? "text-[28px] leading-tight" : "text-[40px]"} font-bold text-purple-400 mb-0.5 break-words`}>
               {fmt$(totalL2Earned)}
@@ -256,7 +249,7 @@ export default function CommissionsPage() {
         {hasL3 && (
           <div className={`${device.cardPadding} border border-cyan-500/20 ${device.borderRadius} bg-cyan-500/[0.03]`}>
             <div className="font-body text-[10px] tracking-[2px] uppercase text-cyan-400/80 mb-3">
-              Level 3 Downline (L3) — {(rates.l3Rate * 100).toFixed(0)}% of fee
+              Level 3 Downline (L3)
             </div>
             <div className={`font-display ${device.isMobile ? "text-[28px] leading-tight" : "text-[40px]"} font-bold text-cyan-400 mb-0.5 break-words`}>
               {fmt$(0)}
@@ -324,7 +317,7 @@ export default function CommissionsPage() {
           {[
             { label: "Client Refund", formula: "e.g. $100,000", color: "text-[var(--app-text-secondary)]" },
             { label: `${FIRM_SHORT} Fee (${(DEFAULT_FIRM_FEE_RATE * 100).toFixed(0)}%)`, formula: "= $20,000", color: "text-[var(--app-text-secondary)]" },
-            { label: `Your L1 Cut (${(rates.l1Rate * 100).toFixed(0)}% of fee)`, formula: `= ${fmt$(100000 * DEFAULT_FIRM_FEE_RATE * rates.l1Rate)}`, color: "text-brand-gold" },
+            { label: `Your Cut (${(directRate * 100).toFixed(0)}% of fee)`, formula: `= ${fmt$(100000 * DEFAULT_FIRM_FEE_RATE * directRate)}`, color: "text-brand-gold" },
           ].map((r) => (
             <div key={r.label} className="p-3 sm:p-4 border border-[var(--app-border)] rounded-lg text-center">
               <div className="font-body text-[10px] text-[var(--app-text-muted)] mb-1.5 tracking-wider">{r.label}</div>
@@ -334,12 +327,12 @@ export default function CommissionsPage() {
         </div>
         {hasDownline && (
           <div className="mt-3 p-3 bg-purple-500/[0.05] border border-purple-500/15 rounded-lg font-body text-[12px] text-[var(--app-text-secondary)] text-center">
-            L2 (Downline) = {(rates.l2Rate * 100).toFixed(0)}% of {FIRM_SHORT}&apos;s fee — e.g. {fmt$(100000 * DEFAULT_FIRM_FEE_RATE * rates.l2Rate)} on a $100K refund
+            L2 Override = up to {(l1OverrideRate * 100).toFixed(0)}% of {FIRM_SHORT}&apos;s fee (varies by your downline partner&apos;s assigned rate)
           </div>
         )}
         {hasL3 && (
           <div className="mt-2 p-3 bg-cyan-500/[0.05] border border-cyan-500/15 rounded-lg font-body text-[12px] text-[var(--app-text-secondary)] text-center">
-            L3 (2nd-Level Downline) = {(rates.l3Rate * 100).toFixed(0)}% of {FIRM_SHORT}&apos;s fee
+            L3 (2nd-Level Downline) — rate set when your downline recruits their sub-partners
           </div>
         )}
       </div>

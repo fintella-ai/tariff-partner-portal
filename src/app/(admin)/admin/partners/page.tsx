@@ -14,8 +14,6 @@ type Partner = {
   mobilePhone: string | null;
   status: string;
   referredByPartnerCode: string | null;
-  l1Rate: number | null;
-  l2Rate: number | null;
   notes: string | null;
   signupDate: string;
   agreementStatus: string;

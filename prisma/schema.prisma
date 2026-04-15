@@ -39,10 +39,7 @@ model Partner {
   tier                  String   @default("l1")  // "l1", "l2", "l3"
   commissionRate        Float    @default(0.25)   // rate this partner earns on their direct deals (% of firm fee)
   recruitedViaInvite    String?  // token from RecruitmentInvite that created this partner
-  // Legacy commission overrides (retained for backward compat)
-  l1Rate                Float?
-  l2Rate                Float?
-  l3Rate                Float?
+  // L3 recruitment flag — admin-controlled gate that lets this partner generate L3 invite links
   l3Enabled             Boolean  @default(false)
   // Communications opt-in
   emailOptIn            Boolean  @default(false)

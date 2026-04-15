@@ -14,10 +14,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Fetch partner's commission rate overrides from the Partner record
+    // Fetch partner's commission tier and rate — these drive the waterfall
     const partner = await prisma.partner.findUnique({
       where: { partnerCode },
-      select: { l1Rate: true, l2Rate: true, l3Rate: true, l3Enabled: true },
+      select: { tier: true, commissionRate: true, l3Enabled: true },
     });
 
     // Fetch commission ledger entries
@@ -27,17 +27,10 @@ export async function GET(req: NextRequest) {
       take: 50,
     });
 
-    const hasOverrides = partner && (partner.l1Rate != null || partner.l2Rate != null || partner.l3Rate != null);
-
     return NextResponse.json({
-      overrides: hasOverrides
-        ? {
-            l1Rate: partner.l1Rate,
-            l2Rate: partner.l2Rate,
-            l3Rate: partner.l3Rate,
-            l3Enabled: partner.l3Enabled,
-          }
-        : null,
+      tier: partner?.tier ?? "l1",
+      commissionRate: partner?.commissionRate ?? 0.25,
+      l3Enabled: partner?.l3Enabled ?? false,
       ledger,
     });
   } catch {

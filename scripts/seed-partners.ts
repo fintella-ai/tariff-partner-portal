@@ -26,7 +26,6 @@ async function main() {
         phone: p.phone || null,
         status: p.status,
         referredByPartnerCode: p.referredByPartnerCode || null,
-        l1Rate: (p as any).l1Rate || null,
         notes: p.notes || null,
       },
     });
