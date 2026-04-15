@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -20,7 +20,7 @@ type StripeStatus = {
   demo: boolean;
 };
 
-export default function CommissionsPage() {
+function CommissionsPageContent() {
   const { data: session } = useSession();
   const device = useDevice();
   const router = useRouter();
@@ -579,5 +579,13 @@ export default function CommissionsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CommissionsPage() {
+  return (
+    <Suspense>
+      <CommissionsPageContent />
+    </Suspense>
   );
 }
