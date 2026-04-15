@@ -14,55 +14,45 @@
 
 ## 🕒 Last updated
 
-`2026-04-15T22:00:00Z` — by session (Playwright install + Phase 15c research)
+`2026-04-15T22:00:00Z` — by session (Invited tab + status filter tabs; GitHub branch cleanup)
 
 ## 🌿 Git state at last checkpoint
 
 - **Branch**: `main`
-- **HEAD**: `895d85c` — PR #127 `chore(session): update session-state.md to PR #126 checkpoint`
-- **Working tree**: clean (`.claude/settings.local.json` + `tsconfig.tsbuildinfo` untracked/gitignored)
+- **HEAD**: `7d77445` — PR #129 `feat(partners): Invited stat card + status filter tabs`
+- **Working tree**: clean (uncommitted Playwright scaffolding — package.json, playwright.config.ts, tests/, .github/workflows/playwright.yml — intentionally left uncommitted pending CI wiring)
 - **Build**: 107/107 static pages ✓
 - **Open PRs**: 0
-- **Vercel**: deployed at `fintella.partners`
+- **Remote branches**: clean — all merged branches deleted
+- **Vercel**: auto-deploying from #129 merge
 
 ## ✅ What's done this session (in merge order)
 
 | # | PR | What shipped |
 |---|---|---|
-| 1 | **#126** | `feat(partners)`: Admin-controlled L1 invite flow + variable commission rates |
-| 2 | **#127** | `chore(session)`: session-state.md checkpoint after #126 |
+| 1 | **#129** | `feat(partners)`: Invited stat card + status filter tabs on partner management page |
 
-### Playwright installed (uncommitted — no code changes, just deps)
-- `@playwright/test` added as devDependency
-- `playwright.config.ts` — configured: baseURL from env (localhost:3000 default), webServer auto-starts `npm run dev`, Chromium + Mobile Chrome projects, auth reuse pattern
-- `tests/auth.setup.ts` — logs in as admin once, saves session to `tests/.auth/admin.json` (gitignored)
-- `tests/example.spec.ts` — 3 stub smoke tests: admin dashboard, partner list, invite modal
-- `.gitignore` — updated `/tests/.auth/` (was `/playwright/.auth/`)
-- **NOT yet run against live app** — set `PLAYWRIGHT_ADMIN_EMAIL` + `PLAYWRIGHT_ADMIN_PASSWORD` before first run
+### PR #129 detail
+
+**`/admin/partners` page**:
+- Added `Invited` stat card between Pending and Blocked — counts `RecruitmentInvite` records with `status = "active"`. Blue (`text-blue-400`). Stats grid → 5 cols.
+- Filter tabs (All / Active / Pending / Invited / Blocked) above the search box
+  - Active/Pending/Blocked tabs filter the partner table client-side
+  - **Invited tab** swaps in an invites table: name, email, rate, status badge (active=blue/used=green/expired=gray), sent date, expires date
+  - Tab reads "All"; stat card retains "Total Partners"
+- Invite list fetched from `/api/admin/invites`; refreshed after each new invite sent
+- Search on Invited tab filters by name/email client-side
+- Added `inviteStatusBadge` record; `invited` added to `statusBadge` (blue)
+
+### Phase 15c research (from prior session — NOT implemented)
+- `ALL_PARTY_CONSENT_STATES` needed in `src/lib/constants.ts`
+- Voice webhook needs `<Say>` consent + `record` attr on `<Dial>` when `TWILIO_RECORDING_ENABLED=true`
+- New `/api/twilio/recording-webhook/route.ts` needed to update `CallLog.recordingUrl`
+- See prior session-state for full plan
 
 ## 🔄 What's in flight
 
-**Phase 15c — voice recording with state-by-state consent disclosure** (research complete, implementation NOT started)
-
-### What's already built (do NOT rebuild):
-- `src/lib/twilio-voice.ts` — `initiateBridgedCall()` — bridged click-to-call, CallLog persistence, demo-gate. Recording intentionally disabled with comment "Phase 15c-followup".
-- `/api/twilio/call/route.ts` — POST to initiate call (admin-only)
-- `/api/twilio/voice-webhook/route.ts` — TwiML handler (bridge + softphone paths). Has `buildBridgeTwiml()` and `buildSoftphoneOutboundTwiml()`.
-- `/api/twilio/call-status/route.ts` — Twilio status callback, updates CallLog. Already has `recordingUrl` + `recordingDurationSeconds` field handling.
-- `/api/twilio/voice-token/route.ts` — mints Twilio Voice Access Token for softphone
-- `CallLog` schema — already has `recordingUrl String?` and `recordingDurationSeconds Int?`
-- Communications page Phone tab — already renders `recordingUrl` as a `▶ Recording` link
-
-### What Phase 15c needs to build:
-1. **`src/lib/constants.ts`** — add `ALL_PARTY_CONSENT_STATES` (CA, WA, FL, IL, PA, MI, NH, MD, MA, OR, NV, DE, CT, MT)
-2. **`src/lib/twilio-voice.ts`** — add `partnerState?: string | null` to `InitiateCallInput`, pass as `?state=` on voice webhook URL
-3. **`/api/twilio/call/route.ts`** — select `state` from `PartnerProfile` (joined), pass to `initiateBridgedCall`
-4. **`/api/twilio/voice-webhook/route.ts`** — read `?state=` param; when `TWILIO_RECORDING_ENABLED=true`: add `<Say>` consent disclosure + `record="record-from-answer-dual"` + `recordingStatusCallback` to `<Dial>` TwiML
-5. **New `/api/twilio/recording-webhook/route.ts`** — Twilio POSTs here when recording ready → update `CallLog.recordingUrl` + `recordingDurationSeconds`
-
-### Partner state lookup:
-- `Partner` model has NO `state` field directly — state is in `PartnerProfile.state`
-- Need to join `PartnerProfile` in `/api/twilio/call/route.ts` when fetching partner
+Nothing. Working tree clean. All branches merged.
 
 ## 🎯 What's next (queued, prioritized)
 
@@ -70,43 +60,43 @@
 1. **Twilio A2P 10DLC** — approval window ~2026-04-28 to 2026-05-05
 2. **SendGrid domain authentication** — DNS propagating; check Verify button
 3. **Frost Law IT** — send `FROST_LAW_API_KEY` + point to `https://fintella.partners/docs/webhook-guide`
-4. **Smoke-test production** — create test partner via new invite flow, sign agreement, verify status flip
+4. **Smoke-test production** — create test partner via invite flow, sign agreement, verify status flip
 
-### 🅱 Code work (queued)
-1. **Phase 15c** — voice recording + consent (research done this session, implementation next) — see "In flight" above for exact plan
-2. **Playwright test suite** — write real tests: invite flow e2e, `/getstarted` token gate, commission display. Stub tests exist in `tests/example.spec.ts`.
+### 🅱 Code work (no external dependencies)
+1. **Playwright CI wiring** — scaffolding uncommitted; needs DATABASE_URL + NEXTAUTH_SECRET + admin creds in GitHub Secrets before committing the workflow. Dedicated session.
+2. **Phase 15c** — voice recording with state-by-state consent. Multi-hour, fresh session.
 3. **Phase 16 — Stripe Connect** — partner payout system. Multi-hour, fresh session.
 4. **Phase 18b — Next.js 14→16 migration** — deferred, dedicated session.
-5. **HMAC enforcement on `/api/webhook/referral`** — flip from log-only to hard-reject once Frost Law implements signing.
+5. **HMAC enforcement on `/api/webhook/referral`** — flip from log-only once Frost Law implements signing.
 
 ### 🅲 Operational (John does in UI)
-1. Delete legacy `admin@trln.com` super_admin row via `/admin/users`
-2. Smoke-test invite flow: `/admin/partners` → Invite Partner → pick rate → verify email logged → open link → complete signup
+1. Delete legacy `admin@trln.com` super_admin row via `/admin/users` (orphan from pre-rebrand)
+2. Smoke-test: `/admin/partners` → Invited tab → verify invite count and table
 
 ## 🧠 Context that matters for resuming
 
-- **Commission system (post-#126)**: L1's assigned rate is the total payout ceiling — NOT always 25%.
-- **Invite flow**: `/getstarted` is token-gated (admin invite only). `/signup` remains for L2/L3.
-- **Partner.commissionRate** is authoritative for all rates.
+- **Partner management page (post-#129)**: Invited tab shows `RecruitmentInvite` records from `/api/admin/invites` (L1 admin invites only). Tab filter is client-side on API-search-filtered partner list.
+- **Commission system (post-#126)**: L1's assigned rate is the total payout ceiling — NOT always 25%. `getAllowedDownlineRates(inviterRate)` returns valid L2 rate options.
+- **Invite flow**: `/getstarted` is token-gated (admin L1 only). `/signup` for L2/L3 partner-to-partner.
 - **Pre-launch**: no real customers. Smoke-test against `fintella.partners`.
 - **Branch protection on `main`**: all changes via PR, squash merge, Vercel auto-deploys.
 - **No HubSpot** — Phase 14 descoped permanently.
-- **Demo-gate pattern**: every integration is a no-op if env var unset, writes audit row with `status="demo"`.
+- **Demo-gate pattern**: every integration is a no-op if env var unset, writes audit row `status="demo"`.
 - **TCPA gate**: every SMS send checks `Partner.smsOptIn` BEFORE network call. Never remove.
+- **Playwright scaffolding**: uncommitted local files. CI workflow needs env vars before merging.
 
 ## 📂 Relevant files for the next task
 
 If next session starts with **Phase 15c (voice recording)**:
 - `src/lib/twilio-voice.ts` — add `partnerState` to `InitiateCallInput` + voice webhook URL
-- `src/app/api/twilio/call/route.ts` — fetch `PartnerProfile.state` and pass to `initiateBridgedCall`
-- `src/app/api/twilio/voice-webhook/route.ts` — add consent `<Say>` + `record` attr to `<Dial>` TwiML
+- `src/app/api/twilio/call/route.ts` — fetch `PartnerProfile.state`, pass to `initiateBridgedCall`
+- `src/app/api/twilio/voice-webhook/route.ts` — add consent `<Say>` + `record` attr to `<Dial>`
 - New: `src/app/api/twilio/recording-webhook/route.ts` — update CallLog when recording ready
 - `src/lib/constants.ts` — add `ALL_PARTY_CONSENT_STATES`
 
-If next session starts with **Playwright tests**:
-- `tests/example.spec.ts` — replace stubs with real tests
-- `tests/auth.setup.ts` — auth setup (needs `PLAYWRIGHT_ADMIN_EMAIL` + `PLAYWRIGHT_ADMIN_PASSWORD`)
-- `playwright.config.ts` — already configured
+If next session starts with **Playwright CI wiring**:
+- `playwright.config.ts`, `tests/auth.setup.ts`, `tests/example.spec.ts`, `.github/workflows/playwright.yml`
+- Needs: DATABASE_URL + NEXTAUTH_SECRET + PLAYWRIGHT_ADMIN_EMAIL/PASSWORD in GitHub Secrets
 
 If next session starts with **Phase 16 (Stripe Connect)**:
 - New `src/lib/stripe.ts` (raw fetch, follow house pattern)
