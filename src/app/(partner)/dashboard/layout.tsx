@@ -506,14 +506,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </div>
 
-      {/* ── LIVE CHAT BUTTON ── */}
+      {/* ── LIVE CHAT BUTTON ──
+          Lives in the lower-LEFT corner (moved from right) so it
+          doesn't fight with the floating NotificationBell in the
+          top-right and doesn't compete with the sticky top CTA bar. */}
       {chatEnabled && (
       <button
         onClick={() => setChatOpen(!chatOpen)}
         className={`fixed z-[950] bg-gradient-to-br from-brand-gold to-[#e8c060] text-brand-dark rounded-full shadow-lg shadow-brand-gold/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${
           device.isMobile
-            ? "bottom-[88px] right-4 w-12 h-12 text-xl"
-            : "bottom-6 right-6 w-14 h-14 text-2xl"
+            ? "bottom-[88px] left-4 w-12 h-12 text-xl"
+            : "bottom-6 left-6 w-14 h-14 text-2xl"
         }`}
         title="Chat with support"
       >
@@ -527,7 +530,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           className={`fixed z-[951] bg-[var(--app-bg-secondary)] border border-brand-gold/20 shadow-2xl shadow-black/40 flex flex-col ${
             device.isMobile
               ? "inset-0 rounded-none pt-safe pb-safe pl-safe pr-safe"
-              : "bottom-24 right-6 w-[380px] h-[520px] max-w-[calc(100vw-3rem)] max-h-[calc(100vh-8rem)] rounded-2xl"
+              : "bottom-24 left-6 w-[380px] h-[520px] max-w-[calc(100vw-3rem)] max-h-[calc(100vh-8rem)] rounded-2xl"
           }`}
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--app-border)]">

@@ -47,15 +47,66 @@ export default function AdminChatPage() {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [filter, setFilter] = useState<"all" | "active" | "closed">("active");
+  const [soundOn, setSoundOn] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Remember the last-seen unread count per session so we can detect
+  // genuinely new inbound partner messages across polls and beep only
+  // when the count actually grows. Using a ref so updates don't
+  // re-trigger the useEffect that reads it.
+  const lastUnreadRef = useRef<Record<string, number>>({});
+  const firstLoadRef = useRef(true);
+
+  // Play a short beep via WebAudio — no asset download required.
+  const playBeep = useCallback(() => {
+    if (!soundOn) return;
+    try {
+      const ctxCtor =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!ctxCtor) return;
+      const ctx = new ctxCtor();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 880; // A5
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.26);
+      osc.onended = () => ctx.close().catch(() => {});
+    } catch {
+      // Autoplay policy may block the first beep until user interacts
+      // with the page. Silently swallow.
+    }
+  }, [soundOn]);
 
   const fetchSessions = useCallback(() => {
     fetch("/api/admin/chat")
       .then((r) => r.json())
-      .then((data) => setSessions(data.sessions || []))
+      .then((data) => {
+        const list: ChatSession[] = data.sessions || [];
+        // Detect new inbound messages by comparing unread counts to
+        // the last-known values. Skip the very first load so we don't
+        // beep on existing unread counts.
+        if (!firstLoadRef.current) {
+          let newArrivals = 0;
+          for (const s of list) {
+            const prev = lastUnreadRef.current[s.id] || 0;
+            if (s.unreadCount > prev) newArrivals += s.unreadCount - prev;
+          }
+          if (newArrivals > 0) playBeep();
+        }
+        const next: Record<string, number> = {};
+        for (const s of list) next[s.id] = s.unreadCount;
+        lastUnreadRef.current = next;
+        firstLoadRef.current = false;
+        setSessions(list);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [playBeep]);
 
   useEffect(() => {
     fetchSessions();
@@ -144,7 +195,7 @@ export default function AdminChatPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-3">
         <div>
           <h2 className="font-display text-[22px] font-bold mb-1">Live Chat</h2>
           <p className="font-body text-[13px] text-[var(--app-text-muted)]">
@@ -152,6 +203,22 @@ export default function AdminChatPage() {
             {totalUnread > 0 && <span className="text-brand-gold font-semibold ml-2">{totalUnread} unread</span>}
           </p>
         </div>
+        <button
+          onClick={() => {
+            setSoundOn((v) => !v);
+            // Also play a test beep when turning on so the admin confirms
+            // their browser is allowing audio.
+            if (!soundOn) setTimeout(() => playBeep(), 50);
+          }}
+          title={soundOn ? "Notification sound on" : "Notification sound off"}
+          className={`font-body text-[12px] border rounded-lg px-3 py-2 transition-colors min-h-[36px] flex items-center gap-2 ${
+            soundOn
+              ? "text-brand-gold border-brand-gold/30 bg-brand-gold/10 hover:bg-brand-gold/15"
+              : "text-[var(--app-text-muted)] border-[var(--app-border)] hover:text-[var(--app-text-secondary)]"
+          }`}
+        >
+          {soundOn ? "🔔 Sound on" : "🔕 Sound off"}
+        </button>
       </div>
 
       <div className="flex gap-4" style={{ height: "calc(100vh - 220px)", minHeight: 400 }}>
