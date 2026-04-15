@@ -210,7 +210,8 @@ model CommissionLedger {
   payoutDate     DateTime?
   payoutMethod   String?
   payoutReference String?
-  batchId        String?
+  batchId           String?
+  stripeTransferId  String?  // Stripe Transfer ID (tr_xxx) — populated by process_batch when partner has a connected account
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -731,6 +732,25 @@ model SmsLog {
   @@index([partnerCode])
   @@index([createdAt])
   @@index([direction])
+}
+
+// ─── STRIPE CONNECT (Phase 16) ──────────────────────────────────────────────
+// One row per partner who has started or completed Stripe Express onboarding.
+// status lifecycle: pending → onboarding → active (ready to receive transfers)
+//                                        ↘ restricted (needs attention)
+model StripeAccount {
+  id               String   @id @default(cuid())
+  partnerCode      String   @unique
+  stripeAccountId  String   @unique          // acct_xxx
+  status           String   @default("pending") // pending, onboarding, active, restricted
+  chargesEnabled   Boolean  @default(false)
+  payoutsEnabled   Boolean  @default(false)
+  detailsSubmitted Boolean  @default(false)
+  country          String   @default("US")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([partnerCode])
 }
 
 // ─── CALL LOG (Phase 15c — Twilio Voice) ─────────────────────────────────────

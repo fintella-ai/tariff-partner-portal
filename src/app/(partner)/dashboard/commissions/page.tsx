@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { fmt$, fmtDate } from "@/lib/format";
 import { useDevice } from "@/lib/useDevice";
@@ -11,10 +11,20 @@ import {
   DEFAULT_FIRM_FEE_RATE,
 } from "@/lib/constants";
 
-export default function CommissionsPage() {
+type StripeStatus = {
+  connected: boolean;
+  status: string | null;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  stripeAccountId: string | null;
+  demo: boolean;
+};
+
+function CommissionsPageContent() {
   const { data: session } = useSession();
   const device = useDevice();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [tier, setTier] = useState<string>("l1");
   const [commissionRate, setCommissionRate] = useState<number>(0.25);
@@ -24,6 +34,12 @@ export default function CommissionsPage() {
   const [downlinePartners, setDownlinePartners] = useState<any[]>([]);
   const [ledger, setLedger] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Stripe Connect state
+  const [stripe, setStripe] = useState<StripeStatus | null>(null);
+  const [stripeConnecting, setStripeConnecting] = useState(false);
+  const [stripeMessage, setStripeMessage] = useState<string | null>(null);
+  const stripeReturnHandled = useRef(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -54,10 +70,60 @@ export default function CommissionsPage() {
         // Use defaults
       }
 
+      // Fetch Stripe Connect status
+      try {
+        const res = await fetch("/api/partner/stripe/status");
+        if (res.ok) {
+          const data = await res.json();
+          setStripe(data);
+        }
+      } catch {
+        // Non-fatal — Stripe card will show loading state
+      }
+
       loadData();
     }
     load();
   }, [loadData]);
+
+  // Handle return from Stripe onboarding (?stripe_return=1)
+  useEffect(() => {
+    if (stripeReturnHandled.current) return;
+    if (searchParams.get("stripe_return") === "1") {
+      stripeReturnHandled.current = true;
+      setStripeMessage("Stripe account connected! Your payout info is being verified.");
+      fetch("/api/partner/stripe/status")
+        .then((r) => r.json())
+        .then((data) => setStripe(data))
+        .catch(() => {});
+    }
+    if (searchParams.get("stripe_error") === "1") {
+      stripeReturnHandled.current = true;
+      setStripeMessage("There was a problem with your Stripe session. Please try again.");
+    }
+  }, [searchParams]);
+
+  async function handleConnectStripe() {
+    setStripeConnecting(true);
+    setStripeMessage(null);
+    try {
+      const res = await fetch("/api/partner/stripe/onboard", { method: "POST" });
+      const data = await res.json();
+      if (data.demo) {
+        setStripeMessage("Stripe Connect is not yet configured in this environment (demo mode).");
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setStripeMessage(data.error || "Failed to start Stripe onboarding.");
+      }
+    } catch {
+      setStripeMessage("Failed to connect to Stripe. Please try again.");
+    } finally {
+      setStripeConnecting(false);
+    }
+  }
 
   // Compute totals
   const totalL1Earned = directDeals.reduce(
@@ -137,6 +203,81 @@ export default function CommissionsPage() {
         All amounts based on {FIRM_SHORT}&apos;s {(DEFAULT_FIRM_FEE_RATE * 100).toFixed(0)}% fee on collected refunds.
         Commissions are only paid on <strong className="text-[var(--app-text-secondary)]">Closed Won</strong> deals.
       </p>
+
+      {/* ═══ STRIPE CONNECT CARD ═══ */}
+      {(() => {
+        const isActive = stripe?.status === "active" && stripe?.payoutsEnabled;
+        const isOnboarding = stripe?.connected && !isActive;
+        const isDemo = stripe?.demo;
+
+        if (isActive) {
+          return (
+            <div className={`${device.cardPadding} ${device.borderRadius} border border-green-500/20 bg-green-500/[0.04] flex items-center justify-between gap-4 mb-6`}>
+              <div>
+                <div className="font-body text-sm font-semibold text-green-400 mb-0.5">Stripe Payouts Connected</div>
+                <div className="font-body text-[12px] text-[var(--app-text-muted)]">
+                  Your commissions will be transferred automatically when a payout batch is processed.
+                </div>
+              </div>
+              <div className="shrink-0">
+                <span className="font-body text-[10px] tracking-[1.5px] uppercase bg-green-500/15 text-green-400 border border-green-500/20 rounded-full px-3 py-1">
+                  Active
+                </span>
+              </div>
+            </div>
+          );
+        }
+
+        if (isOnboarding) {
+          return (
+            <div className={`${device.cardPadding} ${device.borderRadius} border border-yellow-500/20 bg-yellow-500/[0.04] flex items-center justify-between gap-4 mb-6`}>
+              <div>
+                <div className="font-body text-sm font-semibold text-yellow-400 mb-0.5">Stripe Onboarding In Progress</div>
+                <div className="font-body text-[12px] text-[var(--app-text-muted)]">
+                  Complete your Stripe onboarding to enable automatic commission payouts.
+                </div>
+              </div>
+              <button
+                onClick={handleConnectStripe}
+                disabled={stripeConnecting}
+                className="shrink-0 font-body text-xs border border-brand-gold/40 text-brand-gold rounded-lg px-4 py-2 hover:bg-brand-gold/10 transition-colors disabled:opacity-50"
+              >
+                {stripeConnecting ? "Loading\u2026" : "Resume Onboarding"}
+              </button>
+            </div>
+          );
+        }
+
+        return (
+          <div className={`${device.cardPadding} ${device.borderRadius} border border-[var(--app-border)] bg-[var(--app-card-bg)] flex ${device.isMobile ? "flex-col gap-4" : "items-center justify-between gap-4"} mb-6`}>
+            <div className="flex-1">
+              <div className="font-body text-sm font-semibold text-[var(--app-text)] mb-1">
+                Connect Stripe for Automatic Payouts
+              </div>
+              <div className="font-body text-[12px] text-[var(--app-text-muted)]">
+                Link your Stripe account to receive commission payments directly when a payout batch is processed.
+                {isDemo && (
+                  <span className="ml-1 text-[var(--app-text-faint)]">(Demo mode — Stripe not yet configured)</span>
+                )}
+              </div>
+              {stripeMessage && (
+                <div className="font-body text-[12px] text-yellow-400 mt-1">{stripeMessage}</div>
+              )}
+            </div>
+            <button
+              onClick={handleConnectStripe}
+              disabled={stripeConnecting || !!isDemo}
+              className={`shrink-0 font-body text-sm font-medium rounded-lg px-5 py-2.5 transition-colors ${
+                isDemo
+                  ? "opacity-40 cursor-not-allowed border border-[var(--app-border)] text-[var(--app-text-muted)]"
+                  : "btn-gold"
+              }`}
+            >
+              {stripeConnecting ? "Connecting\u2026" : "Connect Stripe"}
+            </button>
+          </div>
+        );
+      })()}
 
       {/* ═══ TOTALS BANNER ═══ */}
       <div className={`${device.cardPadding} ${device.borderRadius} border border-[var(--app-border)] bg-[var(--app-card-bg)] mb-6`}>
@@ -438,5 +579,13 @@ export default function CommissionsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CommissionsPage() {
+  return (
+    <Suspense>
+      <CommissionsPageContent />
+    </Suspense>
   );
 }
