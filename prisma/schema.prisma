@@ -58,19 +58,6 @@ model Partner {
   @@index([referredByPartnerCode])
 }
 
-// ─── PARTNER COMMISSION OVERRIDES ────────────────────────────────────────────
-model PartnerOverride {
-  id          String   @id @default(cuid())
-  partnerCode String   @unique
-  l1Rate      Float?   // null = use default
-  l2Rate      Float?
-  l3Rate      Float?   // 0 or null = L3 disabled
-  l3Enabled   Boolean  @default(false)
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
 // ─── PARTNER PROFILE (address, payout info) ──────────────────────────────────
 model PartnerProfile {
   id              String   @id @default(cuid())
