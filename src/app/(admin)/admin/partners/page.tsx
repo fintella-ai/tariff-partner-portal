@@ -35,7 +35,6 @@ type Invite = {
 type TabType = "all" | "active" | "pending" | "invited" | "blocked";
 
 // Normalize a stored mobile number to E.164 for the softphone Device.
-// Accepts 10-digit US, 11-digit starting with 1, or already-E.164.
 function normalizeForSoftphone(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const trimmed = raw.trim();
@@ -100,6 +99,13 @@ export default function AdminPartnersPage() {
   const [inviteResult, setInviteResult] = useState<{ signupUrl: string } | null>(null);
   const [inviteSending, setInviteSending] = useState(false);
 
+  // Resend invite state
+  const [selectedInviteIds, setSelectedInviteIds] = useState<string[]>([]);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [bulkResending, setBulkResending] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ succeeded: number; failed: number } | null>(null);
+  const [resendFeedback, setResendFeedback] = useState<Record<string, "ok" | "error">>({});
+
   const ALLOWED_L1_RATES = [0.10, 0.15, 0.20, 0.25];
 
   const fetchPartners = useCallback(async () => {
@@ -156,6 +162,53 @@ export default function AdminPartnersPage() {
     setInviteError(""); setInviteResult(null);
   };
 
+  // ── Resend helpers ────────────────────────────────────────────────────────
+
+  const toggleSelectInvite = (id: string) => {
+    setSelectedInviteIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleResendInvite = async (inviteId: string) => {
+    setResendingId(inviteId);
+    try {
+      const res = await fetch(`/api/admin/invites/${inviteId}/resend`, { method: "POST" });
+      setResendFeedback((prev) => ({ ...prev, [inviteId]: res.ok ? "ok" : "error" }));
+    } catch {
+      setResendFeedback((prev) => ({ ...prev, [inviteId]: "error" }));
+    } finally {
+      setResendingId(null);
+      setTimeout(() => {
+        setResendFeedback((prev) => { const n = { ...prev }; delete n[inviteId]; return n; });
+        fetchInvites();
+      }, 1800);
+    }
+  };
+
+  const handleBulkResend = async () => {
+    setBulkResending(true);
+    setBulkResult(null);
+    try {
+      const res = await fetch("/api/admin/invites/bulk-resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedInviteIds }),
+      });
+      const data = await res.json();
+      setBulkResult({ succeeded: data.succeeded ?? 0, failed: data.failed ?? selectedInviteIds.length });
+      setSelectedInviteIds([]);
+    } catch {
+      setBulkResult({ succeeded: 0, failed: selectedInviteIds.length });
+      setSelectedInviteIds([]);
+    } finally {
+      setBulkResending(false);
+      setTimeout(() => { setBulkResult(null); fetchInvites(); }, 3000);
+    }
+  };
+
+  // ── Derived state ─────────────────────────────────────────────────────────
+
   const handleAdd = async () => {
     setFormError("");
     if (!formFirst.trim() || !formLast.trim() || !formEmail.trim()) {
@@ -194,12 +247,10 @@ export default function AdminPartnersPage() {
   const blocked = partners.filter((p) => p.status === "blocked").length;
   const invitedCount = invites.filter((inv) => inv.status === "active").length;
 
-  // Tab filter applied client-side (partners already search-filtered by API)
   const filteredPartners = activeTab === "all" || activeTab === "invited"
     ? partners
     : partners.filter((p) => p.status === activeTab);
 
-  // Invite search filtered client-side
   const filteredInvites = invites.filter((inv) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -208,6 +259,12 @@ export default function AdminPartnersPage() {
       inv.invitedName?.toLowerCase().includes(q)
     );
   });
+
+  // Only non-used invites can be selected for resend
+  const resendableInvites = filteredInvites.filter((inv) => inv.status !== "used");
+  const allSelected =
+    resendableInvites.length > 0 &&
+    resendableInvites.every((inv) => selectedInviteIds.includes(inv.id));
 
   const tabs: { key: TabType; label: string }[] = [
     { key: "all", label: "All" },
@@ -323,7 +380,7 @@ export default function AdminPartnersPage() {
         {tabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => { setActiveTab(tab.key); setSelectedInviteIds([]); setBulkResult(null); }}
             className={`shrink-0 px-4 rounded-lg font-body text-[12px] font-medium transition-colors min-h-[36px] ${
               activeTab === tab.key
                 ? "bg-brand-gold text-black"
@@ -351,29 +408,117 @@ export default function AdminPartnersPage() {
         </div>
       ) : activeTab === "invited" ? (
         <>
+          {/* Bulk action bar */}
+          {(selectedInviteIds.length > 0 || bulkResult) && (
+            <div className="mb-3 p-3 rounded-lg border border-[var(--app-border)] flex flex-wrap items-center gap-3" style={{ background: "var(--app-input-bg)" }}>
+              {bulkResult ? (
+                <span className={`font-body text-[13px] ${bulkResult.failed === 0 ? "text-green-400" : "text-yellow-400"}`}>
+                  {bulkResult.succeeded > 0 && `${bulkResult.succeeded} invite${bulkResult.succeeded !== 1 ? "s" : ""} resent`}
+                  {bulkResult.succeeded > 0 && bulkResult.failed > 0 && " · "}
+                  {bulkResult.failed > 0 && `${bulkResult.failed} failed`}
+                </span>
+              ) : (
+                <>
+                  <span className="font-body text-[13px] theme-text-secondary">
+                    {selectedInviteIds.length} selected
+                  </span>
+                  <button
+                    onClick={handleBulkResend}
+                    disabled={bulkResending}
+                    className="btn-gold text-[12px] px-4 min-h-[36px] disabled:opacity-50"
+                  >
+                    {bulkResending ? "Sending..." : "Resend Selected"}
+                  </button>
+                  <button
+                    onClick={() => setSelectedInviteIds([])}
+                    className="font-body text-[12px] theme-text-muted border border-[var(--app-border)] rounded-lg px-4 min-h-[36px] hover:theme-text-secondary transition-colors"
+                  >
+                    Clear
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Invited — Desktop Table */}
           <div className="card hidden sm:block overflow-x-auto">
-            <div className="grid grid-cols-[2fr_0.6fr_0.7fr_1fr_1fr] gap-3 px-5 py-3 border-b border-[var(--app-border)]">
-              {["Invitee", "Rate", "Status", "Sent", "Expires"].map((h) => (
+            {/* Header */}
+            <div className="grid grid-cols-[auto_2fr_0.6fr_0.7fr_0.9fr_0.9fr_auto] gap-3 px-5 py-3 border-b border-[var(--app-border)] items-center">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={() => {
+                  if (allSelected) {
+                    setSelectedInviteIds([]);
+                  } else {
+                    setSelectedInviteIds(resendableInvites.map((inv) => inv.id));
+                  }
+                }}
+                disabled={resendableInvites.length === 0}
+                className="w-4 h-4 rounded cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 accent-[#c4a050]"
+                title={allSelected ? "Deselect all" : "Select all"}
+              />
+              {["Invitee", "Rate", "Status", "Sent", "Expires", ""].map((h) => (
                 <div key={h} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider">{h}</div>
               ))}
             </div>
-            {filteredInvites.map((inv) => (
-              <div key={inv.id} className="grid grid-cols-[2fr_0.6fr_0.7fr_1fr_1fr] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center">
-                <div>
-                  <div className="font-body text-[13px] text-[var(--app-text)] font-medium">{inv.invitedName || "—"}</div>
-                  <div className="font-body text-[11px] text-[var(--app-text-muted)]">{inv.invitedEmail || "—"}</div>
+
+            {/* Rows */}
+            {filteredInvites.map((inv) => {
+              const isResendable = inv.status !== "used";
+              const isResending = resendingId === inv.id;
+              const feedback = resendFeedback[inv.id];
+              return (
+                <div
+                  key={inv.id}
+                  className="grid grid-cols-[auto_2fr_0.6fr_0.7fr_0.9fr_0.9fr_auto] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedInviteIds.includes(inv.id)}
+                    onChange={() => isResendable && toggleSelectInvite(inv.id)}
+                    disabled={!isResendable}
+                    className="w-4 h-4 rounded cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 accent-[#c4a050]"
+                  />
+                  <div>
+                    <div className="font-body text-[13px] text-[var(--app-text)] font-medium">{inv.invitedName || "—"}</div>
+                    <div className="font-body text-[11px] text-[var(--app-text-muted)]">{inv.invitedEmail || "—"}</div>
+                  </div>
+                  <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{Math.round(inv.commissionRate * 100)}%</div>
+                  <div>
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${inviteStatusBadge[inv.status] || inviteStatusBadge.expired}`}>
+                      {inv.status}
+                    </span>
+                  </div>
+                  <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(inv.createdAt)}</div>
+                  <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(inv.expiresAt)}</div>
+                  <div>
+                    <button
+                      onClick={() => handleResendInvite(inv.id)}
+                      disabled={!isResendable || isResending || !!feedback}
+                      className={`font-body text-[11px] px-3 min-h-[32px] rounded-lg border transition-colors whitespace-nowrap disabled:cursor-not-allowed ${
+                        feedback === "ok"
+                          ? "text-green-400 border-green-500/20 bg-green-500/10"
+                          : feedback === "error"
+                          ? "text-red-400 border-red-500/20 bg-red-500/10"
+                          : isResendable
+                          ? "text-brand-gold border-brand-gold/30 hover:bg-brand-gold/10 disabled:opacity-50"
+                          : "text-[var(--app-text-muted)] border-[var(--app-border)] opacity-40"
+                      }`}
+                    >
+                      {isResending
+                        ? "Sending…"
+                        : feedback === "ok"
+                        ? "Sent ✓"
+                        : feedback === "error"
+                        ? "Failed"
+                        : "Resend"}
+                    </button>
+                  </div>
                 </div>
-                <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{Math.round(inv.commissionRate * 100)}%</div>
-                <div>
-                  <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${inviteStatusBadge[inv.status] || inviteStatusBadge.expired}`}>
-                    {inv.status}
-                  </span>
-                </div>
-                <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(inv.createdAt)}</div>
-                <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(inv.expiresAt)}</div>
-              </div>
-            ))}
+              );
+            })}
+
             {filteredInvites.length === 0 && (
               <div className="px-5 py-10 text-center font-body text-[13px] text-[var(--app-text-muted)]">No invites found.</div>
             )}
@@ -381,23 +526,62 @@ export default function AdminPartnersPage() {
 
           {/* Invited — Mobile Cards */}
           <div className="sm:hidden space-y-3">
-            {filteredInvites.map((inv) => (
-              <div key={inv.id} className="card p-4">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div>
-                    <div className="font-body text-[13px] font-medium text-[var(--app-text)]">{inv.invitedName || "—"}</div>
-                    <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">{inv.invitedEmail || "—"}</div>
+            {filteredInvites.map((inv) => {
+              const isResendable = inv.status !== "used";
+              const isResending = resendingId === inv.id;
+              const feedback = resendFeedback[inv.id];
+              return (
+                <div key={inv.id} className="card p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <div className="font-body text-[13px] font-medium text-[var(--app-text)]">{inv.invitedName || "—"}</div>
+                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">{inv.invitedEmail || "—"}</div>
+                    </div>
+                    <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${inviteStatusBadge[inv.status] || inviteStatusBadge.expired}`}>
+                      {inv.status}
+                    </span>
                   </div>
-                  <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${inviteStatusBadge[inv.status] || inviteStatusBadge.expired}`}>
-                    {inv.status}
-                  </span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="font-body text-[11px] text-[var(--app-text-muted)]">Rate: {Math.round(inv.commissionRate * 100)}%</div>
+                    <div className="font-body text-[11px] text-[var(--app-text-muted)]">Expires {fmtDate(inv.expiresAt)}</div>
+                  </div>
+                  {/* Mobile: select + resend row */}
+                  <div className="flex items-center justify-between pt-3 border-t border-[var(--app-border)]">
+                    <label className={`flex items-center gap-2 ${isResendable ? "cursor-pointer" : "cursor-not-allowed opacity-40"}`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedInviteIds.includes(inv.id)}
+                        onChange={() => isResendable && toggleSelectInvite(inv.id)}
+                        disabled={!isResendable}
+                        className="w-4 h-4 rounded accent-[#c4a050]"
+                      />
+                      <span className="font-body text-[11px] theme-text-muted select-none">Select</span>
+                    </label>
+                    <button
+                      onClick={() => handleResendInvite(inv.id)}
+                      disabled={!isResendable || isResending || !!feedback}
+                      className={`font-body text-[11px] px-3 min-h-[36px] rounded-lg border transition-colors whitespace-nowrap disabled:cursor-not-allowed ${
+                        feedback === "ok"
+                          ? "text-green-400 border-green-500/20 bg-green-500/10"
+                          : feedback === "error"
+                          ? "text-red-400 border-red-500/20 bg-red-500/10"
+                          : isResendable
+                          ? "text-brand-gold border-brand-gold/30 hover:bg-brand-gold/10 disabled:opacity-50"
+                          : "text-[var(--app-text-muted)] border-[var(--app-border)] opacity-40"
+                      }`}
+                    >
+                      {isResending
+                        ? "Sending…"
+                        : feedback === "ok"
+                        ? "Sent ✓"
+                        : feedback === "error"
+                        ? "Failed"
+                        : "Resend"}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="font-body text-[11px] text-[var(--app-text-muted)]">Rate: {Math.round(inv.commissionRate * 100)}%</div>
-                  <div className="font-body text-[11px] text-[var(--app-text-muted)]">Expires {fmtDate(inv.expiresAt)}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {filteredInvites.length === 0 && (
               <div className="text-center py-10 font-body text-[13px] text-[var(--app-text-muted)]">No invites found.</div>
             )}
