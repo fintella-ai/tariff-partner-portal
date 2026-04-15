@@ -406,6 +406,13 @@ model PortalSettings {
   // Navigation visibility + order (JSON strings)
   hiddenNavItems String @default("[]")
   navOrder       String @default("[]")  // ordered array of nav IDs
+  // Per-item label + icon overrides. JSON shape:
+  //   { "admin.partners": "Team", "partner.home": "Dashboard" }
+  // navIcons values are base64 data URLs (same storage as logoUrl), so an
+  // uploaded PNG / SVG replaces the default emoji glyph. Keys namespace
+  // by scope so admin + partner sides can override the same short id.
+  navLabels      String @default("{}")
+  navIcons       String @default("{}")
   // Home page content (JSON strings)
   announcements  String @default("[]")
   upcomingEvents String @default("[]")

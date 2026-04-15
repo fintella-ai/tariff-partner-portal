@@ -89,6 +89,16 @@ export async function PUT(req: NextRequest) {
         ? body.navOrder
         : JSON.stringify(body.navOrder);
     }
+    if (body.navLabels !== undefined) {
+      data.navLabels = typeof body.navLabels === "string"
+        ? body.navLabels
+        : JSON.stringify(body.navLabels);
+    }
+    if (body.navIcons !== undefined) {
+      data.navIcons = typeof body.navIcons === "string"
+        ? body.navIcons
+        : JSON.stringify(body.navIcons);
+    }
 
     // Home page content
     if (body.announcements !== undefined) {

@@ -44,24 +44,33 @@ function NavButton({
   isActive,
   onClick,
   collapsed = false,
+  customLabel,
+  customIcon,
 }: {
   item: { id: string; href: string; icon: string; label: string };
   isActive: boolean;
   onClick: () => void;
   collapsed?: boolean;
+  customLabel?: string;
+  customIcon?: string;
 }) {
+  const label = customLabel || item.label;
   return (
     <button
       onClick={onClick}
-      title={collapsed ? item.label : undefined}
+      title={collapsed ? label : undefined}
       className={`flex items-center ${collapsed ? "justify-center" : "gap-3"} w-full text-left ${collapsed ? "px-2" : "px-4"} py-3 rounded-lg font-body text-[13px] transition-all min-h-[44px] ${
         isActive
           ? "bg-brand-gold/10 text-[var(--app-gold-text)]"
           : "theme-text-secondary hover:bg-brand-gold/5"
       }`}
     >
-      <span className="text-base leading-none">{item.icon}</span>
-      {!collapsed && <span>{item.label}</span>}
+      {customIcon ? (
+        <img src={customIcon} alt="" className="w-5 h-5 object-contain" />
+      ) : (
+        <span className="text-base leading-none">{item.icon}</span>
+      )}
+      {!collapsed && <span>{label}</span>}
     </button>
   );
 }
@@ -94,6 +103,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [faviconUrl, setFaviconUrl] = useState("");
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
   const [navOrder, setNavOrder] = useState<string[]>([]);
+  // Partner-scope nav label + icon overrides set by super_admin in /admin/settings.
+  // Keys are "partner.<itemId>".
+  const [navLabels, setNavLabels] = useState<Record<string, string>>({});
+  const [navIcons, setNavIcons] = useState<Record<string, string>>({});
 
   // Fetch portal settings
   useEffect(() => {
@@ -109,6 +122,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           const order = JSON.parse(settings.navOrder || "[]");
           if (order.length > 0) setNavOrder(order);
         } catch {}
+        try { setNavLabels(JSON.parse(settings.navLabels || "{}")); } catch {}
+        try { setNavIcons(JSON.parse(settings.navIcons || "{}")); } catch {}
       })
       .catch(() => {});
   }, []);
@@ -229,6 +244,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             isActive={isActive(item.href)}
             onClick={() => navigate(item.href)}
             collapsed={isCollapsed}
+            customLabel={navLabels[`partner.${item.id}`]}
+            customIcon={navIcons[`partner.${item.id}`]}
           />
         ))}
       </div>

@@ -55,6 +55,27 @@ const ALL_NAV_ITEMS = [
   { id: "conference", label: "Live Weekly Call!", icon: "📹" },
 ];
 
+// Mirror of ADMIN_NAV_ITEMS in src/app/(admin)/admin/layout.tsx. Update
+// here whenever the admin sidebar gains or loses an item. Used by the
+// Admin Navigation editor in the settings page.
+const ALL_ADMIN_NAV_ITEMS = [
+  { id: "partners", label: "Partners", icon: "👥" },
+  { id: "deals", label: "Deals", icon: "💼" },
+  { id: "communications", label: "Communications", icon: "📧" },
+  { id: "training", label: "Training", icon: "🎓" },
+  { id: "conference", label: "Live Weekly", icon: "📹" },
+  { id: "documents", label: "Documents", icon: "📄" },
+  { id: "support", label: "Support", icon: "🎫" },
+  { id: "chat", label: "Live Chat", icon: "💬" },
+  { id: "reports", label: "Reports", icon: "📈" },
+  { id: "revenue", label: "Revenue", icon: "💵" },
+  { id: "payouts", label: "Payouts", icon: "💳" },
+  { id: "settings", label: "Settings", icon: "⚙️" },
+  { id: "users", label: "Admin Users", icon: "🛡️" },
+  { id: "dev", label: "Development", icon: "🛠️" },
+  { id: "features", label: "Feature Requests", icon: "✨" },
+];
+
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 
 interface Announcement {
@@ -149,6 +170,12 @@ export default function SettingsPage() {
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
   const [navOrder, setNavOrder] = useState<string[]>(ALL_NAV_ITEMS.map((n) => n.id));
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  // Per-item label + icon overrides keyed by `<scope>.<itemId>`.
+  // Scope is either "partner" or "admin". Icons are base64 data URLs.
+  const [navLabels, setNavLabels] = useState<Record<string, string>>({});
+  const [navIcons, setNavIcons] = useState<Record<string, string>>({});
+  // Which navigation scope is being edited in the Navigation tab.
+  const [navScope, setNavScope] = useState<"partner" | "admin">("partner");
 
   // Home page content
   const [announcements, setAnnouncements] = useState<Announcement[]>(DEFAULT_ANNOUNCEMENTS);
@@ -184,6 +211,8 @@ export default function SettingsPage() {
       setAgreementTemplateEnterprise(settings.agreementTemplateEnterprise || "");
 
       try { setHiddenNavItems(JSON.parse(settings.hiddenNavItems || "[]")); } catch { setHiddenNavItems([]); }
+      try { setNavLabels(JSON.parse(settings.navLabels || "{}")); } catch { setNavLabels({}); }
+      try { setNavIcons(JSON.parse(settings.navIcons || "{}")); } catch { setNavIcons({}); }
       try {
         const order = JSON.parse(settings.navOrder || "[]");
         if (order.length > 0) setNavOrder(order);
@@ -225,6 +254,8 @@ export default function SettingsPage() {
         l3Enabled,
         hiddenNavItems: JSON.stringify(hiddenNavItems),
         navOrder: JSON.stringify(navOrder),
+        navLabels: JSON.stringify(navLabels),
+        navIcons: JSON.stringify(navIcons),
         announcements: JSON.stringify(announcements),
         upcomingEvents: JSON.stringify(upcomingEvents),
         referralOpportunities: JSON.stringify(referralOpps),
@@ -528,65 +559,195 @@ export default function SettingsPage() {
 
       {/* ═══ NAVIGATION TAB ═══ */}
       {tab === "navigation" && (
-        <div className="card p-5 sm:p-6">
-          <div className="font-body font-semibold text-sm mb-1">Partner Navigation</div>
-          <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-5">Drag to reorder. Toggle visibility on/off.</p>
-          <div className="space-y-2">
-            {orderedNavItems.map((item, idx) => {
-              const isVisible = !hiddenNavItems.includes(item.id);
-              const isDragging = dragIdx === idx;
-              return (
-                <div
-                  key={item.id}
-                  draggable
-                  onDragStart={() => handleDragStart(idx)}
-                  onDragOver={(e) => handleDragOver(e, idx)}
-                  onDragEnd={handleDragEnd}
-                  className={`flex items-center justify-between p-3 border rounded-lg transition-all cursor-grab active:cursor-grabbing ${
-                    isDragging
-                      ? "bg-brand-gold/10 border-brand-gold/30 scale-[1.02] shadow-lg"
-                      : "bg-[var(--app-card-bg)] border-[var(--app-border)] hover:bg-[var(--app-card-bg)]"
-                  } ${!isVisible ? "opacity-50" : ""}`}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Drag handle */}
-                    <div className="flex flex-col gap-[2px] shrink-0 cursor-grab">
-                      <div className="w-4 h-[2px] bg-[var(--app-input-bg)] rounded" />
-                      <div className="w-4 h-[2px] bg-[var(--app-input-bg)] rounded" />
-                      <div className="w-4 h-[2px] bg-[var(--app-input-bg)] rounded" />
-                    </div>
-                    <span className="font-body text-[12px] text-[var(--app-text-muted)] w-5 text-center">{idx + 1}</span>
-                    <span className="text-lg">{item.icon}</span>
-                    <span className="font-body text-sm text-[var(--app-text)]">{item.label}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {/* Move up/down buttons (for mobile/accessibility) */}
-                    <button
-                      onClick={() => moveNav(idx, -1)}
-                      disabled={idx === 0}
-                      className="w-7 h-7 flex items-center justify-center rounded bg-[var(--app-card-bg)] hover:bg-[var(--app-card-bg)] text-[var(--app-text-muted)] disabled:opacity-20 transition-colors text-[11px]"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      onClick={() => moveNav(idx, 1)}
-                      disabled={idx === orderedNavItems.length - 1}
-                      className="w-7 h-7 flex items-center justify-center rounded bg-[var(--app-card-bg)] hover:bg-[var(--app-card-bg)] text-[var(--app-text-muted)] disabled:opacity-20 transition-colors text-[11px]"
-                    >
-                      ▼
-                    </button>
-                    {/* Visibility toggle */}
-                    <button
-                      onClick={() => toggleNavItem(item.id)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isVisible ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
-                    >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isVisible ? "translate-x-6" : "translate-x-1"}`} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+        <div className="space-y-4">
+          {/* Scope toggle */}
+          <div className="card p-2 flex gap-1">
+            {(["partner", "admin"] as const).map((scope) => (
+              <button
+                key={scope}
+                onClick={() => setNavScope(scope)}
+                className={`flex-1 font-body text-sm px-4 py-2 rounded transition-colors ${
+                  navScope === scope
+                    ? "bg-brand-gold/15 text-brand-gold"
+                    : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
+                }`}
+              >
+                {scope === "partner" ? "Partner Navigation" : "Admin Navigation"}
+              </button>
+            ))}
           </div>
+
+          {navScope === "partner" ? (
+            <div className="card p-5 sm:p-6">
+              <div className="font-body font-semibold text-sm mb-1">Partner Navigation</div>
+              <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-5">
+                Drag to reorder, toggle visibility, edit labels, or upload a custom icon. Changes sync to every partner on next page load.
+              </p>
+              <div className="space-y-3">
+                {orderedNavItems.map((item, idx) => {
+                  const isVisible = !hiddenNavItems.includes(item.id);
+                  const isDragging = dragIdx === idx;
+                  const key = `partner.${item.id}`;
+                  const currentLabel = navLabels[key] ?? "";
+                  const currentIcon = navIcons[key] ?? "";
+                  return (
+                    <div
+                      key={item.id}
+                      draggable
+                      onDragStart={() => handleDragStart(idx)}
+                      onDragOver={(e) => handleDragOver(e, idx)}
+                      onDragEnd={handleDragEnd}
+                      className={`p-3 border rounded-lg transition-all ${
+                        isDragging
+                          ? "bg-brand-gold/10 border-brand-gold/30 scale-[1.02] shadow-lg"
+                          : "bg-[var(--app-card-bg)] border-[var(--app-border)]"
+                      } ${!isVisible ? "opacity-50" : ""}`}
+                    >
+                      <div className="flex items-center gap-3 mb-3 cursor-grab active:cursor-grabbing">
+                        <div className="flex flex-col gap-[2px] shrink-0">
+                          <div className="w-4 h-[2px] bg-[var(--app-input-bg)] rounded" />
+                          <div className="w-4 h-[2px] bg-[var(--app-input-bg)] rounded" />
+                          <div className="w-4 h-[2px] bg-[var(--app-input-bg)] rounded" />
+                        </div>
+                        <span className="font-body text-[12px] text-[var(--app-text-muted)] w-5 text-center">{idx + 1}</span>
+                        {currentIcon ? (
+                          <img src={currentIcon} alt="" className="w-6 h-6 object-contain" />
+                        ) : (
+                          <span className="text-lg">{item.icon}</span>
+                        )}
+                        <span className="font-body text-sm text-[var(--app-text)] flex-1">{currentLabel || item.label}</span>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => moveNav(idx, -1)} disabled={idx === 0} className="w-7 h-7 flex items-center justify-center rounded bg-[var(--app-card-bg)] text-[var(--app-text-muted)] disabled:opacity-20 text-[11px]">▲</button>
+                          <button onClick={() => moveNav(idx, 1)} disabled={idx === orderedNavItems.length - 1} className="w-7 h-7 flex items-center justify-center rounded bg-[var(--app-card-bg)] text-[var(--app-text-muted)] disabled:opacity-20 text-[11px]">▼</button>
+                          <button
+                            onClick={() => toggleNavItem(item.id)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isVisible ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
+                          >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isVisible ? "translate-x-6" : "translate-x-1"}`} />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+                        <div>
+                          <label className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] block mb-1">Label</label>
+                          <input
+                            type="text"
+                            value={currentLabel}
+                            onChange={(e) => setNavLabels({ ...navLabels, [key]: e.target.value })}
+                            placeholder={item.label}
+                            className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded px-3 py-2 text-[var(--app-text)] font-body text-sm outline-none focus:border-brand-gold/40"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] block mb-1">Custom Icon</label>
+                          <div className="flex items-center gap-2">
+                            <label className="cursor-pointer bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded px-3 py-2 font-body text-[12px] text-[var(--app-text-secondary)] hover:bg-[var(--app-card-bg)]">
+                              Upload
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const dataUrl = await compressImage(file, 128, 0.85);
+                                  setNavIcons({ ...navIcons, [key]: dataUrl });
+                                }}
+                              />
+                            </label>
+                            {currentIcon && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = { ...navIcons };
+                                  delete next[key];
+                                  setNavIcons(next);
+                                }}
+                                className="font-body text-[11px] text-red-400/60 hover:text-red-400"
+                              >
+                                Reset
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="card p-5 sm:p-6">
+              <div className="font-body font-semibold text-sm mb-1">Admin Navigation</div>
+              <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-5">
+                Rename admin sidebar items or upload custom icons. Affects the admin panel sidebar for everyone with admin access.
+              </p>
+              <div className="space-y-3">
+                {ALL_ADMIN_NAV_ITEMS.map((item) => {
+                  const key = `admin.${item.id}`;
+                  const currentLabel = navLabels[key] ?? "";
+                  const currentIcon = navIcons[key] ?? "";
+                  return (
+                    <div key={item.id} className="p-3 border border-[var(--app-border)] rounded-lg bg-[var(--app-card-bg)]">
+                      <div className="flex items-center gap-3 mb-3">
+                        {currentIcon ? (
+                          <img src={currentIcon} alt="" className="w-6 h-6 object-contain" />
+                        ) : (
+                          <span className="text-lg">{item.icon}</span>
+                        )}
+                        <span className="font-body text-sm text-[var(--app-text)] flex-1">{currentLabel || item.label}</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+                        <div>
+                          <label className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] block mb-1">Label</label>
+                          <input
+                            type="text"
+                            value={currentLabel}
+                            onChange={(e) => setNavLabels({ ...navLabels, [key]: e.target.value })}
+                            placeholder={item.label}
+                            className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded px-3 py-2 text-[var(--app-text)] font-body text-sm outline-none focus:border-brand-gold/40"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] block mb-1">Custom Icon</label>
+                          <div className="flex items-center gap-2">
+                            <label className="cursor-pointer bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded px-3 py-2 font-body text-[12px] text-[var(--app-text-secondary)] hover:bg-[var(--app-card-bg)]">
+                              Upload
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const dataUrl = await compressImage(file, 128, 0.85);
+                                  setNavIcons({ ...navIcons, [key]: dataUrl });
+                                }}
+                              />
+                            </label>
+                            {currentIcon && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = { ...navIcons };
+                                  delete next[key];
+                                  setNavIcons(next);
+                                }}
+                                className="font-body text-[11px] text-red-400/60 hover:text-red-400"
+                              >
+                                Reset
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
