@@ -217,40 +217,67 @@ export async function sendForSigning(
     return { documentId: mockId, status: "pending", embeddedSigningUrl: null };
   }
 
-  // When sending from a template, SignWell matches recipients to template
-  // placeholders by `placeholder_name`. Do NOT send a custom `id` on the
-  // recipient — that creates a new recipient instead of binding to the
-  // template's existing placeholder, and every field on the template
-  // placeholder reports `with_no_fields` because they're still linked to
-  // the placeholder id we shadowed.
-  //
-  // For ad-hoc file sends (no template), we have no placeholders to match,
-  // so we pass through the caller's id as before.
+  // When sending from a template, SignWell needs each recipient's `id`
+  // to match the template placeholder's internal id (e.g. "3" for
+  // Partner, "1" for Fintella) — not our partnerCode. We don't know
+  // those ids ahead of time, so we fetch the template first, build a
+  // name→id map, and use those ids as the recipient ids. The fields
+  // attached to each placeholder then bind correctly.
   const usingTemplate = !!options.templateId;
+  let placeholderIdByName: Record<string, string> = {};
+  if (usingTemplate) {
+    try {
+      const tplRes = await fetch(
+        `${SIGNWELL_API_BASE}/document_templates/${options.templateId}`,
+        {
+          headers: {
+            "X-Api-Key": SIGNWELL_API_KEY,
+            Accept: "application/json",
+          },
+        }
+      );
+      if (tplRes.ok) {
+        const tpl = await tplRes.json();
+        const placeholders: Array<{ id?: string; name?: string }> = Array.isArray(
+          tpl.placeholders
+        )
+          ? tpl.placeholders
+          : [];
+        for (const p of placeholders) {
+          if (p.name && p.id) placeholderIdByName[p.name] = p.id;
+        }
+      } else {
+        console.warn(
+          `[signwell] Failed to fetch template placeholders: ${tplRes.status}`
+        );
+      }
+    } catch (e) {
+      console.warn("[signwell] Template placeholder lookup error:", e);
+    }
+  }
+
   const body: Record<string, any> = {
     name: options.name,
     subject: options.subject,
     message: options.message,
     recipients: options.recipients.map((r, idx) => {
-      const recipient: Record<string, any> = {
+      // Resolve the template placeholder id for this recipient's role.
+      // Fall back to the caller-supplied id (non-template sends) or a
+      // stable per-position id if the template lookup failed.
+      const placeholderId = usingTemplate
+        ? placeholderIdByName[r.role] || r.id || String(idx + 1)
+        : r.id;
+      return {
+        id: placeholderId,
         email: r.email,
         name: r.name,
+        role: r.role,
+        placeholder_name: r.role,
         // Signing order follows recipient array order. When multiple
         // recipients are passed, partner (index 0) signs first, Fintella
         // co-signer (index 1) signs second.
         signing_order: idx + 1,
       };
-      if (usingTemplate) {
-        // Bind to the template placeholder by name. SignWell will reuse
-        // the template placeholder's id + fields automatically.
-        recipient.placeholder_name = r.role;
-      } else {
-        // Non-template send — expose the caller-supplied id + role.
-        recipient.id = r.id;
-        recipient.role = r.role;
-        recipient.placeholder_name = r.role;
-      }
-      return recipient;
     }),
     reminders: true,
     // Enable strict order so the Fintella co-signer only sees the
