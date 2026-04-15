@@ -486,8 +486,54 @@ Retry-After: 17
                 {
                   category: "Financials",
                   colorVar: "--doc-green",
-                  fields: ["estimated_refund_amount", "firm_fee_rate", "firm_fee_amount"],
-                  desc: "Update the deal's refund amount, firm fee percentage (e.g. 20 or 0.20), or firm fee dollar amount.",
+                  fields: [
+                    "estimated_refund_amount",
+                    "actual_refund_amount",
+                    "firm_fee_rate",
+                    "firm_fee_amount",
+                    "l1_commission_rate",
+                  ],
+                  desc: "Estimated refund at submission, actual refund once the client has received the check from IRS/CBP, firm fee rate (e.g. 20 or 0.20), firm fee dollar amount, and optional per-deal L1 commission override (decimal or percentage).",
+                },
+                {
+                  category: "Client Info",
+                  colorVar: "--doc-blue",
+                  fields: [
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "phone",
+                    "business_title",
+                  ],
+                  desc: "Correct or enrich the client contact details. Composite client name is auto-rebuilt from first + last.",
+                },
+                {
+                  category: "Business Details",
+                  colorVar: "--doc-blue",
+                  fields: [
+                    "legal_entity_name",
+                    "service_of_interest",
+                    "city",
+                    "state",
+                  ],
+                  desc: "Update the business entity name, service of interest, or location.",
+                },
+                {
+                  category: "Tariff Fields",
+                  colorVar: "--doc-blue",
+                  fields: [
+                    "imports_goods",
+                    "import_countries",
+                    "annual_import_value",
+                    "importer_of_record",
+                  ],
+                  desc: "Update tariff-specific intake fields as you learn more during qualification.",
+                },
+                {
+                  category: "Product Details",
+                  colorVar: "--doc-blue",
+                  fields: ["product_type", "imported_products"],
+                  desc: "Set the product category (ieepa, section301, other) and a free-text description of the goods.",
                 },
                 {
                   category: "Consultation",
@@ -496,10 +542,35 @@ Retry-After: 17
                   desc: "Reschedule or set the consultation date/time. Overwrites previous values.",
                 },
                 {
+                  category: "Notes",
+                  colorVar: "--doc-text-muted",
+                  fields: ["affiliate_notes", "notes"],
+                  desc: "Free-text affiliate notes from the referral source, or internal notes on the deal.",
+                },
+                {
                   category: "Closed Lost",
                   colorVar: "--doc-text-muted",
                   fields: ["closed_lost_reason"],
                   desc: "Optional reason if the deal is moved to Closed Lost. Not required.",
+                },
+                {
+                  category: "Locked (server-managed)",
+                  colorVar: "--doc-red",
+                  fields: [
+                    "id",
+                    "partnerCode",
+                    "idempotencyKey",
+                    "l1CommissionAmount",
+                    "l1CommissionStatus",
+                    "l2CommissionAmount",
+                    "l2CommissionStatus",
+                    "paymentReceivedAt",
+                    "paymentReceivedBy",
+                    "closeDate",
+                    "createdAt",
+                    "updatedAt",
+                  ],
+                  desc: "These fields are NOT updatable via PATCH. Commission amounts and statuses are derived by Fintella's waterfall engine; payment-received and close date are stamped automatically; the partner code and deal ID are immutable after creation.",
                 },
               ].map((row) => (
                 <div key={row.category} style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", borderLeftWidth: 3, borderLeftColor: `var(${row.colorVar})` }}>
@@ -550,8 +621,9 @@ Retry-After: 17
   "dealId": "clx8f9abc123def456",
   "dealstage": "Closed Won",
   "estimated_refund_amount": 300000,
+  "actual_refund_amount": 287500,
   "firm_fee_rate": 20,
-  "firm_fee_amount": 60000
+  "firm_fee_amount": 57500
 }`}
                 </pre>
               </div>
@@ -630,12 +702,14 @@ Retry-After: 17
     "dealId": "clx8f9abc123",
     "dealstage": "Closed Won",
     "estimated_refund_amount": 300000,
+    "actual_refund_amount": 287500,
     "firm_fee_rate": 20,
-    "firm_fee_amount": 60000
+    "firm_fee_amount": 57500
   }'
 
 # → 200 OK
-# closeDate is automatically stamped when stage normalizes to "closedwon" or "closedlost"`}
+# closeDate is automatically stamped when stage normalizes to "closedwon" or "closedlost"
+# actual_refund_amount captures what the client really received vs the estimate`}
             </pre>
             <InfoBox>
               A testing sandbox is available on request — ask us and we will issue a preview-only API key that points at an isolated deal table.
