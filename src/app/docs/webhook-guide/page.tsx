@@ -478,6 +478,12 @@ Retry-After: 17
                   desc: "The unique deal ID returned in the original POST 201 response. Must be stored in your system.",
                 },
                 {
+                  category: "Conditionally Required",
+                  colorVar: "--doc-red",
+                  fields: ["estimated_refund_amount", "firm_fee_rate"],
+                  desc: "When transitioning a deal into client_engaged (contract signed), in_process, or closedwon, BOTH of these must be present — either in the PATCH body or already on the deal from a prior update. firm_fee_amount is NOT required; it is derived from refund × rate.",
+                },
+                {
                   category: "Deal Stage",
                   colorVar: "--doc-orange",
                   fields: ["dealstage", "deal_stage", "stage"],

@@ -844,6 +844,45 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    // ─── Stage-specific required fields ────────────────────────────────
+    // Certain internal stages carry business preconditions: you can't
+    // transition a deal to client_engaged (contract signed) or beyond
+    // without telling us the refund size and the negotiated firm fee
+    // rate, because those are what drive every downstream commission
+    // calculation. Enforce here so Frost Law gets a clean 400 instead
+    // of us silently accepting an incomplete transition.
+    //
+    // Firm fee AMOUNT is intentionally NOT required — it's derived
+    // from refund × rate and may not be known yet at contract signing.
+    const stagesRequiringFinancials = new Set([
+      "client_engaged",
+      "in_process",
+      "closedwon",
+    ]);
+    if (data.stage && stagesRequiringFinancials.has(data.stage)) {
+      const effectiveRefund =
+        typeof data.estimatedRefundAmount === "number"
+          ? data.estimatedRefundAmount
+          : deal.estimatedRefundAmount;
+      const effectiveRate =
+        typeof data.firmFeeRate === "number"
+          ? data.firmFeeRate
+          : deal.firmFeeRate;
+      const missing: string[] = [];
+      if (!effectiveRefund || effectiveRefund <= 0) missing.push("estimated_refund_amount");
+      if (!effectiveRate || effectiveRate <= 0) missing.push("firm_fee_rate");
+      if (missing.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Stage "${data.stage}" requires these fields to be set: ${missing.join(", ")}. They can be provided on this PATCH or already present on the deal from an earlier update.`,
+            missing,
+            stage: data.stage,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // ─── Auto-create CommissionLedger on first closed_won transition ───
     // When a deal first transitions to closed_won via this webhook, we
     // materialize the L1/L2/L3 commissions as "pending" ledger rows.
@@ -1087,6 +1126,10 @@ export async function GET() {
     },
     update_fields: {
       required: ["dealId"],
+      conditionally_required: {
+        "client_engaged / in_process / closedwon":
+          "estimated_refund_amount + firm_fee_rate must be present (on this PATCH or already on the deal). firm_fee_amount is NOT required — it is derived from refund × rate.",
+      },
       deal_stage: [
         "dealstage",
         "deal_stage",
