@@ -269,6 +269,10 @@ export default function CommunicationsPage() {
   const [newTplBody, setNewTplBody] = useState("");
   const [newTplSaving, setNewTplSaving] = useState(false);
 
+  // Templates sub-tab — splits live (wired) from drafts (placeholders) so
+  // super admins can see at a glance which templates are actually firing.
+  const [templatesSubTab, setTemplatesSubTab] = useState<"live" | "drafts">("live");
+
   // Edit modal state — null means modal closed
   const [editingTpl, setEditingTpl] = useState<Template | null>(null);
   const [editSaving, setEditSaving] = useState(false);
@@ -920,21 +924,56 @@ export default function CommunicationsPage() {
           </div>
         )}
 
+        {/* Live / Drafts sub-tabs */}
+        {!templatesLoading && (
+          <div className="flex gap-1 mb-4 border-b border-[var(--app-border)]">
+            {(["live", "drafts"] as const).map((sub) => {
+              const count =
+                sub === "live"
+                  ? templates.filter((t) => !t.isDraft).length
+                  : templates.filter((t) => t.isDraft).length;
+              return (
+                <button
+                  key={sub}
+                  onClick={() => setTemplatesSubTab(sub)}
+                  className={`font-body text-[13px] px-4 py-2.5 transition-colors border-b-2 -mb-px ${
+                    templatesSubTab === sub
+                      ? "text-brand-gold border-brand-gold"
+                      : "text-[var(--app-text-muted)] border-transparent hover:text-[var(--app-text-secondary)]"
+                  }`}
+                >
+                  {sub === "live" ? "Live" : "Drafts"}{" "}
+                  <span className="text-[10px] text-[var(--app-text-faint)]">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Template cards */}
         {!templatesLoading && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {templates.map((t) => (
+            {templates
+              .filter((t) => (templatesSubTab === "live" ? !t.isDraft : t.isDraft))
+              .map((t) => (
               <div key={t.id} className="card p-5">
                 <div className="flex items-start justify-between mb-2 gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-display text-sm font-bold">{t.name}</h4>
-                      {t.isDraft && (
+                      {t.isDraft ? (
                         <span
                           className="text-[10px] px-1.5 py-0.5 rounded font-mono uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30"
                           title="Draft — not yet wired to any code path. Editing has no effect on real partner emails until a future PR connects this template to an event."
                         >
                           Draft
+                        </span>
+                      ) : (
+                        <span
+                          className="text-[10px] px-1.5 py-0.5 rounded font-mono uppercase tracking-wider bg-lime-500/15 text-lime-400 border border-lime-500/30"
+                          title="Live — wired to a real trigger. Edits here change what partners actually receive on the next matching event."
+                        >
+                          Live
                         </span>
                       )}
                       {!t.enabled && (
