@@ -121,6 +121,7 @@ export async function PUT(req: NextRequest) {
         : JSON.stringify(body.referralOpportunities);
     }
     if (body.leaderboardEnabled !== undefined) data.leaderboardEnabled = body.leaderboardEnabled;
+    if (body.liveChatEnabled !== undefined) data.liveChatEnabled = body.liveChatEnabled;
     if (body.callRecordingEnabled !== undefined) data.callRecordingEnabled = body.callRecordingEnabled;
 
     // Upsert — create if not exists

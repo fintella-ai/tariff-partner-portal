@@ -1,45 +1,48 @@
 # Session State
 
-🕒 Last updated: 2026-04-15 — post Phase 16 merge
+🕒 Last updated: 2026-04-15 — softphone fixed, Stripe env vars added
 
 ## 🌿 Git state
-- **main HEAD:** `29ea4fb` — feat(stripe): Phase 16 — Stripe Connect Express partner payouts (#135)
-- **Open feature branch:** `claude/recording-toggle-softphone-fix` (2 commits ahead of main: recording toggle DB setting + Twilio diagnostic endpoint)
-- **Working tree:** clean on main
+- **main HEAD:** `098c1d9` — chore(session): checkpoint (local only, 1 ahead of origin/main)
+- **origin/main HEAD:** `41bbaed` — feat(settings): DB-driven call recording toggle + softphone recording fix (#134)
+- **Working tree:** clean (`.env.local` and `.env.production` are gitignored)
 
 ## ✅ What's done (this session)
-- **PR #135 — Phase 16 Stripe Connect** — merged to main, deployed to Vercel ✓
-  - New `StripeAccount` model + `stripeTransferId` on `CommissionLedger`
-  - `src/lib/stripe.ts` — raw fetch client (no SDK), demo-gated on `STRIPE_SECRET_KEY`
-  - `POST /api/partner/stripe/onboard` — creates/resumes Express account + returns onboarding URL
-  - `GET /api/partner/stripe/status` — returns DB-cached account state
-  - `GET /api/partner/stripe/return` — post-onboarding redirect handler, syncs DB from Stripe
-  - `POST /api/stripe/webhook` — handles `account.updated`, keeps DB in sync
-  - `process_batch` updated — Stripe Transfers executed before commissions marked paid
-  - Fixed fire-and-forget email sends in `process_batch` + `approve_single` (Vercel safe)
-  - Partner commissions page: Stripe Connect card (not connected / onboarding / active states)
-  - Admin payouts page: Stripe status badge column (Transferred / Ready / Pending / —)
+- **PR #135 — Phase 16 Stripe Connect** — merged to main, deployed ✓
+- **PR #134 — Phase 15c call recording toggle** — merged to main, deployed ✓
+  - DB-driven `callRecordingEnabled` toggle in admin Settings
+  - `partner-consent-webhook` for playing consent to called party
+  - Diagnostic endpoint at `/api/admin/dev/twilio-voice`
+- **Softphone root cause found and fixed:**
+  - Vercel had `TWILIO_PHONE_NUMBER` but code reads `TWILIO_FROM_NUMBER`
+  - Added `TWILIO_FROM_NUMBER=+17276108292` to all 3 Vercel environments
+  - Triggered production redeploy via Vercel CLI — live at fintella.partners
+  - Full diagnostic: ✅ All 7 env vars, ✅ TwiML App URL, ✅ Access Token
+- **Vercel project now properly linked:** `tariff-partner-portal-iwki` (was incorrectly linked to old `tariff-partner-portal`)
+- **Stripe env vars added to Vercel:** `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (added 17-19m ago by user)
 
 ## 🔄 What's in flight
-- **`claude/recording-toggle-softphone-fix`** — 2 commits not yet PR'd:
-  - `62d85f4`: DB-driven call recording toggle (PortalSettings.callRecordingEnabled)
-  - `ff0af31`: Twilio voice diagnostic endpoint (`GET /api/admin/dev/twilio-voice`)
+- Nothing — working tree is clean
 
 ## 🎯 What's next
-1. **Open PR for `claude/recording-toggle-softphone-fix`** — recording toggle + Twilio diagnostic
-2. **Activate Stripe Connect** — add `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` to Vercel, point webhook to `/api/stripe/webhook`
-3. **Smoke-test** invite flow end-to-end (create partner → sign agreement → verify status flip)
-4. **Phase 18b** — Next.js 14→16 migration (dedicated session)
+1. **Smoke-test softphone** — make a test call from admin panel to confirm bridged call works now
+2. **Smoke-test Stripe Connect** — add Stripe webhook in Stripe dashboard pointing to `https://fintella.partners/api/stripe/webhook`, then test partner onboarding flow
+3. **Smoke-test invite flow** — create partner via invite link, sign agreement, verify status flips to `active`
+4. **HMAC enforcement on `/api/webhook/referral`** — flip from log-only to enforced when Frost Law is ready
+5. **Phase 18b** — Next.js 14→16 migration (dedicated session)
 
 ## 🧠 Context that matters for resuming
-- Stripe Connect is fully demo-gated — shows disabled button until `STRIPE_SECRET_KEY` is set in Vercel
-- The `recording-toggle` branch needs its own PR (separate feature from Phase 16)
-- All DB data is test/seed — safe to freely test against production
+- Vercel project name: `tariff-partner-portal-iwki` (NOT `tariff-partner-portal`)
+- Vercel team: `john-fflaw-projects`
+- `TWILIO_PHONE_NUMBER` is the old Vercel env var name; `TWILIO_FROM_NUMBER` is what the code reads
+- Stripe Connect is demo-gated — needs `STRIPE_SECRET_KEY` in Vercel (now set) and Stripe webhook configured
+- All DB data is test/seed — safe to test against production
 - Playwright: user said "im not worried about playwright" — not on roadmap
 
 ## 📂 Relevant files for the next task
 - `.claude/session-state.md` — this file
-- `prisma/schema.prisma` — now has `StripeAccount` model + `stripeTransferId` on `CommissionLedger`
+- `src/lib/twilio-voice.ts` — bridged call initiation
+- `src/lib/twilio.ts` — SMS + demo-gate check (uses TWILIO_FROM_NUMBER)
+- `src/app/api/twilio/voice-webhook/route.ts` — TwiML response handler
 - `src/lib/stripe.ts` — Stripe raw fetch client
-- `src/app/api/partner/stripe/` — onboard, status, return routes
 - `src/app/api/stripe/webhook/route.ts` — account.updated handler
