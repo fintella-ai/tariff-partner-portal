@@ -14,46 +14,67 @@
 
 ## 🕒 Last updated
 
-`2026-04-15T00:00:00Z` — by session (branched from btw conversation, audit + cleanup session)
+`2026-04-15T21:00:00Z` — by session (L1 invite flow + variable commission rates)
 
 ## 🌿 Git state at last checkpoint
 
 - **Branch**: `main`
-- **HEAD**: `e054958` — PR #125 `refactor(commissions): remove legacy l1Rate/l2Rate/l3Rate`
+- **HEAD**: `b79ce66` — PR #126 `feat(partners): admin-controlled L1 invite flow + variable commission rates`
 - **Working tree**: clean
-- **Build**: 106/106 static pages ✓ (up from 97/97 at #77 — 9 new pages added in #78–#123)
+- **Build**: 107/107 static pages ✓ (was 106/106 — getstarted gained a new API route)
 - **Open PRs**: 0
-- **Vercel**: auto-deployed from #125 merge
+- **Vercel**: auto-deployed from #126 merge — `prisma db push` ran on deploy (inviterCode nullable, invitedEmail/invitedName added to RecruitmentInvite)
 
 ## ✅ What's done this session (in merge order)
 
 | # | PR | What shipped |
 |---|---|---|
-| 1 | **#124** | `chore(cleanup)`: Remove dead code from post-#79 audit — `src/lib/hubspot.ts` (231 lines, Phase 14 descoped), `scripts/seed-all.ts` (118-line stale stub), `PartnerOverride` model from schema (never wired up), fix `/api/commissions` which had the one hidden `prisma.partnerOverride` call |
-| 2 | **#125** | `refactor(commissions)`: Remove legacy `l1Rate`/`l2Rate`/`l3Rate` from Partner model — unify commission display and payout calculation on `commissionRate` + `tier`. Removes 7 dead legacy functions from `commission.ts`, ghost state from admin partner detail page, and the rate drift bug where admin-set display rates could silently diverge from waterfall payouts |
+| 1 | **#126** | `feat(partners)`: Admin-controlled L1 invite flow + variable commission rates. Full rework of the partner onboarding path and commission waterfall. |
 
-## 🔍 Audit findings (this session)
+### PR #126 detail
 
-Performed a deep audit of PRs #79–#123 (46-PR gap from last session-state). Key findings:
+**Schema** (`RecruitmentInvite`):
+- `inviterCode` → nullable (`String?`) — null for admin-generated L1 invites
+- New `invitedEmail String?` and `invitedName String?` for admin invites
+- `targetTier` now supports `"l1"` in addition to `"l2"/"l3"`
 
-**False positives (intentional, not duplicates):**
-- `/api/training/*` vs `/api/admin/training/*` — role-split (partner reads published, admin manages)
-- `/api/chat` vs `/api/admin/chat` vs `/api/ai/chat` — three distinct systems (partner live chat, admin chat panel, AI assistant)
-- `/admin/reports` vs `/admin/revenue` vs `/admin/payouts` — three reporting views sharing `ReportingTabs` component, single "Reporting" nav entry
+**Commission waterfall** (`src/lib/commission.ts`):
+- L1 direct deal earns their *assigned* rate (10–25%), not always 25%
+- L1 override on L2 deals = `L1.rate − L2.rate` (was `MAX_COMMISSION_RATE − L2.rate`)
+- Total payout per deal always = L1's assigned rate
 
-**Real issues fixed (both PRs):**
-- `PartnerOverride` — schema model, never queried (now deleted)
-- `seed-all.ts` — stale 118-line stub, build used `seed-all.js` (now deleted)
-- `hubspot.ts` — 231 lines dead code, Phase 14 descoped (now deleted)
-- Dual commission rate systems — `Partner.l1Rate/l2Rate/l3Rate` (display-only legacy) vs `Partner.commissionRate + tier` (waterfall). Silent drift risk. Legacy fields removed.
+**New `/api/admin/invites`**:
+- `GET`: list admin-generated L1 invites
+- `POST`: create L1 invite at chosen rate (10/15/20/25%), send invite email via SendGrid
 
-**What PRs #78–#123 added (session-state was stale for this range):**
-- #79: Two-phase commission ledger (pending → due → paid)
-- #80–81: CLAUDE.md trim + settings.json exclusions
-- #82–83: Admin utilities (test email, super_admin delete)
-- #84–103: Communications Hub templates, webhook field expansion, deal editing, inbound email inbox, support enhancements
-- #104–112: Training file upload, chat improvements, WebRTC softphone
-- #113–123: SignWell improvements (co-signer, template fields, diagnostics), phone column, unified phone tab, MP3 audio uploads
+**`/api/getstarted`**:
+- New `GET`: validate invite token before showing form
+- `POST`: requires token, marks invite used on signup
+
+**`/getstarted` page**:
+- Token-gated — shows "Invalid Invite" error if no/expired token
+- Pre-fills email and name from invite, shows commission rate
+
+**`/api/invites`** (partner → downline):
+- Rate validation now dynamic: `[5%…inviterRate−5%]` in 5% steps
+- L3 eligibility: L2 must have rate ≥ 10%
+
+**`referral-links` page**:
+- Available recruit rates come from API (`allowedDownlineRates` per partner)
+- Override display uses partner's actual rate, not hardcoded 25%
+
+**`commissions` page**:
+- `directRate = commissionRate` (was `tier === "l1" ? MAX_COMMISSION_RATE : commissionRate`)
+
+**Admin partners page**:
+- "Invite Partner" button opens modal with email + rate selector
+- Rate preview shows downline range for chosen rate
+- Mobile: `flex-wrap` on header buttons, `min-h-[44px]` on all action buttons
+
+**Constants** (`src/lib/constants.ts`):
+- New `ALLOWED_L1_RATES = [0.10, 0.15, 0.20, 0.25]`
+- New `RATE_INCREMENT = 0.05`, `MIN_KEEP_FOR_SELF = 0.05`
+- New `getAllowedDownlineRates(inviterRate): number[]` helper
 
 ## 🔄 What's in flight
 
@@ -61,41 +82,41 @@ Nothing. Working tree is clean, all branches merged.
 
 ## 🎯 What's next (queued, prioritized)
 
-### 🅰 External blockers still in motion (unchanged from #77)
+### 🅰 External blockers still in motion
 1. **Twilio A2P 10DLC** — approval window ~2026-04-28 to 2026-05-05
 2. **SendGrid domain authentication** — DNS propagating; check Verify button
 3. **Frost Law IT** — send `FROST_LAW_API_KEY` + point to `https://fintella.partners/docs/webhook-guide`
-4. **Smoke-test production** — create test partner, trigger agreement, sign it, verify `Partner.status` flips; test post-#125 commissions page shows correct rates
+4. **Smoke-test production** — create test partner via new invite flow, sign agreement, verify status flip
 
 ### 🅱 Code work (no external dependencies)
-1. **session-state.md → schema cleanup note**: `Partner.l1Rate/l2Rate/l3Rate` columns are now removed from the schema — `prisma db push --accept-data-loss` will drop them from the production DB on next Vercel deploy (auto, safe, columns were nullable)
-2. **Phase 15c-followup** — voice recording with state-by-state consent disclosure. Multi-hour, fresh session.
-3. **Phase 16 — Stripe Connect** — partner payout system. Multi-hour, fresh session.
-4. **Phase 18b — Next.js 14→16 migration** — deferred, dedicated session.
-5. **HMAC enforcement on `/api/webhook/referral`** — flip from log-only to hard-reject once Frost Law implements signing (one-line change in `verifyHmacSignature()`).
+1. **`prisma db push` already ran on #126 Vercel deploy** — inviterCode nullable, invitedEmail/invitedName added. No manual action needed.
+2. **Existing partners**: all have `commissionRate = 0.25` which is a valid `ALLOWED_L1_RATE` — no data migration needed.
+3. **Phase 15c** — voice recording with state-by-state consent disclosure. Multi-hour, fresh session.
+4. **Phase 16 — Stripe Connect** — partner payout system. Multi-hour, fresh session.
+5. **Phase 18b — Next.js 14→16 migration** — deferred, dedicated session.
+6. **HMAC enforcement on `/api/webhook/referral`** — flip from log-only to hard-reject once Frost Law implements signing.
 
 ### 🅲 Operational (John does in UI)
-1. Delete legacy `admin@trln.com` super_admin row via `/admin/users` (orphan from pre-rebrand deployment)
-2. Verify production commissions page post-#125 (L1 partner should see 25%, L2 should see their assigned rate)
+1. Delete legacy `admin@trln.com` super_admin row via `/admin/users` (orphan from pre-rebrand)
+2. Smoke-test new invite flow: go to `/admin/partners` → Invite Partner → pick rate → verify email logged → open link → complete signup
 
 ## 🧠 Context that matters for resuming
 
-- **Pre-launch status**: no real customers in any environment. Freely destructive DB ops are safe. Smoke-test directly against `fintella.partners`.
-- **Branch protection on `main`**: all changes via PR, squash merge, Vercel auto-deploys. Never merge without John go-ahead.
-- **Build expects 106/106 pages** as of `e054958`. The old 97/97 count is stale.
-- **Commission system (post-#125)**: single source of truth is `Partner.commissionRate` + `Partner.tier`. Waterfall in `computeDealCommissions()` uses these. Display on commissions page now uses these too. Legacy `l1Rate/l2Rate/l3Rate` are gone.
+- **Commission system (post-#126)**: L1's assigned rate is the total payout ceiling — NOT always 25%. Admin picks rate per invite. `getAllowedDownlineRates(inviterRate)` returns the valid L2 rate options.
+- **Invite flow**: `/getstarted` is now token-gated (admin invite only). `/signup` remains for L2/L3 partner-to-partner invites.
+- **Partner.commissionRate** is authoritative for all rates. The waterfall uses it directly.
+- **Pre-launch status**: no real customers. Smoke-test against `fintella.partners`.
+- **Branch protection on `main`**: all changes via PR, squash merge, Vercel auto-deploys.
 - **No HubSpot** — Phase 14 descoped. Frost Law webhook is the only external deal data source.
-- **Demo-gate pattern**: every integration (SignWell, SendGrid, Twilio, Anthropic) is a no-op if env var unset, writes audit row with `status="demo"`.
+- **Demo-gate pattern**: every integration is a no-op if env var unset, writes audit row with `status="demo"`.
 - **TCPA gate**: every SMS send checks `Partner.smsOptIn` BEFORE network call. Never remove.
-- **Admin roles**: super_admin, admin, accounting, partner_support. Middleware gates `/admin/*` to any of the four. Per-route gates for escalated operations.
-- **Webhook contract** (`/api/webhook/referral`): dual-scheme auth (`X-Fintella-Api-Key` primary, legacy `x-webhook-secret`/`Authorization: Bearer` fallback), 60 req/60s rate limit, idempotency via `idempotencyKey`, HMAC log-only.
 
 ## 📂 Relevant files for the next task
 
-If next session starts with **smoke-testing post-#125 commissions**:
-- `/dashboard/commissions` — partner view, should show tier-correct rates
-- `/api/commissions` — returns `{ tier, commissionRate, l3Enabled, ledger }`
-- `prisma/schema.prisma` — Partner model now has `commissionRate` + `tier` + `l3Enabled` (no l1/l2/l3Rate)
+If next session starts with **smoke-testing the invite flow**:
+- `/admin/partners` → "Invite Partner" button
+- `/api/admin/invites/route.ts` — invite creation + email send
+- `/getstarted?token=XXX` — partner signup with pre-filled invite data
 
 If next session starts with **Phase 15c (voice recording)**:
 - `src/lib/twilio-voice.ts` — voice call lib
@@ -106,4 +127,3 @@ If next session starts with **Phase 16 (Stripe Connect)**:
 - New `src/lib/stripe.ts` (raw fetch, follow house pattern)
 - New `StripeAccount` Prisma model linked to `Partner`
 - New API routes for Connect onboarding flow
-- Multi-hour, fresh session recommended
