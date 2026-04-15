@@ -185,27 +185,40 @@ export default function VideoModal({
           </button>
         </div>
 
-        {/* Video area — responsive 16:9 aspect ratio */}
+        {/* Media area — responsive 16:9 for video/iframe, compact for audio */}
         <div className={isMobile ? "flex-1 px-2 pb-2" : "px-4 sm:px-5 pb-4 sm:pb-5"}>
-          <div className={isMobile ? "w-full h-full" : "aspect-video w-full"}>
-            {videoUrl.startsWith("data:video") || videoUrl.startsWith("blob:") ? (
-              <video
+          {videoUrl.startsWith("data:audio") ? (
+            <div className="flex flex-col items-center justify-center gap-4 py-10 bg-black/20 rounded-lg">
+              <div className="text-5xl">🎧</div>
+              <div className="font-display text-lg text-[var(--app-text)]">{title}</div>
+              <audio
                 src={videoUrl}
-                title={title}
-                className="w-full h-full rounded-lg bg-black"
+                className="w-full max-w-xl"
                 controls
-                playsInline
+                preload="metadata"
               />
-            ) : (
-              <iframe
-                src={embedUrl}
-                title={title}
-                className="w-full h-full rounded-lg"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className={isMobile ? "w-full h-full" : "aspect-video w-full"}>
+              {videoUrl.startsWith("data:video") || videoUrl.startsWith("blob:") ? (
+                <video
+                  src={videoUrl}
+                  title={title}
+                  className="w-full h-full rounded-lg bg-black"
+                  controls
+                  playsInline
+                />
+              ) : (
+                <iframe
+                  src={embedUrl}
+                  title={title}
+                  className="w-full h-full rounded-lg"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

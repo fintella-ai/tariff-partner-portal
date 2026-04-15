@@ -201,12 +201,18 @@ export default function AdminTrainingPage() {
   const handleVideoFile = async (file: File | undefined) => {
     if (!file) return;
     setSaveError(null);
-    if (!file.type.startsWith("video/")) {
-      setSaveError("That file doesn't look like a video. Paste a YouTube/Vimeo URL instead, or pick a .mp4/.webm file.");
+    // Accept both video (mp4/webm) and audio (mp3/wav/ogg) — the module
+    // player on the partner side auto-detects and renders the right
+    // HTML5 element based on the data URL mime type.
+    const isVideo = file.type.startsWith("video/");
+    const isAudio = file.type.startsWith("audio/");
+    if (!isVideo && !isAudio) {
+      setSaveError("That file doesn't look like a video or audio file. Paste a YouTube/Vimeo URL, or pick a .mp4/.webm/.mp3/.wav file.");
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      setSaveError(`Video is ${(file.size / 1024 / 1024).toFixed(1)}MB — too large to embed (max 4MB). Host it on YouTube, Vimeo, or your CDN and paste the URL instead.`);
+      const kind = isAudio ? "Audio" : "Video";
+      setSaveError(`${kind} file is ${(file.size / 1024 / 1024).toFixed(1)}MB — too large to embed (max 4MB). Host it on your CDN and paste the URL instead.`);
       return;
     }
     setUploading(true);
@@ -214,7 +220,7 @@ export default function AdminTrainingPage() {
       const dataUrl = await readFileAsDataUrl(file);
       setFormVideoUrl(dataUrl);
     } catch {
-      setSaveError("Failed to read video file.");
+      setSaveError("Failed to read media file.");
     } finally {
       setUploading(false);
     }
@@ -695,10 +701,11 @@ export default function AdminTrainingPage() {
                     ))}
                   </select>
                 </div>
-                {/* Video URL — paste YouTube/Vimeo or upload a local file */}
+                {/* Video / Audio URL — paste YouTube/Vimeo, or drag & drop
+                    an .mp4/.webm video or .mp3/.wav audio file */}
                 <div className="sm:col-span-2">
                   <label className="block font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1.5">
-                    Video URL or Upload
+                    Video / Audio URL or Upload
                   </label>
                   <div
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
@@ -711,18 +718,24 @@ export default function AdminTrainingPage() {
                   >
                     <input
                       type="text"
-                      value={formVideoUrl.startsWith("data:") ? "[embedded video]" : formVideoUrl}
+                      value={
+                        formVideoUrl.startsWith("data:audio")
+                          ? "[embedded audio]"
+                          : formVideoUrl.startsWith("data:")
+                          ? "[embedded video]"
+                          : formVideoUrl
+                      }
                       onChange={(e) => setFormVideoUrl(e.target.value)}
                       className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none mb-2"
-                      placeholder="https://youtube.com/... — or drag & drop a video file below"
+                      placeholder="https://youtube.com/... — or drag & drop a video/audio file below"
                       disabled={formVideoUrl.startsWith("data:")}
                     />
                     <div className="flex items-center gap-2 flex-wrap">
                       <label className="cursor-pointer font-body text-[11px] text-brand-gold border border-brand-gold/30 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors">
-                        {uploading ? "Uploading..." : "Upload / Drag video"}
+                        {uploading ? "Uploading..." : "Upload / Drag video or audio"}
                         <input
                           type="file"
-                          accept="video/*"
+                          accept="video/*,audio/*"
                           className="hidden"
                           onChange={(e) => handleVideoFile(e.target.files?.[0])}
                         />
@@ -737,7 +750,7 @@ export default function AdminTrainingPage() {
                         </button>
                       )}
                       <span className="font-body text-[10px] text-[var(--app-text-faint)]">
-                        Max 4MB embedded. For larger videos, host on YouTube or Vimeo and paste the URL.
+                        Max 4MB embedded. For larger video, host on YouTube/Vimeo and paste the URL. MP3 audio files play inline on the module page.
                       </span>
                     </div>
                   </div>
