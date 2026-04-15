@@ -719,28 +719,102 @@ export async function PATCH(req: NextRequest) {
       if (!isNaN(parsed)) data.firmFeeAmount = parsed;
     }
 
+    // L1 commission rate (per-deal override, decimal 0.25 or percentage 25)
+    const l1Rate =
+      body.l1_commission_rate ??
+      body.l1CommissionRate ??
+      body.commission_rate ??
+      body.commissionRate;
+    if (l1Rate !== undefined && l1Rate !== null && l1Rate !== "") {
+      let parsed = parseFloat(String(l1Rate));
+      if (!isNaN(parsed)) {
+        if (parsed > 1) parsed = parsed / 100;
+        data.l1CommissionRate = parsed;
+      }
+    }
+
+    // String field helper: first non-empty alias wins, trimmed
+    const pickStr = (...keys: string[]): string | undefined => {
+      for (const k of keys) {
+        const v = body[k];
+        if (v !== undefined && v !== null && String(v).trim() !== "") {
+          return String(v).trim();
+        }
+      }
+      return undefined;
+    };
+
+    // Deal name (if Frost Law renames the opportunity)
+    const dealName = pickStr("deal_name", "dealName", "opportunity_name", "opportunityName");
+    if (dealName) data.dealName = dealName;
+
+    // Client contact — update any subset
+    const firstName = pickStr("first_name", "firstName", "fname", "First Name");
+    if (firstName) data.clientFirstName = firstName;
+    const lastName = pickStr("last_name", "lastName", "lname", "Last Name");
+    if (lastName) data.clientLastName = lastName;
+    // If either name changed, resync composite clientName
+    if (firstName || lastName) {
+      const f = firstName ?? deal.clientFirstName ?? "";
+      const l = lastName ?? deal.clientLastName ?? "";
+      const composite = `${f} ${l}`.trim();
+      if (composite) data.clientName = composite;
+    }
+    const clientName = pickStr("client_name", "clientName");
+    if (clientName) data.clientName = clientName;
+
+    const clientEmail = pickStr("email", "Email", "client_email", "clientEmail", "emailAddress", "email_address");
+    if (clientEmail) data.clientEmail = clientEmail;
+    const clientPhone = pickStr("phone", "Phone", "client_phone", "clientPhone", "phone_number", "phoneNumber", "telephone");
+    if (clientPhone) data.clientPhone = clientPhone;
+    const clientTitle = pickStr("business_title", "businessTitle", "client_title", "clientTitle", "title", "job_title", "jobTitle");
+    if (clientTitle) data.clientTitle = clientTitle;
+
+    // Service & business details
+    const serviceOfInterest = pickStr("service_of_interest", "serviceOfInterest", "service", "service_interest");
+    if (serviceOfInterest) data.serviceOfInterest = serviceOfInterest;
+    const legalEntityName = pickStr(
+      "legal_entity_name", "legalEntityName",
+      "company", "Company", "company_name", "companyName",
+      "business_name", "businessName"
+    );
+    if (legalEntityName) data.legalEntityName = legalEntityName;
+    const businessCity = pickStr("city", "City", "business_city", "businessCity");
+    if (businessCity) data.businessCity = businessCity;
+    const businessState = pickStr("state", "State", "business_state", "businessState", "region");
+    if (businessState) data.businessState = businessState;
+
+    // Tariff-specific
+    const importsGoods = pickStr("imports_goods", "importsGoods", "imports", "do_you_import");
+    if (importsGoods) data.importsGoods = importsGoods;
+    const importCountries = pickStr("import_countries", "importCountries", "countries", "country_of_origin");
+    if (importCountries) data.importCountries = importCountries;
+    const annualImportValue = pickStr("annual_import_value", "annualImportValue", "import_value", "importValue", "annual_value");
+    if (annualImportValue) data.annualImportValue = annualImportValue;
+    const importerOfRecord = pickStr("importer_of_record", "importerOfRecord", "ior");
+    if (importerOfRecord) data.importerOfRecord = importerOfRecord;
+
+    // Product details
+    const productType = pickStr("product_type", "productType");
+    if (productType) data.productType = productType;
+    const importedProducts = pickStr("imported_products", "importedProducts", "products", "goods");
+    if (importedProducts) data.importedProducts = importedProducts;
+
+    // Notes fields
+    const affiliateNotes = pickStr("affiliate_notes", "affiliateNotes");
+    if (affiliateNotes) data.affiliateNotes = affiliateNotes;
+    const notes = pickStr("notes", "Notes", "internal_notes", "internalNotes", "comments", "Comments", "message", "Message");
+    if (notes) data.notes = notes;
+
     // Closed lost reason
-    const closedLostReason =
-      body.closed_lost_reason ||
-      body.closedLostReason ||
-      body.lost_reason ||
-      body.lostReason;
-    if (closedLostReason)
-      data.closedLostReason = String(closedLostReason).trim();
+    const closedLostReason = pickStr("closed_lost_reason", "closedLostReason", "lost_reason", "lostReason");
+    if (closedLostReason) data.closedLostReason = closedLostReason;
 
     // Consultation scheduling (create or reschedule)
-    const consultDate =
-      body.consult_booked_date ||
-      body.consultBookedDate ||
-      body.consultation_date ||
-      body.consultationDate;
-    if (consultDate) data.consultBookedDate = String(consultDate).trim();
-    const consultTime =
-      body.consult_booked_time ||
-      body.consultBookedTime ||
-      body.consultation_time ||
-      body.consultationTime;
-    if (consultTime) data.consultBookedTime = String(consultTime).trim();
+    const consultDate = pickStr("consult_booked_date", "consultBookedDate", "consultation_date", "consultationDate", "consult_date", "meeting_date", "meetingDate");
+    if (consultDate) data.consultBookedDate = consultDate;
+    const consultTime = pickStr("consult_booked_time", "consultBookedTime", "consultation_time", "consultationTime", "consult_time", "meeting_time", "meetingTime");
+    if (consultTime) data.consultBookedTime = consultTime;
 
     // Close date (if stage is closedwon or closedlost). Uses the internal
     // stage value we just resolved via STAGE_MAP, so "Closed Won" /
@@ -983,8 +1057,44 @@ export async function GET() {
         "estimated_refund_amount",
         "firm_fee_rate",
         "firm_fee_amount",
+        "l1_commission_rate",
       ],
+      deal_meta: ["deal_name"],
+      client_info: [
+        "first_name",
+        "last_name",
+        "client_name",
+        "email",
+        "phone",
+        "business_title",
+      ],
+      business_details: [
+        "legal_entity_name",
+        "service_of_interest",
+        "city",
+        "state",
+      ],
+      tariff_fields: [
+        "imports_goods",
+        "import_countries",
+        "annual_import_value",
+        "importer_of_record",
+      ],
+      product_details: ["product_type", "imported_products"],
+      consultation: [
+        "consult_booked_date",
+        "consult_booked_time",
+      ],
+      notes: ["affiliate_notes", "notes"],
       other: ["closed_lost_reason"],
+      locked: [
+        "id", "partnerCode", "idempotencyKey",
+        "l1CommissionAmount", "l1CommissionStatus",
+        "l2CommissionAmount", "l2CommissionStatus",
+        "paymentReceivedAt", "paymentReceivedBy",
+        "closeDate (auto-stamped on closedwon/closedlost)",
+        "createdAt", "updatedAt",
+      ],
     },
     security: {
       api_key:
