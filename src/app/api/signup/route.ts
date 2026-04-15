@@ -146,27 +146,9 @@ export async function POST(req: NextRequest) {
       },
     }).catch(() => {});
 
-    // Phase 15a — fire transactional onboarding emails (best-effort, never blocks the response).
-    // 1) Welcome email to the new partner
-    sendWelcomeEmail({
-      partnerCode,
-      email: partner.email,
-      firstName: partner.firstName,
-      lastName: partner.lastName,
-    }).catch((err) => console.error("[Signup] welcome email failed:", err));
-
-    // Phase 15b — fire welcome SMS in parallel. Gated on smsOptIn inside
-    // sendSms; if the partner declined SMS or has no mobile number, the call
-    // logs a "skipped_optout" row and short-circuits.
-    sendWelcomeSms({
-      partnerCode,
-      mobilePhone: partner.mobilePhone,
-      smsOptIn: partner.smsOptIn,
-      firstName: partner.firstName,
-      lastName: partner.lastName,
-    }).catch((err) => console.error("[Signup] welcome SMS failed:", err));
-
-    // 2) Notification email + SMS to the inviting L1 partner
+    // Phase 15a/15b — transactional emails + SMS. Awaited so Vercel doesn't
+    // kill the function before the network calls complete. Run in parallel
+    // where possible; failures are non-fatal (logged internally by each helper).
     const inviter = await prisma.partner.findUnique({
       where: { partnerCode: invite.inviterCode! }, // non-null guard: checked above
       select: {
@@ -178,34 +160,51 @@ export async function POST(req: NextRequest) {
         smsOptIn: true,
       },
     }).catch(() => null);
-    if (inviter?.email) {
-      const inviterName =
-        [inviter.firstName, inviter.lastName].filter(Boolean).join(" ").trim() ||
-        "Partner";
-      sendInviterSignupNotificationEmail({
-        inviterEmail: inviter.email,
-        inviterName,
-        inviterCode: inviter.partnerCode,
-        recruitName: partnerName,
-        recruitTier: invite.targetTier,
-        commissionRate: invite.commissionRate,
-      }).catch((err) =>
-        console.error("[Signup] inviter notification email failed:", err)
-      );
 
-      // Phase 15b — parallel SMS to the L1 inviter (gated on their smsOptIn)
-      sendInviterSignupNotificationSms({
-        inviterCode: inviter.partnerCode,
-        inviterMobilePhone: inviter.mobilePhone,
-        inviterSmsOptIn: inviter.smsOptIn,
-        inviterFirstName: inviter.firstName,
-        recruitName: partnerName,
-        recruitTier: invite.targetTier,
-        commissionRate: invite.commissionRate,
-      }).catch((err) =>
-        console.error("[Signup] inviter notification SMS failed:", err)
-      );
-    }
+    const inviterName =
+      inviter ? ([inviter.firstName, inviter.lastName].filter(Boolean).join(" ").trim() || "Partner") : null;
+
+    await Promise.all([
+      // 1) Welcome email + SMS to the new partner
+      sendWelcomeEmail({
+        partnerCode,
+        email: partner.email,
+        firstName: partner.firstName,
+        lastName: partner.lastName,
+      }).catch((err) => console.error("[Signup] welcome email failed:", err)),
+
+      sendWelcomeSms({
+        partnerCode,
+        mobilePhone: partner.mobilePhone,
+        smsOptIn: partner.smsOptIn,
+        firstName: partner.firstName,
+        lastName: partner.lastName,
+      }).catch((err) => console.error("[Signup] welcome SMS failed:", err)),
+
+      // 2) Notification email + SMS to the inviting L1 partner
+      inviter?.email
+        ? sendInviterSignupNotificationEmail({
+            inviterEmail: inviter.email,
+            inviterName: inviterName!,
+            inviterCode: inviter.partnerCode,
+            recruitName: partnerName,
+            recruitTier: invite.targetTier,
+            commissionRate: invite.commissionRate,
+          }).catch((err) => console.error("[Signup] inviter notification email failed:", err))
+        : Promise.resolve(),
+
+      inviter
+        ? sendInviterSignupNotificationSms({
+            inviterCode: inviter.partnerCode,
+            inviterMobilePhone: inviter.mobilePhone,
+            inviterSmsOptIn: inviter.smsOptIn,
+            inviterFirstName: inviter.firstName,
+            recruitName: partnerName,
+            recruitTier: invite.targetTier,
+            commissionRate: invite.commissionRate,
+          }).catch((err) => console.error("[Signup] inviter notification SMS failed:", err))
+        : Promise.resolve(),
+    ]);
 
     return NextResponse.json({
       success: true,

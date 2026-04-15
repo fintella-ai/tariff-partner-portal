@@ -87,8 +87,10 @@ export async function POST(req: NextRequest) {
 
     const signupUrl = `${PORTAL_URL}/getstarted?token=${token}`;
 
-    // Fire-and-forget — email failure must never block the invite creation
-    sendL1InviteEmail({ toEmail: email, toName: invitedName, signupUrl }).catch(() => {});
+    // Await the email so Vercel doesn't kill the function before the SendGrid
+    // request completes. Email failure is still non-fatal — errors are swallowed
+    // and written to EmailLog by sendL1InviteEmail internally.
+    await sendL1InviteEmail({ toEmail: email, toName: invitedName, signupUrl }).catch(() => {});
 
     return NextResponse.json({ invite, signupUrl }, { status: 201 });
   } catch {
