@@ -92,6 +92,11 @@ export default function PartnerDetailPage() {
   const [callMessage, setCallMessage] = useState<string | null>(null);
   const [enterprisePartner, setEnterprisePartner] = useState<any>(null);
   const [commLogFilter, setCommLogFilter] = useState<"all" | "support" | "email" | "sms" | "chat" | "phone">("all");
+  // Inline row expand for the comms feed. Key is "<type>-<id>" so rows
+  // across different sections don't collide.
+  const [expandedCommKey, setExpandedCommKey] = useState<string | null>(null);
+  const toggleCommRow = (key: string) =>
+    setExpandedCommKey((prev) => (prev === key ? null : key));
   const [downlineView, setDownlineView] = useState<"list" | "tree">("list");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1365,29 +1370,60 @@ export default function PartnerDetailPage() {
                   : e.status === "failed"
                   ? "bg-red-500/10 text-red-400 border border-red-500/20"
                   : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]";
+              const key = `email-${e.id}`;
+              const isOpen = expandedCommKey === key;
               return (
-                <div key={e.id} className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0">
-                  <div className="flex items-start gap-3">
-                    <span className="text-base mt-0.5 shrink-0">📧</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{e.subject}</span>
-                        <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 ${statusBadge}`}>
-                          {e.status}
-                        </span>
+                <div key={e.id} className="border-b border-[var(--app-border)] last:border-b-0">
+                  <div
+                    className="px-5 py-3 cursor-pointer hover:bg-[var(--app-card-bg)] transition-colors"
+                    onClick={() => toggleCommRow(key)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-base mt-0.5 shrink-0">📧</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{e.subject}</span>
+                          <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 ${statusBadge}`}>
+                            {e.status}
+                          </span>
+                        </div>
+                        <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
+                          To: {e.toEmail} · {e.template}
+                        </div>
+                        {e.bodyPreview && !isOpen && (
+                          <div className="font-body text-[11px] text-[var(--app-text-secondary)] mt-1 line-clamp-2">{e.bodyPreview}</div>
+                        )}
+                        {e.errorMessage && (
+                          <div className="font-body text-[10px] text-red-400 mt-1 truncate">{e.errorMessage}</div>
+                        )}
+                        <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDateTime(e.createdAt)}</div>
                       </div>
-                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
-                        To: {e.toEmail} · {e.template}
-                      </div>
-                      {e.bodyPreview && (
-                        <div className="font-body text-[11px] text-[var(--app-text-secondary)] mt-1 line-clamp-2">{e.bodyPreview}</div>
-                      )}
-                      {e.errorMessage && (
-                        <div className="font-body text-[10px] text-red-400 mt-1 truncate">{e.errorMessage}</div>
-                      )}
-                      <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDateTime(e.createdAt)}</div>
+                      <span className={`text-[10px] text-[var(--app-text-faint)] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
                     </div>
                   </div>
+                  {isOpen && (
+                    <div className="px-5 pb-4 pt-1 bg-[var(--app-card-bg)]">
+                      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-body text-[11px] mb-2">
+                        <span className="text-[var(--app-text-muted)]">From:</span>
+                        <span className="text-[var(--app-text-secondary)]">{e.fromEmail}</span>
+                        <span className="text-[var(--app-text-muted)]">To:</span>
+                        <span className="text-[var(--app-text-secondary)]">{e.toEmail}</span>
+                        <span className="text-[var(--app-text-muted)]">Subject:</span>
+                        <span className="text-[var(--app-text-secondary)]">{e.subject}</span>
+                        <span className="text-[var(--app-text-muted)]">Template:</span>
+                        <span className="text-[var(--app-text-secondary)] font-mono">{e.template}</span>
+                        {e.providerMessageId && (
+                          <>
+                            <span className="text-[var(--app-text-muted)]">Msg ID:</span>
+                            <span className="text-[var(--app-text-faint)] font-mono truncate">{e.providerMessageId}</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="font-body text-[12px] text-[var(--app-text-secondary)] whitespace-pre-wrap bg-[var(--app-input-bg)] rounded-lg p-3 border border-[var(--app-border)]">
+                        {e.bodyPreview || "(no body preview available)"}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1411,43 +1447,68 @@ export default function PartnerDetailPage() {
                 Inbound Emails ({inboundEmails.length})
               </div>
             </div>
-            {inboundEmails.map((e: any) => (
-              <div key={e.id} className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0">
-                <div className="flex items-start gap-3">
-                  <span className="text-base mt-0.5 shrink-0">📥</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{e.subject}</span>
-                      <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                        inbound
-                      </span>
-                      {e.replied && (
-                        <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 bg-green-500/10 text-green-400 border border-green-500/20">
-                          replied
+            {inboundEmails.map((e: any) => {
+              const key = `inbound-${e.id}`;
+              const isOpen = expandedCommKey === key;
+              return (
+              <div key={e.id} className="border-b border-[var(--app-border)] last:border-b-0">
+                <div
+                  className="px-5 py-3 cursor-pointer hover:bg-[var(--app-card-bg)] transition-colors"
+                  onClick={() => toggleCommRow(key)}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-base mt-0.5 shrink-0">📥</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{e.subject}</span>
+                        <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                          inbound
                         </span>
+                        {e.replied && (
+                          <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 bg-green-500/10 text-green-400 border border-green-500/20">
+                            replied
+                          </span>
+                        )}
+                        {!e.read && (
+                          <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 bg-brand-gold/10 text-brand-gold border border-brand-gold/20">
+                            unread
+                          </span>
+                        )}
+                      </div>
+                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
+                        From: {e.fromName ? `${e.fromName} <${e.fromEmail}>` : e.fromEmail} · to {e.toEmail}
+                      </div>
+                      {e.textBody && !isOpen && (
+                        <div className="font-body text-[11px] text-[var(--app-text-secondary)] mt-1 line-clamp-2 whitespace-pre-wrap">{e.textBody}</div>
                       )}
-                      {!e.read && (
-                        <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 bg-brand-gold/10 text-brand-gold border border-brand-gold/20">
-                          unread
-                        </span>
-                      )}
+                      <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">
+                        {fmtDateTime(e.createdAt)}
+                        {e.supportTicketId && (
+                          <> · <a href={`/admin/support?ticket=${e.supportTicketId}`} target="_blank" rel="noopener noreferrer" className="text-brand-gold underline" onClick={(evt) => evt.stopPropagation()}>linked ticket</a></>
+                        )}
+                      </div>
                     </div>
-                    <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
-                      From: {e.fromName ? `${e.fromName} <${e.fromEmail}>` : e.fromEmail} · to {e.toEmail}
-                    </div>
-                    {e.textBody && (
-                      <div className="font-body text-[11px] text-[var(--app-text-secondary)] mt-1 line-clamp-2 whitespace-pre-wrap">{e.textBody}</div>
-                    )}
-                    <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">
-                      {fmtDateTime(e.createdAt)}
-                      {e.supportTicketId && (
-                        <> · <a href={`/admin/support?ticket=${e.supportTicketId}`} target="_blank" rel="noopener noreferrer" className="text-brand-gold underline">linked ticket</a></>
-                      )}
-                    </div>
+                    <span className={`text-[10px] text-[var(--app-text-faint)] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
                   </div>
                 </div>
+                {isOpen && (
+                  <div className="px-5 pb-4 pt-1 bg-[var(--app-card-bg)]">
+                    <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-body text-[11px] mb-2">
+                      <span className="text-[var(--app-text-muted)]">From:</span>
+                      <span className="text-[var(--app-text-secondary)]">{e.fromName ? `${e.fromName} <${e.fromEmail}>` : e.fromEmail}</span>
+                      <span className="text-[var(--app-text-muted)]">To:</span>
+                      <span className="text-[var(--app-text-secondary)]">{e.toEmail}</span>
+                      <span className="text-[var(--app-text-muted)]">Subject:</span>
+                      <span className="text-[var(--app-text-secondary)]">{e.subject}</span>
+                    </div>
+                    <div className="font-body text-[12px] text-[var(--app-text-secondary)] whitespace-pre-wrap bg-[var(--app-input-bg)] rounded-lg p-3 border border-[var(--app-border)] max-h-96 overflow-y-auto">
+                      {e.textBody || "(no body)"}
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -1474,34 +1535,61 @@ export default function PartnerDetailPage() {
               const statusLabel = s.status === "skipped_optout" ? "skipped (no opt-in)" : s.status;
               const directionLabel = isInbound ? "From" : "To";
               const directionPhone = isInbound ? s.fromPhone : s.toPhone;
+              const key = `sms-${s.id}`;
+              const isOpen = expandedCommKey === key;
               return (
-                <div key={s.id} className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0">
-                  <div className="flex items-start gap-3">
-                    <span className="text-base mt-0.5 shrink-0">{isInbound ? "📥" : "💬"}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{s.template}</span>
-                        {isInbound && (
-                          <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                            inbound
+                <div key={s.id} className="border-b border-[var(--app-border)] last:border-b-0">
+                  <div
+                    className="px-5 py-3 cursor-pointer hover:bg-[var(--app-card-bg)] transition-colors"
+                    onClick={() => toggleCommRow(key)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-base mt-0.5 shrink-0">{isInbound ? "📥" : "💬"}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{s.template}</span>
+                          {isInbound && (
+                            <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                              inbound
+                            </span>
+                          )}
+                          <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 ${statusBadge}`}>
+                            {statusLabel}
                           </span>
+                        </div>
+                        <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
+                          {directionLabel}: {directionPhone || "(no number)"}
+                        </div>
+                        {s.body && !isOpen && (
+                          <div className="font-body text-[11px] text-[var(--app-text-secondary)] mt-1 line-clamp-2">{s.body}</div>
                         )}
-                        <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase shrink-0 ${statusBadge}`}>
-                          {statusLabel}
-                        </span>
+                        {s.errorMessage && (
+                          <div className="font-body text-[10px] text-red-400 mt-1 truncate">{s.errorMessage}</div>
+                        )}
+                        <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDateTime(s.createdAt)}</div>
                       </div>
-                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
-                        {directionLabel}: {directionPhone || "(no number)"}
-                      </div>
-                      {s.body && (
-                        <div className="font-body text-[11px] text-[var(--app-text-secondary)] mt-1 line-clamp-2">{s.body}</div>
-                      )}
-                      {s.errorMessage && (
-                        <div className="font-body text-[10px] text-red-400 mt-1 truncate">{s.errorMessage}</div>
-                      )}
-                      <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">{fmtDateTime(s.createdAt)}</div>
+                      <span className={`text-[10px] text-[var(--app-text-faint)] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
                     </div>
                   </div>
+                  {isOpen && (
+                    <div className="px-5 pb-4 pt-1 bg-[var(--app-card-bg)]">
+                      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-body text-[11px] mb-2">
+                        <span className="text-[var(--app-text-muted)]">{directionLabel}:</span>
+                        <span className="text-[var(--app-text-secondary)]">{directionPhone || "(no number)"}</span>
+                        <span className="text-[var(--app-text-muted)]">Template:</span>
+                        <span className="text-[var(--app-text-secondary)] font-mono">{s.template}</span>
+                        {s.providerMessageId && (
+                          <>
+                            <span className="text-[var(--app-text-muted)]">Msg SID:</span>
+                            <span className="text-[var(--app-text-faint)] font-mono truncate">{s.providerMessageId}</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="font-body text-[12px] text-[var(--app-text-secondary)] whitespace-pre-wrap bg-[var(--app-input-bg)] rounded-lg p-3 border border-[var(--app-border)]">
+                        {s.body || "(no body)"}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
