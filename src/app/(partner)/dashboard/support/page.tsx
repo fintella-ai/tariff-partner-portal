@@ -267,7 +267,7 @@ export default function SupportPage() {
                           {msg.authorType === "admin" ? "Support Team" : "You"}
                         </span>
                         <span className="font-body text-[10px] text-[var(--app-text-faint)]">
-                          {new Date(msg.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                          {new Date(msg.createdAt).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
                         </span>
                       </div>
                       <div className="font-body text-sm text-[var(--app-text-secondary)] whitespace-pre-wrap">{msg.content}</div>
@@ -516,7 +516,7 @@ export default function SupportPage() {
                     <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-1">{t.category}</div>
                     <div className="flex justify-between items-center">
                       <div className="font-body text-[10px] text-[var(--app-text-faint)]">
-                        Opened {new Date(t.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} &middot; {t.messages} messages
+                        Opened {new Date(t.createdAt).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })} &middot; {t.messages} messages
                       </div>
                       <span className="font-body text-[11px] text-brand-gold/70">View &rarr;</span>
                     </div>
@@ -548,7 +548,7 @@ export default function SupportPage() {
                       </span>
                     </div>
                     <div className="font-body text-[12px] text-[var(--app-text-muted)]">
-                      {new Date(t.lastReply).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      {new Date(t.lastReply).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
                     </div>
                     <div className="text-right">
                       <span className="font-body text-[11px] text-brand-gold/70 hover:text-brand-gold transition-colors">
