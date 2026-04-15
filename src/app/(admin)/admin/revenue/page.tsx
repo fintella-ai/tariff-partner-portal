@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { fmt$, fmtDate } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
 import DealLink from "@/components/ui/DealLink";
+import ReportingTabs from "@/components/ui/ReportingTabs";
 import { useSession } from "next-auth/react";
 
 type RevenueTab = "Revenue" | "Custom Commissions" | "Enterprise Reporting";
@@ -266,6 +267,7 @@ export default function RevenuePage() {
 
   return (
     <div>
+      <ReportingTabs />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h2 className="font-display text-[22px] font-bold mb-1">Company Revenue</h2>

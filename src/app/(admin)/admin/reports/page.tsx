@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { fmt$ } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
+import ReportingTabs from "@/components/ui/ReportingTabs";
 
 type SortDir = "asc" | "desc";
 
@@ -130,6 +131,7 @@ export default function ReportsPage() {
 
   return (
     <div>
+      <ReportingTabs />
       <div className="flex justify-between items-start mb-6">
         <div>
           <h2 className="font-display text-[22px] font-bold mb-1.5">Reports & Analytics</h2>

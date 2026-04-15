@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { fmt$ } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
 import DealLink from "@/components/ui/DealLink";
+import ReportingTabs from "@/components/ui/ReportingTabs";
 
 type Payout = {
   id: string;
@@ -134,6 +135,7 @@ export default function PayoutManagementPage() {
 
   return (
     <div>
+      <ReportingTabs />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h2 className="font-display text-xl sm:text-2xl font-bold mb-1">Payout Management</h2>

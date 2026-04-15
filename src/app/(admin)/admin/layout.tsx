@@ -23,20 +23,12 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   { id: "documents", href: "/admin/documents", icon: "\u{1F4C4}", label: "Documents" },
   { id: "support", href: "/admin/support", icon: "\u{1F3AB}", label: "Support" },
   { id: "chat", href: "/admin/chat", icon: "\u{1F4AC}", label: "Live Chat" },
-  // Reports group — rolls up finance / analytics pages so the flat nav
-  // doesn't have three adjacent items that all answer "how much money"
-  // questions. Kept as a group even though Revenue + Payouts are still
-  // first-class pages with their own permission gates.
-  {
-    id: "reports",
-    icon: "\u{1F4CA}",
-    label: "Reports",
-    children: [
-      { id: "reports", href: "/admin/reports", icon: "\u{1F4C8}", label: "Reports" },
-      { id: "revenue", href: "/admin/revenue", icon: "\u{1F4B5}", label: "Revenue" },
-      { id: "payouts", href: "/admin/payouts", icon: "\u{1F4B3}", label: "Payouts" },
-    ],
-  },
+  // Reporting is a single nav entry that lands on /admin/reports. The three
+  // finance pages (Reports / Revenue / Payouts) share a ReportingTabs bar
+  // rendered at the top of each page so the user can switch between them
+  // once they're in the reporting area. This replaces the earlier nested
+  // group that expanded inline in the sidebar — simpler nav, same pages.
+  { id: "reporting", href: "/admin/reports", icon: "\u{1F4CA}", label: "Reporting" },
   { id: "settings", href: "/admin/settings", icon: "\u2699\uFE0F", label: "Settings" },
   { id: "users", href: "/admin/users", icon: "\u{1F6E1}\uFE0F", label: "Admin Users" },
   { id: "dev", href: "/admin/dev", icon: "\u{1F6E0}\uFE0F", label: "Development" },
@@ -77,6 +69,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const visibleChildren = item.children.filter((c) => visibleNavIds.includes(c.id));
       if (visibleChildren.length === 0) return [];
       return [{ ...item, children: visibleChildren }];
+    }
+    // "reporting" is a synthetic umbrella item. The permissions table
+    // doesn't list it directly — instead, show it if any of the three
+    // underlying pages (reports / revenue / payouts) is visible to the
+    // current role.
+    if (item.id === "reporting") {
+      const anyVisible = ["reports", "revenue", "payouts"].some((id) => visibleNavIds.includes(id));
+      return anyVisible ? [item] : [];
     }
     return visibleNavIds.includes(item.id) ? [item] : [];
   });
