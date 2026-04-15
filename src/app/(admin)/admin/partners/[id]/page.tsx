@@ -15,6 +15,7 @@ type Partner = {
   firstName: string;
   lastName: string;
   companyName: string | null;
+  title: string | null;
   phone: string | null;
   mobilePhone: string | null;
   tin: string | null;
@@ -106,6 +107,7 @@ export default function PartnerDetailPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [title, setTitle] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [mobileCountry, setMobileCountry] = useState("US");
@@ -180,6 +182,7 @@ export default function PartnerDetailPage() {
       setFirstName(p.firstName);
       setLastName(p.lastName);
       setCompanyName(p.companyName || "");
+      setTitle((p as any).title || "");
       setEmail(p.email);
       setPhone(p.phone || "");
       const parsedMobile = parseMobilePhone(p.mobilePhone || "");
@@ -272,6 +275,7 @@ export default function PartnerDetailPage() {
       const body: Record<string, any> = {
         firstName, lastName, email,
         companyName: companyName || null,
+        title: title || null,
         phone: phone || null,
         mobilePhone: buildMobilePhone(mobileCountry, mobileNumber) || null,
         tin: tin || null,
@@ -603,6 +607,10 @@ export default function PartnerDetailPage() {
           <div>
             <label className={labelClass}>Company Name</label>
             <input className={inputClass} value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="If applicable" />
+          </div>
+          <div>
+            <label className={labelClass}>Title</label>
+            <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="CEO, Founder, Managing Partner..." />
           </div>
           <div>
             <label className={labelClass}>Email</label>

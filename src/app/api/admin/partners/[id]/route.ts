@@ -147,6 +147,7 @@ export async function PUT(
     if (body.email !== undefined) data.email = body.email;
     if (body.phone !== undefined) data.phone = body.phone || null;
     if (body.companyName !== undefined) data.companyName = body.companyName || null;
+    if (body.title !== undefined) data.title = body.title || null;
     if (body.tin !== undefined) data.tin = body.tin || null;
     if (body.mobilePhone !== undefined) data.mobilePhone = body.mobilePhone || null;
     if (body.status !== undefined) data.status = body.status;

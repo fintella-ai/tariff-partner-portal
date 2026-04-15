@@ -29,6 +29,7 @@ model Partner {
   firstName             String
   lastName              String
   companyName           String?
+  title                 String?  // partner's title at their company (e.g. CEO, Founder, Managing Partner). Surfaces in SignWell agreements via the partner_title api_id.
   phone                 String?
   mobilePhone           String?  // international SMS format (+1...)
   tin                   String?  // TIN in ##-####### format

@@ -121,6 +121,7 @@ export async function POST(
       phone: partner.phone,
       mobilePhone: partner.mobilePhone,
       companyName: partner.companyName,
+      title: (partner as any).title || null,
       tin: partner.tin,
       commissionRate: effectiveRate,
       street: profile?.street,
