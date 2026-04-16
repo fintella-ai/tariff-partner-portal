@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fmt$, fmtDate } from "@/lib/format";
+import { fmt$, fmtDate, fmtDateTime } from "@/lib/format";
 import { resolveDealFinancials, formatRate } from "@/lib/dealCalc";
 import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -483,7 +483,7 @@ export default function AdminDealsPage() {
                 {formatRate(fin.commissionRate)}
               </div>
               <div className="font-display text-[14px] font-semibold text-brand-gold text-center">{fmt$(fin.commissionAmount)}</div>
-              <div className="font-body text-[12px] text-[var(--app-text-muted)] text-right">{fmtDate(deal.createdAt)}</div>
+              <div className="font-body text-[12px] text-[var(--app-text-muted)] text-right">{fmtDateTime(deal.createdAt)}</div>
             </div>
 
             {/* Expanded detail + edit panel */}
@@ -738,7 +738,7 @@ export default function AdminDealsPage() {
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex-1 min-w-0">
                   <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{deal.dealName}</div>
-                  <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5"><PartnerLink partnerId={deal.partnerId} className="text-[var(--app-text-muted)]">{deal.partnerName}</PartnerLink> · {fmtDate(deal.createdAt)}</div>
+                  <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5"><PartnerLink partnerId={deal.partnerId} className="text-[var(--app-text-muted)]">{deal.partnerName}</PartnerLink> · {fmtDateTime(deal.createdAt)}</div>
                 </div>
                 <StageBadge stage={deal.stage} />
               </div>

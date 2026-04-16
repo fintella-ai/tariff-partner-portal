@@ -7,7 +7,7 @@ import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { SkeletonTableRow } from "@/components/ui/Skeleton";
 import PullToRefresh from "@/components/ui/PullToRefresh";
-import { fmt$, fmtDate } from "@/lib/format";
+import { fmt$, fmtDate, fmtDateTime } from "@/lib/format";
 import { resolveDealFinancials, formatRate } from "@/lib/dealCalc";
 import { STAGE_LABELS } from "@/lib/constants";
 
@@ -111,7 +111,7 @@ export default function DealsPage() {
                     <StageBadge stage={deal.stage} />
                   </div>
                   <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-3">
-                    {fmtDate(deal.createdAt)}
+                    {fmtDateTime(deal.createdAt)}
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
@@ -167,7 +167,7 @@ export default function DealsPage() {
                 >
                   <div>
                     <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{deal.dealName}</div>
-                    <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">{fmtDate(deal.createdAt)}</div>
+                    <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">{fmtDateTime(deal.createdAt)}</div>
                   </div>
                   <div className="text-center"><StageBadge stage={deal.stage} /></div>
                   <div className="font-body text-[13px] text-[var(--app-text)] text-center">{fmt$(fin.refund)}</div>
@@ -332,7 +332,7 @@ function DealDetail({ deal, onSupport }: { deal: any; onSupport: () => void }) {
             <span className="text-sm mt-0.5 shrink-0">📋</span>
             <div className="flex-1">
               <div className="font-body text-[12px] text-[var(--app-text-secondary)]">Deal created</div>
-              <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-0.5">{fmtDate(deal.createdAt)}</div>
+              <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-0.5">{fmtDateTime(deal.createdAt)}</div>
             </div>
           </div>
 
