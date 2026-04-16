@@ -31,8 +31,9 @@ export async function GET(req: NextRequest) {
       orderBy: { version: "desc" },
     });
 
-    // Auto-reconcile: if agreement is under_review but there's an approved document, fix it
-    if (agreement && (agreement.status === "under_review" || agreement.status === "pending")) {
+    // Auto-reconcile: if agreement is under_review but there's an approved document, fix it.
+    // Skip SignWell agreements — those transition only via document_completed webhook.
+    if (agreement && !agreement.signwellDocumentId && (agreement.status === "under_review" || agreement.status === "pending")) {
       const approvedDoc = await prisma.document.findFirst({
         where: { partnerCode, docType: "agreement", status: "approved" },
         orderBy: { createdAt: "desc" },
