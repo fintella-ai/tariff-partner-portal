@@ -276,7 +276,8 @@ export default function SoftPhone() {
       <button
         onClick={async () => { setOpen(true); await ensureDevice(); }}
         title="Open softphone"
-        className="fixed bottom-6 right-6 z-[950] bg-gradient-to-br from-brand-gold to-[#e8c060] text-brand-dark rounded-full shadow-lg shadow-brand-gold/20 w-14 h-14 text-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+        className="fixed z-[950] bg-gradient-to-br from-brand-gold to-[#e8c060] text-brand-dark rounded-full shadow-lg shadow-brand-gold/20 w-14 h-14 text-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+        style={{ bottom: "calc(1.5rem + var(--safe-bottom))", right: "calc(1.5rem + var(--safe-right))" }}
       >
         📞
       </button>

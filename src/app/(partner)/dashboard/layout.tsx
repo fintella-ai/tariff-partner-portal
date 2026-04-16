@@ -345,7 +345,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Close button */}
             <button
               onClick={() => setSidebarOpen(false)}
-              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg theme-text-muted hover:bg-brand-gold/10 transition-colors"
+              className="absolute right-3 w-11 h-11 flex items-center justify-center rounded-lg theme-text-muted hover:bg-brand-gold/10 transition-colors"
+              style={{ top: "calc(0.75rem + var(--safe-top))" }}
+              aria-label="Close menu"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

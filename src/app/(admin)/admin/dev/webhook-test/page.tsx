@@ -273,7 +273,7 @@ export default function WebhookTestPage() {
             <button
               key={m}
               onClick={() => switchMethod(m)}
-              className={`font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2 transition-all min-h-[36px] ${
+              className={`font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2 transition-all min-h-[44px] ${
                 method === m
                   ? "bg-brand-gold/15 border-brand-gold/30 text-brand-gold"
                   : "border-[var(--app-border)] theme-text-muted hover:text-[var(--app-text)]"
@@ -413,13 +413,13 @@ export default function WebhookTestPage() {
               <div className="mt-4 flex gap-2 flex-wrap">
                 <button
                   onClick={viewDealInAdmin}
-                  className="font-body text-[12px] font-semibold bg-brand-gold/15 border border-brand-gold/30 text-brand-gold rounded-lg px-4 py-2 hover:bg-brand-gold/25 transition-colors min-h-[36px]"
+                  className="font-body text-[12px] font-semibold bg-brand-gold/15 border border-brand-gold/30 text-brand-gold rounded-lg px-4 py-2 hover:bg-brand-gold/25 transition-colors min-h-[44px]"
                 >
                   View Deal in Admin ↗
                 </button>
                 <button
                   onClick={loadDealIdIntoPatch}
-                  className="font-body text-[12px] font-semibold border border-[var(--app-border)] theme-text-secondary rounded-lg px-4 py-2 hover:border-brand-gold/30 hover:text-[var(--app-text)] transition-colors min-h-[36px]"
+                  className="font-body text-[12px] font-semibold border border-[var(--app-border)] theme-text-secondary rounded-lg px-4 py-2 hover:border-brand-gold/30 hover:text-[var(--app-text)] transition-colors min-h-[44px]"
                 >
                   Test PATCH on this deal →
                 </button>

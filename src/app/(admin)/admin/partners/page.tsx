@@ -408,7 +408,7 @@ export default function AdminPartnersPage() {
           <button
             key={tab.key}
             onClick={() => { setActiveTab(tab.key); setSelectedInviteIds([]); setBulkResult(null); }}
-            className={`shrink-0 px-4 rounded-lg font-body text-[12px] font-medium transition-colors min-h-[36px] ${
+            className={`shrink-0 px-4 rounded-lg font-body text-[12px] font-medium transition-colors min-h-[44px] ${
               activeTab === tab.key
                 ? "bg-brand-gold text-black"
                 : "border border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
@@ -452,13 +452,13 @@ export default function AdminPartnersPage() {
                   <button
                     onClick={handleBulkResend}
                     disabled={bulkResending}
-                    className="btn-gold text-[12px] px-4 min-h-[36px] disabled:opacity-50"
+                    className="btn-gold text-[12px] px-4 min-h-[44px] disabled:opacity-50"
                   >
                     {bulkResending ? "Sending..." : "Resend Selected"}
                   </button>
                   <button
                     onClick={() => setSelectedInviteIds([])}
-                    className="font-body text-[12px] theme-text-muted border border-[var(--app-border)] rounded-lg px-4 min-h-[36px] hover:theme-text-secondary transition-colors"
+                    className="font-body text-[12px] theme-text-muted border border-[var(--app-border)] rounded-lg px-4 min-h-[44px] hover:theme-text-secondary transition-colors"
                   >
                     Clear
                   </button>
@@ -587,7 +587,7 @@ export default function AdminPartnersPage() {
                     <button
                       onClick={() => handleResendInvite(inv.id)}
                       disabled={!isResendable || isResending || !!feedback}
-                      className={`font-body text-[11px] px-3 min-h-[36px] rounded-lg border transition-colors whitespace-nowrap disabled:cursor-not-allowed ${
+                      className={`font-body text-[11px] px-3 min-h-[44px] rounded-lg border transition-colors whitespace-nowrap disabled:cursor-not-allowed ${
                         feedback === "ok"
                           ? "text-green-400 border-green-500/20 bg-green-500/10"
                           : feedback === "error"

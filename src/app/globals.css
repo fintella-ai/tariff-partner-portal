@@ -190,6 +190,20 @@
   animation: fadeUp 0.6s 0.08s ease both;
 }
 
+/* ── Select option visibility fix ───────────────────────────────────────── */
+/* Native <option> popups in browsers can't read CSS variables, so we        */
+/* hardcode solid colours that match the theme for both modes.               */
+select option {
+  background-color: #f8f9fa;
+  color: #1a1a2e;
+}
+@media (prefers-color-scheme: dark) {
+  select option {
+    background-color: #0d1836;
+    color: #ffffff;
+  }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-thumb { background: var(--app-scrollbar); border-radius: 2px; }

@@ -183,14 +183,14 @@ export default function AiAssistantPage() {
             {!device.isDesktop && (
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="font-body text-[11px] border border-[var(--app-border)] rounded-lg px-3 py-2 text-[var(--app-text-muted)] hover:text-[var(--app-text)] min-h-[36px]"
+                className="font-body text-[11px] border border-[var(--app-border)] rounded-lg px-3 py-2 text-[var(--app-text-muted)] hover:text-[var(--app-text)] min-h-[44px]"
               >
                 History
               </button>
             )}
             <button
               onClick={startNew}
-              className="font-body text-[11px] font-semibold tracking-wider bg-brand-gold/15 border border-brand-gold/30 text-brand-gold rounded-lg px-3 py-2 hover:bg-brand-gold/25 min-h-[36px]"
+              className="font-body text-[11px] font-semibold tracking-wider bg-brand-gold/15 border border-brand-gold/30 text-brand-gold rounded-lg px-3 py-2 hover:bg-brand-gold/25 min-h-[44px]"
             >
               + New Chat
             </button>
