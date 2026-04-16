@@ -223,24 +223,26 @@ export async function sendForSigning(
   // flat array of {api_id, value} applied across all placeholders.
   const usingTemplate = !!options.templateId;
 
+  const recipientList = options.recipients.map((r, idx) => {
+    const recipient: Record<string, any> = {
+      email: r.email,
+      name: r.name,
+      signing_order: idx + 1,
+    };
+    if (usingTemplate) {
+      recipient.placeholder_name = r.role;
+    } else {
+      recipient.id = r.id;
+    }
+    return recipient;
+  });
+
   const body: Record<string, any> = {
     name: options.name,
     subject: options.subject,
     message: options.message,
-    recipients: options.recipients.map((r, idx) => {
-      const recipient: Record<string, any> = {
-        email: r.email,
-        name: r.name,
-        signing_order: idx + 1,
-      };
-      if (usingTemplate) {
-        // Template docs match recipients to placeholders by name
-        recipient.placeholder_name = r.role;
-      } else {
-        recipient.id = r.id;
-      }
-      return recipient;
-    }),
+    // Template endpoint uses "signees"; regular endpoint uses "recipients"
+    [usingTemplate ? "signees" : "recipients"]: recipientList,
     reminders: true,
     apply_signing_order: options.recipients.length > 1,
     embedded_signing: true,
