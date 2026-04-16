@@ -85,6 +85,7 @@ export async function GET(req: NextRequest) {
             signedDate: agreement.signedDate,
             documentUrl: agreement.documentUrl,
             embeddedSigningUrl,
+            signwellDocumentId: agreement.signwellDocumentId || null,
             signwellConfigured: isSignWellConfigured(),
           }
         : null,
