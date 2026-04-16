@@ -319,8 +319,8 @@ export default function SoftPhone() {
       >
         {/* Row 1: status left — branding center — close right */}
         <div className="flex items-center">
-          {/* Left: status indicator */}
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          {/* Left: status indicator — self-stretch so it fills the full header height, items-center vertically centers dot+label */}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0 self-stretch">
             <span
               className="shrink-0 w-2.5 h-2.5 rounded-full shadow-sm"
               style={{
@@ -349,7 +349,6 @@ export default function SoftPhone() {
             ) : null}
             <div className="font-display text-[15px] font-bold text-brand-gold leading-none">Fintella</div>
             <div className="font-body text-[9px] uppercase tracking-[2px] text-[var(--app-text-muted)] mt-0.5">Softphone</div>
-            <div className="font-mono text-[10px] text-brand-gold mt-0.5 leading-none">{OFFICE_NUMBER_DISPLAY}</div>
           </div>
 
           {/* Right: close */}
