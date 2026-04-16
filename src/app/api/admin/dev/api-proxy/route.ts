@@ -51,6 +51,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Unsupported method "${method}". Allowed: ${allowedMethods.join(", ")}` }, { status: 400 });
   }
 
+  // Block private/loopback ranges to prevent SSRF pivoting to internal services.
+  // Even though this is super_admin only, defence-in-depth means we don't allow
+  // the admin panel to reach 169.254.x (cloud metadata), 127.x (loopback), or
+  // RFC-1918 private ranges.
+  const hostname = parsedUrl.hostname.toLowerCase();
+  const PRIVATE_PATTERNS = [
+    /^localhost$/,
+    /^127\./,
+    /^0\.0\.0\.0$/,
+    /^10\./,
+    /^172\.(1[6-9]|2[0-9]|3[01])\./,
+    /^192\.168\./,
+    /^169\.254\./,    // link-local / cloud metadata (AWS IMDS, GCP, Azure)
+    /^::1$/,          // IPv6 loopback
+    /^fc00:/,         // IPv6 ULA
+    /^fe80:/,         // IPv6 link-local
+  ];
+  if (PRIVATE_PATTERNS.some((p) => p.test(hostname))) {
+    return NextResponse.json(
+      { error: "Requests to localhost and private IP ranges are not permitted" },
+      { status: 400 }
+    );
+  }
+
   const start = Date.now();
 
   try {
