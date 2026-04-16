@@ -240,7 +240,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Nav */}
       <div className="flex flex-col gap-0.5">
         {(navOrder.length > 0
-          ? navOrder.map((id) => MAIN_NAV.find((n) => n.id === id)).filter(Boolean) as typeof MAIN_NAV
+          ? [
+              ...navOrder.map((id) => MAIN_NAV.find((n) => n.id === id)).filter(Boolean) as typeof MAIN_NAV,
+              ...MAIN_NAV.filter((n) => !navOrder.includes(n.id)),
+            ]
           : MAIN_NAV
         ).filter((item) => !hiddenNavItems.includes(item.id)).map((item) => (
           <NavButton
