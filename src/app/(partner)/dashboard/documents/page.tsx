@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useDevice } from "@/lib/useDevice";
 import { useSession } from "next-auth/react";
 import { FIRM_SHORT, DOC_TYPE_LABELS } from "@/lib/constants";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, fmtDateTime } from "@/lib/format";
 
 type AgreementStatus = "not_sent" | "pending" | "signed" | "approved" | "amended" | "under_review";
 type DocStatus = "required" | "uploaded" | "under_review" | "approved" | "expired" | "voided";
@@ -212,20 +212,27 @@ export default function DocumentsPage() {
                   Agreement Sent — Awaiting Your Signature
                 </p>
                 <p className="font-body text-xs text-[var(--app-text-secondary)] leading-relaxed">
-                  Sent on {fmtDate(agreementData?.sentDate)}.
+                  Sent on {fmtDateTime(agreementData?.sentDate)}.
                   {agreementData?.embeddedSigningUrl
                     ? " Click below to review and sign right here."
                     : " Check your email for the signing link from SignWell."}
                 </p>
               </div>
             </div>
-            {agreementData?.embeddedSigningUrl && (
+            {agreementData?.embeddedSigningUrl ? (
               <button
                 onClick={handleOpenSigning}
                 className="w-full sm:w-auto mt-3 btn-gold text-[12px] px-5 py-2.5 text-center"
               >
                 Sign Now
               </button>
+            ) : (
+              <a
+                href={`mailto:?subject=Partnership%20Agreement&body=Please%20check%20your%20email%20from%20SignWell%20to%20sign%20your%20agreement.`}
+                className="inline-flex items-center gap-1.5 mt-3 font-body text-[12px] text-brand-gold hover:text-brand-gold/80 underline underline-offset-2 transition-colors"
+              >
+                📧 Check your email from SignWell
+              </a>
             )}
           </div>
         ) : (

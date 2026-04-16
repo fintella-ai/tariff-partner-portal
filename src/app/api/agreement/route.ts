@@ -46,10 +46,22 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // For pending agreements, try to get the embedded signing URL
+    // For pending agreements, try to get the embedded signing URL.
+    // First check the DB, then fetch fresh from SignWell if missing.
+    const partnerEmail = (session.user as any).email || null;
     let embeddedSigningUrl = agreement?.embeddedSigningUrl || null;
     if (agreement?.status === "pending" && !embeddedSigningUrl && agreement.signwellDocumentId) {
-      embeddedSigningUrl = await getEmbeddedSigningUrl(agreement.signwellDocumentId);
+      embeddedSigningUrl = await getEmbeddedSigningUrl(
+        agreement.signwellDocumentId,
+        partnerEmail
+      );
+      // Persist it so we don't re-fetch every page load
+      if (embeddedSigningUrl) {
+        await prisma.partnershipAgreement.update({
+          where: { id: agreement.id },
+          data: { embeddedSigningUrl },
+        }).catch(() => {});
+      }
     }
 
     // Also return Partner.status so the partner-side gates at
