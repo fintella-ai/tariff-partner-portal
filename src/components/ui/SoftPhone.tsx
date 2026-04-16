@@ -45,7 +45,7 @@ export default function SoftPhone() {
   const [muted, setMuted] = useState(false);
   const [durationSec, setDurationSec] = useState(0);
   const [missing, setMissing] = useState<string[]>([]);
-  // Dialer UI state — typed digits, partner search query, partner list.
+  // Dialer UI state
   const [dialDigits, setDialDigits] = useState("");
   const [partnerSearch, setPartnerSearch] = useState("");
   const [partners, setPartners] = useState<PartnerOption[]>([]);
@@ -53,6 +53,39 @@ export default function SoftPhone() {
   const deviceRef = useRef<any>(null);
   const callRef = useRef<any>(null);
   const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ── Drag state ─────────────────────────────────────────────────────────────
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+
+  const onDragStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const el = panelRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const curX = pos?.x ?? rect.left;
+    const curY = pos?.y ?? rect.top;
+    dragOffset.current = { x: e.clientX - curX, y: e.clientY - curY };
+    setDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }, [pos]);
+
+  const onDragMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    const el = panelRef.current;
+    const w = el ? el.offsetWidth : 340;
+    const h = el ? el.offsetHeight : 500;
+    const newX = Math.max(0, Math.min(e.clientX - dragOffset.current.x, window.innerWidth - w));
+    const newY = Math.max(0, Math.min(e.clientY - dragOffset.current.y, window.innerHeight - h));
+    setPos({ x: newX, y: newY });
+  }, [dragging]);
+
+  const onDragEnd = useCallback(() => {
+    setDragging(false);
+  }, []);
+
+  // ── Timer ──────────────────────────────────────────────────────────────────
 
   const startDurationTimer = useCallback(() => {
     setDurationSec(0);
@@ -69,9 +102,8 @@ export default function SoftPhone() {
     }
   }, []);
 
-  // Initialise the Twilio Device once per session. Lazy — we only load
-  // the SDK and register when the admin actually wants to place a call,
-  // so demo-mode admins don't pull the SDK bundle for nothing.
+  // ── Device init ────────────────────────────────────────────────────────────
+
   const ensureDevice = useCallback(async () => {
     if (deviceRef.current) return deviceRef.current;
     setState("registering");
@@ -84,9 +116,7 @@ export default function SoftPhone() {
         return null;
       }
       const { Device } = await import("@twilio/voice-sdk");
-      const device = new Device(data.token, {
-        logLevel: 1,
-      });
+      const device = new Device(data.token, { logLevel: 1 });
       device.on("registered", () => setState("ready"));
       device.on("error", (err: any) => {
         console.error("[SoftPhone] device error:", err);
@@ -104,6 +134,8 @@ export default function SoftPhone() {
     }
   }, []);
 
+  // ── Call / hangup ──────────────────────────────────────────────────────────
+
   const call = useCallback(
     async (phone: string, partnerName?: string) => {
       setOpen(true);
@@ -113,7 +145,6 @@ export default function SoftPhone() {
       setMuted(false);
       const device = await ensureDevice();
       if (!device) {
-        // Demo mode — fake a connected state for UX testing
         if (state === "demo") {
           setState("in-call");
           startDurationTimer();
@@ -125,25 +156,10 @@ export default function SoftPhone() {
         const c = await device.connect({ params: { To: phone } });
         callRef.current = c;
         c.on("ringing", () => setState("ringing"));
-        c.on("accept", () => {
-          setState("in-call");
-          startDurationTimer();
-        });
-        c.on("disconnect", () => {
-          setState("ended");
-          stopDurationTimer();
-          callRef.current = null;
-        });
-        c.on("cancel", () => {
-          setState("ended");
-          stopDurationTimer();
-          callRef.current = null;
-        });
-        c.on("reject", () => {
-          setState("ended");
-          stopDurationTimer();
-          callRef.current = null;
-        });
+        c.on("accept", () => { setState("in-call"); startDurationTimer(); });
+        c.on("disconnect", () => { setState("ended"); stopDurationTimer(); callRef.current = null; });
+        c.on("cancel", () => { setState("ended"); stopDurationTimer(); callRef.current = null; });
+        c.on("reject", () => { setState("ended"); stopDurationTimer(); callRef.current = null; });
         c.on("error", (err: any) => {
           console.error("[SoftPhone] call error:", err);
           setErrorMsg(err?.message || "Call error");
@@ -160,9 +176,7 @@ export default function SoftPhone() {
   );
 
   const hangup = useCallback(() => {
-    try {
-      callRef.current?.disconnect?.();
-    } catch {}
+    try { callRef.current?.disconnect?.(); } catch {}
     callRef.current = null;
     stopDurationTimer();
     setState("ended");
@@ -175,18 +189,18 @@ export default function SoftPhone() {
     }
   }, [muted]);
 
-  // Register the API on window so any admin page can fire it.
+  // ── Window API ─────────────────────────────────────────────────────────────
+
   useEffect(() => {
     const api: SoftPhoneAPI = { call, hangup, state };
     window.__fintellaSoftphone = api;
     return () => {
-      if (window.__fintellaSoftphone === api) {
-        delete window.__fintellaSoftphone;
-      }
+      if (window.__fintellaSoftphone === api) delete window.__fintellaSoftphone;
     };
   }, [call, hangup, state]);
 
-  // Lazy-load the partner directory the first time the dock opens.
+  // ── Partner directory ──────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!open || partnersLoaded) return;
     fetch("/api/admin/partners")
@@ -205,11 +219,8 @@ export default function SoftPhone() {
       .catch(() => setPartnersLoaded(true));
   }, [open, partnersLoaded]);
 
-  // Normalize a raw typed number to E.164. Pure US-centric for now:
-  //   10 digits → prefix +1
-  //   11 digits starting with 1 → prefix +
-  //   already starts with + → leave alone
-  // Returns null for anything else so the caller can show an error.
+  // ── Dialer helpers ─────────────────────────────────────────────────────────
+
   const toE164 = (raw: string): string | null => {
     const trimmed = raw.trim();
     if (trimmed.startsWith("+") && /^\+[1-9]\d{6,14}$/.test(trimmed)) return trimmed;
@@ -228,9 +239,7 @@ export default function SoftPhone() {
     call(e164);
   };
 
-  const appendDigit = (d: string) => {
-    setDialDigits((v) => (v + d).slice(0, 20));
-  };
+  const appendDigit = (d: string) => setDialDigits((v) => (v + d).slice(0, 20));
 
   const filteredPartners = partnerSearch.trim()
     ? partners.filter((p) => {
@@ -245,13 +254,11 @@ export default function SoftPhone() {
       })
     : partners.slice(0, 8);
 
-  // Cleanup on unmount
+  // ── Cleanup ────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     return () => {
-      try {
-        callRef.current?.disconnect?.();
-        deviceRef.current?.destroy?.();
-      } catch {}
+      try { callRef.current?.disconnect?.(); deviceRef.current?.destroy?.(); } catch {}
       stopDurationTimer();
     };
   }, [stopDurationTimer]);
@@ -262,14 +269,12 @@ export default function SoftPhone() {
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
-  // Don't render anything until the admin triggers a call for the first time.
+  // ── Floating trigger button (panel closed) ─────────────────────────────────
+
   if (!open) {
     return (
       <button
-        onClick={async () => {
-          setOpen(true);
-          await ensureDevice();
-        }}
+        onClick={async () => { setOpen(true); await ensureDevice(); }}
         title="Open softphone"
         className="fixed bottom-6 right-6 z-[950] bg-gradient-to-br from-brand-gold to-[#e8c060] text-brand-dark rounded-full shadow-lg shadow-brand-gold/20 w-14 h-14 text-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
       >
@@ -278,21 +283,39 @@ export default function SoftPhone() {
     );
   }
 
-  const inCall =
-    state === "in-call" || state === "ringing" || state === "connecting";
+  const inCall = state === "in-call" || state === "ringing" || state === "connecting";
+
+  // Panel position: use dragged pos if set, otherwise anchor to bottom-right.
+  const panelStyle: React.CSSProperties = pos
+    ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" }
+    : { right: 24, bottom: 24 };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[951] w-[340px] max-h-[85vh] bg-[var(--app-bg-secondary)] border border-brand-gold/30 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)] bg-gradient-to-r from-brand-gold/10 to-transparent shrink-0">
+    <div
+      ref={panelRef}
+      style={panelStyle}
+      className="fixed z-[951] w-[340px] max-h-[85vh] bg-[var(--app-bg-secondary)] border border-brand-gold/30 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col"
+    >
+      {/* ── Header (drag handle) ── */}
+      <div
+        onPointerDown={onDragStart}
+        onPointerMove={onDragMove}
+        onPointerUp={onDragEnd}
+        className={`flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)] bg-gradient-to-r from-brand-gold/10 to-transparent shrink-0 select-none ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+      >
         <div>
-          <div className="font-body text-[11px] uppercase tracking-[1.5px] text-brand-gold">Softphone</div>
+          <div className="font-body text-[11px] uppercase tracking-[1.5px] text-brand-gold flex items-center gap-1.5">
+            <span className="text-[var(--app-text-muted)] text-[10px]">⠿</span>
+            Softphone
+          </div>
           <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-0.5">
             {state === "demo" ? "Demo mode — not configured" : state.replace("-", " ")}
           </div>
         </div>
         <button
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={() => {
-            if (state === "in-call" || state === "ringing" || state === "connecting") hangup();
+            if (inCall) hangup();
             setOpen(false);
           }}
           className="text-[var(--app-text-muted)] hover:text-[var(--app-text)] text-lg w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--app-input-bg)] transition-colors"
@@ -302,6 +325,7 @@ export default function SoftPhone() {
         </button>
       </div>
 
+      {/* ── Body ── */}
       <div className="p-5 overflow-y-auto">
         {state === "demo" && (
           <div className="font-body text-[11px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-4">
@@ -353,10 +377,9 @@ export default function SoftPhone() {
           </>
         )}
 
-        {/* ── DIALER VIEW (idle / ready / ended / error / demo) ── */}
+        {/* ── DIALER VIEW ── */}
         {!inCall && (
           <div className="flex flex-col gap-4">
-            {/* Typed number display */}
             <div>
               <input
                 type="tel"
@@ -370,7 +393,6 @@ export default function SoftPhone() {
               )}
             </div>
 
-            {/* Keypad */}
             <div className="grid grid-cols-3 gap-2">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"].map((k) => (
                 <button
@@ -400,7 +422,6 @@ export default function SoftPhone() {
               </button>
             </div>
 
-            {/* Partner search + directory */}
             <div className="border-t border-[var(--app-border)] pt-3">
               <input
                 type="text"
@@ -423,8 +444,7 @@ export default function SoftPhone() {
                         setErrorMsg(`${p.firstName} ${p.lastName} has no mobile number on file.`);
                         return;
                       }
-                      const fullName = `${p.firstName} ${p.lastName}`.trim();
-                      call(p.mobilePhone, fullName);
+                      call(p.mobilePhone, `${p.firstName} ${p.lastName}`.trim());
                     }}
                     className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-left hover:bg-brand-gold/10 transition-colors"
                   >
