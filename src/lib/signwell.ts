@@ -305,6 +305,10 @@ export async function sendForSigning(
     ? `${SIGNWELL_API_BASE}/document_templates/documents`
     : `${SIGNWELL_API_BASE}/documents`;
 
+  // Log the full request for debugging (remove once stable)
+  console.log("[signwell] POST", url);
+  console.log("[signwell] Request body:", JSON.stringify(body, null, 2));
+
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -316,6 +320,7 @@ export async function sendForSigning(
 
   if (!res.ok) {
     const errText = await res.text();
+    console.error("[signwell] Error response:", errText);
     throw new Error(`SignWell API error (${res.status}): ${errText}`);
   }
 
