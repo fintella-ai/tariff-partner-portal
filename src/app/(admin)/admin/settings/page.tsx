@@ -52,7 +52,10 @@ const ALL_NAV_ITEMS = [
   { id: "submit-client", label: "Submit Client", icon: "📩" },
   { id: "referral-links", label: "Referral Links", icon: "🔗" },
   { id: "documents", label: "Documents", icon: "📄" },
+  { id: "support", label: "Support", icon: "🎫" },
   { id: "conference", label: "Live Weekly Call!", icon: "📹" },
+  { id: "ai-assistant", label: "PartnerOS AI", icon: "🤖" },
+  { id: "feature-request", label: "Feature Requests", icon: "✨" },
 ];
 
 // Mirror of ADMIN_NAV_ITEMS in src/app/(admin)/admin/layout.tsx. Update
@@ -66,9 +69,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "training", label: "Training", icon: "🎓" },
   { id: "conference", label: "Live Weekly", icon: "📹" },
   { id: "documents", label: "Documents", icon: "📄" },
-  { id: "reports", label: "Reports", icon: "📈" },
-  { id: "revenue", label: "Revenue", icon: "💵" },
-  { id: "payouts", label: "Payouts", icon: "💳" },
+  { id: "reporting", label: "Reporting", icon: "📊" },
   { id: "settings", label: "Settings", icon: "⚙️" },
   { id: "users", label: "Admin Users", icon: "🛡️" },
   { id: "dev", label: "Development", icon: "🛠️" },
