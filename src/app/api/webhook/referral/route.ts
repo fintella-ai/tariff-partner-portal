@@ -24,9 +24,10 @@ import { sendDealStatusUpdateEmail } from "@/lib/sendgrid";
  *
  *   3. HMAC signature   — reads `X-Fintella-Signature` header if present.
  *                         Computes HMAC-SHA256 of raw body with WEBHOOK_SECRET
- *                         env var. Currently LOG-ONLY (warning on mismatch or
- *                         missing signature) — will be enforced once Frost Law
- *                         implements signing on their side.
+ *                         env var. Enforced when WEBHOOK_SECRET is set: returns
+ *                         401 on missing or mismatched signature. No-op when the
+ *                         env var is absent — safe to deploy before Frost Law
+ *                         implements signing; set WEBHOOK_SECRET to activate.
  *
  *   4. Idempotency      — POST accepts optional `idempotencyKey`. If provided,
  *                         re-POST with the same key returns the existing deal
@@ -179,21 +180,25 @@ function checkAuth(
   return { ok: false, status: 401, error: "Unauthorized" };
 }
 
-// ─── HMAC signature verify (log-only prep — not enforced yet) ──────────────
+// ─── HMAC signature verify — enforced when WEBHOOK_SECRET is set ───────────
 
 async function verifyHmacSignature(
   req: NextRequest,
   rawBody: string
-): Promise<void> {
+): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
   const secret = process.env.WEBHOOK_SECRET;
-  if (!secret) return; // HMAC not configured on our side — skip
+  if (!secret) return { ok: true }; // HMAC not configured — skip (no-op until activated)
 
   const sig = req.headers.get("x-fintella-signature");
   if (!sig) {
-    console.warn(
-      "[webhook/referral] HMAC: X-Fintella-Signature missing — will be enforced in a future release"
-    );
-    return;
+    console.warn("[webhook/referral] HMAC: X-Fintella-Signature missing — rejected");
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Missing HMAC signature. Include X-Fintella-Signature: sha256=<hex> header." },
+        { status: 401 }
+      ),
+    };
   }
 
   try {
@@ -216,11 +221,22 @@ async function verifyHmacSignature(
     const expected = sig.startsWith("sha256=") ? sig.slice(7) : sig;
     if (computed !== expected) {
       console.warn(
-        `[webhook/referral] HMAC mismatch — computed=${computed.slice(0, 8)}… received=${expected.slice(0, 8)}… (not enforced yet)`
+        `[webhook/referral] HMAC mismatch — rejected (computed=${computed.slice(0, 8)}… received=${expected.slice(0, 8)}…)`
       );
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { error: "HMAC signature mismatch." },
+          { status: 401 }
+        ),
+      };
     }
+    return { ok: true };
   } catch (e) {
-    console.warn("[webhook/referral] HMAC verification error:", e);
+    // Fail open on unexpected crypto errors — don't lock out Frost Law due
+    // to an edge case in the HMAC path. Log prominently so it surfaces.
+    console.error("[webhook/referral] HMAC verification error (failing open):", e);
+    return { ok: true };
   }
 }
 
@@ -251,8 +267,9 @@ async function preflightCheck(
     };
   }
 
-  // 3. HMAC signature (log-only)
-  await verifyHmacSignature(req, rawBody);
+  // 3. HMAC signature — enforced when WEBHOOK_SECRET env var is set
+  const hmac = await verifyHmacSignature(req, rawBody);
+  if (!hmac.ok) return hmac;
 
   return { ok: true };
 }
@@ -1186,7 +1203,7 @@ function getHandler(): Response {
       api_key:
         "Send X-Fintella-Api-Key header (value = FROST_LAW_API_KEY env var). Legacy x-webhook-secret / Authorization: Bearer still accepted.",
       rate_limit: `${RATE_LIMIT_MAX} requests per ${Math.round(RATE_LIMIT_WINDOW_MS / 1000)}s per API key. 429 with Retry-After if exceeded.`,
-      hmac: "Optional: send X-Fintella-Signature header with sha256=HEX of HMAC-SHA256(body, WEBHOOK_SECRET). Currently logged but not enforced.",
+      hmac: "Send X-Fintella-Signature: sha256=HEX of HMAC-SHA256(body, WEBHOOK_SECRET). Enforced when WEBHOOK_SECRET env var is set; no-op otherwise.",
       allowed_events: Array.from(ALLOWED_EVENTS),
     },
   });
