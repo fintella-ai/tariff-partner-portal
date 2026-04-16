@@ -42,6 +42,56 @@ export default function SoftPhone() {
   const [currentNumber, setCurrentNumber] = useState("");
   const [currentName, setCurrentName] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // ── Drag state ──
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartPos = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
+
+  const handleDragStart = useCallback((clientX: number, clientY: number) => {
+    dragStartPos.current = {
+      x: clientX,
+      y: clientY,
+      ox: dragOffset?.x ?? 0,
+      oy: dragOffset?.y ?? 0,
+    };
+    setIsDragging(true);
+  }, [dragOffset]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleMove = (clientX: number, clientY: number) => {
+      if (!dragStartPos.current) return;
+      const dx = clientX - dragStartPos.current.x;
+      const dy = clientY - dragStartPos.current.y;
+      setDragOffset({
+        x: dragStartPos.current.ox + dx,
+        y: dragStartPos.current.oy + dy,
+      });
+    };
+    const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 1) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const onEnd = () => {
+      setIsDragging(false);
+      dragStartPos.current = null;
+    };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onEnd);
+    document.addEventListener("touchmove", onTouchMove, { passive: true });
+    document.addEventListener("touchend", onEnd);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onEnd);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onEnd);
+    };
+  }, [isDragging]);
+
+  const dragStyle = dragOffset
+    ? { transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`, transition: isDragging ? "none" : "transform 0.15s ease" }
+    : undefined;
   const [muted, setMuted] = useState(false);
   const [durationSec, setDurationSec] = useState(0);
   const [missing, setMissing] = useState<string[]>([]);
@@ -267,11 +317,13 @@ export default function SoftPhone() {
     return (
       <button
         onClick={async () => {
-          setOpen(true);
-          await ensureDevice();
+          if (!isDragging) { setOpen(true); await ensureDevice(); }
         }}
-        title="Open softphone"
+        onMouseDown={(e) => { e.preventDefault(); handleDragStart(e.clientX, e.clientY); }}
+        onTouchStart={(e) => { if (e.touches.length === 1) handleDragStart(e.touches[0].clientX, e.touches[0].clientY); }}
+        title="Open softphone (drag to reposition)"
         className="fixed bottom-6 right-6 z-[950] bg-gradient-to-br from-brand-gold to-[#e8c060] text-brand-dark rounded-full shadow-lg shadow-brand-gold/20 w-14 h-14 text-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+        style={{ ...dragStyle, cursor: isDragging ? "grabbing" : "grab" }}
       >
         📞
       </button>
@@ -282,8 +334,13 @@ export default function SoftPhone() {
     state === "in-call" || state === "ringing" || state === "connecting";
 
   return (
-    <div className="fixed bottom-6 right-6 z-[951] w-[340px] max-h-[85vh] bg-[var(--app-bg-secondary)] border border-brand-gold/30 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)] bg-gradient-to-r from-brand-gold/10 to-transparent shrink-0">
+    <div className="fixed bottom-6 right-6 z-[951] w-[340px] max-h-[85vh] bg-[var(--app-bg-secondary)] border border-brand-gold/30 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col" style={dragStyle}>
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)] bg-gradient-to-r from-brand-gold/10 to-transparent shrink-0"
+        style={{ cursor: isDragging ? "grabbing" : "grab" }}
+        onMouseDown={(e) => { e.preventDefault(); handleDragStart(e.clientX, e.clientY); }}
+        onTouchStart={(e) => { if (e.touches.length === 1) handleDragStart(e.touches[0].clientX, e.touches[0].clientY); }}
+      >
         <div>
           <div className="font-body text-[11px] uppercase tracking-[1.5px] text-brand-gold">Softphone</div>
           <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-0.5">
