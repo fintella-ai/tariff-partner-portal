@@ -163,11 +163,12 @@ export default function NotificationBell({ draggable = false }: { draggable?: bo
       )}
       <button
         onClick={() => { if (!isDragging) setOpen(!open); }}
-        className={`relative font-body text-lg border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm ${
+        className={`relative font-body text-lg border-2 rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm ${
           unreadCount > 0
-            ? "text-brand-gold border-brand-gold/60 bg-brand-gold/[0.15] animate-pulse shadow-[0_0_16px_rgba(196,160,80,0.35)]"
-            : "text-[var(--app-text-muted)] border-[var(--app-border)] hover:text-[var(--app-text-secondary)] bg-[#c4a050]/[0.08]"
+            ? "border-brand-gold bg-brand-gold/25 animate-pulse shadow-[0_0_16px_rgba(196,160,80,0.5)]"
+            : "border-brand-gold/70 bg-brand-gold/10 hover:bg-brand-gold/20"
         }`}
+        style={{ filter: "saturate(1.3) brightness(1.1)" }}
         title={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}` : "Notifications"}
       >
         🔔
