@@ -242,8 +242,26 @@ export default function SettingsPage() {
         if (order.length > 0) setNavOrder(order);
       } catch {}
       try {
-        const aOrder = JSON.parse(settings.adminNavOrder || "[]");
-        if (Array.isArray(aOrder) && aOrder.length > 0) setAdminNavOrder(aOrder);
+        let aOrder = JSON.parse(settings.adminNavOrder || "[]");
+        if (Array.isArray(aOrder) && aOrder.length > 0) {
+          // Migrate legacy IDs: reports/revenue/payouts → reporting
+          const legacyIds = ["reports", "revenue", "payouts"];
+          if (aOrder.some((id: string) => legacyIds.includes(id))) {
+            const insertAt = aOrder.indexOf("reports");
+            aOrder = aOrder.filter((id: string) => !legacyIds.includes(id));
+            if (!aOrder.includes("reporting")) {
+              aOrder.splice(insertAt >= 0 ? insertAt : aOrder.length, 0, "reporting");
+            }
+          }
+          // Drop any IDs not in the valid set
+          const validIds = new Set(ALL_ADMIN_NAV_ITEMS.map((n) => n.id));
+          aOrder = aOrder.filter((id: string) => validIds.has(id));
+          // Append any new items not in saved order
+          for (const item of ALL_ADMIN_NAV_ITEMS) {
+            if (!aOrder.includes(item.id)) aOrder.push(item.id);
+          }
+          setAdminNavOrder(aOrder);
+        }
       } catch {}
       try {
         const ann = JSON.parse(settings.announcements || "[]");
