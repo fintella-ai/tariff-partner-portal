@@ -275,7 +275,7 @@ function makeFieldResolver(body: Record<string, any>) {
 // POST — create a new deal
 // ═══════════════════════════════════════════════════════════════════════════
 
-export async function POST(req: NextRequest) {
+async function postHandler(req: NextRequest): Promise<Response> {
   try {
     // Read the raw body once so we can HMAC-verify it AND JSON-parse it.
     const rawBody = await req.text();
@@ -614,7 +614,7 @@ export async function POST(req: NextRequest) {
 // PATCH — update an existing deal by dealId
 // ═══════════════════════════════════════════════════════════════════════════
 
-export async function PATCH(req: NextRequest) {
+async function patchHandler(req: NextRequest): Promise<Response> {
   try {
     const rawBody = await req.text();
 
@@ -1083,7 +1083,7 @@ export async function PATCH(req: NextRequest) {
 // GET — health check / documentation
 // ═══════════════════════════════════════════════════════════════════════════
 
-export async function GET() {
+function getHandler(): Response {
   return NextResponse.json({
     status: "ok",
     endpoints: {
@@ -1190,4 +1190,87 @@ export async function GET() {
       allowed_events: Array.from(ALLOWED_EVENTS),
     },
   });
+}
+
+// ─── Request logging wrapper ────────────────────────────────────────────────
+// Wraps POST/PATCH handlers to capture every incoming request into
+// WebhookRequestLog for inspection in the admin developer panel.
+// Auth header values are redacted before storage. Fire-and-forget —
+// log writes never block the response to the caller.
+
+const REDACTED_HEADERS = new Set([
+  "x-webhook-secret",
+  "x-fintella-api-key",
+  "authorization",
+  "cookie",
+]);
+
+async function withApiLog(
+  req: NextRequest,
+  handler: (req: NextRequest) => Promise<Response>
+): Promise<Response> {
+  const start = Date.now();
+
+  const sourceIp =
+    (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() || null;
+
+  const headers: Record<string, string> = {};
+  req.headers.forEach((v, k) => {
+    headers[k] = REDACTED_HEADERS.has(k.toLowerCase()) ? "[REDACTED]" : v;
+  });
+
+  // Clone request before any body reads so the original stream is intact
+  // for the handler to consume normally via req.json().
+  let bodyStr: string | null = null;
+  try {
+    bodyStr = await req.clone().text();
+    if (bodyStr) bodyStr = bodyStr.slice(0, 10_000);
+  } catch {}
+
+  let response: Response;
+  let error: string | undefined;
+  try {
+    response = await handler(req);
+  } catch (e: any) {
+    error = e?.message || "Unhandled error";
+    response = NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+
+  let responseBodyStr: string | null = null;
+  try {
+    responseBodyStr = (await response.clone().text()).slice(0, 4_000);
+  } catch {}
+
+  // Fire-and-forget — do not await, never block the caller
+  prisma.webhookRequestLog
+    .create({
+      data: {
+        method: req.method,
+        path: "/api/webhook/referral",
+        sourceIp,
+        headers: JSON.stringify(headers),
+        body: bodyStr,
+        responseStatus: response.status,
+        responseBody: responseBodyStr,
+        durationMs: Date.now() - start,
+        error,
+      },
+    })
+    .catch((e) => console.error("[api-log] write failed:", e));
+
+  return response;
+}
+
+// ─── Next.js route exports ──────────────────────────────────────────────────
+
+export async function POST(req: NextRequest) {
+  return withApiLog(req, postHandler);
+}
+
+export async function PATCH(req: NextRequest) {
+  return withApiLog(req, patchHandler);
+}
+
+export function GET() {
+  return getHandler();
 }

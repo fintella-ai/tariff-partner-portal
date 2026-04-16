@@ -782,3 +782,25 @@ model CallLog {
   @@index([createdAt])
   @@index([providerCallSid])
 }
+
+// ─── WEBHOOK / API REQUEST LOG (Dev tools) ───────────────────────────────────
+// Captures every incoming HTTP request to /api/webhook/referral so
+// admins can inspect traffic in the developer panel. Auth header values
+// are redacted server-side before storage. Body + response capped at
+// 10 KB / 4 KB respectively to keep row sizes manageable.
+model WebhookRequestLog {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  method         String   // POST, PATCH, GET
+  path           String   @default("/api/webhook/referral")
+  sourceIp       String?
+  headers        String?  // JSON string — auth values replaced with [REDACTED]
+  body           String?  // JSON string of request body (capped at 10 KB)
+  responseStatus Int?     // HTTP status code
+  responseBody   String?  // JSON string of response (capped at 4 KB)
+  durationMs     Int?
+  error          String?
+
+  @@index([createdAt])
+  @@index([responseStatus])
+}
