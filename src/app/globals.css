@@ -18,88 +18,88 @@
 
 /* ── Theme Variables ─────────────────────────────────────────────────── */
 :root {
-  /* Light mode (default) */
-  --app-bg: #f5f6fa;
+  /* Light mode (default) — boosted contrast */
+  --app-bg: #f3f4f8;
   --app-bg-secondary: #ffffff;
-  --app-text: #1a1a2e;
-  --app-text-secondary: #555;
-  --app-text-muted: #888;
-  --app-text-faint: #bbb;
-  --app-border: #e5e7eb;
-  --app-border-subtle: #f0f0f0;
+  --app-text: #111827;
+  --app-text-secondary: #374151;
+  --app-text-muted: #6b7280;
+  --app-text-faint: #9ca3af;
+  --app-border: #d1d5db;
+  --app-border-subtle: #e5e7eb;
   --app-card-bg: #ffffff;
-  --app-card-border: #e5e7eb;
-  --app-input-bg: #f8f9fa;
-  --app-input-border: #d1d5db;
-  --app-input-text: #1a1a2e;
-  --app-input-placeholder: #9ca3af;
+  --app-card-border: #d1d5db;
+  --app-input-bg: #f9fafb;
+  --app-input-border: #9ca3af;
+  --app-input-text: #111827;
+  --app-input-placeholder: #6b7280;
   --app-sidebar-bg: #ffffff;
-  --app-sidebar-border: rgba(196, 160, 80, 0.15);
-  --app-hover: rgba(0, 0, 0, 0.03);
-  --app-overlay: rgba(0, 0, 0, 0.4);
-  --app-gold: #c4a050;
-  --app-gold-text: #9a7b30;
-  --app-code-bg: #f0f0f5;
-  --app-scrollbar: rgba(196, 160, 80, 0.3);
+  --app-sidebar-border: rgba(196, 160, 80, 0.25);
+  --app-hover: rgba(0, 0, 0, 0.05);
+  --app-overlay: rgba(0, 0, 0, 0.5);
+  --app-gold: #b8922e;
+  --app-gold-text: #8a6d1f;
+  --app-code-bg: #eef0f5;
+  --app-scrollbar: rgba(196, 160, 80, 0.4);
   --brand-gold: #c4a050;
-  --brand-gold-muted: rgba(196, 160, 80, 0.12);
+  --brand-gold-muted: rgba(196, 160, 80, 0.15);
 }
 
 /* Dark theme — [data-theme="dark"] is set by ThemeProvider (JS, before first paint).
    The media query block is a fallback for SSR / JS-off scenarios so there's no flash. */
 [data-theme="dark"] {
-  --app-bg: #080d1c;
-  --app-bg-secondary: #0a1025;
-  --app-text: rgba(255, 255, 255, 0.9);
-  --app-text-secondary: rgba(255, 255, 255, 0.6);
-  --app-text-muted: rgba(255, 255, 255, 0.4);
-  --app-text-faint: rgba(255, 255, 255, 0.2);
-  --app-border: rgba(255, 255, 255, 0.08);
-  --app-border-subtle: rgba(255, 255, 255, 0.04);
-  --app-card-bg: rgba(255, 255, 255, 0.02);
-  --app-card-border: rgba(255, 255, 255, 0.07);
-  --app-input-bg: rgba(255, 255, 255, 0.05);
-  --app-input-border: rgba(255, 255, 255, 0.12);
+  --app-bg: #0c1221;
+  --app-bg-secondary: #111828;
+  --app-text: rgba(255, 255, 255, 0.95);
+  --app-text-secondary: rgba(255, 255, 255, 0.75);
+  --app-text-muted: rgba(255, 255, 255, 0.55);
+  --app-text-faint: rgba(255, 255, 255, 0.35);
+  --app-border: rgba(255, 255, 255, 0.16);
+  --app-border-subtle: rgba(255, 255, 255, 0.08);
+  --app-card-bg: rgba(255, 255, 255, 0.04);
+  --app-card-border: rgba(255, 255, 255, 0.14);
+  --app-input-bg: rgba(255, 255, 255, 0.07);
+  --app-input-border: rgba(255, 255, 255, 0.22);
   --app-input-text: #ffffff;
-  --app-input-placeholder: rgba(255, 255, 255, 0.3);
-  --app-sidebar-bg: rgba(0, 0, 0, 0.3);
-  --app-sidebar-border: rgba(196, 160, 80, 0.1);
-  --app-hover: rgba(255, 255, 255, 0.02);
-  --app-overlay: rgba(0, 0, 0, 0.6);
-  --app-gold: #c4a050;
-  --app-gold-text: #c4a050;
+  --app-input-placeholder: rgba(255, 255, 255, 0.4);
+  --app-sidebar-bg: rgba(8, 14, 30, 0.95);
+  --app-sidebar-border: rgba(196, 160, 80, 0.22);
+  --app-hover: rgba(255, 255, 255, 0.06);
+  --app-overlay: rgba(0, 0, 0, 0.7);
+  --app-gold: #d4ad55;
+  --app-gold-text: #d4ad55;
   --app-code-bg: rgba(255, 255, 255, 0.1);
-  --app-scrollbar: rgba(196, 160, 80, 0.2);
+  --app-scrollbar: rgba(196, 160, 80, 0.3);
   --brand-gold: #c4a050;
-  --brand-gold-muted: rgba(196, 160, 80, 0.12);
+  --brand-gold-muted: rgba(196, 160, 80, 0.15);
   color-scheme: dark;
 }
 
 /* Fallback for SSR / JS-off (no data-theme set yet) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --app-bg: #080d1c;
-    --app-bg-secondary: #0a1025;
-    --app-text: rgba(255, 255, 255, 0.9);
-    --app-text-secondary: rgba(255, 255, 255, 0.6);
-    --app-text-muted: rgba(255, 255, 255, 0.4);
-    --app-text-faint: rgba(255, 255, 255, 0.2);
-    --app-border: rgba(255, 255, 255, 0.08);
-    --app-border-subtle: rgba(255, 255, 255, 0.04);
-    --app-card-bg: rgba(255, 255, 255, 0.02);
-    --app-card-border: rgba(255, 255, 255, 0.07);
-    --app-input-bg: rgba(255, 255, 255, 0.05);
-    --app-input-border: rgba(255, 255, 255, 0.12);
+    --app-bg: #0c1221;
+    --app-bg-secondary: #111828;
+    --app-text: rgba(255, 255, 255, 0.95);
+    --app-text-secondary: rgba(255, 255, 255, 0.75);
+    --app-text-muted: rgba(255, 255, 255, 0.55);
+    --app-text-faint: rgba(255, 255, 255, 0.35);
+    --app-border: rgba(255, 255, 255, 0.16);
+    --app-border-subtle: rgba(255, 255, 255, 0.08);
+    --app-card-bg: rgba(255, 255, 255, 0.04);
+    --app-card-border: rgba(255, 255, 255, 0.14);
+    --app-input-bg: rgba(255, 255, 255, 0.07);
+    --app-input-border: rgba(255, 255, 255, 0.22);
     --app-input-text: #ffffff;
-    --app-input-placeholder: rgba(255, 255, 255, 0.3);
-    --app-sidebar-bg: rgba(0, 0, 0, 0.3);
-    --app-sidebar-border: rgba(196, 160, 80, 0.1);
-    --app-hover: rgba(255, 255, 255, 0.02);
-    --app-overlay: rgba(0, 0, 0, 0.6);
-    --app-gold: #c4a050;
-    --app-gold-text: #c4a050;
+    --app-input-placeholder: rgba(255, 255, 255, 0.4);
+    --app-sidebar-bg: rgba(8, 14, 30, 0.95);
+    --app-sidebar-border: rgba(196, 160, 80, 0.22);
+    --app-hover: rgba(255, 255, 255, 0.06);
+    --app-overlay: rgba(0, 0, 0, 0.7);
+    --app-gold: #d4ad55;
+    --app-gold-text: #d4ad55;
     --app-code-bg: rgba(255, 255, 255, 0.1);
-    --app-scrollbar: rgba(196, 160, 80, 0.2);
+    --app-scrollbar: rgba(196, 160, 80, 0.3);
     color-scheme: dark;
   }
 }
@@ -143,12 +143,12 @@
 
   .stat-card {
     @apply p-5 rounded-xl transition-all duration-300;
-    border: 1px solid rgba(196, 160, 80, 0.1);
-    background: rgba(196, 160, 80, 0.025);
+    border: 1px solid rgba(196, 160, 80, 0.18);
+    background: rgba(196, 160, 80, 0.04);
   }
   .stat-card:hover {
-    border-color: rgba(196, 160, 80, 0.3);
-    background: rgba(196, 160, 80, 0.05);
+    border-color: rgba(196, 160, 80, 0.4);
+    background: rgba(196, 160, 80, 0.08);
   }
 
   .card {
