@@ -24,12 +24,59 @@ const TYPE_ICONS: Record<string, string> = {
   system: "🔔",
 };
 
-export default function NotificationBell() {
+export default function NotificationBell({ draggable = false }: { draggable?: boolean } = {}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+
+  // ── Drag state ──
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartPos = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
+
+  const handleDragStart = useCallback((clientX: number, clientY: number) => {
+    if (!draggable) return;
+    dragStartPos.current = {
+      x: clientX,
+      y: clientY,
+      ox: dragOffset?.x ?? 0,
+      oy: dragOffset?.y ?? 0,
+    };
+    setIsDragging(true);
+  }, [draggable, dragOffset]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleMove = (clientX: number, clientY: number) => {
+      if (!dragStartPos.current) return;
+      const dx = clientX - dragStartPos.current.x;
+      const dy = clientY - dragStartPos.current.y;
+      setDragOffset({
+        x: dragStartPos.current.ox + dx,
+        y: dragStartPos.current.oy + dy,
+      });
+    };
+    const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 1) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const onEnd = () => {
+      setIsDragging(false);
+      dragStartPos.current = null;
+    };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onEnd);
+    document.addEventListener("touchmove", onTouchMove, { passive: true });
+    document.addEventListener("touchend", onEnd);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onEnd);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onEnd);
+    };
+  }, [isDragging]);
 
   const fetchNotifications = useCallback(() => {
     fetch("/api/notifications")
@@ -96,9 +143,26 @@ export default function NotificationBell() {
   }
 
   return (
-    <div ref={ref} className="relative">
+    <div
+      ref={ref}
+      className="relative"
+      style={
+        draggable && dragOffset
+          ? { transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`, transition: isDragging ? "none" : "transform 0.15s ease" }
+          : undefined
+      }
+    >
+      {draggable && (
+        <div
+          className="absolute -top-2 left-1/2 -translate-x-1/2 w-6 h-2 rounded-full bg-[var(--app-border)] opacity-0 hover:opacity-60 transition-opacity z-10"
+          style={{ cursor: isDragging ? "grabbing" : "grab" }}
+          onMouseDown={(e) => { e.preventDefault(); handleDragStart(e.clientX, e.clientY); }}
+          onTouchStart={(e) => { if (e.touches.length === 1) handleDragStart(e.touches[0].clientX, e.touches[0].clientY); }}
+          title="Drag to reposition"
+        />
+      )}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { if (!isDragging) setOpen(!open); }}
         className={`relative font-body text-lg border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm ${
           unreadCount > 0
             ? "text-brand-gold border-brand-gold/60 bg-brand-gold/[0.15] animate-pulse shadow-[0_0_16px_rgba(196,160,80,0.35)]"

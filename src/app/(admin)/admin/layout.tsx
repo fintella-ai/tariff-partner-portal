@@ -385,7 +385,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {adminName || user?.name || "Administrator"} <span className="font-body text-[13px] font-normal theme-text-muted">({ROLE_LABELS[userRole] || "Admin"})</span>
               </h1>
             </div>
-            <NotificationBell />
+            <div className="flex items-center gap-2">
+              <a
+                href="/admin/support"
+                className="relative font-body text-lg border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
+                title="Support"
+              >
+                🎫
+              </a>
+              <NotificationBell draggable />
+            </div>
           </div>
         </div>
         {children}

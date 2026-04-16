@@ -413,7 +413,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           right: device.isMobile ? "16px" : "24px",
         }}
       >
-        <NotificationBell />
+        <NotificationBell draggable />
       </div>
 
       {/* ══ MAIN CONTENT ══ */}
