@@ -123,7 +123,10 @@ export default function DocumentsPage() {
 
   // Open embedded signing for a pending agreement
   const handleOpenSigning = () => {
-    setShowSigningModal(true);
+    // Open signing URL in a new tab — SignWell blocks iframe embedding
+    if (agreementData?.embeddedSigningUrl) {
+      window.open(agreementData.embeddedSigningUrl, "_blank");
+    }
   };
 
   // Called when signing is completed in the embedded modal
