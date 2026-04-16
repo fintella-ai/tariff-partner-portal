@@ -47,6 +47,7 @@ interface AgreementData {
   signedDate: string | null;
   documentUrl: string | null;
   embeddedSigningUrl: string | null;
+  signwellDocumentId: string | null;
 }
 
 export default function DocumentsPage() {
@@ -212,28 +213,28 @@ export default function DocumentsPage() {
                   Agreement Sent — Awaiting Your Signature
                 </p>
                 <p className="font-body text-xs text-[var(--app-text-secondary)] leading-relaxed">
-                  Sent on {fmtDateTime(agreementData?.sentDate)}.
-                  {agreementData?.embeddedSigningUrl
-                    ? " Click below to review and sign right here."
-                    : " Check your email for the signing link from SignWell."}
+                  Sent on {fmtDateTime(agreementData?.sentDate)}. Review and sign your partnership agreement to activate your account.
                 </p>
               </div>
+              {(() => {
+                const signingUrl = agreementData?.embeddedSigningUrl
+                  || (agreementData?.signwellDocumentId ? `https://www.signwell.com/sign/${agreementData.signwellDocumentId}/` : null);
+                return signingUrl ? (
+                  <button
+                    onClick={() => {
+                      if (agreementData?.embeddedSigningUrl) {
+                        handleOpenSigning();
+                      } else {
+                        window.open(signingUrl, "_blank");
+                      }
+                    }}
+                    className="shrink-0 btn-gold text-[12px] px-5 py-2.5 min-h-[44px]"
+                  >
+                    Sign Now
+                  </button>
+                ) : null;
+              })()}
             </div>
-            {agreementData?.embeddedSigningUrl ? (
-              <button
-                onClick={handleOpenSigning}
-                className="w-full sm:w-auto mt-3 btn-gold text-[12px] px-5 py-2.5 text-center"
-              >
-                Sign Now
-              </button>
-            ) : (
-              <a
-                href={`mailto:?subject=Partnership%20Agreement&body=Please%20check%20your%20email%20from%20SignWell%20to%20sign%20your%20agreement.`}
-                className="inline-flex items-center gap-1.5 mt-3 font-body text-[12px] text-brand-gold hover:text-brand-gold/80 underline underline-offset-2 transition-colors"
-              >
-                📧 Check your email from SignWell
-              </a>
-            )}
           </div>
         ) : (
           <div className="p-4 bg-yellow-500/[0.06] border border-yellow-500/20 rounded-lg">
