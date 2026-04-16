@@ -226,9 +226,13 @@ export async function sendForSigning(
   //   Each recipient needs "id" matching the template placeholder id
   const usingTemplate = !!options.templateId;
 
-  // For template sends, fetch the template to get placeholder name→id map.
-  // Recipients must include `id` matching the placeholder's internal id.
+  // For template sends, fetch the template to get:
+  //   1. placeholder name→id map (recipients need `id` matching placeholder id)
+  //   2. set of valid field api_ids (SignWell rejects unknown api_ids)
+  //   3. locked field types to skip (autofill_date_signed can't be pre-filled)
   let placeholderIdByName: Record<string, string> = {};
+  let validFieldApiIds: Set<string> = new Set();
+  const LOCKED_FIELD_TYPES = new Set(["autofill_date_signed", "signature"]);
   if (usingTemplate) {
     try {
       const tplRes = await fetch(
@@ -242,17 +246,29 @@ export async function sendForSigning(
       );
       if (tplRes.ok) {
         const tpl = await tplRes.json();
+        // Build placeholder name→id map
         const placeholders: Array<{ id?: string; name?: string }> =
           Array.isArray(tpl.placeholders) ? tpl.placeholders : [];
         for (const p of placeholders) {
           if (p.name && p.id) placeholderIdByName[p.name] = p.id;
         }
+        // Build set of pre-fillable field api_ids from the template.
+        // Fields is a 2D array; flatten and collect api_ids, skipping
+        // locked types (signatures, auto-dated fields).
+        const allFields: Array<{ api_id?: string; type?: string }> =
+          Array.isArray(tpl.fields) ? tpl.fields.flat() : [];
+        for (const f of allFields) {
+          if (f.api_id && !LOCKED_FIELD_TYPES.has(f.type || "")) {
+            validFieldApiIds.add(f.api_id);
+          }
+        }
         console.log("[signwell] Placeholder map:", placeholderIdByName);
+        console.log("[signwell] Valid pre-fill api_ids:", Array.from(validFieldApiIds));
       } else {
-        console.warn("[signwell] Failed to fetch template placeholders:", tplRes.status);
+        console.warn("[signwell] Failed to fetch template:", tplRes.status);
       }
     } catch (e) {
-      console.warn("[signwell] Template placeholder lookup error:", e);
+      console.warn("[signwell] Template lookup error:", e);
     }
   }
 
@@ -284,10 +300,18 @@ export async function sendForSigning(
   };
 
   if (usingTemplate) {
-    // Template send: template_id in body, template_fields for pre-fills
+    // Template send: template_id in body, template_fields for pre-fills.
+    // Filter to only api_ids that exist on the template and aren't locked —
+    // SignWell rejects unknown api_ids (not silently ignored).
     body.template_id = options.templateId;
     if (options.templateFields && options.templateFields.length > 0) {
-      body.template_fields = options.templateFields;
+      const filtered = validFieldApiIds.size > 0
+        ? options.templateFields.filter((f) => validFieldApiIds.has(f.api_id))
+        : options.templateFields;
+      if (filtered.length > 0) {
+        body.template_fields = filtered;
+      }
+      console.log("[signwell] Fields sent:", filtered.length, "of", options.templateFields.length);
     }
   } else if (options.fileUrl) {
     // Non-template send: attach file
