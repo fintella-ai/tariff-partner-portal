@@ -162,7 +162,7 @@ export default function AdminFeaturesPage() {
           <button
             key={opt.value}
             onClick={() => setFilter(opt.value)}
-            className={`font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2 whitespace-nowrap transition-all min-h-[36px] ${
+            className={`font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2 whitespace-nowrap transition-all min-h-[44px] ${
               filter === opt.value
                 ? "bg-brand-gold/15 border-brand-gold/30 text-brand-gold"
                 : "border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text)]"
@@ -278,13 +278,13 @@ export default function AdminFeaturesPage() {
                         <button
                           onClick={() => updateRequest(req.id, { adminNotes: currentNotes })}
                           disabled={saving === req.id || currentNotes === (req.adminNotes || "")}
-                          className="bg-brand-gold/20 border border-brand-gold/30 text-brand-gold rounded-lg px-4 py-2 font-body text-[12px] font-semibold hover:bg-brand-gold/30 transition-colors disabled:opacity-50 min-h-[36px]"
+                          className="bg-brand-gold/20 border border-brand-gold/30 text-brand-gold rounded-lg px-4 py-2 font-body text-[12px] font-semibold hover:bg-brand-gold/30 transition-colors disabled:opacity-50 min-h-[44px]"
                         >
                           {saving === req.id ? "Saving..." : "Save Note"}
                         </button>
                         <button
                           onClick={() => deleteRequest(req.id)}
-                          className="border border-red-500/30 text-red-400 rounded-lg px-4 py-2 font-body text-[12px] font-semibold hover:bg-red-500/10 transition-colors min-h-[36px]"
+                          className="border border-red-500/30 text-red-400 rounded-lg px-4 py-2 font-body text-[12px] font-semibold hover:bg-red-500/10 transition-colors min-h-[44px]"
                         >
                           Delete
                         </button>

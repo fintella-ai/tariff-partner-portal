@@ -211,7 +211,7 @@ export default function AdminChatPage() {
             if (!soundOn) setTimeout(() => playBeep(), 50);
           }}
           title={soundOn ? "Notification sound on" : "Notification sound off"}
-          className={`font-body text-[12px] border rounded-lg px-3 py-2 transition-colors min-h-[36px] flex items-center gap-2 ${
+          className={`font-body text-[12px] border rounded-lg px-3 py-2 transition-colors min-h-[44px] flex items-center gap-2 ${
             soundOn
               ? "text-brand-gold border-brand-gold/30 bg-brand-gold/10 hover:bg-brand-gold/15"
               : "text-[var(--app-text-muted)] border-[var(--app-border)] hover:text-[var(--app-text-secondary)]"

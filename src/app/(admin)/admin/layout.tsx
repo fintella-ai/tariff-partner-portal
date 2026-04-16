@@ -300,7 +300,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Close button */}
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute right-3 w-8 h-8 flex items-center justify-center rounded-lg theme-text-muted hover:bg-brand-gold/10 transition-colors"
+              className="absolute right-3 w-11 h-11 flex items-center justify-center rounded-lg theme-text-muted hover:bg-brand-gold/10 transition-colors"
               style={{ top: "calc(0.75rem + var(--safe-top))" }}
               aria-label="Close menu"
             >
