@@ -807,3 +807,69 @@ model WebhookRequestLog {
   @@index([direction])
   @@index([responseStatus])
 }
+
+// ─── WORKFLOWS & AUTOMATIONS ──────────────────────────────────────────────────
+// Super-admin-only automation engine. Three models:
+//   Workflow       — trigger + conditions + actions definition
+//   WorkflowLog    — execution history per run
+//   WebhookSource  — named incoming webhook sources (/api/webhook/[slug])
+
+model Workflow {
+  id            String        @id @default(cuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  name          String
+  description   String?
+  enabled       Boolean       @default(true)
+  // Trigger key — see TRIGGER_REGISTRY in src/lib/workflow-engine.ts
+  trigger       String
+  // Additional filter for the trigger, e.g. { "stage": "closedwon" }
+  triggerConfig Json?
+  // Optional condition array [{field, op, value}] — all must pass
+  conditions    Json?
+  // Action array [{type, config}] — executed in order
+  actions       Json
+
+  logs WorkflowLog[]
+
+  @@index([trigger])
+  @@index([enabled])
+}
+
+model WorkflowLog {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  workflowId  String
+  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  triggerKey  String
+  triggerData Json?    // snapshot of the event payload (trimmed for storage)
+  // "success" | "failed" | "skipped"
+  status      String   @default("success")
+  actionsRun  Json?    // [{type, status, durationMs, error?}]
+  error       String?
+  durationMs  Int?
+
+  @@index([workflowId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model WebhookSource {
+  id           String    @id @default(cuid())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  name         String
+  // URL slug — becomes /api/webhook/{slug}
+  slug         String    @unique
+  // API key validated via x-api-key header
+  apiKey       String    @unique @default(cuid())
+  enabled      Boolean   @default(true)
+  description  String?
+  // Action array — same format as Workflow.actions
+  actions      Json
+  requestCount Int       @default(0)
+  lastHitAt    DateTime?
+
+  @@index([slug])
+  @@index([enabled])
+}

@@ -78,6 +78,13 @@ export async function POST(req: NextRequest) {
           });
         }
 
+        // Fire workflow trigger for partner.activated (fire-and-forget)
+        if (partner && partner.status === "pending") {
+          import("@/lib/workflow-engine").then(({ fireWorkflowTrigger }) =>
+            fireWorkflowTrigger("partner.activated", { partner })
+          ).catch(() => {});
+        }
+
         // Phase 15a + 15b — fire transactional "account active" email + SMS.
         // Best-effort; webhook should still 200 even if SendGrid/Twilio is down.
         if (partner?.email) {

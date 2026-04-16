@@ -35,6 +35,7 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   { id: "users", href: "/admin/users", icon: "\u{1F6E1}\uFE0F", label: "Admin Users" },
   { id: "dev", href: "/admin/dev", icon: "\u{1F6E0}\uFE0F", label: "Development" },
   { id: "features", href: "/admin/features", icon: "\u{2728}", label: "Feature Requests" },
+  { id: "workflows", href: "/admin/workflows", icon: "\u26A1", label: "Workflows" },
 ];
 
 function CollapseIcon({ collapsed }: { collapsed: boolean }) {
