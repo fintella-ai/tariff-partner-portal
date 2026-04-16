@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizePhone } from "@/lib/format";
 
 /**
  * GET /api/partner/settings
@@ -124,8 +125,8 @@ export async function PATCH(req: NextRequest) {
         ...(companyName !== undefined && { companyName: companyName || null }),
         ...(tin !== undefined && { tin: tin || null }),
         ...(email !== undefined && { email }),
-        ...(phone !== undefined && { phone: phone || null }),
-        ...(mobilePhone !== undefined && { mobilePhone: mobilePhone || null }),
+        ...(phone !== undefined && { phone: normalizePhone(phone) }),
+        ...(mobilePhone !== undefined && { mobilePhone: normalizePhone(mobilePhone) }),
         ...(typeof emailOptIn === "boolean" && { emailOptIn }),
         ...(typeof smsOptIn === "boolean" && { smsOptIn }),
         ...(flippedOnOptIn && { optInDate: new Date() }),

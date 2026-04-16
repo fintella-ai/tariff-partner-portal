@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { normalizePhone } from "@/lib/format";
 import { computeDealCommissions } from "@/lib/commission";
 import { sendDealStatusUpdateEmail } from "@/lib/sendgrid";
 
@@ -521,7 +522,7 @@ export async function POST(req: NextRequest) {
         clientName:
           firstName && lastName ? `${firstName} ${lastName}` : null,
         clientEmail: email || null,
-        clientPhone: phone || null,
+        clientPhone: normalizePhone(phone),
         clientTitle: clientTitle || null,
         serviceOfInterest: serviceOfInterest || null,
         legalEntityName: legalEntityName || null,
@@ -780,7 +781,7 @@ export async function PATCH(req: NextRequest) {
     const clientEmail = pickStr("email", "Email", "client_email", "clientEmail", "emailAddress", "email_address");
     if (clientEmail) data.clientEmail = clientEmail;
     const clientPhone = pickStr("phone", "Phone", "client_phone", "clientPhone", "phone_number", "phoneNumber", "telephone");
-    if (clientPhone) data.clientPhone = clientPhone;
+    if (clientPhone) data.clientPhone = normalizePhone(clientPhone) ?? clientPhone;
     const clientTitle = pickStr("business_title", "businessTitle", "client_title", "clientTitle", "title", "job_title", "jobTitle");
     if (clientTitle) data.clientTitle = clientTitle;
 

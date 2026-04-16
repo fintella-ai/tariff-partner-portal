@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { normalizePhone } from "@/lib/format";
 import {
   sendWelcomeEmail,
   sendInviterSignupNotificationEmail,
@@ -103,8 +104,8 @@ export async function POST(req: NextRequest) {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         companyName: companyName?.trim() || null,
-        phone: phone?.trim() || null,
-        mobilePhone: mobilePhone?.trim() || null,
+        phone: normalizePhone(phone),
+        mobilePhone: normalizePhone(mobilePhone),
         status: "pending", // pending until agreement signed
         referredByPartnerCode: invite.inviterCode,
         tier: invite.targetTier,

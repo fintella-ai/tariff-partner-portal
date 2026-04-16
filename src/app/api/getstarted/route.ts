@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { normalizePhone } from "@/lib/format";
 import { sendForSigning, buildPartnerTemplateFields } from "@/lib/signwell";
 import { hashSync } from "bcryptjs";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
@@ -91,8 +92,8 @@ export async function POST(req: NextRequest) {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         companyName: companyName?.trim() || null,
-        phone: phone?.trim() || null,
-        mobilePhone: mobilePhone || null,
+        phone: normalizePhone(phone),
+        mobilePhone: normalizePhone(mobilePhone),
         status: "pending", // pending until agreement signed
         tier: "l1",
         commissionRate: invite.commissionRate,

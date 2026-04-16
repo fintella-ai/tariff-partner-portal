@@ -99,6 +99,25 @@ export default function AdminPartnersPage() {
   const [inviteResult, setInviteResult] = useState<{ signupUrl: string } | null>(null);
   const [inviteSending, setInviteSending] = useState(false);
 
+  // Sort state
+  type SortCol = "name" | "code" | "status" | "joined";
+  const [sortCol, setSortCol] = useState<SortCol>("joined");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (col: SortCol) => {
+    if (sortCol === col) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortCol }) => {
+    if (sortCol !== col) return <span className="ml-1 opacity-30 text-[10px]">↕</span>;
+    return <span className="ml-1 text-brand-gold text-[10px]">{sortDir === "asc" ? "↑" : "↓"}</span>;
+  };
+
   // Resend invite state
   const [selectedInviteIds, setSelectedInviteIds] = useState<string[]>([]);
   const [resendingId, setResendingId] = useState<string | null>(null);
@@ -247,9 +266,17 @@ export default function AdminPartnersPage() {
   const blocked = partners.filter((p) => p.status === "blocked").length;
   const invitedCount = invites.filter((inv) => inv.status === "active").length;
 
-  const filteredPartners = activeTab === "all" || activeTab === "invited"
+  const filteredPartners = (activeTab === "all" || activeTab === "invited"
     ? partners
-    : partners.filter((p) => p.status === activeTab);
+    : partners.filter((p) => p.status === activeTab)
+  ).slice().sort((a, b) => {
+    let va: string, vb: string;
+    if (sortCol === "name") { va = `${a.firstName} ${a.lastName}`.toLowerCase(); vb = `${b.firstName} ${b.lastName}`.toLowerCase(); }
+    else if (sortCol === "code") { va = a.partnerCode; vb = b.partnerCode; }
+    else if (sortCol === "status") { va = a.status; vb = b.status; }
+    else { va = a.signupDate; vb = b.signupDate; }
+    return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
 
   const filteredInvites = invites.filter((inv) => {
     if (!search) return true;
@@ -592,8 +619,27 @@ export default function AdminPartnersPage() {
           {/* Partners — Desktop Table */}
           <div className="card hidden sm:block overflow-x-auto">
             <div className="grid grid-cols-[1.5fr_1fr_0.9fr_1.2fr_0.7fr_0.6fr_0.8fr_0.5fr] gap-3 px-5 py-3 border-b border-[var(--app-border)]">
-              {["Partner", "Code", "Phone", "Email", "Status", "W9", "Joined", ""].map((h) => (
-                <div key={h} className={`font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider ${h === "Status" || h === "W9" ? "text-center" : ""}`}>{h}</div>
+              {([
+                { label: "Partner", col: "name" as SortCol },
+                { label: "Code", col: "code" as SortCol },
+                { label: "Phone", col: null },
+                { label: "Email", col: null },
+                { label: "Status", col: "status" as SortCol, center: true },
+                { label: "W9", col: null, center: true },
+                { label: "Joined", col: "joined" as SortCol },
+                { label: "", col: null },
+              ] as { label: string; col: SortCol | null; center?: boolean }[]).map((h) => (
+                h.col ? (
+                  <button
+                    key={h.label}
+                    onClick={() => handleSort(h.col!)}
+                    className={`font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider flex items-center gap-0.5 hover:text-[var(--app-text-secondary)] transition-colors ${h.center ? "justify-center" : ""}`}
+                  >
+                    {h.label}<SortIcon col={h.col} />
+                  </button>
+                ) : (
+                  <div key={h.label} className={`font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider ${h.center ? "text-center" : ""}`}>{h.label}</div>
+                )
               ))}
             </div>
             {filteredPartners.map((p) => {

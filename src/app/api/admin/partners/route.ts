@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizePhone } from "@/lib/format";
 
 function generatePartnerCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
         email: body.email,
         firstName: body.firstName,
         lastName: body.lastName,
-        phone: body.phone || null,
+        phone: normalizePhone(body.phone),
         status: body.status || "active",
         referredByPartnerCode: body.referredByPartnerCode || null,
         l3Enabled: body.l3Enabled || false,

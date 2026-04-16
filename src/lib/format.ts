@@ -35,3 +35,17 @@ export function fmtDateTime(d: string | Date | null | undefined): string {
 export function fmtPercent(n: number): string {
   return `${(n * 100).toFixed(0)}%`;
 }
+
+/**
+ * Normalize any US phone input to E.164 (+1##########).
+ * Strips formatting, accepts 10-digit or 11-digit (leading 1) numbers.
+ * Returns null for blank or unrecognizable input.
+ */
+export function normalizePhone(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  if (digits.length === 0) return null;
+  return raw.trim(); // non-US / already formatted — store as-is
+}
