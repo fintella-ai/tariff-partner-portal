@@ -7,6 +7,7 @@
 
 const SIGNWELL_API_KEY = process.env.SIGNWELL_API_KEY || "";
 const SIGNWELL_API_BASE = "https://www.signwell.com/api/v1";
+const SIGNWELL_API_APP_ID = process.env.SIGNWELL_API_APP_ID || "";
 
 interface SignWellRecipient {
   id: string;
@@ -217,19 +218,21 @@ export async function sendForSigning(
     return { documentId: mockId, status: "pending", embeddedSigningUrl: null };
   }
 
-  // Template sends use a dedicated endpoint that already knows its file
-  // and placeholder structure. Recipients match by `placeholder_name`
-  // (e.g. "Partner", "Fintella") — no numeric id needed. Fields are a
-  // flat array of {api_id, value} applied across all placeholders.
+  // Per SignWell API docs (developers.signwell.com/reference/createdocumentfromtemplate):
+  //   Endpoint: POST /api/v1/document_templates/documents
+  //   template_id goes in the BODY (not the URL path)
+  //   Recipients key is "recipients" (not "signees")
+  //   Field pre-fills key is "template_fields"
   const usingTemplate = !!options.templateId;
 
-  const recipientList = options.recipients.map((r, idx) => {
+  const recipients = options.recipients.map((r, idx) => {
     const recipient: Record<string, any> = {
       email: r.email,
       name: r.name,
       signing_order: idx + 1,
     };
     if (usingTemplate) {
+      // Template sends: match recipient to template placeholder by name
       recipient.placeholder_name = r.role;
     } else {
       recipient.id = r.id;
@@ -241,27 +244,33 @@ export async function sendForSigning(
     name: options.name,
     subject: options.subject,
     message: options.message,
-    // Template endpoint uses "signees"; regular endpoint uses "recipients"
-    [usingTemplate ? "signees" : "recipients"]: recipientList,
+    recipients,
     reminders: true,
     apply_signing_order: options.recipients.length > 1,
     embedded_signing: true,
     embedded_signing_notifications: true,
   };
 
-  // Template sends: field pre-fills via `fields`, no files needed.
-  // Non-template sends: attach a file URL.
-  if (usingTemplate && options.templateFields && options.templateFields.length > 0) {
-    body.fields = options.templateFields;
-  }
-  if (!usingTemplate && options.fileUrl) {
+  if (usingTemplate) {
+    // Template send: template_id in body, template_fields for pre-fills
+    body.template_id = options.templateId;
+    if (options.templateFields && options.templateFields.length > 0) {
+      body.template_fields = options.templateFields;
+    }
+  } else if (options.fileUrl) {
+    // Non-template send: attach file
     body.files = [{ file_url: options.fileUrl }];
   }
 
-  // Template documents use /document_templates/{id}/documents;
-  // non-template documents use /documents.
+  // Attach API App ID for branded signing experience if configured
+  if (SIGNWELL_API_APP_ID) {
+    body.api_application_id = SIGNWELL_API_APP_ID;
+  }
+
+  // Template docs: POST /document_templates/documents
+  // Regular docs:  POST /documents
   const url = usingTemplate
-    ? `${SIGNWELL_API_BASE}/document_templates/${options.templateId}/documents`
+    ? `${SIGNWELL_API_BASE}/document_templates/documents`
     : `${SIGNWELL_API_BASE}/documents`;
 
   const res = await fetch(url, {
