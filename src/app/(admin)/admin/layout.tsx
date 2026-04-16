@@ -387,11 +387,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div className="flex items-center gap-2">
               <a
-                href="/admin/support"
-                className="relative font-body text-lg border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
-                title="Support"
+                href="/admin/chat"
+                className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
+                title="Live Chat"
               >
-                🎫
+                💬<span className="hidden lg:inline font-medium">Live Chat</span>
+              </a>
+              <a
+                href="/admin/support"
+                className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
+                title="Support Ticket"
+              >
+                🎫<span className="hidden lg:inline font-medium">Support Ticket</span>
               </a>
               <NotificationBell draggable />
             </div>
