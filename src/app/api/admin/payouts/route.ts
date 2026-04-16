@@ -311,6 +311,11 @@ export async function POST(req: NextRequest) {
         })
       );
 
+      // Fire workflow trigger for commission.paid (fire-and-forget)
+      import("@/lib/workflow-engine").then(({ fireWorkflowTrigger }) =>
+        fireWorkflowTrigger("commission.paid", { batch, entries: toProcess })
+      ).catch(() => {});
+
       return NextResponse.json({ batch });
     }
 
