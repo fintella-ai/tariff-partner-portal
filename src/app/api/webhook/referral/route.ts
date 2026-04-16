@@ -559,6 +559,11 @@ async function postHandler(req: NextRequest): Promise<Response> {
       },
     });
 
+    // Fire workflow trigger (fire-and-forget)
+    import("@/lib/workflow-engine").then(({ fireWorkflowTrigger }) =>
+      fireWorkflowTrigger("deal.created", { deal })
+    ).catch(() => {});
+
     // Notify partner (if attributed)
     if (partnerCode && partnerCode !== "UNATTRIBUTED") {
       await prisma.notification
@@ -1023,6 +1028,17 @@ async function patchHandler(req: NextRequest): Promise<Response> {
       return d;
     });
 
+    // Fire workflow triggers for stage changes (fire-and-forget)
+    if (data.stage && data.stage !== deal.stage) {
+      import("@/lib/workflow-engine").then(({ fireWorkflowTrigger }) => {
+        const previousStage = deal.stage;
+        const newStage = data.stage;
+        fireWorkflowTrigger("deal.stage_changed", { deal: updated, previousStage, newStage }).catch(() => {});
+        if (newStage === "closedwon") fireWorkflowTrigger("deal.closed_won", { deal: updated }).catch(() => {});
+        if (newStage === "closedlost") fireWorkflowTrigger("deal.closed_lost", { deal: updated }).catch(() => {});
+      }).catch(() => {});
+    }
+
     // Fire-and-forget deal status update email to the partner whenever
     // the internal stage actually changed. Uses the deal_status_update
     // template (editable by super admin in /admin/settings Communications).
@@ -1258,8 +1274,8 @@ async function withApiLog(
     responseBodyStr = (await response.clone().text()).slice(0, 4_000);
   } catch {}
 
-  // Fire-and-forget — do not await, never block the caller
-  prisma.webhookRequestLog
+  // Awaited — Vercel kills unawaited promises before they complete.
+  await prisma.webhookRequestLog
     .create({
       data: {
         method: req.method,
