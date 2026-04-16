@@ -223,7 +223,38 @@ export async function sendForSigning(
   //   template_id goes in the BODY (not the URL path)
   //   Recipients key is "recipients" (not "signees")
   //   Field pre-fills key is "template_fields"
+  //   Each recipient needs "id" matching the template placeholder id
   const usingTemplate = !!options.templateId;
+
+  // For template sends, fetch the template to get placeholder name→id map.
+  // Recipients must include `id` matching the placeholder's internal id.
+  let placeholderIdByName: Record<string, string> = {};
+  if (usingTemplate) {
+    try {
+      const tplRes = await fetch(
+        `${SIGNWELL_API_BASE}/document_templates/${options.templateId}`,
+        {
+          headers: {
+            "X-Api-Key": SIGNWELL_API_KEY,
+            Accept: "application/json",
+          },
+        }
+      );
+      if (tplRes.ok) {
+        const tpl = await tplRes.json();
+        const placeholders: Array<{ id?: string; name?: string }> =
+          Array.isArray(tpl.placeholders) ? tpl.placeholders : [];
+        for (const p of placeholders) {
+          if (p.name && p.id) placeholderIdByName[p.name] = p.id;
+        }
+        console.log("[signwell] Placeholder map:", placeholderIdByName);
+      } else {
+        console.warn("[signwell] Failed to fetch template placeholders:", tplRes.status);
+      }
+    } catch (e) {
+      console.warn("[signwell] Template placeholder lookup error:", e);
+    }
+  }
 
   const recipients = options.recipients.map((r, idx) => {
     const recipient: Record<string, any> = {
@@ -232,7 +263,8 @@ export async function sendForSigning(
       signing_order: idx + 1,
     };
     if (usingTemplate) {
-      // Template sends: match recipient to template placeholder by name
+      // Template sends: id must match placeholder id, placeholder_name for binding
+      recipient.id = placeholderIdByName[r.role] || String(idx + 1);
       recipient.placeholder_name = r.role;
     } else {
       recipient.id = r.id;
