@@ -438,18 +438,25 @@ export default function PartnerReportingPage() {
                       return <DownlineTree root={rootPartner} isMobile={device.isMobile} />;
                     })()
                   ) : device.isMobile ? (
-                    downlinePartners.map((p, idx) => (
-                      <div key={p.id} className={`px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0 flex items-center justify-between ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
-                        <div>
-                          <div className="font-body text-[13px] font-medium text-[var(--app-text)]">{p.firstName} {p.lastName}</div>
-                          <div className="font-body text-[11px] text-[var(--app-text-muted)]">{p.partnerCode} · {p.companyName || "—"}</div>
-                        </div>
-                        <div className="flex items-center gap-3">
+                    downlinePartners.map((p, idx) => {
+                      const theirRate = p.commissionRate || 0;
+                      const override = commissionRate - theirRate;
+                      return (
+                      <div key={p.id} className={`px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0 ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <div className="font-body text-[13px] font-medium text-[var(--app-text)]">{p.firstName} {p.lastName}</div>
+                            <div className="font-body text-[11px] text-[var(--app-text-muted)]">{p.partnerCode} · {p.companyName || "—"}</div>
+                          </div>
                           <span className={`font-body text-[10px] font-semibold rounded-full px-2.5 py-0.5 ${p.status === "active" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"}`}>{p.status}</span>
-                          {p.commissionRate && <span className="font-body text-[11px] text-brand-gold">{Math.round(p.commissionRate * 100)}%</span>}
                         </div>
-                      </div>
-                    ))
+                        <div className="flex items-center gap-4 font-body text-[11px]">
+                          <span className="text-purple-400">Their: {theirRate ? `${Math.round(theirRate * 100)}%` : "—"}</span>
+                          <span className="text-brand-gold">Override: {override > 0 ? `${Math.round(override * 100)}%` : "—"}</span>
+                          <span className="text-green-400">Total: {commissionRate ? `${Math.round(commissionRate * 100)}%` : "—"}</span>
+                        </div>
+                      </div>);
+                    })
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full">
@@ -459,11 +466,16 @@ export default function PartnerReportingPage() {
                             <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Code</th>
                             <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Company</th>
                             <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Rate</th>
+                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Their Rate</th>
+                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Your Override</th>
+                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Your Total</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {downlinePartners.map((p, idx) => (
+                          {downlinePartners.map((p, idx) => {
+                            const theirRate = p.commissionRate || 0;
+                            const override = commissionRate - theirRate;
+                            return (
                             <tr key={p.id} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
                               <td className="px-4 sm:px-6 py-3.5 font-body text-[13px] font-medium text-[var(--app-text)]">{p.firstName} {p.lastName}</td>
                               <td className="px-3 py-3.5 text-center font-mono text-[12px] text-[var(--app-text-muted)]">{p.partnerCode}</td>
@@ -471,9 +483,11 @@ export default function PartnerReportingPage() {
                               <td className="px-3 py-3.5 text-center">
                                 <span className={`font-body text-[10px] font-semibold rounded-full px-2.5 py-0.5 ${p.status === "active" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"}`}>{p.status}</span>
                               </td>
-                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-brand-gold font-semibold">{p.commissionRate ? `${Math.round(p.commissionRate * 100)}%` : "—"}</td>
-                            </tr>
-                          ))}
+                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-purple-400 font-semibold">{theirRate ? `${Math.round(theirRate * 100)}%` : "—"}</td>
+                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-brand-gold font-semibold">{override > 0 ? `${Math.round(override * 100)}%` : "—"}</td>
+                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-green-400 font-semibold">{commissionRate ? `${Math.round(commissionRate * 100)}%` : "—"}</td>
+                            </tr>);
+                          })}
                         </tbody>
                       </table>
                     </div>
