@@ -1,55 +1,47 @@
 # Session State
 
-🕒 Last updated: 2026-04-18 — PRs #265 + #266 opened, #262–#264 merged
+🕒 Last updated: 2026-04-18 — post-reboot session: #265–#270 all merged, Custom Commissions split into its own tab
 
 ## 🌿 Git state
-- **main HEAD:** `048ccab` — feat(deals): snapshot L1 commission rate onto Deal at creation (#264)
-- **origin/main HEAD:** `048ccab` — in sync
-- **Feature branches in flight:**
-  - `claude/enterprise-waterfall-per-deal-l1rate` → PR #265 (EP override consumes #264 snapshot)
-  - `claude/signwell-doc-proxy` → PR #266 (auth-gated PDF proxy for SignWell URLs)
-- **Working tree:** clean
+- **main HEAD:** `3b9acb8` — refactor(admin): split Custom Commissions + Enterprise Reporting into their own tab (#270)
+- **origin/main HEAD:** `3b9acb8` — in sync
+- **Feature branches in flight:** none
+- **Working tree:** clean on `main`
 
 ## ✅ What's done (this session)
-- **PR #262 — signed PDF + audit log into Documents** — merged
-  - `getCompletedPdfUrl()` helper; `document_completed` webhook upserts a `Document` row so signed PDFs show in partner + admin docs log
-  - Admin docs list dedups synthetic agreement row when a real Document row exists
-  - Super-admin-only `POST /api/admin/dev/signwell-backfill-pdfs` for historic signed agreements
-- **PR #263 — session checkpoint** — merged
-- **PR #264 — snapshot L1 commission rate onto Deal at creation** — merged
-  - `Deal.l1CommissionRate Float?` captured at creation so the per-deal waterfall is stable even if an L1's rate changes later
-- **PR #265 — EP override waterfall consumes #264 snapshot** — open
-  - `epOverrideRate = max(0, ep.totalRate - (deal.l1CommissionRate ?? MAX_COMMISSION_RATE))`
-  - Clamp at 0 prevents negative payouts from misconfigured `EP.totalRate < L1 rate`
-- **PR #266 — SignWell doc PDF proxy** — open
-  - `GET /api/signwell/document?url=<signwell.com URL>` — session-gated, domain-pinned, server-side `SIGNWELL_API_KEY`
-  - Lets logged-in admins/partners view signed-agreement PDFs without exposing the SignWell API key
+- **PR #265 — EP waterfall consumes L1 rate snapshot** — merged pre-reboot
+- **PR #266 — SignWell doc PDF proxy** — merged pre-reboot (session-gated `/api/signwell/document?docId=…` → 302 to pre-signed S3)
+- **PR #267 — session-state.md refresh** — merged pre-reboot
+- **PR #268 — specs for live chat deal links + Full Reporting sort arrows** — merged (docs only, zero runtime impact)
+  - Design docs at `docs/superpowers/specs/2026-04-18-{live-chat-deal-links,full-reporting-sort-arrows}-design.md`
+- **PR #269 — fix(settings): L1 commission rate is per-partner, not a fixed 25%** — merged
+  - Admin Settings → Commissions tab was showing a hardcoded "25%" as if every L1 earned that rate. Real model: admin picks 10/15/20/25% per recruitment invite, same as L2/L3
+  - Replaced hero card with rate badges, rewrote waterfall example, synced CLAUDE.md "Commission waterfall" bullets to match `src/lib/commission.ts`
+- **PR #270 — refactor(admin): Custom Commissions gets its own top-level tab** — merged
+  - `/admin/custom-commissions` is a new page carrying both the EP management view and the Enterprise Reporting deal breakdown
+  - `/admin/revenue` shrank from 1011 → 455 lines, now single-view
+  - `ReportingTabs` order: Reports · Revenue · Custom Commissions · Payouts
 
 ## 🔄 What's in flight
-- PR #265 (EP waterfall) — awaiting CI + review
-- PR #266 (doc proxy) — awaiting CI + review
+- Nothing open — zero PRs, clean `main`
 
 ## 🎯 What's next
-1. **Live chat deal links** — when a partner mentions a deal in live chat, give admin a clickable link that opens the deal in a new window
-2. **Sort arrows / filters** on all table headers in Full Reporting
-3. **Test end-to-end on prod** — send a fresh agreement, sign as partner + co-signer, confirm PDF appears in both `/dashboard/documents` and `/admin/documents` with working View/Download (now that #266 unlocks client-side viewing)
-4. **Run historic backfill on prod** — `POST /api/admin/dev/signwell-backfill-pdfs` as super_admin for pre-#262 signed agreements
-5. **Admin chat reply UI** — wire reply input to `/api/admin/chat` POST
-6. **HMAC enforcement on `/api/webhook/referral`** — flip log-only → hard-reject when Frost Law cuts over
-7. **Phase 18b** — Next.js 14 → 16 migration (dedicated session)
+1. **`writing-plans` for the two merged specs** (live chat deal links + Full Reporting sort arrows) — produces the implementation plans that drive the next two feature PRs
+2. **Smoke-test `/admin/custom-commissions` on prod** — click through ReportingTabs, try Add EP / Add L1 / Terminate as super_admin
+3. **Admin chat reply UI** — wire reply input to `/api/admin/chat` POST (reply path still TODO per CLAUDE.md task queue)
+4. **HMAC enforcement on `/api/webhook/referral`** — flip log-only → hard-reject when Frost Law cuts over
+5. **Phase 18b** — Next.js 14 → 16 migration (dedicated session, deferred)
 
 ## 🧠 Context that matters for resuming
-- SignWell `completed_pdf` endpoint returns a pre-signed S3 `file_url` that works in the browser without auth, but the earlier PDF links on `Document` rows are SignWell-hosted and DO require `X-Api-Key` — that's why the #266 proxy exists
-- `audit_page=true` includes the legally-defensible signing audit page
-- Document dedup key: `uploadedBy = "SignWell:<signwellDocumentId>"`
-- Vercel project name: `tariff-partner-portal-iwki` (NOT `tariff-partner-portal`)
-- Vercel team: `john-fflaw-projects`
-- All DB data is test/seed — safe to test against production
+- **Commission model correction (from #269/CLAUDE.md):** L1 rate is per-partner (10/15/20/25%), picked by admin at recruitment. Total waterfall = L1's assigned rate, not a fixed 25%. The code in `src/lib/commission.ts` has been correct since #264; only the UI copy was stale
+- **Custom Commissions lives at `/admin/custom-commissions`** now, not as a sub-tab of `/admin/revenue`. Same `/api/admin/enterprise` endpoint, same super-admin mutation gate via `isSuperAdmin` in page
+- **Specs for next two features** are committed at `docs/superpowers/specs/2026-04-18-*-design.md`. Treat them as the source of truth when implementing
+- **Merge-to-main protocol:** always ask for explicit "ok to merge" before squash-merging, even when CI is green — user rule saved in memory
 - SignWell send/sign flow is considered "done, don't touch" as of PRs #149–#249
-- `Deal.l1CommissionRate` is a nullable `Float?` — always `?? MAX_COMMISSION_RATE` when using it so legacy deals degrade gracefully
-- EP override math: `firmFee × max(0, ep.totalRate - (deal.l1CommissionRate ?? 0.25))`
+- All DB data is test/seed — safe to test against production
 
 ## 📂 Relevant files for the next task
-- Live chat deal links: `src/app/api/admin/chat/*`, `src/app/(admin)/admin/chat/*`, mention parser lives client-side
-- Full Reporting sort: `src/app/(partner)/dashboard/reporting/*`, `src/components/ResizableTable*` or similar table primitives
-- E2E signing test: `/dashboard/agreements`, `/admin/partners/[id]/agreements`, SignWell webhook at `src/app/api/signwell/webhook/route.ts`
+- Live chat deal links spec: `docs/superpowers/specs/2026-04-18-live-chat-deal-links-design.md`
+  - Files to touch: `src/app/api/admin/chat/route.ts`, `src/lib/linkifyDeals.ts` (new), `src/lib/__tests__/linkifyDeals.test.ts` (new), `src/app/(admin)/admin/chat/page.tsx`
+- Full Reporting sort arrows spec: `docs/superpowers/specs/2026-04-18-full-reporting-sort-arrows-design.md`
+  - Files to touch: `src/components/ui/SortHeader.tsx` (new), `src/lib/sortRows.ts` (new), `src/app/(partner)/dashboard/reporting/page.tsx`, plus cleanups on `src/app/(admin)/admin/{reports,revenue}/page.tsx` to import the shared SortHeader
