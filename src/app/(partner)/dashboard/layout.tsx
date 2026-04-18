@@ -12,31 +12,29 @@ import { useTheme } from "@/components/layout/ThemeProvider";
 // ─── NAV STRUCTURE ───────────────────────────────────────────────────────────
 // Main nav items (top section of sidebar)
 const MAIN_NAV = [
-  { id: "home", href: "/dashboard/home", icon: "\u{1F3E0}", label: "Home", shortLabel: "Home" },
-  { id: "overview", href: "/dashboard/overview", icon: "\u{1F4CA}", label: "Overview", shortLabel: "Stats" },
-  { id: "training", href: "/dashboard/training", icon: "\u{1F393}", label: "Partner Training", shortLabel: "Learn" },
-  { id: "deals", href: "/dashboard/deals", icon: "\u{1F4BC}", label: "My Deals", shortLabel: "Deals" },
-  { id: "downline", href: "/dashboard/downline", icon: "\u{1F465}", label: "Downline", shortLabel: "Team" },
-  { id: "commissions", href: "/dashboard/commissions", icon: "\u{1F4B0}", label: "Commissions", shortLabel: "Earn" },
-  { id: "submit-client", href: "/dashboard/submit-client", icon: "\u{1F4E9}", label: "Submit Client", shortLabel: "Submit" },
-  { id: "reporting", href: "/dashboard/reporting", icon: "\u{1F4CA}", label: "Full Reporting", shortLabel: "Reports" },
-  { id: "referral-links", href: "/dashboard/referral-links", icon: "\u{1F517}", label: "Referral Links", shortLabel: "Links" },
-  { id: "documents", href: "/dashboard/documents", icon: "\u{1F4C4}", label: "Documents", shortLabel: "Docs" },
-  // Support sits right under Documents per partner-portal layout spec —
-  // was previously rendered as a separate top-right button.
-  { id: "support", href: "/dashboard/support", icon: "\u{1F3AB}", label: "Support", shortLabel: "Help" },
-  { id: "conference", href: "/dashboard/conference", icon: "\u{1F4F9}", label: "Live Weekly Call!", shortLabel: "Live" },
-  { id: "ai-assistant", href: "/dashboard/ai-assistant", icon: "\u{1F916}", label: "PartnerOS AI", shortLabel: "AI" },
-  { id: "feature-request", href: "/dashboard/feature-request", icon: "\u{2728}", label: "Feature Requests", shortLabel: "Ideas" },
+  { id: "home", href: "/dashboard/home", icon: "🏠", label: "Home", shortLabel: "Home" },
+  { id: "overview", href: "/dashboard/overview", icon: "📊", label: "Overview", shortLabel: "Stats" },
+  { id: "training", href: "/dashboard/training", icon: "🎯", label: "Partner Training", shortLabel: "Learn" },
+  { id: "deals", href: "/dashboard/deals", icon: "📋", label: "My Deals", shortLabel: "Deals" },
+  { id: "downline", href: "/dashboard/downline", icon: "👥", label: "Downline", shortLabel: "Team" },
+  { id: "commissions", href: "/dashboard/commissions", icon: "💲", label: "Commissions", shortLabel: "Earn" },
+  { id: "submit-client", href: "/dashboard/submit-client", icon: "📤", label: "Submit Client", shortLabel: "Submit" },
+  { id: "reporting", href: "/dashboard/reporting", icon: "📈", label: "Full Reporting", shortLabel: "Reports" },
+  { id: "referral-links", href: "/dashboard/referral-links", icon: "🔗", label: "Referral Links", shortLabel: "Links" },
+  { id: "documents", href: "/dashboard/documents", icon: "📁", label: "Documents", shortLabel: "Docs" },
+  { id: "support", href: "/dashboard/support", icon: "🛟", label: "Support", shortLabel: "Help" },
+  { id: "conference", href: "/dashboard/conference", icon: "📹", label: "Live Weekly Call!", shortLabel: "Live" },
+  { id: "ai-assistant", href: "/dashboard/ai-assistant", icon: "🤖", label: "PartnerOS AI", shortLabel: "AI" },
+  { id: "feature-request", href: "/dashboard/feature-request", icon: "💡", label: "Feature Requests", shortLabel: "Ideas" },
 ];
 
 // Mobile bottom bar items (subset)
 const MOBILE_BAR = [
-  { id: "home", href: "/dashboard/home", icon: "\u{1F3E0}", shortLabel: "Home" },
-  { id: "deals", href: "/dashboard/deals", icon: "\u{1F4BC}", shortLabel: "Deals" },
-  { id: "overview", href: "/dashboard/overview", icon: "\u{1F4CA}", shortLabel: "Stats" },
-  { id: "commissions", href: "/dashboard/commissions", icon: "\u{1F4B0}", shortLabel: "Earn" },
-  { id: "more", href: "#more", icon: "\u{2261}", shortLabel: "More" },
+  { id: "home", href: "/dashboard/home", icon: "🏠", shortLabel: "Home" },
+  { id: "deals", href: "/dashboard/deals", icon: "📋", shortLabel: "Deals" },
+  { id: "overview", href: "/dashboard/overview", icon: "📊", shortLabel: "Stats" },
+  { id: "commissions", href: "/dashboard/commissions", icon: "💲", shortLabel: "Earn" },
+  { id: "more", href: "#more", icon: "☰", shortLabel: "More" },
 ];
 
 function NavButton({

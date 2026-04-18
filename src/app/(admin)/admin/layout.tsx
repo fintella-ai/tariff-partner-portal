@@ -24,23 +24,23 @@ const ADMIN_NAV_IDS_DEFAULT = [
 ];
 
 const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
-  partners:     { id: "partners", href: "/admin/partners", icon: "\u{1F465}", label: "Partners" },
-  deals:        { id: "deals", href: "/admin/deals", icon: "\u{1F4BC}", label: "Deals" },
-  communications: { id: "communications", href: "/admin/communications", icon: "\u{1F4E7}", label: "Communications" },
-  training:     { id: "training", href: "/admin/training", icon: "\u{1F393}", label: "Training" },
-  conference:   { id: "conference", href: "/admin/conference", icon: "\u{1F4F9}", label: "Live Weekly" },
-  documents:    { id: "documents", href: "/admin/documents", icon: "\u{1F4C4}", label: "Documents" },
+  partners:     { id: "partners", href: "/admin/partners", icon: "👥", label: "Partners" },
+  deals:        { id: "deals", href: "/admin/deals", icon: "📋", label: "Deals" },
+  communications: { id: "communications", href: "/admin/communications", icon: "💬", label: "Communications" },
+  training:     { id: "training", href: "/admin/training", icon: "🎯", label: "Training" },
+  conference:   { id: "conference", href: "/admin/conference", icon: "📹", label: "Live Weekly" },
+  documents:    { id: "documents", href: "/admin/documents", icon: "📁", label: "Documents" },
   // "reporting" is a synthetic umbrella for Reports / Revenue / Payouts.
   // The three finance pages share a ReportingTabs bar rendered at the top
   // of each page so the user can switch between them in-context.
-  reporting:    { id: "reporting", href: "/admin/reports", icon: "\u{1F4CA}", label: "Reporting" },
-  settings:     { id: "settings", href: "/admin/settings", icon: "\u2699\uFE0F", label: "Settings" },
-  users:        { id: "users", href: "/admin/users", icon: "\u{1F6E1}\uFE0F", label: "Admin Users" },
-  dev:          { id: "dev", href: "/admin/dev", icon: "\u{1F6E0}\uFE0F", label: "Development" },
-  workflows:    { id: "workflows", href: "/admin/workflows", icon: "\u26A1", label: "Workflows" },
-  features:     { id: "features", href: "/admin/features", icon: "\u2728", label: "Feature Requests" },
-  support:      { id: "support", href: "/admin/support", icon: "\u{1F3AB}", label: "Support" },
-  chat:         { id: "chat", href: "/admin/chat", icon: "\u{1F4AC}", label: "Live Chat" },
+  reporting:    { id: "reporting", href: "/admin/reports", icon: "📈", label: "Reporting" },
+  settings:     { id: "settings", href: "/admin/settings", icon: "⚙️", label: "Settings" },
+  users:        { id: "users", href: "/admin/users", icon: "🔐", label: "Admin Users" },
+  dev:          { id: "dev", href: "/admin/dev", icon: "🛠️", label: "Development" },
+  workflows:    { id: "workflows", href: "/admin/workflows", icon: "⚡", label: "Workflows" },
+  features:     { id: "features", href: "/admin/features", icon: "💡", label: "Feature Requests" },
+  support:      { id: "support", href: "/admin/support", icon: "🛟", label: "Support" },
+  chat:         { id: "chat", href: "/admin/chat", icon: "💬", label: "Live Chat" },
 };
 
 function CollapseIcon({ collapsed }: { collapsed: boolean }) {
