@@ -35,6 +35,7 @@ function CommissionsPageContent() {
   const [ledger, setLedger] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [commTab, setCommTab] = useState<"all" | "direct" | "downline">("all");
+  const [payoutTab, setPayoutTab] = useState<"payout-all" | "payout-pending" | "payout-due" | "payout-paid">("payout-all");
 
   // Stripe Connect state
   const [stripe, setStripe] = useState<StripeStatus | null>(null);
@@ -597,6 +598,113 @@ function CommissionsPageContent() {
             Commission ledger entries will appear here once payouts are processed.
           </div>
         )}
+      </div>
+
+      {/* ═══ PAYOUTS ═══ */}
+      <div className="card mt-6">
+        <div className="px-4 sm:px-6 pt-4 sm:pt-5">
+          <div className="font-body font-semibold text-sm sm:text-[15px]">Payouts</div>
+        </div>
+        <div className="flex gap-1 px-4 sm:px-6 border-b border-[var(--app-border)]">
+          {([
+            { id: "payout-all" as const, label: "All" },
+            { id: "payout-pending" as const, label: "Pending" },
+            { id: "payout-due" as const, label: "Due" },
+            { id: "payout-paid" as const, label: "Paid" },
+          ]).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setPayoutTab(t.id)}
+              className={`font-body text-[13px] px-4 py-2.5 whitespace-nowrap transition-colors border-b-2 -mb-px ${
+                payoutTab === t.id
+                  ? "text-brand-gold border-brand-gold"
+                  : "text-[var(--app-text-muted)] border-transparent hover:text-[var(--app-text-secondary)]"
+              }`}
+            >
+              {t.label}
+              {t.id === "payout-pending" && ledger.filter((e) => e.status === "pending").length > 0 && (
+                <span className="ml-1.5 text-[10px] bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 rounded-full px-1.5">{ledger.filter((e) => e.status === "pending").length}</span>
+              )}
+              {t.id === "payout-due" && ledger.filter((e) => e.status === "due").length > 0 && (
+                <span className="ml-1.5 text-[10px] bg-blue-500/15 text-blue-400 border border-blue-500/20 rounded-full px-1.5">{ledger.filter((e) => e.status === "due").length}</span>
+              )}
+              {t.id === "payout-paid" && ledger.filter((e) => e.status === "paid").length > 0 && (
+                <span className="ml-1.5 text-[10px] bg-green-500/15 text-green-400 border border-green-500/20 rounded-full px-1.5">{ledger.filter((e) => e.status === "paid").length}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {(() => {
+          const filtered = payoutTab === "payout-all"
+            ? ledger
+            : ledger.filter((e) => e.status === payoutTab.replace("payout-", ""));
+          if (filtered.length === 0) {
+            return (
+              <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">
+                {payoutTab === "payout-all"
+                  ? "No commission ledger entries yet. Entries are created when deals reach Closed Won."
+                  : `No ${payoutTab.replace("payout-", "")} entries.`}
+              </div>
+            );
+          }
+          return device.isMobile ? (
+            <div>
+              {filtered.map((entry: any) => (
+                <div key={entry.id} className="px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="font-body text-[13px] text-[var(--app-text)] truncate flex-1 mr-3">{entry.dealName || entry.dealId}</div>
+                    <span className={`font-body text-[10px] font-semibold tracking-wider uppercase rounded-full px-2 py-0.5 ${
+                      entry.status === "paid" ? "bg-green-500/15 text-green-400 border border-green-500/20"
+                        : entry.status === "due" ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                        : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20"
+                    }`}>{entry.status}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-body text-[10px] font-semibold rounded px-1.5 py-0.5 ${
+                        entry.tier === "l1" ? "text-brand-gold bg-brand-gold/10 border border-brand-gold/20"
+                          : "text-purple-400 bg-purple-500/10 border border-purple-500/20"
+                      }`}>{entry.tier.toUpperCase()}</span>
+                      <span className="font-body text-[11px] text-[var(--app-text-muted)]">{fmtDate(entry.createdAt)}</span>
+                    </div>
+                    <div className="font-display text-sm font-semibold text-brand-gold">{fmt$(entry.amount)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div>
+              <div className="grid grid-cols-[1.5fr_0.5fr_1fr_0.8fr_0.8fr] gap-3 px-6 py-3 border-b border-[var(--app-border)]">
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Deal</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Tier</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Date</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Amount</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Status</div>
+              </div>
+              {filtered.map((entry: any, idx: number) => (
+                <div key={entry.id} className={`grid grid-cols-[1.5fr_0.5fr_1fr_0.8fr_0.8fr] gap-3 px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                  <div className="font-body text-[13px] text-[var(--app-text)] truncate">{entry.dealName || entry.dealId}</div>
+                  <div className="text-center">
+                    <span className={`font-body text-[10px] font-semibold rounded px-1.5 py-0.5 ${
+                      entry.tier === "l1" ? "text-brand-gold bg-brand-gold/10 border border-brand-gold/20"
+                        : "text-purple-400 bg-purple-500/10 border border-purple-500/20"
+                    }`}>{entry.tier.toUpperCase()}</span>
+                  </div>
+                  <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">{fmtDate(entry.createdAt)}</div>
+                  <div className="font-display text-[14px] font-semibold text-brand-gold text-center">{fmt$(entry.amount)}</div>
+                  <div className="text-center">
+                    <span className={`font-body text-[10px] font-semibold tracking-wider uppercase rounded-full px-2.5 py-0.5 ${
+                      entry.status === "paid" ? "bg-green-500/15 text-green-400 border border-green-500/20"
+                        : entry.status === "due" ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                        : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20"
+                    }`}>{entry.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
