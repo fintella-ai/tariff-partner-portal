@@ -182,38 +182,22 @@ export default async function WebhookGuidePage() {
       <div style={{ minHeight: "100vh", background: "var(--doc-bg)", color: "var(--doc-text)", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif", lineHeight: 1.65 }}>
         <div style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(20px, 5vw, 40px) clamp(12px, 4vw, 20px) 60px" }}>
 
-          {/* Header — logo (if PortalSettings has one) sits left of the
-              FINTELLA wordmark + subtitle stack. Logo is a square sized via
-              `aspectRatio: 1/1` + `alignSelf: stretch` so it auto-spans from
-              the top of FINTELLA to the bottom of "Financial Intelligence
-              Network" without us hardcoding pixel heights. Falls back to
-              text-only when no logo is configured. */}
+          {/* Header — logo with black background between dividers */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "stretch", gap: 14, marginBottom: 24 }}>
-              {logoUrl && (
+            <div style={{ height: 1, background: "var(--doc-border)", margin: "0 -20px" }} />
+            <div style={{ background: "#000", padding: "20px 0", margin: "0 -20px", display: "flex", justifyContent: "center" }}>
+              {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={logoUrl}
                   alt="Fintella"
-                  style={{
-                    aspectRatio: "1 / 1",
-                    alignSelf: "stretch",
-                    height: "auto",
-                    width: "auto",
-                    maxHeight: "100%",
-                    borderRadius: 4,
-                    objectFit: "contain",
-                    flexShrink: 0,
-                  }}
+                  style={{ maxHeight: 80, objectFit: "contain" }}
                 />
+              ) : (
+                <div style={{ fontSize: 24, fontWeight: 700, color: "var(--doc-gold)", letterSpacing: 2 }}>FINTELLA</div>
               )}
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "var(--doc-gold)", letterSpacing: 2, marginBottom: 2 }}>FINTELLA</div>
-                <div style={{ fontSize: 13, color: "var(--doc-text-muted)" }}>Financial Intelligence Network</div>
-              </div>
             </div>
-            <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--doc-text)", margin: "0 0 8px" }}>Referral Webhook Integration Guide</h1>
-            <div style={{ height: 2, width: 80, background: "var(--doc-gold)", borderRadius: 2 }} />
+            <div style={{ height: 1, background: "var(--doc-border)", margin: "0 -20px 16px" }} />
           </div>
 
           {/* Navigation Menu */}
