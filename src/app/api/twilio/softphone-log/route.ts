@@ -59,12 +59,15 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { logId, status, errorMessage } = body;
+    const { logId, status, errorMessage, durationSeconds } = body;
     if (!logId || !status) return NextResponse.json({ error: "logId and status required" }, { status: 400 });
 
     const data: Record<string, any> = { status };
     if (status === "completed" || status === "failed" || status === "canceled" || status === "no-answer") {
       data.completedAt = new Date();
+    }
+    if (typeof durationSeconds === "number" && durationSeconds > 0) {
+      data.durationSeconds = durationSeconds;
     }
     if (errorMessage) data.errorMessage = errorMessage;
 
