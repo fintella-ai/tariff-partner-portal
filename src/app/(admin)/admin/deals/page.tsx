@@ -417,15 +417,15 @@ export default function AdminDealsPage() {
 
       {/* ═══ DESKTOP TABLE ═══ */}
       <div className="card hidden md:block overflow-x-auto">
-        <div className="min-w-[1240px]">
+        <div className="min-w-[1320px]">
         {/* Header — 9 columns: Deal / Partner / Stage / Refund / Firm Fee % /
             Firm Fee / Commission % / Commission / Date. The two rate columns
             (Firm Fee % + Commission %) sit immediately before their dollar-
             amount counterparts so the eye reads "20% × $X = $Y" left to right.
             All center-aligned except Deal (left, long name) and Date (right,
-            terse trailing metadata). gap-6 + min-w-[1240px] (was 1040) to
+            terse trailing metadata). gap-6 + min-w-[1320px] (was 1040) to
             absorb the two new columns. */}
-        <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.55fr_0.8fr_0.65fr_0.8fr_0.6fr] gap-6 px-5 py-3 border-b border-[var(--app-border)]">
+        <div className="grid grid-cols-[1.5fr_1fr_0.9fr_0.9fr_0.5fr_0.8fr_0.5fr_0.8fr_0.7fr] gap-6 px-5 py-3 border-b border-[var(--app-border)]">
           <button onClick={() => toggleSort("dealName")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-left hover:text-[var(--app-text-secondary)]">
             Deal{sortIcon("dealName")}
           </button>
@@ -437,13 +437,13 @@ export default function AdminDealsPage() {
             Refund{sortIcon("estimatedRefundAmount")}
           </button>
           <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center" title="Firm fee rate as a percentage of the deal refund">
-            Firm Fee (%)
+            Fee %
           </div>
           <button onClick={() => toggleSort("firmFeeAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)] w-full">
             Firm Fee{sortIcon("firmFeeAmount")}
           </button>
           <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center" title="Commission rate as a percentage of the firm fee (per the partner's tier)">
-            Commission (%)
+            Comm %
           </div>
           <button onClick={() => toggleSort("l1CommissionAmount")} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)] w-full">
             Commission{sortIcon("l1CommissionAmount")}
@@ -463,7 +463,7 @@ export default function AdminDealsPage() {
           return (
           <div key={deal.id} id={`deal-${deal.id}`}>
             <div
-              className={`grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.55fr_0.8fr_0.65fr_0.8fr_0.6fr] gap-6 px-5 py-3.5 border-b border-[var(--app-border)] hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
+              className={`grid grid-cols-[1.5fr_1fr_0.9fr_0.9fr_0.5fr_0.8fr_0.5fr_0.8fr_0.7fr] gap-6 px-5 py-3.5 border-b border-[var(--app-border)] hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
               onClick={() => toggleExpand(deal)}
             >
               <div>
