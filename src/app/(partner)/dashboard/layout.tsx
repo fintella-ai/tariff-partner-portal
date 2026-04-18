@@ -17,7 +17,7 @@ const MAIN_NAV = [
   { id: "training", href: "/dashboard/training", icon: "🎯", label: "Partner Training", shortLabel: "Learn" },
   { id: "deals", href: "/dashboard/deals", icon: "📋", label: "My Deals", shortLabel: "Deals" },
   { id: "commissions", href: "/dashboard/commissions", icon: "💲", label: "Commissions", shortLabel: "Earn" },
-  { id: "submit-client", href: "/dashboard/submit-client", icon: "📤", label: "Submit Client", shortLabel: "Submit" },
+  { id: "submit-client", href: "/dashboard/submit-client", icon: "✅", label: "Submit Client", shortLabel: "Submit" },
   { id: "reporting", href: "/dashboard/reporting", icon: "📈", label: "Full Reporting", shortLabel: "Reports" },
   { id: "downline", href: "/dashboard/downline", icon: "👥", label: "Downline", shortLabel: "Team" },
   { id: "referral-links", href: "/dashboard/referral-links", icon: "🔗", label: "Referral Links", shortLabel: "Links" },
@@ -456,7 +456,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold hover:bg-brand-gold/10"
               }`}
             >
-              💼 Submit Client
+              ✅ Submit Client
             </button>
             <button
               onClick={() => navigate("/dashboard/referral-links")}
@@ -499,7 +499,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold hover:bg-brand-gold/10"
                     }`}
                   >
-                    💼 Submit Client
+                    ✅ Submit Client
                   </button>
                   <button
                     onClick={() => navigate("/dashboard/referral-links")}

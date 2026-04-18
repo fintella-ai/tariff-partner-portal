@@ -48,7 +48,7 @@ const ALL_NAV_ITEMS = [
   { id: "training", label: "Partner Training", icon: "🎯" },
   { id: "deals", label: "My Deals", icon: "📋" },
   { id: "commissions", label: "Commissions", icon: "💲" },
-  { id: "submit-client", label: "Submit Client", icon: "📤" },
+  { id: "submit-client", label: "Submit Client", icon: "✅" },
   { id: "reporting", label: "Full Reporting", icon: "📈" },
   { id: "downline", label: "Downline", icon: "👥" },
   { id: "referral-links", label: "Referral Links", icon: "🔗" },
