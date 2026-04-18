@@ -239,8 +239,16 @@ export default function SettingsPage() {
       try { setNavLabels(JSON.parse(settings.navLabels || "{}")); } catch { setNavLabels({}); }
       try { setNavIcons(JSON.parse(settings.navIcons || "{}")); } catch { setNavIcons({}); }
       try {
-        const order = JSON.parse(settings.navOrder || "[]");
-        if (order.length > 0) setNavOrder(order);
+        let order = JSON.parse(settings.navOrder || "[]");
+        if (Array.isArray(order) && order.length > 0) {
+          // Drop unknown IDs, append any new items not in saved order
+          const validIds = new Set(ALL_NAV_ITEMS.map((n) => n.id));
+          order = order.filter((id: string) => validIds.has(id));
+          for (const item of ALL_NAV_ITEMS) {
+            if (!order.includes(item.id)) order.push(item.id);
+          }
+          setNavOrder(order);
+        }
       } catch {}
       try {
         let aOrder = JSON.parse(settings.adminNavOrder || "[]");
