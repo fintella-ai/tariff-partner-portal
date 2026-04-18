@@ -156,6 +156,15 @@ function checkRateLimit(
 function checkAuth(
   req: NextRequest
 ): { ok: true } | { ok: false; status: number; error: string } {
+  // Temporary bypass flag — set WEBHOOK_AUTH_BYPASS=true on Vercel to let
+  // unauthenticated HubSpot/Frost Law calls through while key sync is in
+  // progress. Logs a loud warning so the bypass is visible in Vercel logs.
+  // Flip this off as soon as the API key is aligned on both sides.
+  if (process.env.WEBHOOK_AUTH_BYPASS === "true") {
+    console.warn("[webhook/referral] WEBHOOK_AUTH_BYPASS=true — auth skipped");
+    return { ok: true };
+  }
+
   const legacySecret = process.env.REFERRAL_WEBHOOK_SECRET;
   const apiKey = process.env.FROST_LAW_API_KEY;
 
@@ -186,6 +195,11 @@ async function verifyHmacSignature(
   req: NextRequest,
   rawBody: string
 ): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
+  // Same bypass as checkAuth — HubSpot's Automation Actions don't send
+  // X-Fintella-Signature, so when the bypass is on we skip HMAC too.
+  if (process.env.WEBHOOK_AUTH_BYPASS === "true") {
+    return { ok: true };
+  }
   const secret = process.env.WEBHOOK_SECRET;
   if (!secret) return { ok: true }; // HMAC not configured — skip (no-op until activated)
 
