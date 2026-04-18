@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { FIRM_SHORT, DOC_TYPE_LABELS } from "@/lib/constants";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 
-type AgreementStatus = "not_sent" | "pending" | "signed" | "approved" | "amended" | "under_review";
+type AgreementStatus = "not_sent" | "pending" | "partner_signed" | "signed" | "approved" | "amended" | "under_review";
 type DocStatus = "required" | "uploaded" | "under_review" | "approved" | "expired" | "voided";
 
 const AGREEMENT_STATUS_CONFIG: Record<
@@ -15,6 +15,7 @@ const AGREEMENT_STATUS_CONFIG: Record<
 > = {
   not_sent:     { label: "Not Sent",           bg: "bg-[var(--app-input-bg)]",        text: "text-[var(--app-text-secondary)]",   dot: "bg-[var(--app-text-muted)]" },
   pending:      { label: "Pending Signature",  bg: "bg-yellow-500/15",   text: "text-yellow-400", dot: "bg-yellow-400" },
+  partner_signed: { label: "Awaiting Co-sign", bg: "bg-blue-500/15",    text: "text-blue-400",   dot: "bg-blue-400" },
   signed:       { label: "Signed",             bg: "bg-green-500/15",    text: "text-green-400",  dot: "bg-green-400" },
   approved:     { label: "Signed & Approved",  bg: "bg-green-500/15",    text: "text-green-400",  dot: "bg-green-400" },
   under_review: { label: "Under Review",       bg: "bg-blue-500/15",     text: "text-blue-400",   dot: "bg-blue-400" },
@@ -101,7 +102,7 @@ export default function DocumentsPage() {
   const agreementStatus: AgreementStatus = agreementData?.status || "not_sent";
   const astCfg = AGREEMENT_STATUS_CONFIG[agreementStatus];
   const isSigned = agreementStatus === "signed" || agreementStatus === "approved";
-  const isPending = agreementStatus === "pending";
+  const isPending = agreementStatus === "pending" || agreementStatus === "partner_signed";
 
   // Request signing — sends agreement then opens embedded signing modal
   const handleSignAgreement = async () => {
@@ -200,6 +201,27 @@ export default function DocumentsPage() {
                 </a>
               </div>
             )}
+          </div>
+        ) : isPending && agreementData?.status === "partner_signed" ? (
+          <div className="p-4 bg-blue-500/[0.06] border border-blue-500/20 rounded-lg">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-green-500/15 border border-green-500/25 flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-sm font-semibold text-green-400 mb-1">
+                  Your Signature Complete ✓
+                </p>
+                <p className="font-body text-xs text-[var(--app-text-secondary)] leading-relaxed">
+                  Awaiting Fintella co-signer to complete the agreement. You will be notified when it&apos;s fully executed.
+                </p>
+              </div>
+              <span className="shrink-0 font-body text-[11px] tracking-wider uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full px-3 py-1.5">
+                Awaiting Co-sign
+              </span>
+            </div>
           </div>
         ) : isPending ? (
           <div className="p-4 bg-yellow-500/[0.06] border border-yellow-500/20 rounded-lg">

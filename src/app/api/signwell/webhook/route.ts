@@ -111,6 +111,33 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Individual signer completed — partner signed but co-signer hasn't yet
+    if (event === "document_signed") {
+      const agreement = await prisma.partnershipAgreement.findFirst({
+        where: { signwellDocumentId: data.document_id },
+      });
+
+      if (agreement && agreement.status === "pending") {
+        // Partner has signed — update to partner_signed so the UI
+        // shows "Your Signature Complete" + "Awaiting Co-sign"
+        await prisma.partnershipAgreement.update({
+          where: { id: agreement.id },
+          data: { status: "partner_signed" },
+        });
+
+        // Notify the partner that their part is done
+        await prisma.notification.create({
+          data: {
+            recipientType: "partner",
+            recipientId: agreement.partnerCode,
+            type: "agreement_signed",
+            title: "Your Signature Complete",
+            message: "Your partnership agreement signature is complete. Awaiting Fintella co-signer to finalize.",
+          },
+        }).catch(() => {});
+      }
+    }
+
     if (event === "document_viewed") {
       // Track that the partner has viewed the document (no status change needed,
       // but useful for admin visibility)
