@@ -209,9 +209,14 @@ async function verifyHmacSignature(
   req: NextRequest,
   rawBody: string
 ): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
-  // Same bypass as checkAuth — HubSpot's Automation Actions don't send
-  // X-Fintella-Signature, so when the bypass is on we skip HMAC too.
+  // Full bypass (auth + HMAC) via WEBHOOK_AUTH_BYPASS — see checkAuth.
   if (process.env.WEBHOOK_AUTH_BYPASS === "true") {
+    return { ok: true };
+  }
+  // Narrower bypass: WEBHOOK_SKIP_HMAC=true keeps API-key auth enforced but
+  // skips HMAC. Use this when an upstream (e.g. HubSpot Automation Actions)
+  // can authenticate via X-Fintella-Api-Key but has no way to sign bodies.
+  if (process.env.WEBHOOK_SKIP_HMAC === "true") {
     return { ok: true };
   }
   const secret = process.env.WEBHOOK_SECRET;
