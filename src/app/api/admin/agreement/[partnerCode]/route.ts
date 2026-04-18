@@ -41,9 +41,25 @@ export async function GET(
       const cosignerEmail = settings?.fintellaSignerEmail;
       if (!cosignerEmail) return NextResponse.json({ cosignerUrl: null });
 
-      const { getEmbeddedSigningUrl } = await import("@/lib/signwell");
-      const cosignerUrl = await getEmbeddedSigningUrl(docId, cosignerEmail);
-      return NextResponse.json({ cosignerUrl });
+      // Fetch document from SignWell and find the co-signer's URL
+      const SIGNWELL_API_KEY = process.env.SIGNWELL_API_KEY || "";
+      if (!SIGNWELL_API_KEY) return NextResponse.json({ cosignerUrl: null });
+
+      try {
+        const docRes = await fetch(`https://www.signwell.com/api/v1/documents/${docId}`, {
+          headers: { "X-Api-Key": SIGNWELL_API_KEY },
+        });
+        if (docRes.ok) {
+          const doc = await docRes.json();
+          // Find the co-signer's URL by email match
+          const match = doc.recipients_with_urls?.find((r: any) => r.email === cosignerEmail);
+          const cosignerUrl = match?.embedded_signing_url
+            || doc.recipients_with_urls?.[1]?.embedded_signing_url
+            || null;
+          return NextResponse.json({ cosignerUrl });
+        }
+      } catch {}
+      return NextResponse.json({ cosignerUrl: null });
     }
 
     const agreements = await prisma.partnershipAgreement.findMany({
