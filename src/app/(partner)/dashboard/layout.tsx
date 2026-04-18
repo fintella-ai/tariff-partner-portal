@@ -18,6 +18,7 @@ const MAIN_NAV = [
   { id: "deals", href: "/dashboard/deals", icon: "\u{1F4BC}", label: "My Deals", shortLabel: "Deals" },
   { id: "downline", href: "/dashboard/downline", icon: "\u{1F465}", label: "Downline", shortLabel: "Team" },
   { id: "commissions", href: "/dashboard/commissions", icon: "\u{1F4B0}", label: "Commissions", shortLabel: "Earn" },
+  { id: "reporting", href: "/dashboard/reporting", icon: "\u{1F4CA}", label: "Reporting", shortLabel: "Reports" },
   { id: "submit-client", href: "/dashboard/submit-client", icon: "\u{1F4E9}", label: "Submit Client", shortLabel: "Submit" },
   { id: "referral-links", href: "/dashboard/referral-links", icon: "\u{1F517}", label: "Referral Links", shortLabel: "Links" },
   { id: "documents", href: "/dashboard/documents", icon: "\u{1F4C4}", label: "Documents", shortLabel: "Docs" },
