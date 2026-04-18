@@ -481,6 +481,9 @@ export default function AdminDealsPage() {
               </div>
               <div className="text-center">
                 <PartnerLink partnerId={deal.partnerId} className="font-body text-[12px] text-[var(--app-text-secondary)] truncate inline-block max-w-full">{deal.partnerName}</PartnerLink>
+                {deal.partnerName !== deal.partnerCode && (
+                  <div className="font-mono text-[10px] text-[var(--app-text-muted)] mt-0.5 truncate">{deal.partnerCode}</div>
+                )}
               </div>
               <div className="text-center"><StageBadge stage={deal.stage} /></div>
               <div className="font-body text-[13px] text-[var(--app-text)] text-center">{fmt$(fin.refund)}</div>
@@ -766,7 +769,11 @@ export default function AdminDealsPage() {
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex-1 min-w-0">
                   <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{deal.dealName}</div>
-                  <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5"><PartnerLink partnerId={deal.partnerId} className="text-[var(--app-text-muted)]">{deal.partnerName}</PartnerLink> · {fmtDateTime(deal.createdAt)}</div>
+                  <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
+                    <PartnerLink partnerId={deal.partnerId} className="text-[var(--app-text-muted)]">{deal.partnerName}</PartnerLink>
+                    {deal.partnerName !== deal.partnerCode && <span className="font-mono ml-1">· {deal.partnerCode}</span>}
+                    <span className="ml-1">· {fmtDateTime(deal.createdAt)}</span>
+                  </div>
                 </div>
                 <StageBadge stage={deal.stage} />
               </div>
