@@ -53,7 +53,7 @@ const ALL_NAV_ITEMS = [
   { id: "downline", label: "Downline", icon: "👥" },
   { id: "referral-links", label: "Referral Links", icon: "🔗" },
   { id: "documents", label: "Documents", icon: "📁" },
-  { id: "support", label: "Support", icon: "❓" },
+  { id: "support", label: "Support", icon: "🆘" },
   { id: "conference", label: "Live Weekly Call!", icon: "📹" },
   { id: "ai-assistant", label: "PartnerOS AI", icon: "🤖" },
   { id: "feature-request", label: "Feature Requests", icon: "💡" },
@@ -76,7 +76,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "dev", label: "Development", icon: "🛠️" },
   { id: "workflows", label: "Workflows", icon: "⚡" },
   { id: "features", label: "Feature Requests", icon: "💡" },
-  { id: "support", label: "Support", icon: "❓" },
+  { id: "support", label: "Support", icon: "🆘" },
   { id: "chat", label: "Live Chat", icon: "💬" },
 ];
 
