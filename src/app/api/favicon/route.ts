@@ -29,7 +29,7 @@ export async function GET() {
     }
 
     // Return a simple default SVG favicon with the gold brand color
-    const defaultSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#c4a050"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#fff">T</text></svg>`;
+    const defaultSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#c4a050"/><text x="16" y="22" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#fff">F</text></svg>`;
     return new NextResponse(defaultSvg, {
       headers: {
         "Content-Type": "image/svg+xml",

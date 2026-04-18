@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fallback: gold rounded square SVG with firm initial
-    const initial = (settings?.firmShort || "T").charAt(0);
+    const initial = (settings?.firmShort || "F").charAt(0);
     const s = parseInt(size) || 192;
     const fontSize = Math.round(s * 0.5);
     const textY = Math.round(s * 0.65);
