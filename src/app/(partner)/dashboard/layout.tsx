@@ -524,15 +524,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </>
           )}
 
-          <div className="flex justify-between items-start">
-            <div>
+          <div className={`flex ${device.isMobile ? "flex-col items-center text-center" : "justify-between items-start"}`}>
+            <div className={device.isMobile ? "flex flex-col items-center" : ""}>
               <div className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1">
                 Welcome back
               </div>
               <h1 className={`font-display ${device.headingSize} font-bold mb-1`}>
                 {user?.name || "Partner"}
               </h1>
-              <div className="flex gap-2 sm:gap-4 items-center flex-wrap">
+              <div className={`flex gap-2 sm:gap-4 items-center flex-wrap ${device.isMobile ? "justify-center" : ""}`}>
                 <span className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px]">
                   Code: <strong className="text-brand-gold">{partnerCode}</strong>
                 </span>
