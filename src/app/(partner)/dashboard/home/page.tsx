@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useDevice } from "@/lib/useDevice";
 import { FIRM_SHORT } from "@/lib/constants";
@@ -133,6 +134,18 @@ export default function HomePage() {
   const device = useDevice();
   const user = session?.user as any;
   const firstName = user?.name?.split(" ")[0] || "Partner";
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.settings?.leaderboardEnabled !== undefined) {
+          setLeaderboardEnabled(d.settings.leaderboardEnabled);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div>
@@ -180,7 +193,7 @@ export default function HomePage() {
       </div>
 
       {/* ══════════════════ SECTION 2: LEADERBOARD ══════════════════ */}
-      <div className="mb-6 sm:mb-8 animate-fade-up">
+      {leaderboardEnabled && <div className="mb-6 sm:mb-8 animate-fade-up">
         <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-1">
           Partner Leaderboard &mdash; March 2026
         </h2>
@@ -272,7 +285,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* ══════════════════ SECTION 3: UPCOMING EVENTS ══════════════════ */}
       <div className="mb-6 sm:mb-8 animate-fade-up">
