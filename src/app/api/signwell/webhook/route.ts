@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { event, data } = body;
+    console.log("[SignWellWebhook] event:", event, "doc:", data?.document_id || data?.id || "unknown");
 
     if (event === "document_completed") {
       // Find the agreement by SignWell document ID and mark as signed
