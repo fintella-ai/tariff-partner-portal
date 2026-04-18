@@ -150,7 +150,7 @@ export default function HomePage() {
   return (
     <div>
       {/* ══════════════════ WELCOME HEADER ══════════════════ */}
-      <div className="mb-6 sm:mb-8 animate-fade-up">
+      <div className={`mb-6 sm:mb-8 animate-fade-up ${device.isMobile ? "text-center" : ""}`}>
         <h1 className={`font-display ${device.headingSize} font-bold text-[var(--app-text)] mb-1`}>
           Welcome Back, {firstName}
         </h1>
