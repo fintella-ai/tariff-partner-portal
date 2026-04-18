@@ -66,11 +66,22 @@ const INTERNAL_STAGES = [
   "no_consultation",
   "consultation_booked",
   "client_no_show",
+  "client_qualified",
   "client_engaged",
   "in_process",
   "closedwon",
   "closedlost",
 ] as const;
+
+// Frost Law / HubSpot pipeline stage IDs (numeric). Map each to an internal
+// enum value. If HubSpot renames a stage in-place their ID stays the same, so
+// this map is a stable contract until they rebuild the pipeline.
+const HUBSPOT_STAGE_MAP: Record<string, string> = {
+  "3468521172": "consultation_booked", // Meeting Booked
+  "3467318997": "client_no_show",      // Meeting Missed
+  "3468521174": "client_qualified",    // Qualified
+  "3468521175": "closedlost",          // Disqualified (closedLostReason = "disqualified")
+};
 
 /**
  * Normalize an incoming stage string to look up against internal values.
@@ -111,6 +122,9 @@ const STAGE_MAP: Record<string, string> = (() => {
  * no match. Exported via the closure — used only inside PATCH.
  */
 function resolveInternalStage(external: string): string | null {
+  // HubSpot numeric pipeline stage IDs — direct map wins, no normalization.
+  const asNumericId = String(external).trim();
+  if (HUBSPOT_STAGE_MAP[asNumericId]) return HUBSPOT_STAGE_MAP[asNumericId];
   return STAGE_MAP[normalizeStage(external)] ?? null;
 }
 
@@ -417,7 +431,8 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "title",
       "Title",
       "job_title",
-      "jobTitle"
+      "jobTitle",
+      "jobtitle"
     );
     const serviceOfInterest = get(
       "service_of_interest",
@@ -469,7 +484,9 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "importsGoods",
       "imports",
       "Imports Goods",
-      "do_you_import"
+      "do_you_import",
+      "import_good_to_us",
+      "importGoodToUs"
     );
     const importCountries = get(
       "import_countries",
@@ -502,9 +519,25 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "Stage",
       "pipeline_stage",
       "pipelineStage",
+      "hs_pipeline_stage",
+      "hsPipelineStage",
       "status",
       "Status"
     );
+
+    // HubSpot's deal ID (number in payload; stringify for our unique index).
+    const externalDealIdRaw = get("hs_object_id", "hsObjectId", "hubspotDealId", "externalDealId");
+    const externalDealId = externalDealIdRaw ? String(externalDealIdRaw) : null;
+
+    // Resolve the internal stage NOW from the external marker so we can set
+    // Deal.stage at creation time for HubSpot-originated rows. Falls back to
+    // "new_lead" when no match (preserves existing behavior for untagged POSTs).
+    const resolvedStage = externalStage ? resolveInternalStage(externalStage) : null;
+    const initialStage = resolvedStage || "new_lead";
+    const initialClosedLostReason =
+      resolvedStage === "closedlost" && String(externalStage).trim() === "3468521175"
+        ? "disqualified"
+        : null;
 
     // Consultation scheduling
     const consultBookedDate = get(
@@ -554,8 +587,11 @@ async function postHandler(req: NextRequest): Promise<Response> {
       data: {
         dealName,
         partnerCode: partnerCode || "UNATTRIBUTED",
-        stage: "new_lead",
+        stage: initialStage,
         externalStage: externalStage || null,
+        externalDealId: externalDealId,
+        rawPayload: rawBody.slice(0, 20_000),
+        closedLostReason: initialClosedLostReason,
         clientFirstName: firstName || null,
         clientLastName: lastName || null,
         clientName:

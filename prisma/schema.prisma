@@ -447,6 +447,8 @@ model Deal {
   // Deal tracking
   stage                 String    @default("new_lead")
   externalStage         String?   // raw deal stage from external system (Frost Law / HubSpot)
+  externalDealId        String?   @unique  // network-assigned ID (HubSpot's hs_object_id, or outbound network's returned ID)
+  rawPayload            String?            // last raw inbound payload JSON (failsafe for fields we didn't map to columns)
   consultBookedDate     String?   // consultation date (YYYY-MM-DD or display format)
   consultBookedTime     String?   // consultation time (HH:MM or display format)
   productType           String?   // "ieepa", "section301", "other"

@@ -512,6 +512,25 @@ export default function AdminDealsPage() {
                     <div className="font-mono text-[12px] text-[var(--app-text)] mt-0.5 select-all">{deal.id}</div>
                   </div>
 
+                  {/* HubSpot / external deal ID (set for HubSpot-sourced inbound + outbound-submitted deals) */}
+                  {(deal as any).externalDealId && (
+                    <div className="mb-3 p-2.5 rounded-lg" style={{ background: "var(--app-input-bg)", border: "1px solid var(--app-border)" }}>
+                      <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">HubSpot Deal ID</div>
+                      <div className="font-mono text-[12px] text-[var(--app-text)] mt-0.5 select-all">{(deal as any).externalDealId}</div>
+                    </div>
+                  )}
+
+                  {/* Raw source payload (collapsible failsafe for fields we didn't map to columns) */}
+                  {(deal as any).rawPayload && (
+                    <details className="mb-3 p-2.5 rounded-lg" style={{ background: "var(--app-input-bg)", border: "1px solid var(--app-border)" }}>
+                      <summary className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider cursor-pointer select-none">Raw Source Payload (inbound JSON)</summary>
+                      <pre className="font-mono text-[11px] text-[var(--app-text-secondary)] mt-2 overflow-x-auto whitespace-pre-wrap break-all">{(() => {
+                        try { return JSON.stringify(JSON.parse((deal as any).rawPayload), null, 2); }
+                        catch { return (deal as any).rawPayload; }
+                      })()}</pre>
+                    </details>
+                  )}
+
                   {/* Consultation Date/Time */}
                   {(deal.consultBookedDate || deal.consultBookedTime) && (
                     <div className="mb-3 p-2.5 rounded-lg flex items-center gap-4" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)" }}>
