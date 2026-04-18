@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { event, data } = body;
-    console.log("[SignWellWebhook] event:", event, "doc:", data?.document_id || data?.id || "unknown");
+    console.log("[SignWellWebhook] event:", event, "doc:", data?.document_id || data?.id || "unknown", "body_keys:", Object.keys(body));
 
     if (event === "document_completed") {
       // Find the agreement by SignWell document ID and mark as signed
@@ -113,7 +113,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Individual signer completed — partner signed but co-signer hasn't yet
-    if (event === "document_signed") {
+    // SignWell may use: document_signed, recipient_completed, document_recipient_completed
+    const isPartialSign = ["document_signed", "recipient_completed", "document_recipient_completed", "recipient_signed"].includes(event);
+    if (isPartialSign) {
       const agreement = await prisma.partnershipAgreement.findFirst({
         where: { signwellDocumentId: data.document_id },
       });
