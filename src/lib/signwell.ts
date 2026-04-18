@@ -293,10 +293,9 @@ export async function sendForSigning(
     recipients,
     reminders: true,
     apply_signing_order: options.recipients.length > 1,
-    // embedded_signing: true tells SignWell to generate a signing URL.
-    // We NEVER use it in an iframe — always window.open() in a new tab.
-    // Without this flag, SignWell doesn't return a signing URL at all.
-    embedded_signing: true,
+    // embedded_signing stays false — we construct the signing URL ourselves
+    // from the document ID: https://www.signwell.com/docs/{id}/
+    embedded_signing: false,
   };
 
   if (usingTemplate) {
@@ -344,18 +343,9 @@ export async function sendForSigning(
 
   const doc = await res.json();
 
-  // Try to get signing URL from create response first
-  let signingUrl =
-    doc.embedded_signing_url ||
-    doc.recipients_with_urls?.[0]?.embedded_signing_url ||
-    doc.recipients?.[0]?.embedded_signing_url ||
-    doc.signees?.[0]?.embedded_signing_url ||
-    null;
-
-  // If not in response (embedded_signing: false), fetch it separately
-  if (!signingUrl && doc.id) {
-    signingUrl = await getEmbeddedSigningUrl(doc.id);
-  }
+  // Construct the signing URL from the document ID
+  // Format: https://www.signwell.com/docs/{id}/
+  const signingUrl = doc.id ? `https://www.signwell.com/docs/${doc.id}/` : null;
 
   return { documentId: doc.id, status: "pending", embeddedSigningUrl: signingUrl };
 }
