@@ -1,47 +1,37 @@
 # Session State
 
-🕒 Last updated: 2026-04-15 — PR #142 fully loaded, awaiting merge
+🕒 Last updated: 2026-04-18 — PR #262 merged, Vercel deploying
 
 ## 🌿 Git state
-- **main HEAD:** `87cfba5` — Merge branch 'main' (PR #141 merged)
-- **origin/main HEAD:** `87cfba5` — in sync
-- **Feature branch:** `claude/api-log-unified-direction` → **PR #142 open** (4 commits ahead of main)
-- **Working tree:** clean (only `.env.production` + `tsconfig.tsbuildinfo` untracked/gitignored)
+- **main HEAD:** `ae5c109` — feat(signwell): store signed PDF + audit log in Documents (#262)
+- **origin/main HEAD:** `ae5c109` — in sync
+- **Feature branch:** none (deleted after PR #262 merge)
+- **Working tree:** clean (only `src/app/api/signwell/document/` is pre-existing untracked local work — a SignWell URL proxy route; not part of PR #262)
 
 ## ✅ What's done (this session)
-- **PR #141 — /admin/dev tabbed page + WebhookRequestLog + custom API sender** — merged to main ✓
-- **PR #142 — multi-feature, open** — 4 commits, Vercel building:
-  1. `a3d2bfa` — unified API log: `direction` + `targetUrl` schema fields; api-proxy logs outgoing calls; direction badges in UI
-  2. `089e89a` — dev page: Custom API + API Log promoted to top-level tabs (7 tabs total)
-  3. `9cc8fad` (user commit) — Theme IQ: `ThemeProvider` + localStorage + anti-flash script + ☀️/🌙 sidebar toggle; API Log filter pills; CSS `[data-theme]` attr approach
-  4. `89053cd` — session state checkpoint
+- **PR #262 — signed PDF + audit log into Documents** — merged:
+  - `getCompletedPdfUrl()` helper in `src/lib/signwell.ts` — calls `/documents/{id}/completed_pdf?url_only=true&audit_page=true`
+  - `document_completed` webhook now upserts a `Document` row (`docType: "agreement"`, `uploadedBy: "SignWell:<docId>"`) so signed PDFs show in partner + admin docs log like any other upload
+  - Admin documents list dedups synthetic agreement row when a real Document row exists
+  - New super_admin-only POST `/api/admin/dev/signwell-backfill-pdfs` to backfill historic signed agreements
+  - **Did NOT modify existing SignWell send/sign code** — it's working and should stay untouched
 
 ## 🔄 What's in flight
-- **PR #142** — awaiting Vercel check + merge
+- Nothing — PR #262 merged
 
 ## 🎯 What's next
-1. **Merge PR #142** once Vercel checks pass
-2. **Admin chat reply UI** — wire reply input to `/api/admin/chat` POST
-3. **HMAC enforcement on `/api/webhook/referral`** — flip log-only → hard-reject once Frost Law implements signing
-4. **Phase 18b** — Next.js 14→16 migration (dedicated session)
+1. **Test end-to-end on prod** — send a fresh agreement, sign as partner + co-signer, confirm PDF appears in both `/dashboard/documents` and `/admin/documents` with working View/Download
+2. **Run backfill on prod** — `POST /api/admin/dev/signwell-backfill-pdfs` as super_admin for historic signed agreements
+3. **Live chat deal links, sort arrows, table audit** — carried from prior session
+4. **Admin chat reply UI** — wire reply input to `/api/admin/chat` POST (from earlier session)
+5. **HMAC enforcement on `/api/webhook/referral`** — flip log-only → hard-reject when Frost Law cuts over
+6. **Phase 18b** — Next.js 14→16 migration (dedicated session)
 
 ## 🧠 Context that matters for resuming
+- SignWell `completed_pdf` endpoint returns a pre-signed S3 `file_url` that works in the browser without auth — safe to persist and hand to `<a href>` / `<iframe>` directly
+- `audit_page=true` includes the legally-defensible signing audit page
+- Document dedup key: `uploadedBy = "SignWell:<signwellDocumentId>"` — the admin docs list suppresses the synthetic agreement row when a Document with this key exists
 - Vercel project name: `tariff-partner-portal-iwki` (NOT `tariff-partner-portal`)
 - Vercel team: `john-fflaw-projects`
-- `DIRECT_URL` Neon env var not available via `vercel env pull` — schema migrations apply on Vercel build (safe pre-launch)
 - All DB data is test/seed — safe to test against production
-- `TWILIO_FROM_NUMBER` is the correct env var name (not `TWILIO_PHONE_NUMBER`)
-- Stripe Connect: keys set, needs Stripe Dashboard webhook configured
-- Playwright: user said "im not worried about playwright" — not on roadmap
-- Theme toggle stored in `localStorage` key `"theme"` ("light"|"dark"); `ThemeProvider` at `src/components/layout/ThemeProvider.tsx`
-
-## 📂 Relevant files changed in PR #142
-- `prisma/schema.prisma` — WebhookRequestLog: direction + targetUrl + @@index([direction])
-- `src/app/api/admin/dev/api-proxy/route.ts` — logs outgoing calls fire-and-forget
-- `src/app/api/admin/dev/api-log/route.ts` — returns direction + targetUrl
-- `src/app/(admin)/admin/dev/page.tsx` — 7 tabs, filter pills, direction badges
-- `src/components/layout/ThemeProvider.tsx` — theme context + localStorage + OS listener
-- `src/app/layout.tsx` — anti-flash script + ThemeProvider wrapper
-- `src/app/globals.css` — [data-theme="dark"] attribute selector + SSR fallback
-- `src/app/(admin)/admin/layout.tsx` — ☀️/🌙 theme toggle in sidebar
-- `src/app/(partner)/dashboard/layout.tsx` — ☀️/🌙 theme toggle in sidebar
+- SignWell send/sign flow is considered "done, don't touch" as of PRs #149–#249
