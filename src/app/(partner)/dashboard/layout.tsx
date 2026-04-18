@@ -22,7 +22,7 @@ const MAIN_NAV = [
   { id: "downline", href: "/dashboard/downline", icon: "👥", label: "Downline", shortLabel: "Team" },
   { id: "referral-links", href: "/dashboard/referral-links", icon: "🔗", label: "Referral Links", shortLabel: "Links" },
   { id: "documents", href: "/dashboard/documents", icon: "📁", label: "Documents", shortLabel: "Docs" },
-  { id: "support", href: "/dashboard/support", icon: "🎧", label: "Support", shortLabel: "Help" },
+  { id: "support", href: "/dashboard/support", icon: "❓", label: "Support", shortLabel: "Help" },
   { id: "conference", href: "/dashboard/conference", icon: "📹", label: "Live Weekly Call!", shortLabel: "Live" },
   { id: "ai-assistant", href: "/dashboard/ai-assistant", icon: "🤖", label: "PartnerOS AI", shortLabel: "AI" },
   { id: "feature-request", href: "/dashboard/feature-request", icon: "💡", label: "Feature Requests", shortLabel: "Ideas" },
@@ -426,7 +426,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
           title="Support"
         >
-          🎧<span className="hidden lg:inline font-medium">Support</span>
+          ❓<span className="hidden lg:inline font-medium">Support</span>
         </a>
         <NotificationBell draggable />
       </div>
@@ -516,7 +516,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
                     title="Support"
                   >
-                    🎧
+                    ❓
                   </a>
                   <NotificationBell />
               </div>

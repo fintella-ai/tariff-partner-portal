@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useDevice } from "@/lib/useDevice";
 import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { fmt$, fmtDate } from "@/lib/format";
+import { fmt$, fmtDate, fmtDateTime } from "@/lib/format";
 import { FIRM_SHORT, DEFAULT_FIRM_FEE_RATE } from "@/lib/constants";
 import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
 
@@ -32,6 +32,8 @@ export default function PartnerReportingPage() {
   const [downlineSubTab, setDownlineSubTab] = useState<"partners" | "deals">("partners");
   const [partnerView, setPartnerView] = useState<"list" | "tree">("list");
   const [commSubTab, setCommSubTab] = useState<"all" | "direct" | "downline">("all");
+
+  const [expandedDealId, setExpandedDealId] = useState<string | null>(null);
 
   // Filters (overview tab)
   const [sourceFilter, setSourceFilter] = useState<"all" | "direct" | "downline">("all");
@@ -263,8 +265,8 @@ export default function PartnerReportingPage() {
                       const commAmt = deal.source === "direct" ? deal.l1CommissionAmount : (deal.l2CommissionAmount || 0);
                       const commStatus = deal.source === "direct" ? deal.l1CommissionStatus : (deal.l2CommissionStatus || "pending");
                       const partnerName = deal.source === "downline" ? (deal.submittingPartnerName || partnerNameMap[deal.partnerCode || ""] || deal.partnerCode) : null;
-                      return (
-                        <tr key={deal.id + deal.source} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                      return (<React.Fragment key={deal.id + deal.source}>
+                        <tr onClick={() => setExpandedDealId(expandedDealId === deal.id ? null : deal.id)} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
                           <td className="px-4 sm:px-6 py-3.5">
                             <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
                             {partnerName && <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">via {partnerName}</div>}
@@ -278,7 +280,10 @@ export default function PartnerReportingPage() {
                           <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(commAmt)}</td>
                           <td className="px-3 py-3.5 text-center"><StatusBadge status={commStatus} /></td>
                         </tr>
-                      );
+                        {expandedDealId === deal.id && (
+                          <tr><td colSpan={7} className="p-0"><DealDetailPanel deal={deal} /></td></tr>
+                        )}
+                        </React.Fragment>);
                     })}
                   </tbody>
                 </table>
@@ -291,15 +296,10 @@ export default function PartnerReportingPage() {
       {/* ═══════════════ MY DEALS TAB ═══════════════ */}
       {pageTab === "deals" && (
         <>
-          <div className="flex gap-1 mb-4 border-b border-[var(--app-border)]">
-            {([{ id: "direct" as const, label: "My Direct Deals" }, { id: "downline" as const, label: "Downline Deals" }]).map((t) => (
-              <button key={t.id} onClick={() => setDealsSubTab(t.id)} className={`font-body text-[13px] px-4 py-2.5 whitespace-nowrap transition-colors border-b-2 -mb-px ${dealsSubTab === t.id ? "text-brand-gold border-brand-gold" : "text-[var(--app-text-muted)] border-transparent hover:text-[var(--app-text-secondary)]"}`}>{t.label}</button>
-            ))}
-          </div>
           <div className="card">
             {(() => {
-              const deals = dealsSubTab === "direct" ? directDeals : downlineDeals;
-              const isDownline = dealsSubTab === "downline";
+              const deals = directDeals;
+              const isDownline = false;
               if (deals.length === 0) return <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">{isDownline ? "No downline deals yet." : "No direct deals yet."}</div>;
               return device.isMobile ? (
                 <div>
@@ -342,8 +342,8 @@ export default function PartnerReportingPage() {
                         const commAmt = isDownline ? (deal.l2CommissionAmount || 0) : deal.l1CommissionAmount;
                         const commStatus = isDownline ? (deal.l2CommissionStatus || "pending") : deal.l1CommissionStatus;
                         const partner = isDownline ? (deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode) : null;
-                        return (
-                          <tr key={deal.id} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                        return (<React.Fragment key={deal.id}>
+                          <tr onClick={() => setExpandedDealId(expandedDealId === deal.id ? null : deal.id)} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
                             <td className="px-4 sm:px-6 py-3.5">
                               <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
                               {partner && <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">via {partner}</div>}
@@ -354,7 +354,10 @@ export default function PartnerReportingPage() {
                             <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(commAmt)}</td>
                             <td className="px-3 py-3.5 text-center"><StatusBadge status={commStatus} /></td>
                           </tr>
-                        );
+                          {expandedDealId === deal.id && (
+                            <tr><td colSpan={6} className="p-0"><DealDetailPanel deal={deal} /></td></tr>
+                          )}
+                        </React.Fragment>);
                       })}
                     </tbody>
                   </table>
@@ -422,9 +425,9 @@ export default function PartnerReportingPage() {
                       };
                       return <DownlineTree root={rootPartner} isMobile={device.isMobile} />;
                     })()
-                  ) : (
+                  ) : device.isMobile ? (
                     downlinePartners.map((p, idx) => (
-                      <div key={p.id} className={`px-4 sm:px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 flex items-center justify-between ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                      <div key={p.id} className={`px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0 flex items-center justify-between ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
                         <div>
                           <div className="font-body text-[13px] font-medium text-[var(--app-text)]">{p.firstName} {p.lastName}</div>
                           <div className="font-body text-[11px] text-[var(--app-text-muted)]">{p.partnerCode} · {p.companyName || "—"}</div>
@@ -435,6 +438,33 @@ export default function PartnerReportingPage() {
                         </div>
                       </div>
                     ))
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-[var(--app-border)]">
+                            <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Partner</th>
+                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Code</th>
+                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Company</th>
+                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
+                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Rate</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {downlinePartners.map((p, idx) => (
+                            <tr key={p.id} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                              <td className="px-4 sm:px-6 py-3.5 font-body text-[13px] font-medium text-[var(--app-text)]">{p.firstName} {p.lastName}</td>
+                              <td className="px-3 py-3.5 text-center font-mono text-[12px] text-[var(--app-text-muted)]">{p.partnerCode}</td>
+                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-secondary)]">{p.companyName || "—"}</td>
+                              <td className="px-3 py-3.5 text-center">
+                                <span className={`font-body text-[10px] font-semibold rounded-full px-2.5 py-0.5 ${p.status === "active" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"}`}>{p.status}</span>
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-brand-gold font-semibold">{p.commissionRate ? `${Math.round(p.commissionRate * 100)}%` : "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </>
               )
@@ -608,6 +638,103 @@ export default function PartnerReportingPage() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/* ── Read-only deal detail panel ── */
+function DealDetailPanel({ deal }: { deal: any }) {
+  return (
+    <div className="px-4 sm:px-6 py-5 bg-[var(--app-card-bg)] border-b border-t border-[var(--app-border)]">
+      {/* Deal ID */}
+      <div className="mb-4 p-3 rounded-lg" style={{ background: "var(--app-input-bg)", border: "1px solid var(--app-border)" }}>
+        <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Deal ID</div>
+        <div className="font-mono text-[12px] text-[var(--app-text)] mt-0.5 select-all">{deal.id}</div>
+      </div>
+
+      {/* Client Info */}
+      <div className="mb-4">
+        <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-3">Client Information</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2.5">
+          {[
+            { label: "Client Name", value: deal.clientName || [deal.clientFirstName, deal.clientLastName].filter(Boolean).join(" ") },
+            { label: "Email", value: deal.clientEmail },
+            { label: "Phone", value: deal.clientPhone },
+            { label: "Business Title", value: deal.clientTitle },
+            { label: "Company / Entity", value: deal.legalEntityName },
+            { label: "Service", value: deal.serviceOfInterest },
+            { label: "City", value: deal.businessCity },
+            { label: "State", value: deal.businessState },
+          ].filter((f) => f.value).map((f) => (
+            <div key={f.label}>
+              <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">{f.label}</div>
+              <div className="font-body text-[13px] text-[var(--app-text-secondary)] mt-0.5">{f.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Consultation */}
+      {(deal.consultBookedDate || deal.consultBookedTime) && (
+        <div className="mb-4 p-3 rounded-lg flex items-center gap-4" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)" }}>
+          <div>
+            <div className="font-body text-[10px] text-yellow-500/80 uppercase tracking-wider">Consultation Date</div>
+            <div className="font-body text-[13px] text-[var(--app-text)] mt-0.5">{deal.consultBookedDate || "—"}</div>
+          </div>
+          {deal.consultBookedTime && <div>
+            <div className="font-body text-[10px] text-yellow-500/80 uppercase tracking-wider">Consultation Time</div>
+            <div className="font-body text-[13px] text-[var(--app-text)] mt-0.5">{deal.consultBookedTime}</div>
+          </div>}
+        </div>
+      )}
+
+      {/* Tariff Info */}
+      {(deal.importsGoods || deal.importCountries || deal.annualImportValue) && (
+        <div className="mb-4">
+          <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-3">Tariff Information</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2.5">
+            {[
+              { label: "Imports Goods", value: deal.importsGoods },
+              { label: "Import Countries", value: deal.importCountries },
+              { label: "Annual Import Value", value: deal.annualImportValue },
+              { label: "Importer of Record", value: deal.importerOfRecord },
+            ].filter((f) => f.value).map((f) => (
+              <div key={f.label}>
+                <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">{f.label}</div>
+                <div className="font-body text-[13px] text-[var(--app-text-secondary)] mt-0.5">{f.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Financials */}
+      <div>
+        <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-3">Financial Summary</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: "Estimated Refund", value: fmt$(deal.estimatedRefundAmount), highlight: false },
+            { label: "Firm Fee", value: fmt$(deal.firmFeeAmount), highlight: false },
+            { label: "Commission", value: fmt$(deal.l1CommissionAmount || deal.l2CommissionAmount || 0), highlight: true },
+            { label: "Status", value: (deal.l1CommissionStatus || deal.l2CommissionStatus || "pending").replace(/^\w/, (c: string) => c.toUpperCase()), highlight: false },
+          ].map((f) => (
+            <div key={f.label} className="p-3 rounded-lg" style={{ background: "var(--app-input-bg)", border: "1px solid var(--app-border)" }}>
+              <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">{f.label}</div>
+              <div className={`font-display text-base font-bold ${f.highlight ? "text-brand-gold" : "text-[var(--app-text)]"}`}>{f.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Notes */}
+      {deal.affiliateNotes && (
+        <div className="mt-4 p-3 rounded-lg" style={{ background: "var(--app-input-bg)", border: "1px solid var(--app-border)" }}>
+          <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Your Referral Notes</div>
+          <div className="font-body text-[13px] text-[var(--app-text-secondary)] whitespace-pre-wrap">{deal.affiliateNotes}</div>
+        </div>
+      )}
+
+      <div className="mt-3 font-body text-[10px] text-[var(--app-text-faint)]">Submitted {fmtDateTime(deal.createdAt)}</div>
     </div>
   );
 }

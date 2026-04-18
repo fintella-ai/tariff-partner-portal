@@ -256,11 +256,13 @@ export default function OverviewPage() {
             /* ── Desktop/Tablet: Grid table ── */
             <div>
               {/* Header */}
-              <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_0.7fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
                 <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Client / Deal</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Partner</div>
                 <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Stage</div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Est. Refund</div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">L2 Commission</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Est. Refund</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">L2 Commission</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Status</div>
               </div>
               {/* Rows */}
               {downlineDeals.slice(0, 3).map((deal, idx) => {
@@ -268,24 +270,25 @@ export default function OverviewPage() {
                 return (
                   <div
                     key={deal.id}
-                    className={`grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] items-center hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
+                    className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_0.7fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] items-center hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
                   >
                     <div>
                       <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] font-medium text-[var(--app-text)] truncate text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors block w-full">{p.dealName}</button>
-                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
-                        Via {p.submittingPartnerName || partnerNameMap[p.partnerCode] || p.partnerCode} · {fmtDate(p.createdAt)}
-                      </div>
+                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">{fmtDate(p.createdAt)}</div>
+                    </div>
+                    <div className="text-center font-body text-[12px] text-[var(--app-text-secondary)]">
+                      {p.submittingPartnerName || partnerNameMap[p.partnerCode] || p.partnerCode}
                     </div>
                     <div className="text-center">
                       <StageBadge stage={p.stage} />
                     </div>
-                    <div className="font-body text-[13px] text-[var(--app-text)]">
+                    <div className="font-body text-[13px] text-[var(--app-text)] text-center">
                       {fmt$(p.estimatedRefundAmount)}
                     </div>
-                    <div className="text-right">
-                      <div className="font-display text-[15px] font-semibold text-brand-gold mb-1">
-                        {fmt$(p.l2CommissionAmount)}
-                      </div>
+                    <div className="font-display text-[15px] font-semibold text-brand-gold text-center">
+                      {fmt$(p.l2CommissionAmount)}
+                    </div>
+                    <div className="text-center">
                       <StatusBadge status={p.l2CommissionStatus} />
                     </div>
                   </div>
