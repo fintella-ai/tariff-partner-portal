@@ -126,8 +126,18 @@ function buildSoftphoneOutboundTwiml(
       ` recordingStatusCallbackMethod="POST"`;
   }
 
+  // When recording, use <Number url="..."> to play consent disclosure to
+  // the partner before bridging, same as the bridged call path.
+  let dialContent: string;
+  if (recordingEnabled) {
+    const consentUrl = `${PORTAL_URL}/api/twilio/partner-consent-webhook`;
+    dialContent = `<Number url="${escapeXml(consentUrl)}">${safeNumber}</Number>`;
+  } else {
+    dialContent = safeNumber;
+  }
+
   return `<Response>
-  <Dial${callerAttr} timeout="25" answerOnBridge="true"${recordingAttrs}>${safeNumber}</Dial>
+  <Dial${callerAttr} timeout="25" answerOnBridge="true"${recordingAttrs}>${dialContent}</Dial>
 </Response>`;
 }
 

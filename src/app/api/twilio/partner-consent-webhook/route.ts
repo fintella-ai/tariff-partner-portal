@@ -43,16 +43,15 @@ async function handle(req: NextRequest): Promise<NextResponse> {
     .catch(() => null);
   const recordingEnabled = settings?.callRecordingEnabled ?? false;
 
-  const needsConsent =
-    recordingEnabled && !!state && ALL_PARTY_CONSENT_STATES.has(state);
-
-  if (needsConsent) {
+  // Play recording disclosure on ALL recorded calls, not just consent states.
+  // Partners should always know the call is recorded.
+  if (recordingEnabled) {
     return twiml(
-      `<Response><Say voice="Polly.Joanna">This call is being recorded for quality and compliance purposes. By continuing on this call you consent to the recording.</Say></Response>`
+      `<Response><Say voice="Polly.Joanna">This call is being recorded for quality and training purposes.</Say></Response>`
     );
   }
 
-  // No consent needed — empty response bridges immediately.
+  // Recording disabled — empty response bridges immediately.
   return twiml(`<Response/>`);
 }
 
