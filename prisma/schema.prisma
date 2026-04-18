@@ -131,7 +131,8 @@ model PartnershipAgreement {
   partnerCode           String
   version               Int      @default(1)
   signwellDocumentId    String?
-  embeddedSigningUrl    String?  // SignWell embedded signing URL for in-portal signing
+  embeddedSigningUrl    String?  // Signing URL for partner (opens in new tab)
+  cosignerSigningUrl    String?  // Signing URL for Fintella co-signer
   templateRate          Float?   // the commission rate this agreement is for (0.25, 0.20, 0.15, 0.10)
   templateId            String?  // SignWell template ID used for this agreement
   status                String   @default("not_sent") // not_sent, pending, signed, amended

@@ -185,7 +185,7 @@ export async function POST(
     }
 
     // Send via SignWell
-    const { documentId, embeddedSigningUrl } = await sendForSigning({
+    const { documentId, embeddedSigningUrl, cosignerSigningUrl } = await sendForSigning({
       name: `${FIRM_SHORT} Partnership Agreement — ${partnerName}`,
       subject: `${FIRM_SHORT} Partnership Agreement`,
       message: `Hi ${partnerName}, please review and sign your ${FIRM_NAME} partnership agreement.`,
@@ -200,6 +200,7 @@ export async function POST(
         version: nextVersion,
         signwellDocumentId: documentId,
         embeddedSigningUrl: embeddedSigningUrl || null,
+        cosignerSigningUrl: cosignerSigningUrl || null,
         templateRate,
         templateId: templateId || null,
         status: "pending",

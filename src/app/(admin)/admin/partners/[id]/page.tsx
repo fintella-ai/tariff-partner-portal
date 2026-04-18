@@ -52,6 +52,7 @@ type Agreement = {
   sentDate: string | null;
   signedDate: string | null;
   embeddedSigningUrl: string | null;
+  cosignerSigningUrl: string | null;
   signwellDocumentId: string | null;
 };
 
@@ -1170,25 +1171,26 @@ export default function PartnerDetailPage() {
                   Copy
                 </button>
               </div>
-              {agreement.signwellDocumentId && (
-                <button
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(`/api/admin/agreement/${partner?.partnerCode}?action=cosigner_url&docId=${agreement.signwellDocumentId}`);
-                      const data = await res.json();
-                      if (data.cosignerUrl) {
-                        window.open(data.cosignerUrl, "_blank");
-                      } else {
-                        alert("Co-signer link not available yet. The partner must sign first.");
-                      }
-                    } catch {
-                      alert("Failed to fetch co-signer link.");
-                    }
-                  }}
-                  className="inline-flex items-center gap-1.5 font-body text-[12px] text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
-                >
-                  ✍️ Fintella Co-sign Link
-                </button>
+              {agreement.cosignerSigningUrl && (
+                <div>
+                  <a
+                    href={agreement.cosignerSigningUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 font-body text-[12px] text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
+                  >
+                    ✍️ Fintella Co-sign Link
+                  </a>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(agreement.cosignerSigningUrl!);
+                      alert("Co-signer URL copied to clipboard");
+                    }}
+                    className="ml-3 font-body text-[11px] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition-colors"
+                  >
+                    Copy
+                  </button>
+                </div>
               )}
             </div>
           )}

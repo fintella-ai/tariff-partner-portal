@@ -211,7 +211,7 @@ export function isSignWellConfigured(): boolean {
  */
 export async function sendForSigning(
   options: SignWellSendOptions
-): Promise<{ documentId: string; status: string; embeddedSigningUrl: string | null }> {
+): Promise<{ documentId: string; status: string; embeddedSigningUrl: string | null; cosignerSigningUrl?: string | null }> {
   // Demo mode — return a mock document ID with a demo signing URL
   if (!SIGNWELL_API_KEY) {
     const mockId = `demo-sw-${Date.now()}`;
@@ -346,15 +346,12 @@ export async function sendForSigning(
 
   const doc = await res.json();
 
-  // Extract signing URL from response — opens in new tab, never iframe
-  const signingUrl =
-    doc.embedded_signing_url ||
-    doc.recipients_with_urls?.[0]?.embedded_signing_url ||
-    doc.recipients?.[0]?.embedded_signing_url ||
-    doc.signees?.[0]?.embedded_signing_url ||
-    null;
+  // Extract signing URLs from response — opens in new tab, never iframe
+  const allRecipients = doc.recipients_with_urls || doc.recipients || doc.signees || [];
+  const signingUrl = allRecipients[0]?.embedded_signing_url || doc.embedded_signing_url || null;
+  const cosignerUrl = allRecipients[1]?.embedded_signing_url || null;
 
-  return { documentId: doc.id, status: "pending", embeddedSigningUrl: signingUrl };
+  return { documentId: doc.id, status: "pending", embeddedSigningUrl: signingUrl, cosignerSigningUrl: cosignerUrl };
 }
 
 /**
