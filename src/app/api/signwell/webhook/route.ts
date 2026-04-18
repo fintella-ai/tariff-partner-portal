@@ -18,14 +18,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Log full body to diagnose structure
-    const bodyStr = JSON.stringify(body);
-    console.log("[SignWellWebhook] FULL_BODY_START");
-    // Split into chunks because Vercel truncates long logs
-    for (let i = 0; i < bodyStr.length; i += 500) {
-      console.log("[SignWellWebhook] CHUNK:", bodyStr.slice(i, i + 500));
-    }
-    console.log("[SignWellWebhook] FULL_BODY_END");
+    // Store webhook payload for debugging
+    await prisma.webhookRequestLog.create({
+      data: {
+        direction: "incoming",
+        method: "POST",
+        path: "/api/signwell/webhook",
+        body: JSON.stringify(body).slice(0, 10000),
+        responseStatus: 200,
+      },
+    }).catch(() => {});
 
     const { event, data } = body;
     const docId = data?.document_id || data?.id || body?.document_id || body?.id;
