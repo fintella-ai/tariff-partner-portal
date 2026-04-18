@@ -128,6 +128,53 @@ export interface DealCommissionComputation {
 }
 
 /**
+ * Walk up from the submitting partner to their L1 and return the L1's
+ * current `commissionRate`. Used to snapshot the L1 rate onto a Deal
+ * at creation time so later changes to Partner.commissionRate don't
+ * retro-affect deals already in flight.
+ *
+ * Returns null if the submitter doesn't exist, or if the chain is broken
+ * (e.g. L2 with a missing referrer row). The caller decides whether to
+ * fall back to the submitter's own rate.
+ */
+export async function getL1CommissionRateSnapshot(
+  db: Pick<PrismaClient, "partner">,
+  submitterPartnerCode: string
+): Promise<number | null> {
+  const submitter = await db.partner.findUnique({
+    where: { partnerCode: submitterPartnerCode },
+    select: { tier: true, commissionRate: true, referredByPartnerCode: true },
+  });
+  if (!submitter) return null;
+
+  if (submitter.tier === "l1") return submitter.commissionRate;
+
+  if (submitter.tier === "l2" && submitter.referredByPartnerCode) {
+    const l1 = await db.partner.findUnique({
+      where: { partnerCode: submitter.referredByPartnerCode },
+      select: { tier: true, commissionRate: true },
+    });
+    return l1?.commissionRate ?? null;
+  }
+
+  if (submitter.tier === "l3" && submitter.referredByPartnerCode) {
+    const l2 = await db.partner.findUnique({
+      where: { partnerCode: submitter.referredByPartnerCode },
+      select: { commissionRate: true, referredByPartnerCode: true },
+    });
+    if (l2?.referredByPartnerCode) {
+      const l1 = await db.partner.findUnique({
+        where: { partnerCode: l2.referredByPartnerCode },
+        select: { commissionRate: true },
+      });
+      return l1?.commissionRate ?? null;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Walk the partner chain upward from the submitting partner on a deal,
  * call calcWaterfallCommissions against the deal's firm fee, and return
  * the ledger entries that should exist. The caller decides what status to
