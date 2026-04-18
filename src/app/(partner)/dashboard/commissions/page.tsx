@@ -34,6 +34,7 @@ function CommissionsPageContent() {
   const [downlinePartners, setDownlinePartners] = useState<any[]>([]);
   const [ledger, setLedger] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [commTab, setCommTab] = useState<"all" | "direct" | "downline">("all");
 
   // Stripe Connect state
   const [stripe, setStripe] = useState<StripeStatus | null>(null);
@@ -475,11 +476,30 @@ function CommissionsPageContent() {
 
       {/* ═══ COMMISSION HISTORY ═══ */}
       <div className="card">
-        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[var(--app-border)] flex items-center justify-between">
+        <div className="px-4 sm:px-6 pt-4 sm:pt-5 flex items-center justify-between">
           <div className="font-body font-semibold text-sm sm:text-[15px]">Commission History</div>
           <button className="font-body text-[11px] tracking-[1px] uppercase text-brand-gold/70 border border-brand-gold/20 rounded px-3 py-1.5 hover:bg-brand-gold/10 transition-colors">
             Export CSV
           </button>
+        </div>
+        <div className="flex gap-1 px-4 sm:px-6 border-b border-[var(--app-border)]">
+          {([
+            { id: "all" as const, label: "All" },
+            { id: "direct" as const, label: "Direct" },
+            { id: "downline" as const, label: "Downline" },
+          ]).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setCommTab(t.id)}
+              className={`font-body text-[13px] px-4 py-2.5 whitespace-nowrap transition-colors border-b-2 -mb-px ${
+                commTab === t.id
+                  ? "text-brand-gold border-brand-gold"
+                  : "text-[var(--app-text-muted)] border-transparent hover:text-[var(--app-text-secondary)]"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
         {ledger.length === 0 ? (
@@ -488,7 +508,7 @@ function CommissionsPageContent() {
             {device.isMobile ? (
               /* Mobile cards */
               <div>
-                {directDeals.map((deal) => {
+                {(commTab === "all" || commTab === "direct") && directDeals.map((deal) => {
                   return (
                     <div key={deal.id} className="px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0">
                       <div className="flex justify-between items-center mb-1">
@@ -508,7 +528,7 @@ function CommissionsPageContent() {
                     </div>
                   );
                 })}
-                {downlineDeals.map((deal) => {
+                {(commTab === "all" || commTab === "downline") && downlineDeals.map((deal) => {
                   return (
                     <div key={deal.id} className="px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0">
                       <div className="flex justify-between items-center mb-1">
@@ -539,7 +559,7 @@ function CommissionsPageContent() {
                   <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">Amount</div>
                   <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">Status</div>
                 </div>
-                {directDeals.map((deal) => {
+                {(commTab === "all" || commTab === "direct") && directDeals.map((deal) => {
                   return (
                     <div key={deal.id} className="grid grid-cols-[1.8fr_0.8fr_0.5fr_1fr_0.7fr_0.8fr_0.7fr] gap-3 px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors">
                       <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] text-[var(--app-text)] truncate text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors">{deal.dealName}</button>
@@ -552,7 +572,7 @@ function CommissionsPageContent() {
                     </div>
                   );
                 })}
-                {downlineDeals.map((deal) => {
+                {(commTab === "all" || commTab === "downline") && downlineDeals.map((deal) => {
                   return (
                     <div key={deal.id} className="grid grid-cols-[1.8fr_0.8fr_0.5fr_1fr_0.7fr_0.8fr_0.7fr] gap-3 px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors">
                       <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type ReactNode } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import StageBadge from "@/components/ui/StageBadge";
@@ -17,6 +17,7 @@ export default function OverviewPage() {
   const [downlinePartners, setDownlinePartners] = useState<any[]>([]);
   const [downlineDeals, setDownlineDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [overviewTab, setOverviewTab] = useState<"direct" | "downline">("direct");
 
   const loadData = useCallback(async () => {
     try {
@@ -103,11 +104,29 @@ export default function OverviewPage() {
         ))}
       </div>
 
-      {/* ═══ RECENT DIRECT DEALS ═══ */}
+      {/* ═══ DEALS TABS ═══ */}
       <div className="card mb-6">
-        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[var(--app-border)]">
-          <div className="font-body font-semibold text-sm sm:text-[15px]">Recent Direct Deals</div>
+        <div className="flex gap-1 px-4 sm:px-6 pt-4 sm:pt-5 border-b border-[var(--app-border)]">
+          {([
+            { id: "direct" as const, label: "Recent Direct Deals" },
+            { id: "downline" as const, label: "Recent Downline Activity" },
+          ]).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setOverviewTab(t.id)}
+              className={`font-body text-[13px] px-4 py-2.5 whitespace-nowrap transition-colors border-b-2 -mb-px ${
+                overviewTab === t.id
+                  ? "text-brand-gold border-brand-gold"
+                  : "text-[var(--app-text-muted)] border-transparent hover:text-[var(--app-text-secondary)]"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
+
+        {overviewTab === "direct" && (<>
+        {/* Direct Deals content */}
 
         {directDeals.length === 0 ? (
           <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">
@@ -198,16 +217,9 @@ export default function OverviewPage() {
             })}
           </div>
         )}
-      </div>
+        </>)}
 
-      {/* ═══ RECENT DOWNLINE ACTIVITY ═══ */}
-      {downlineDeals.length > 0 && (
-        <div className="card">
-          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[var(--app-border)]">
-            <div className="font-body font-semibold text-sm sm:text-[15px]">
-              Recent Downline Activity
-            </div>
-          </div>
+        {overviewTab === "downline" && (<>
 
           {device.isMobile ? (
             /* ── Mobile: Card layout ── */
@@ -281,8 +293,14 @@ export default function OverviewPage() {
               })}
             </div>
           )}
-        </div>
-      )}
+
+          {downlineDeals.length === 0 && (
+            <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">
+              No downline activity yet. Recruit partners to build your team.
+            </div>
+          )}
+        </>)}
+      </div>
     </div>
     </PullToRefresh>
   );
