@@ -27,7 +27,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   partners:     { id: "partners", href: "/admin/partners", icon: "👥", label: "Partners" },
   deals:        { id: "deals", href: "/admin/deals", icon: "📋", label: "Deals" },
   communications: { id: "communications", href: "/admin/communications", icon: "💬", label: "Communications" },
-  training:     { id: "training", href: "/admin/training", icon: "🎯", label: "Training" },
+  training:     { id: "training", href: "/admin/training", icon: "📖", label: "Training" },
   conference:   { id: "conference", href: "/admin/conference", icon: "📹", label: "Live Weekly" },
   documents:    { id: "documents", href: "/admin/documents", icon: "📁", label: "Documents" },
   // "reporting" is a synthetic umbrella for Reports / Revenue / Payouts.

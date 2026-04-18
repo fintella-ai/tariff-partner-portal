@@ -14,7 +14,7 @@ import { useTheme } from "@/components/layout/ThemeProvider";
 const MAIN_NAV = [
   { id: "home", href: "/dashboard/home", icon: "🏠", label: "Home", shortLabel: "Home" },
   { id: "overview", href: "/dashboard/overview", icon: "📊", label: "Overview", shortLabel: "Stats" },
-  { id: "training", href: "/dashboard/training", icon: "🎯", label: "Partner Training", shortLabel: "Learn" },
+  { id: "training", href: "/dashboard/training", icon: "📖", label: "Partner Training", shortLabel: "Learn" },
   { id: "deals", href: "/dashboard/deals", icon: "📋", label: "My Deals", shortLabel: "Deals" },
   { id: "commissions", href: "/dashboard/commissions", icon: "💲", label: "Commissions", shortLabel: "Earn" },
   { id: "submit-client", href: "/dashboard/submit-client", icon: "✅", label: "Submit Client", shortLabel: "Submit" },

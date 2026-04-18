@@ -45,7 +45,7 @@ function compressImage(file: File, maxDim: number, quality: number): Promise<str
 const ALL_NAV_ITEMS = [
   { id: "home", label: "Home", icon: "🏠" },
   { id: "overview", label: "Overview", icon: "📊" },
-  { id: "training", label: "Partner Training", icon: "🎯" },
+  { id: "training", label: "Partner Training", icon: "📖" },
   { id: "deals", label: "My Deals", icon: "📋" },
   { id: "commissions", label: "Commissions", icon: "💲" },
   { id: "submit-client", label: "Submit Client", icon: "✅" },
@@ -67,7 +67,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "partners", label: "Partners", icon: "👥" },
   { id: "deals", label: "Deals", icon: "📋" },
   { id: "communications", label: "Communications", icon: "💬" },
-  { id: "training", label: "Training", icon: "🎯" },
+  { id: "training", label: "Training", icon: "📖" },
   { id: "conference", label: "Live Weekly", icon: "📹" },
   { id: "documents", label: "Documents", icon: "📁" },
   { id: "reporting", label: "Reporting", icon: "📈" },
