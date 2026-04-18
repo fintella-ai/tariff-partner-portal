@@ -45,18 +45,18 @@ function compressImage(file: File, maxDim: number, quality: number): Promise<str
 const ALL_NAV_ITEMS = [
   { id: "home", label: "Home", icon: "🏠" },
   { id: "overview", label: "Overview", icon: "📊" },
-  { id: "training", label: "Partner Training", icon: "🎓" },
-  { id: "deals", label: "My Deals", icon: "💼" },
+  { id: "training", label: "Partner Training", icon: "🎯" },
+  { id: "deals", label: "My Deals", icon: "📋" },
   { id: "downline", label: "Downline", icon: "👥" },
-  { id: "commissions", label: "Commissions", icon: "💰" },
-  { id: "submit-client", label: "Submit Client", icon: "📩" },
-  { id: "reporting", label: "Full Reporting", icon: "📊" },
+  { id: "commissions", label: "Commissions", icon: "💲" },
+  { id: "submit-client", label: "Submit Client", icon: "📤" },
+  { id: "reporting", label: "Full Reporting", icon: "📈" },
   { id: "referral-links", label: "Referral Links", icon: "🔗" },
-  { id: "documents", label: "Documents", icon: "📄" },
-  { id: "support", label: "Support", icon: "🎫" },
+  { id: "documents", label: "Documents", icon: "📁" },
+  { id: "support", label: "Support", icon: "🛟" },
   { id: "conference", label: "Live Weekly Call!", icon: "📹" },
   { id: "ai-assistant", label: "PartnerOS AI", icon: "🤖" },
-  { id: "feature-request", label: "Feature Requests", icon: "✨" },
+  { id: "feature-request", label: "Feature Requests", icon: "💡" },
 ];
 
 // Mirror of ADMIN_NAV_ITEMS in src/app/(admin)/admin/layout.tsx. Update
@@ -65,18 +65,18 @@ const ALL_NAV_ITEMS = [
 // Default order mirrors ADMIN_NAV_IDS_DEFAULT in admin/layout.tsx
 const ALL_ADMIN_NAV_ITEMS = [
   { id: "partners", label: "Partners", icon: "👥" },
-  { id: "deals", label: "Deals", icon: "💼" },
-  { id: "communications", label: "Communications", icon: "📧" },
-  { id: "training", label: "Training", icon: "🎓" },
+  { id: "deals", label: "Deals", icon: "📋" },
+  { id: "communications", label: "Communications", icon: "💬" },
+  { id: "training", label: "Training", icon: "🎯" },
   { id: "conference", label: "Live Weekly", icon: "📹" },
-  { id: "documents", label: "Documents", icon: "📄" },
-  { id: "reporting", label: "Reporting", icon: "📊" },
+  { id: "documents", label: "Documents", icon: "📁" },
+  { id: "reporting", label: "Reporting", icon: "📈" },
   { id: "settings", label: "Settings", icon: "⚙️" },
-  { id: "users", label: "Admin Users", icon: "🛡️" },
+  { id: "users", label: "Admin Users", icon: "🔐" },
   { id: "dev", label: "Development", icon: "🛠️" },
   { id: "workflows", label: "Workflows", icon: "⚡" },
-  { id: "features", label: "Feature Requests", icon: "✨" },
-  { id: "support", label: "Support", icon: "🎫" },
+  { id: "features", label: "Feature Requests", icon: "💡" },
+  { id: "support", label: "Support", icon: "🛟" },
   { id: "chat", label: "Live Chat", icon: "💬" },
 ];
 
