@@ -36,6 +36,7 @@ function CommissionsPageContent() {
   const [loading, setLoading] = useState(true);
   const [commTab, setCommTab] = useState<"all" | "direct" | "downline">("all");
   const [payoutTab, setPayoutTab] = useState<"payout-all" | "payout-pending" | "payout-due" | "payout-paid">("payout-all");
+  const [pageTab, setPageTab] = useState<"overview" | "history" | "payouts">("overview");
 
   // Stripe Connect state
   const [stripe, setStripe] = useState<StripeStatus | null>(null);
@@ -201,11 +202,32 @@ function CommissionsPageContent() {
       <h2 className={`font-display ${device.isMobile ? "text-lg" : "text-[22px]"} font-bold mb-1.5`}>
         Commission Summary
       </h2>
-      <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-6">
+      <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-4">
         All amounts based on {FIRM_SHORT}&apos;s {(DEFAULT_FIRM_FEE_RATE * 100).toFixed(0)}% fee on collected refunds.
-        Commissions are only paid on <strong className="text-[var(--app-text-secondary)]">Closed Won</strong> deals.
       </p>
 
+      {/* ═══ PAGE TABS ═══ */}
+      <div className="flex gap-1 mb-6 border-b border-[var(--app-border)]">
+        {([
+          { id: "overview" as const, label: "Overview" },
+          { id: "history" as const, label: "Commission History" },
+          { id: "payouts" as const, label: "Payouts" },
+        ]).map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setPageTab(t.id)}
+            className={`font-body text-[13px] px-4 py-2.5 whitespace-nowrap transition-colors border-b-2 -mb-px ${
+              pageTab === t.id
+                ? "text-brand-gold border-brand-gold"
+                : "text-[var(--app-text-muted)] border-transparent hover:text-[var(--app-text-secondary)]"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {pageTab === "overview" && (<>
       {/* ═══ STRIPE CONNECT CARD ═══ */}
       {(() => {
         const isActive = stripe?.status === "active" && stripe?.payoutsEnabled;
@@ -474,7 +496,9 @@ function CommissionsPageContent() {
           </div>
         )}
       </div>
+      </>)}
 
+      {pageTab === "history" && (<>
       {/* ═══ COMMISSION HISTORY ═══ */}
       <div className="card">
         <div className="px-4 sm:px-6 pt-4 sm:pt-5 flex items-center justify-between">
@@ -599,7 +623,9 @@ function CommissionsPageContent() {
           </div>
         )}
       </div>
+      </>)}
 
+      {pageTab === "payouts" && (<>
       {/* ═══ PAYOUTS ═══ */}
       <div className="card mt-6">
         <div className="px-4 sm:px-6 pt-4 sm:pt-5">
@@ -706,6 +732,7 @@ function CommissionsPageContent() {
           );
         })()}
       </div>
+      </>)}
     </div>
   );
 }
