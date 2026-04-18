@@ -868,21 +868,14 @@ async function patchHandler(req: NextRequest): Promise<Response> {
     }
 
     // ─── Stage-specific required fields ────────────────────────────────
-    // Certain internal stages carry business preconditions: you can't
-    // transition a deal to client_engaged (contract signed) or beyond
-    // without telling us the refund size and the negotiated firm fee
-    // rate, because those are what drive every downstream commission
-    // calculation. Enforce here so Frost Law gets a clean 400 instead
-    // of us silently accepting an incomplete transition.
-    //
-    // Firm fee AMOUNT is intentionally NOT required — it's derived
-    // from refund × rate and may not be known yet at contract signing.
-    const stagesRequiringFinancials = new Set([
-      "client_engaged",
-      "in_process",
-      "closedwon",
-    ]);
-    if (data.stage && stagesRequiringFinancials.has(data.stage)) {
+    // client_engaged (contract signed): only firm_fee_rate required.
+    //   Refund amount may not be known yet at contract signing.
+    // in_process / closedwon: both firm_fee_rate AND estimated_refund_amount
+    //   required, since commission calculations need both.
+    // Firm fee AMOUNT is never required — derived from refund × rate.
+    const stagesRequiringRate = new Set(["client_engaged", "in_process", "closedwon"]);
+    const stagesRequiringRefund = new Set(["in_process", "closedwon"]);
+    if (data.stage && stagesRequiringRate.has(data.stage)) {
       const effectiveRefund =
         typeof data.estimatedRefundAmount === "number"
           ? data.estimatedRefundAmount
@@ -892,7 +885,9 @@ async function patchHandler(req: NextRequest): Promise<Response> {
           ? data.firmFeeRate
           : deal.firmFeeRate;
       const missing: string[] = [];
-      if (!effectiveRefund || effectiveRefund <= 0) missing.push("estimated_refund_amount");
+      if (stagesRequiringRefund.has(data.stage) && (!effectiveRefund || effectiveRefund <= 0)) {
+        missing.push("estimated_refund_amount");
+      }
       if (!effectiveRate || effectiveRate <= 0) missing.push("firm_fee_rate");
       if (missing.length > 0) {
         return NextResponse.json(
@@ -1161,8 +1156,10 @@ function getHandler(): Response {
     update_fields: {
       required: ["dealId"],
       conditionally_required: {
-        "client_engaged / in_process / closedwon":
-          "estimated_refund_amount + firm_fee_rate must be present (on this PATCH or already on the deal). firm_fee_amount is NOT required — it is derived from refund × rate.",
+        "client_engaged (contract signed)":
+          "firm_fee_rate must be present (on this PATCH or already on the deal).",
+        "in_process / closedwon":
+          "estimated_refund_amount + firm_fee_rate must both be present. firm_fee_amount is NOT required — it is derived from refund × rate.",
       },
       deal_stage: [
         "dealstage",
