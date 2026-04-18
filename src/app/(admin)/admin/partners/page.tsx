@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useResizableColumns } from "@/components/ui/ResizableTable";
 import { useRouter } from "next/navigation";
 import { fmtDate, fmtPhone, normalizePhone } from "@/lib/format";
 
@@ -69,6 +70,12 @@ const inviteStatusBadge: Record<string, string> = {
 
 export default function AdminPartnersPage() {
   const router = useRouter();
+  // 8 columns: Partner, Code, Phone, Email, Status, W9, Joined, Action
+  const { columnWidths: partnerCols, getResizeHandler: partnerResize } = useResizableColumns(
+    [180, 120, 140, 180, 90, 80, 110, 70]
+  );
+  const partnerGridCols = partnerCols.map((w) => `${w}px`).join(" ");
+
   const [partners, setPartners] = useState<Partner[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -614,7 +621,7 @@ export default function AdminPartnersPage() {
         <>
           {/* Partners — Desktop Table */}
           <div className="card hidden sm:block overflow-x-auto">
-            <div className="grid grid-cols-[1.5fr_1fr_0.9fr_1.2fr_0.7fr_0.6fr_0.8fr_0.5fr] gap-3 px-5 py-3 border-b border-[var(--app-border)]">
+            <div className="grid gap-3 px-5 py-3 border-b border-[var(--app-border)]" style={{ gridTemplateColumns: partnerGridCols }}>
               {([
                 { label: "Partner", col: "name" as SortCol },
                 { label: "Code", col: "code" as SortCol },
@@ -624,17 +631,17 @@ export default function AdminPartnersPage() {
                 { label: "W9", col: null },
                 { label: "Joined", col: "joined" as SortCol },
                 { label: "", col: null },
-              ] as { label: string; col: SortCol | null }[]).map((h) => (
+              ] as { label: string; col: SortCol | null }[]).map((h, i) => (
                 h.col ? (
                   <button
                     key={h.label}
                     onClick={() => handleSort(h.col!)}
-                    className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider flex items-center gap-0.5 hover:text-[var(--app-text-secondary)] transition-colors justify-center"
+                    className="relative font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider flex items-center gap-0.5 hover:text-[var(--app-text-secondary)] transition-colors justify-center"
                   >
-                    {h.label}<SortIcon col={h.col} />
+                    {h.label}<SortIcon col={h.col} /><span {...partnerResize(i)} />
                   </button>
                 ) : (
-                  <div key={h.label} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center">{h.label}</div>
+                  <div key={h.label || `col-${i}`} className="relative font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center">{h.label}<span {...partnerResize(i)} /></div>
                 )
               ))}
             </div>
@@ -643,7 +650,8 @@ export default function AdminPartnersPage() {
               return (
                 <div
                   key={p.id}
-                  className="grid grid-cols-[1.5fr_1fr_0.9fr_1.2fr_0.7fr_0.6fr_0.8fr_0.5fr] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer"
+                  className="grid gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors items-center cursor-pointer"
+                  style={{ gridTemplateColumns: partnerGridCols }}
                   onClick={() => router.push(`/admin/partners/${p.id}`)}
                 >
                   <div className="font-body text-[13px] text-[var(--app-text)] font-medium truncate">{p.firstName} {p.lastName}</div>
