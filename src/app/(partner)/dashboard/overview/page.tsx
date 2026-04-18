@@ -171,11 +171,13 @@ export default function OverviewPage() {
           /* ── Desktop/Tablet: Grid table with aligned columns ── */
           <div>
             {/* Header row */}
-            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
+            <div className="grid grid-cols-[2fr_0.8fr_1fr_1fr_0.6fr_0.6fr_1fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
               <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Client / Deal</div>
               <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Stage</div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Est. Refund</div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Firm Fee</div>
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Est. Refund</div>
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Firm Fee</div>
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Comm %</div>
+              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Status</div>
               <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">Commission</div>
             </div>
             {/* Data rows */}
@@ -184,34 +186,20 @@ export default function OverviewPage() {
               return (
                 <div
                   key={deal.id}
-                  className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] items-center hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
+                  className={`grid grid-cols-[2fr_0.8fr_1fr_1fr_0.6fr_0.6fr_1fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] items-center hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
                 >
-                  {/* Col 1: Deal name */}
                   <div>
                     <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] font-medium text-[var(--app-text)] truncate text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors block w-full">{p.dealName}</button>
                     <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
                       {p.importedProducts || p.productType} · {fmtDate(p.createdAt)}
                     </div>
                   </div>
-                  {/* Col 2: Stage */}
-                  <div className="text-center">
-                    <StageBadge stage={p.stage} />
-                  </div>
-                  {/* Col 3: Est. Refund */}
-                  <div className="font-body text-[13px] text-[var(--app-text)]">
-                    {fmt$(p.estimatedRefundAmount)}
-                  </div>
-                  {/* Col 4: Firm Fee */}
-                  <div className="font-body text-[13px] text-[var(--app-text-secondary)]">
-                    {fmt$(p.firmFeeAmount)}
-                  </div>
-                  {/* Col 5: Commission + Status */}
-                  <div className="text-right">
-                    <div className="font-display text-[15px] font-semibold text-brand-gold mb-1">
-                      {fmt$(p.l1CommissionAmount)}
-                    </div>
-                    <StatusBadge status={p.l1CommissionStatus} />
-                  </div>
+                  <div className="text-center"><StageBadge stage={p.stage} /></div>
+                  <div className="font-body text-[13px] text-[var(--app-text)] text-center">{fmt$(p.estimatedRefundAmount)}</div>
+                  <div className="font-body text-[13px] text-[var(--app-text-secondary)] text-center">{fmt$(p.firmFeeAmount)}</div>
+                  <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">{p.commissionRate ? `${Math.round(p.commissionRate * 100)}%` : "—"}</div>
+                  <div className="text-center"><StatusBadge status={p.l1CommissionStatus} /></div>
+                  <div className="font-display text-[15px] font-semibold text-brand-gold text-right">{fmt$(p.l1CommissionAmount)}</div>
                 </div>
               );
             })}
@@ -261,8 +249,8 @@ export default function OverviewPage() {
                 <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Partner</div>
                 <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Stage</div>
                 <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Est. Refund</div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">L2 Commission</div>
                 <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Status</div>
+                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">L2 Commission</div>
               </div>
               {/* Rows */}
               {downlineDeals.slice(0, 3).map((deal, idx) => {
@@ -285,11 +273,11 @@ export default function OverviewPage() {
                     <div className="font-body text-[13px] text-[var(--app-text)] text-center">
                       {fmt$(p.estimatedRefundAmount)}
                     </div>
-                    <div className="font-display text-[15px] font-semibold text-brand-gold text-center">
-                      {fmt$(p.l2CommissionAmount)}
-                    </div>
                     <div className="text-center">
                       <StatusBadge status={p.l2CommissionStatus} />
+                    </div>
+                    <div className="font-display text-[15px] font-semibold text-brand-gold text-center">
+                      {fmt$(p.l2CommissionAmount)}
                     </div>
                   </div>
                 );
