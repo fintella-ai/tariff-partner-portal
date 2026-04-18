@@ -447,7 +447,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             NotificationBell still floating in its top-right fixed
             corner. Shown on both mobile and desktop. */}
         <div
-          className="sticky top-0 z-40 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3 mb-5 bg-[var(--app-bg)]/85 backdrop-blur-md border-b border-[var(--app-border)]"
+          className={`sticky top-0 z-40 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3 mb-5 bg-[var(--app-bg)]/85 backdrop-blur-md border-b border-[var(--app-border)] ${device.isMobile ? "hidden" : ""}`}
         >
           <div className="flex items-center justify-center gap-2 sm:gap-3 max-w-xl mx-auto">
             <button
@@ -479,12 +479,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <>
               {/* Safe area spacer for iPhone notch/Dynamic Island */}
               <div style={{ paddingTop: "env(safe-area-inset-top, 12px)" }} />
-              {/* Logo — use uploaded logo or fallback to text */}
-              <div className="flex justify-center py-3">
+              {/* Logo section — black background */}
+              <div className="border-b border-[var(--app-border)]" />
+              <div className="flex justify-center py-5 -mx-4 px-4 bg-black">
                 {logoUrl ? (
-                  <img src={logoUrl} alt={firmShort} className="max-h-12 object-contain" />
+                  <img src={logoUrl} alt={firmShort} className="max-h-20 object-contain" />
                 ) : (
-                  <div className="font-display text-[18px] font-bold text-brand-gold tracking-[2px]">
+                  <div className="font-display text-[22px] font-bold text-brand-gold tracking-[2px]">
                     {firmShort}
                   </div>
                 )}
@@ -509,6 +510,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </a>
                   <NotificationBell />
                 </div>
+              </div>
+              <div className="border-b border-[var(--app-border)] mb-3" />
+              {/* Submit Client + Referral Links */}
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <button
+                  onClick={() => navigate("/dashboard/submit-client")}
+                  className={`flex-1 font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2.5 transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
+                    isActive("/dashboard/submit-client")
+                      ? "bg-brand-gold/15 border-brand-gold/40 text-brand-gold"
+                      : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold hover:bg-brand-gold/10"
+                  }`}
+                >
+                  💼 Submit Client
+                </button>
+                <button
+                  onClick={() => navigate("/dashboard/referral-links")}
+                  className={`flex-1 font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2.5 transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
+                    isActive("/dashboard/referral-links")
+                      ? "bg-purple-500/15 border-purple-500/40 text-purple-400"
+                      : "bg-purple-500/[0.06] border-purple-500/20 text-purple-400 hover:bg-purple-500/10"
+                  }`}
+                >
+                  👥 Referral Links
+                </button>
               </div>
               <div className="border-b border-[var(--app-border)] mb-3" />
             </>
