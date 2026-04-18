@@ -168,41 +168,40 @@ export default function OverviewPage() {
             })}
           </div>
         ) : (
-          /* ── Desktop/Tablet: Grid table with aligned columns ── */
-          <div>
-            {/* Header row */}
-            <div className="grid grid-cols-[2fr_0.8fr_1fr_1fr_0.6fr_0.6fr_1fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Client / Deal</div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Stage</div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Est. Refund</div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Firm Fee</div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Comm %</div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Status</div>
-              <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-right">Commission</div>
-            </div>
-            {/* Data rows */}
-            {directDeals.slice(0, 5).map((deal, idx) => {
-              const p = deal;
-              return (
-                <div
-                  key={deal.id}
-                  className={`grid grid-cols-[2fr_0.8fr_1fr_1fr_0.6fr_0.6fr_1fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] items-center hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
-                >
-                  <div>
-                    <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] font-medium text-[var(--app-text)] truncate text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors block w-full">{p.dealName}</button>
-                    <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">
-                      {p.importedProducts || p.productType} · {fmtDate(p.createdAt)}
-                    </div>
-                  </div>
-                  <div className="text-center"><StageBadge stage={p.stage} /></div>
-                  <div className="font-body text-[13px] text-[var(--app-text)] text-center">{fmt$(p.estimatedRefundAmount)}</div>
-                  <div className="font-body text-[13px] text-[var(--app-text-secondary)] text-center">{fmt$(p.firmFeeAmount)}</div>
-                  <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">{p.commissionRate ? `${Math.round(p.commissionRate * 100)}%` : "—"}</div>
-                  <div className="text-center"><StatusBadge status={p.l1CommissionStatus} /></div>
-                  <div className="font-display text-[15px] font-semibold text-brand-gold text-right">{fmt$(p.l1CommissionAmount)}</div>
-                </div>
-              );
-            })}
+          /* ── Desktop/Tablet: Table ── */
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[var(--app-border)]">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Client / Deal</th>
+                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
+                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Est. Refund</th>
+                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Firm Fee</th>
+                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Comm %</th>
+                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
+                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                </tr>
+              </thead>
+              <tbody>
+                {directDeals.slice(0, 5).map((deal, idx) => {
+                  const p = deal;
+                  return (
+                    <tr key={deal.id} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                      <td className="px-4 sm:px-6 py-3.5">
+                        <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] font-medium text-[var(--app-text)] truncate text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors block w-full">{p.dealName}</button>
+                        <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">{p.importedProducts || p.productType} · {fmtDate(p.createdAt)}</div>
+                      </td>
+                      <td className="px-3 py-3.5 text-center"><StageBadge stage={p.stage} /></td>
+                      <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(p.estimatedRefundAmount)}</td>
+                      <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text-secondary)]">{fmt$(p.firmFeeAmount)}</td>
+                      <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{p.commissionRate ? `${Math.round(p.commissionRate * 100)}%` : "—"}</td>
+                      <td className="px-3 py-3.5 text-center"><StatusBadge status={p.l1CommissionStatus} /></td>
+                      <td className="px-3 py-3.5 text-center font-display text-[15px] font-semibold text-brand-gold">{fmt$(p.l1CommissionAmount)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
         </>)}
@@ -242,46 +241,37 @@ export default function OverviewPage() {
             </div>
           ) : (
             /* ── Desktop/Tablet: Grid table ── */
-            <div>
-              {/* Header */}
-              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_0.7fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)]">Client / Deal</div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Partner</div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Stage</div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Est. Refund</div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">Status</div>
-                <div className="font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] text-center">L2 Commission</div>
-              </div>
-              {/* Rows */}
-              {downlineDeals.slice(0, 3).map((deal, idx) => {
-                const p = deal;
-                return (
-                  <div
-                    key={deal.id}
-                    className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_0.7fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] items-center hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}
-                  >
-                    <div>
-                      <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] font-medium text-[var(--app-text)] truncate text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors block w-full">{p.dealName}</button>
-                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">{fmtDate(p.createdAt)}</div>
-                    </div>
-                    <div className="text-center font-body text-[12px] text-[var(--app-text-secondary)]">
-                      {p.submittingPartnerName || partnerNameMap[p.partnerCode] || p.partnerCode}
-                    </div>
-                    <div className="text-center">
-                      <StageBadge stage={p.stage} />
-                    </div>
-                    <div className="font-body text-[13px] text-[var(--app-text)] text-center">
-                      {fmt$(p.estimatedRefundAmount)}
-                    </div>
-                    <div className="text-center">
-                      <StatusBadge status={p.l2CommissionStatus} />
-                    </div>
-                    <div className="font-display text-[15px] font-semibold text-brand-gold text-center">
-                      {fmt$(p.l2CommissionAmount)}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[var(--app-border)]">
+                    <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Client / Deal</th>
+                    <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Partner</th>
+                    <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
+                    <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Est. Refund</th>
+                    <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
+                    <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">L2 Commission</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {downlineDeals.slice(0, 3).map((deal, idx) => {
+                    const p = deal;
+                    return (
+                      <tr key={deal.id} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                        <td className="px-4 sm:px-6 py-3.5">
+                          <button onClick={() => router.push(`/dashboard/deals?deal=${deal.id}`)} className="font-body text-[13px] font-medium text-[var(--app-text)] truncate text-left hover:text-brand-gold hover:underline underline-offset-2 transition-colors block w-full">{p.dealName}</button>
+                          <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">{fmtDate(p.createdAt)}</div>
+                        </td>
+                        <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-secondary)]">{p.submittingPartnerName || partnerNameMap[p.partnerCode] || p.partnerCode}</td>
+                        <td className="px-3 py-3.5 text-center"><StageBadge stage={p.stage} /></td>
+                        <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(p.estimatedRefundAmount)}</td>
+                        <td className="px-3 py-3.5 text-center"><StatusBadge status={p.l2CommissionStatus} /></td>
+                        <td className="px-3 py-3.5 text-center font-display text-[15px] font-semibold text-brand-gold">{fmt$(p.l2CommissionAmount)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
 
