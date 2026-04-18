@@ -5,13 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 /**
  * ReportingTabs
  *
- * Shared top-of-page tab bar for the three finance/analytics pages
- * (/admin/reports, /admin/revenue, /admin/payouts). Uses router.push()
- * instead of <Link> to ensure same-window navigation in PWA mode.
+ * Shared top-of-page tab bar for the finance/analytics pages
+ * (/admin/reports, /admin/revenue, /admin/custom-commissions, /admin/payouts).
+ * Uses router.push() instead of <Link> to ensure same-window navigation in
+ * PWA mode.
  */
 const TABS = [
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/revenue", label: "Revenue" },
+  { href: "/admin/custom-commissions", label: "Custom Commissions" },
   { href: "/admin/payouts", label: "Payouts" },
 ] as const;
 

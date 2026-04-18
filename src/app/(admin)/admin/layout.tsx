@@ -30,9 +30,10 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   training:     { id: "training", href: "/admin/training", icon: "📖", label: "Training" },
   conference:   { id: "conference", href: "/admin/conference", icon: "📹", label: "Live Weekly" },
   documents:    { id: "documents", href: "/admin/documents", icon: "📁", label: "Documents" },
-  // "reporting" is a synthetic umbrella for Reports / Revenue / Payouts.
-  // The three finance pages share a ReportingTabs bar rendered at the top
-  // of each page so the user can switch between them in-context.
+  // "reporting" is a synthetic umbrella for Reports / Revenue /
+  // Custom Commissions / Payouts. The finance pages share a ReportingTabs
+  // bar rendered at the top of each page so the user can switch between
+  // them in-context.
   reporting:    { id: "reporting", href: "/admin/reports", icon: "📈", label: "Reporting" },
   settings:     { id: "settings", href: "/admin/settings", icon: "⚙️", label: "Settings" },
   users:        { id: "users", href: "/admin/users", icon: "🔐", label: "Admin Users" },
