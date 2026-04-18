@@ -654,7 +654,7 @@ export default function AdminPartnersPage() {
                         onClick={(evt) => {
                           evt.stopPropagation();
                           const sp = (window as any).__fintellaSoftphone;
-                          if (sp) sp.call(e164, `${p.firstName} ${p.lastName}`.trim());
+                          if (sp) sp.call(e164, `${p.firstName} ${p.lastName}`.trim(), p.partnerCode);
                         }}
                         className="text-brand-gold hover:underline"
                         title="Click to dial via softphone"

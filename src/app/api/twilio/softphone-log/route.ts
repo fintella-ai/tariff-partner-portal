@@ -20,9 +20,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const toPhone = normalizePhone(body.toPhone) || body.toPhone || "";
 
-    // Try to match the phone to a partner
-    let partnerCode: string | null = null;
-    if (toPhone) {
+    // Use explicit partnerCode if provided, otherwise match by phone
+    let partnerCode: string | null = body.partnerCode || null;
+    if (!partnerCode && toPhone) {
       const partner = await prisma.partner.findFirst({
         where: { OR: [{ mobilePhone: toPhone }, { phone: toPhone }] },
         select: { partnerCode: true },

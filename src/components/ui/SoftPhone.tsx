@@ -14,7 +14,7 @@ type CallState =
   | "demo";
 
 type SoftPhoneAPI = {
-  call: (phone: string, partnerName?: string) => void;
+  call: (phone: string, partnerName?: string, partnerCode?: string) => void;
   hangup: () => void;
   state: CallState;
 };
@@ -140,7 +140,7 @@ export default function SoftPhone() {
   // ── Call / hangup ──────────────────────────────────────────────────────────
 
   const call = useCallback(
-    async (phone: string, partnerName?: string) => {
+    async (phone: string, partnerName?: string, partnerCode?: string) => {
       setOpen(true);
       setCurrentNumber(phone);
       setCurrentName(partnerName || "");
@@ -162,7 +162,7 @@ export default function SoftPhone() {
           const logRes = await fetch("/api/twilio/softphone-log", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ toPhone: phone, partnerName }),
+            body: JSON.stringify({ toPhone: phone, partnerName, partnerCode }),
           });
           if (logRes.ok) {
             const logData = await logRes.json();

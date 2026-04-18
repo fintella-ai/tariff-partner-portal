@@ -136,8 +136,15 @@ function buildSoftphoneOutboundTwiml(
     dialContent = safeNumber;
   }
 
+  // Status callback so softphone calls get status updates (ringing→completed)
+  let statusAttrs = "";
+  if (logId) {
+    const statusUrl = `${PORTAL_URL}/api/twilio/call-status?logId=${encodeURIComponent(logId)}`;
+    statusAttrs = ` action="${escapeXml(statusUrl)}"`;
+  }
+
   return `<Response>
-  <Dial${callerAttr} timeout="25" answerOnBridge="true"${recordingAttrs}>${dialContent}</Dial>
+  <Dial${callerAttr} timeout="25" answerOnBridge="true"${recordingAttrs}${statusAttrs}>${dialContent}</Dial>
 </Response>`;
 }
 

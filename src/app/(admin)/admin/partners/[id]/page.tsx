@@ -225,7 +225,8 @@ export default function PartnerDetailPage() {
     if (softphone && phoneNumber) {
       softphone.call(
         phoneNumber,
-        `${partner.firstName} ${partner.lastName}`.trim()
+        `${partner.firstName} ${partner.lastName}`.trim(),
+        partner.partnerCode
       );
       setCallMessage("Softphone dialing — see the floating softphone panel.");
       setCallingPartner(false);
