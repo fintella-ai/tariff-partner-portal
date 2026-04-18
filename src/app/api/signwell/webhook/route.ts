@@ -19,12 +19,13 @@ export async function POST(req: NextRequest) {
     }
 
     const { event, data } = body;
-    console.log("[SignWellWebhook] event:", event, "doc:", data?.document_id || data?.id || "unknown", "body_keys:", Object.keys(body));
+    const docId = data?.document_id || data?.id || body?.document_id || body?.id;
+    console.log("[SignWellWebhook] RAW:", JSON.stringify({ event, docId, bodyKeys: Object.keys(body), dataKeys: data ? Object.keys(data) : [] }));
 
     if (event === "document_completed") {
       // Find the agreement by SignWell document ID and mark as signed
       const agreement = await prisma.partnershipAgreement.findFirst({
-        where: { signwellDocumentId: data.document_id },
+        where: { signwellDocumentId: docId },
       });
 
       if (agreement) {
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest) {
     const isPartialSign = ["document_signed", "recipient_completed", "document_recipient_completed", "recipient_signed"].includes(event);
     if (isPartialSign) {
       const agreement = await prisma.partnershipAgreement.findFirst({
-        where: { signwellDocumentId: data.document_id },
+        where: { signwellDocumentId: docId },
       });
 
       if (agreement && agreement.status === "pending") {
@@ -145,7 +146,7 @@ export async function POST(req: NextRequest) {
       // Track that the partner has viewed the document (no status change needed,
       // but useful for admin visibility)
       const agreement = await prisma.partnershipAgreement.findFirst({
-        where: { signwellDocumentId: data.document_id },
+        where: { signwellDocumentId: docId },
       });
 
       if (agreement && agreement.status === "pending") {
@@ -156,7 +157,7 @@ export async function POST(req: NextRequest) {
 
     if (event === "document_expired") {
       const agreement = await prisma.partnershipAgreement.findFirst({
-        where: { signwellDocumentId: data.document_id },
+        where: { signwellDocumentId: docId },
       });
 
       if (agreement) {
