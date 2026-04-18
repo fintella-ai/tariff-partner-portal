@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/format";
-import { computeDealCommissions } from "@/lib/commission";
+import { computeDealCommissions, getL1CommissionRateSnapshot } from "@/lib/commission";
 import { sendDealStatusUpdateEmail } from "@/lib/sendgrid";
 
 /**
@@ -527,6 +527,14 @@ async function postHandler(req: NextRequest): Promise<Response> {
       );
     }
 
+    // Snapshot the L1 commission rate at deal-creation time so later
+    // changes to Partner.commissionRate don't retro-affect this deal.
+    // Skip for UNATTRIBUTED deals — no partner chain to walk.
+    const l1RateSnapshot =
+      partnerCode && partnerCode !== "UNATTRIBUTED"
+        ? await getL1CommissionRateSnapshot(prisma, partnerCode).catch(() => null)
+        : null;
+
     // Create Deal record
     const deal = await prisma.deal.create({
       data: {
@@ -552,6 +560,7 @@ async function postHandler(req: NextRequest): Promise<Response> {
         affiliateNotes: affiliateNotes || null,
         consultBookedDate: consultBookedDate || null,
         consultBookedTime: consultBookedTime || null,
+        l1CommissionRate: l1RateSnapshot,
         idempotencyKey: idempotencyKey || null,
         notes: `Source: Frost Law Referral Form | Partner: ${
           partnerCode || "none"

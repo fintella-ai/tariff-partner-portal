@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getL1CommissionRateSnapshot } from "@/lib/commission";
 
 /**
  * GET /api/deals
@@ -88,6 +89,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
+    // Snapshot the L1 commission rate at deal-creation time so later
+    // changes to Partner.commissionRate don't retro-affect this deal.
+    const l1RateSnapshot = await getL1CommissionRateSnapshot(
+      prisma,
+      partnerCode
+    ).catch(() => null);
+
     const deal = await prisma.deal.create({
       data: {
         dealName: body.businessName || body.dealName,
@@ -99,6 +107,7 @@ export async function POST(req: NextRequest) {
         productType: body.productType || null,
         importedProducts: body.importedProducts || null,
         estimatedRefundAmount: body.estimatedAnnualImportValue ? parseFloat(body.estimatedAnnualImportValue) : 0,
+        l1CommissionRate: l1RateSnapshot,
         notes: body.notes || null,
       },
     });
