@@ -29,10 +29,11 @@ export async function POST(req: NextRequest) {
       },
     }).catch(() => {});
 
-    const { event, data } = body;
-    const docId = data?.document_id || data?.id || body?.document_id || body?.id;
+    // SignWell sends: { event: { type: "document_completed", ... }, data: { object: { id: "..." } } }
+    const eventType = typeof body.event === "string" ? body.event : body.event?.type;
+    const docId = body.data?.object?.id || body.data?.document_id || body.data?.id || body.document_id;
 
-    if (event === "document_completed") {
+    if (eventType === "document_completed") {
       // Find the agreement by SignWell document ID and mark as signed
       const agreement = await prisma.partnershipAgreement.findFirst({
         where: { signwellDocumentId: docId },
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
           data: {
             status: "signed",
             signedDate: new Date(),
-            documentUrl: data.document_url || agreement.documentUrl,
+            documentUrl: body.data?.object?.completed_pdf_url || body.data?.object?.original_file_url || body.data?.document_url || agreement.documentUrl,
           },
         });
 
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
 
     // Individual signer completed — partner signed but co-signer hasn't yet
     // SignWell may use: document_signed, recipient_completed, document_recipient_completed
-    const isPartialSign = ["document_signed", "recipient_completed", "document_recipient_completed", "recipient_signed"].includes(event);
+    const isPartialSign = ["document_signed", "recipient_completed", "document_recipient_completed", "recipient_signed"].includes(eventType || "");
     if (isPartialSign) {
       const agreement = await prisma.partnershipAgreement.findFirst({
         where: { signwellDocumentId: docId },
@@ -152,7 +153,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (event === "document_viewed") {
+    if (eventType === "document_viewed") {
       // Track that the partner has viewed the document (no status change needed,
       // but useful for admin visibility)
       const agreement = await prisma.partnershipAgreement.findFirst({
@@ -165,7 +166,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (event === "document_expired") {
+    if (eventType === "document_expired") {
       const agreement = await prisma.partnershipAgreement.findFirst({
         where: { signwellDocumentId: docId },
       });
