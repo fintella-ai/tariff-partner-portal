@@ -341,22 +341,20 @@ export async function sendForSigning(
 
   const doc = await res.json();
 
-  // Log response keys to debug signing URL extraction
-  console.log("[signwell] Create response keys:", Object.keys(doc));
-  console.log("[signwell] embedded_signing_url:", doc.embedded_signing_url || "null");
-  console.log("[signwell] recipients:", JSON.stringify(doc.recipients || doc.signees || doc.recipients_with_urls || "none"));
-
-  // Extract embedded signing URL — try multiple response shapes
-  const embeddedSigningUrl =
+  // Try to get signing URL from create response first
+  let signingUrl =
     doc.embedded_signing_url ||
     doc.recipients_with_urls?.[0]?.embedded_signing_url ||
     doc.recipients?.[0]?.embedded_signing_url ||
     doc.signees?.[0]?.embedded_signing_url ||
     null;
 
-  console.log("[signwell] Extracted embeddedSigningUrl:", embeddedSigningUrl || "null");
+  // If not in response (embedded_signing: false), fetch it separately
+  if (!signingUrl && doc.id) {
+    signingUrl = await getEmbeddedSigningUrl(doc.id);
+  }
 
-  return { documentId: doc.id, status: "pending", embeddedSigningUrl };
+  return { documentId: doc.id, status: "pending", embeddedSigningUrl: signingUrl };
 }
 
 /**
