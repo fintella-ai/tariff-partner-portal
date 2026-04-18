@@ -145,7 +145,13 @@ export default function SoftPhone() {
   const call = useCallback(
     async (phone: string, partnerName?: string, partnerCode?: string) => {
       setOpen(true);
-      setCurrentNumber(phone);
+      // Normalize to E.164 before dialing
+      const e164 = toE164(phone);
+      if (!e164) {
+        setErrorMsg("Invalid phone number format.");
+        return;
+      }
+      setCurrentNumber(e164);
       setCurrentName(partnerName || "");
       setErrorMsg(null);
       setMuted(false);
@@ -165,7 +171,7 @@ export default function SoftPhone() {
           const logRes = await fetch("/api/twilio/softphone-log", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ toPhone: phone, partnerName, partnerCode }),
+            body: JSON.stringify({ toPhone: e164, partnerName, partnerCode }),
           });
           if (logRes.ok) {
             const logData = await logRes.json();
@@ -173,7 +179,7 @@ export default function SoftPhone() {
           }
         } catch {}
 
-        const connectParams: Record<string, string> = { To: phone };
+        const connectParams: Record<string, string> = { To: e164 };
         if (logId) connectParams.logId = logId;
         const c = await device.connect({ params: connectParams });
         callRef.current = c;
