@@ -48,3 +48,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to create log" }, { status: 500 });
   }
 }
+
+/**
+ * PATCH /api/twilio/softphone-log
+ * Updates a CallLog entry with status changes from the browser softphone.
+ */
+export async function PATCH(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const { logId, status, errorMessage } = body;
+    if (!logId || !status) return NextResponse.json({ error: "logId and status required" }, { status: 400 });
+
+    const data: Record<string, any> = { status };
+    if (status === "completed" || status === "failed" || status === "canceled" || status === "no-answer") {
+      data.completedAt = new Date();
+    }
+    if (errorMessage) data.errorMessage = errorMessage;
+
+    await prisma.callLog.update({ where: { id: logId }, data });
+    return NextResponse.json({ ok: true });
+  } catch (err: any) {
+    console.error("[softphone-log] PATCH error:", err);
+    return NextResponse.json({ error: "Failed to update log" }, { status: 500 });
+  }
+}

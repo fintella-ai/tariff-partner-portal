@@ -174,16 +174,28 @@ export default function SoftPhone() {
         if (logId) connectParams.logId = logId;
         const c = await device.connect({ params: connectParams });
         callRef.current = c;
-        c.on("ringing", () => setState("ringing"));
-        c.on("accept", () => { setState("in-call"); startDurationTimer(); });
-        c.on("disconnect", () => { setState("ended"); stopDurationTimer(); callRef.current = null; });
-        c.on("cancel", () => { setState("ended"); stopDurationTimer(); callRef.current = null; });
-        c.on("reject", () => { setState("ended"); stopDurationTimer(); callRef.current = null; });
+
+        // Helper to update CallLog status from the client
+        const updateLog = (status: string, extra?: Record<string, any>) => {
+          if (!logId) return;
+          fetch("/api/twilio/softphone-log", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ logId, status, ...extra }),
+          }).catch(() => {});
+        };
+
+        c.on("ringing", () => { setState("ringing"); updateLog("ringing"); });
+        c.on("accept", () => { setState("in-call"); startDurationTimer(); updateLog("in-progress"); });
+        c.on("disconnect", () => { setState("ended"); stopDurationTimer(); callRef.current = null; updateLog("completed"); });
+        c.on("cancel", () => { setState("ended"); stopDurationTimer(); callRef.current = null; updateLog("canceled"); });
+        c.on("reject", () => { setState("ended"); stopDurationTimer(); callRef.current = null; updateLog("no-answer"); });
         c.on("error", (err: any) => {
           console.error("[SoftPhone] call error:", err);
           setErrorMsg(err?.message || "Call error");
           setState("error");
           stopDurationTimer();
+          updateLog("failed", { errorMessage: err?.message });
         });
       } catch (err: any) {
         console.error("[SoftPhone] connect failed:", err);
