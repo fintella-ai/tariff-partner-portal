@@ -293,8 +293,7 @@ export async function sendForSigning(
     recipients,
     reminders: true,
     apply_signing_order: options.recipients.length > 1,
-    embedded_signing: true,
-    embedded_signing_notifications: true,
+    embedded_signing: false,
   };
 
   if (usingTemplate) {
