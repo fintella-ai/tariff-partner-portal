@@ -47,25 +47,44 @@ export async function GET() {
       partnerId: infoMap[d.partnerCode]?.id || null,
     }));
 
-    // Convert agreements to document-like entries
-    const agreementDocs = agreements.map((a: any) => ({
-      id: `agreement-${a.id}`,
-      partnerCode: a.partnerCode,
-      partnerName: infoMap[a.partnerCode]?.name || a.partnerCode,
-      partnerId: infoMap[a.partnerCode]?.id || null,
-      docType: "agreement",
-      fileName: `Partnership Agreement v${a.version}`,
-      fileUrl: a.documentUrl || "",
-      status: a.status === "signed" || a.status === "approved" ? "approved"
-        : a.status === "partner_signed" ? "under_review"
-        : a.status === "pending" ? "uploaded"
-        : a.status,
-      uploadedBy: "SignWell",
-      createdAt: a.sentDate || a.createdAt,
-      signwellDocumentId: a.signwellDocumentId,
-      agreementVersion: a.version,
-      agreementStatus: a.status,
-    }));
+    // Build a set of signwellDocumentIds that already have a real Document
+    // row so we don't double-list them below. Our Document rows stamp
+    // `uploadedBy = "SignWell:<signwellDocId>"` when created by the
+    // document_completed webhook (or the backfill).
+    const signwellDocIdsWithDoc = new Set<string>();
+    for (const d of documents) {
+      const ub = (d as any).uploadedBy as string | null;
+      if (ub && ub.startsWith("SignWell:")) {
+        signwellDocIdsWithDoc.add(ub.slice("SignWell:".length));
+      }
+    }
+
+    // Convert agreements to document-like entries for the synthetic log,
+    // but skip any agreement whose completed PDF is already represented
+    // by a real Document row — otherwise the admin view shows the signed
+    // agreement twice.
+    const agreementDocs = agreements
+      .filter((a: any) =>
+        !(a.signwellDocumentId && signwellDocIdsWithDoc.has(a.signwellDocumentId))
+      )
+      .map((a: any) => ({
+        id: `agreement-${a.id}`,
+        partnerCode: a.partnerCode,
+        partnerName: infoMap[a.partnerCode]?.name || a.partnerCode,
+        partnerId: infoMap[a.partnerCode]?.id || null,
+        docType: "agreement",
+        fileName: `Partnership Agreement v${a.version}`,
+        fileUrl: a.documentUrl || "",
+        status: a.status === "signed" || a.status === "approved" ? "approved"
+          : a.status === "partner_signed" ? "under_review"
+          : a.status === "pending" ? "uploaded"
+          : a.status,
+        uploadedBy: "SignWell",
+        createdAt: a.sentDate || a.createdAt,
+        signwellDocumentId: a.signwellDocumentId,
+        agreementVersion: a.version,
+        agreementStatus: a.status,
+      }));
 
     return NextResponse.json({ documents: [...agreementDocs, ...enrichedDocs] });
   } catch {

@@ -387,6 +387,43 @@ export async function getDocumentStatus(
 }
 
 /**
+ * Retrieve the persistent URL to the completed (fully-signed) PDF.
+ *
+ * Per SignWell docs (developers.signwell.com/reference/getcompletedpdf):
+ *   GET /documents/{id}/completed_pdf?url_only=true
+ *   → { file_url: "https://files.signwell.com/..." }
+ *
+ * The returned file_url is a pre-signed S3 URL that works without the API
+ * key, so it's safe to persist on the Document row and hand directly to
+ * the browser for view/download.
+ *
+ * Returns null in demo mode or if SignWell rejects (e.g. document not
+ * fully signed yet).
+ */
+export async function getCompletedPdfUrl(
+  documentId: string
+): Promise<string | null> {
+  if (!SIGNWELL_API_KEY) return null;
+
+  // audit_page=true → SignWell appends the signed audit trail to the PDF,
+  // giving us the legally-defensible record alongside the agreement body.
+  const res = await fetch(
+    `${SIGNWELL_API_BASE}/documents/${documentId}/completed_pdf?url_only=true&audit_page=true`,
+    {
+      headers: {
+        "X-Api-Key": SIGNWELL_API_KEY,
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (!res.ok) return null;
+
+  const data = await res.json().catch(() => null);
+  return data?.file_url || null;
+}
+
+/**
  * Get the embedded signing URL for a specific recipient on a document.
  */
 export async function getEmbeddedSigningUrl(

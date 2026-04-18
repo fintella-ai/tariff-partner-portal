@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendAgreementSignedEmail } from "@/lib/sendgrid";
 import { sendAgreementSignedSms } from "@/lib/twilio";
+import { getCompletedPdfUrl } from "@/lib/signwell";
 
 // SignWell sends webhooks when documents are signed, viewed, etc.
 // Webhook events: document_completed, document_viewed, document_expired
@@ -40,14 +41,55 @@ export async function POST(req: NextRequest) {
       });
 
       if (agreement) {
+        // Pull the completed PDF URL from the webhook body when present;
+        // otherwise call SignWell's /completed_pdf?url_only endpoint
+        // (developers.signwell.com/reference/getcompletedpdf). Includes
+        // the audit page so we have the legally-defensible trail.
+        const bodyPdfUrl =
+          body.data?.object?.completed_pdf_url ||
+          body.data?.object?.original_file_url ||
+          body.data?.document_url ||
+          "";
+        const completedPdfUrl =
+          bodyPdfUrl ||
+          (docId ? await getCompletedPdfUrl(docId).catch(() => null) : null) ||
+          "";
+
         await prisma.partnershipAgreement.update({
           where: { id: agreement.id },
           data: {
             status: "signed",
             signedDate: new Date(),
-            documentUrl: body.data?.object?.completed_pdf_url || body.data?.object?.original_file_url || body.data?.document_url || agreement.documentUrl,
+            documentUrl: completedPdfUrl || agreement.documentUrl,
           },
         });
+
+        // Store completed agreement as a Document so it shows up in the
+        // partner's "My Documents" and the admin's documents log alongside
+        // every other uploaded doc. Dedup via `uploadedBy = SignWell:<docId>`
+        // so SignWell webhook retries don't create duplicates.
+        const uploadedBy = `SignWell:${docId || agreement.id}`;
+        const existingDoc = await prisma.document.findFirst({
+          where: { partnerCode: agreement.partnerCode, uploadedBy },
+          select: { id: true },
+        });
+        if (existingDoc) {
+          await prisma.document.update({
+            where: { id: existingDoc.id },
+            data: { fileUrl: completedPdfUrl, status: "approved" },
+          }).catch(() => {});
+        } else {
+          await prisma.document.create({
+            data: {
+              partnerCode: agreement.partnerCode,
+              docType: "agreement",
+              fileName: `Partnership Agreement v${agreement.version} — Signed ${new Date().toLocaleDateString("en-US")}`,
+              fileUrl: completedPdfUrl,
+              status: "approved",
+              uploadedBy,
+            },
+          }).catch(() => {});
+        }
 
         // Create a notification for the partner
         await prisma.notification.create({
