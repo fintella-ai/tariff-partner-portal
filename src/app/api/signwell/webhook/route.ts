@@ -18,9 +18,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Log full body to diagnose structure
+    const bodyStr = JSON.stringify(body);
+    console.log("[SignWellWebhook] FULL_BODY_START");
+    // Split into chunks because Vercel truncates long logs
+    for (let i = 0; i < bodyStr.length; i += 500) {
+      console.log("[SignWellWebhook] CHUNK:", bodyStr.slice(i, i + 500));
+    }
+    console.log("[SignWellWebhook] FULL_BODY_END");
+
     const { event, data } = body;
     const docId = data?.document_id || data?.id || body?.document_id || body?.id;
-    console.log("[SignWellWebhook] RAW:", JSON.stringify({ event, docId, bodyKeys: Object.keys(body), dataKeys: data ? Object.keys(data) : [] }));
 
     if (event === "document_completed") {
       // Find the agreement by SignWell document ID and mark as signed
