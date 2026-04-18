@@ -18,31 +18,31 @@
 
 /* ── Theme Variables ─────────────────────────────────────────────────── */
 :root {
-  /* Light mode (default) — boosted contrast */
-  --app-bg: #f3f4f8;
-  --app-bg-secondary: #ffffff;
-  --app-text: #111827;
-  --app-text-secondary: #374151;
-  --app-text-muted: #6b7280;
-  --app-text-faint: #9ca3af;
-  --app-border: #d1d5db;
-  --app-border-subtle: #e5e7eb;
+  /* Light mode (default) — high contrast */
+  --app-bg: #e4e6ed;
+  --app-bg-secondary: #f8f9fb;
+  --app-text: #0f172a;
+  --app-text-secondary: #1f2937;
+  --app-text-muted: #4b5563;
+  --app-text-faint: #6b7280;
+  --app-border: #c0c4cc;
+  --app-border-subtle: #d4d8e0;
   --app-card-bg: #ffffff;
-  --app-card-border: #d1d5db;
-  --app-input-bg: #f9fafb;
-  --app-input-border: #9ca3af;
-  --app-input-text: #111827;
-  --app-input-placeholder: #6b7280;
-  --app-sidebar-bg: #ffffff;
-  --app-sidebar-border: rgba(196, 160, 80, 0.25);
-  --app-hover: rgba(0, 0, 0, 0.05);
+  --app-card-border: #c0c4cc;
+  --app-input-bg: #f1f3f6;
+  --app-input-border: #7c8290;
+  --app-input-text: #0f172a;
+  --app-input-placeholder: #4b5563;
+  --app-sidebar-bg: #f0f1f5;
+  --app-sidebar-border: rgba(160, 130, 50, 0.3);
+  --app-hover: rgba(0, 0, 0, 0.06);
   --app-overlay: rgba(0, 0, 0, 0.5);
-  --app-gold: #b8922e;
-  --app-gold-text: #8a6d1f;
-  --app-code-bg: #eef0f5;
-  --app-scrollbar: rgba(196, 160, 80, 0.4);
-  --brand-gold: #c4a050;
-  --brand-gold-muted: rgba(196, 160, 80, 0.15);
+  --app-gold: #9a7820;
+  --app-gold-text: #725a15;
+  --app-code-bg: #e0e3ea;
+  --app-scrollbar: rgba(160, 130, 50, 0.5);
+  --brand-gold: #b08c30;
+  --brand-gold-muted: rgba(160, 130, 50, 0.18);
 }
 
 /* Dark theme — [data-theme="dark"] is set by ThemeProvider (JS, before first paint).
