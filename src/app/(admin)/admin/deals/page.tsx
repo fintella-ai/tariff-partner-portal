@@ -456,7 +456,7 @@ export default function AdminDealsPage() {
           <button onClick={() => toggleSort("l1CommissionAmount")} className="relative font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)] w-full">
             Commission{sortIcon("l1CommissionAmount")}<span {...dealResize(7)} />
           </button>
-          <button onClick={() => toggleSort("createdAt")} className="relative font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-right hover:text-[var(--app-text-secondary)]">
+          <button onClick={() => toggleSort("createdAt")} className="relative font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center hover:text-[var(--app-text-secondary)]">
             Date{sortIcon("createdAt")}<span {...dealResize(8)} />
           </button>
         </div>
@@ -492,7 +492,7 @@ export default function AdminDealsPage() {
                 {formatRate(fin.commissionRate)}
               </div>
               <div className="font-display text-[14px] font-semibold text-brand-gold text-center">{fmt$(fin.commissionAmount)}</div>
-              <div className="font-body text-[12px] text-[var(--app-text-muted)] text-right">{fmtDateTime(deal.createdAt)}</div>
+              <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">{fmtDateTime(deal.createdAt)}</div>
             </div>
 
             {/* Expanded detail + edit panel */}
