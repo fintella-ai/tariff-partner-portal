@@ -408,7 +408,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         className="flex-1 overflow-y-auto p-4 sm:p-6 lg:px-10 lg:py-9"
         style={{
           paddingTop: !device.isDesktop ? "calc(env(safe-area-inset-top, 44px) + 5.5rem)" : undefined,
-          paddingBottom: !device.isDesktop ? "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" : undefined,
+          paddingBottom: !device.isDesktop ? "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" : "60px",
         }}
       >
         <div className="mb-5 sm:mb-8">

@@ -344,7 +344,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      <div className="flex flex-1" style={{ paddingBottom: device.isMobile ? 120 : 0 }}>
+      <div className="flex flex-1" style={{ paddingBottom: device.isMobile ? 120 : 60 }}>
       {/* ── DESKTOP SIDEBAR ── */}
       {device.isDesktop && (
         <div className={`${sidebarCollapsed ? "w-[68px]" : "w-[250px]"} theme-sidebar border-r p-4 flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto transition-all duration-200`}>
