@@ -491,16 +491,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 )}
               </div>
               <div className="-mx-4 border-b border-[var(--app-border)] mb-3" />
-              {/* Sign Out (left) — Submit Client + Referral Links + Support + Bell (right) */}
-              <div className="flex justify-between items-center mb-3">
-                <button
-                  onClick={() => signOut({ callbackUrl: "/login" })}
-                  aria-label="Sign out"
-                  className="font-body text-[11px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded-lg px-3.5 py-2.5 tracking-wider min-h-[44px] min-w-[44px] flex items-center hover:text-[var(--app-text-secondary)] active:scale-95 transition-all"
-                >
-                  Sign Out
-                </button>
-                <div className="flex items-center gap-2">
+              {/* Submit Client + Referral Links + Support + Bell */}
+              <div className="flex items-center justify-center gap-2 mb-3">
                   <button
                     onClick={() => navigate("/dashboard/submit-client")}
                     className={`font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all flex items-center justify-center gap-1 min-h-[44px] ${
@@ -529,7 +521,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     🎫
                   </a>
                   <NotificationBell />
-                </div>
               </div>
               <div className="-mx-4 border-b border-[var(--app-border)] mb-3" />
             </>
