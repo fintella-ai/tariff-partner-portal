@@ -258,8 +258,8 @@ export default function PartnerReportingPage() {
                       <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Refund</th>
                       <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Fee %</th>
                       <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Comm %</th>
-                      <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
                       <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
+                      <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -283,8 +283,8 @@ export default function PartnerReportingPage() {
                           <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</td>
                           <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{feeRate}</td>
                           <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{commRate}</td>
-                          <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(commAmt)}</td>
                           <td className="px-3 py-3.5 text-center"><StatusBadge status={commStatus} /></td>
+                          <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(commAmt)}</td>
                         </tr>
                         {expandedDealId === deal.id && (
                           <tr><td colSpan={9} className="p-0"><DealDetailPanel deal={deal} /></td></tr>
@@ -341,8 +341,8 @@ export default function PartnerReportingPage() {
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Refund</th>
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Fee %</th>
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Comm %</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -363,8 +363,8 @@ export default function PartnerReportingPage() {
                             <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</td>
                             <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{feeRate}</td>
                             <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{dealCommRate}</td>
-                            <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(commAmt)}</td>
                             <td className="px-3 py-3.5 text-center"><StatusBadge status={commStatus} /></td>
+                            <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(commAmt)}</td>
                           </tr>
                           {expandedDealId === deal.id && (
                             <tr><td colSpan={8} className="p-0"><DealDetailPanel deal={deal} /></td></tr>
@@ -525,8 +525,8 @@ export default function PartnerReportingPage() {
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Refund</th>
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Fee %</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -538,8 +538,8 @@ export default function PartnerReportingPage() {
                           <td className="px-3 py-3.5 text-center"><StageBadge stage={deal.stage} /></td>
                           <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</td>
                           <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{deal.firmFeeRate ? `${Math.round(deal.firmFeeRate * 100)}%` : "—"}</td>
-                          <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(deal.l2CommissionAmount)}</td>
                           <td className="px-3 py-3.5 text-center"><StatusBadge status={deal.l2CommissionStatus} /></td>
+                          <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(deal.l2CommissionAmount)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -639,8 +639,8 @@ export default function PartnerReportingPage() {
                         <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Deal</th>
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Date</th>
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Tier</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
                         <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -654,8 +654,8 @@ export default function PartnerReportingPage() {
                           <td className="px-3 py-3.5 text-center">
                             <span className={`font-body text-[10px] font-semibold rounded px-1.5 py-0.5 ${deal._tier === "l1" ? "text-brand-gold bg-brand-gold/10 border border-brand-gold/20" : "text-purple-400 bg-purple-500/10 border border-purple-500/20"}`}>{deal._tier.toUpperCase()}</span>
                           </td>
-                          <td className={`px-3 py-3.5 text-center font-display text-[14px] font-semibold ${deal._tier === "l1" ? "text-brand-gold" : "text-purple-400"}`}>{fmt$(deal._amt)}</td>
                           <td className="px-3 py-3.5 text-center"><StatusBadge status={deal._status} /></td>
+                          <td className={`px-3 py-3.5 text-center font-display text-[14px] font-semibold ${deal._tier === "l1" ? "text-brand-gold" : "text-purple-400"}`}>{fmt$(deal._amt)}</td>
                         </tr>
                       ))}
                     </tbody>
