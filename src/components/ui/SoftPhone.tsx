@@ -46,6 +46,7 @@ export default function SoftPhone() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
   const [durationSec, setDurationSec] = useState(0);
+  const durationRef = useRef(0);
   const [missing, setMissing] = useState<string[]>([]);
   const [logoUrl, setLogoUrl] = useState("");
   // Dialer UI state
@@ -92,9 +93,11 @@ export default function SoftPhone() {
 
   const startDurationTimer = useCallback(() => {
     setDurationSec(0);
+    durationRef.current = 0;
     if (durationTimerRef.current) clearInterval(durationTimerRef.current);
     durationTimerRef.current = setInterval(() => {
-      setDurationSec((d) => d + 1);
+      durationRef.current += 1;
+      setDurationSec(durationRef.current);
     }, 1000);
   }, []);
 
@@ -187,7 +190,7 @@ export default function SoftPhone() {
 
         c.on("ringing", () => { setState("ringing"); updateLog("ringing"); });
         c.on("accept", () => { setState("in-call"); startDurationTimer(); updateLog("in-progress"); });
-        c.on("disconnect", () => { setState("ended"); stopDurationTimer(); callRef.current = null; updateLog("completed"); });
+        c.on("disconnect", () => { setState("ended"); stopDurationTimer(); callRef.current = null; updateLog("completed", { durationSeconds: durationRef.current }); });
         c.on("cancel", () => { setState("ended"); stopDurationTimer(); callRef.current = null; updateLog("canceled"); });
         c.on("reject", () => { setState("ended"); stopDurationTimer(); callRef.current = null; updateLog("no-answer"); });
         c.on("error", (err: any) => {
