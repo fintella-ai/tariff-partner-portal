@@ -12,14 +12,21 @@ type AdminUser = {
   createdAt: string;
 };
 
-const ASSIGNABLE_ROLES: { value: string; label: string }[] = [
+const BASE_ROLES: { value: string; label: string }[] = [
   { value: "admin", label: "Admin" },
   { value: "accounting", label: "Accounting" },
   { value: "partner_support", label: "Partner Support" },
 ];
 
+const MASTER_ROLES: { value: string; label: string }[] = [
+  { value: "super_admin", label: "Super Admin" },
+  ...BASE_ROLES,
+];
+
 export default function AdminUsersPage() {
   const { data: session } = useSession();
+  const isMasterAdmin = (session?.user as any)?.email === "admin@fintella.partners";
+  const assignableRoles = isMasterAdmin ? MASTER_ROLES : BASE_ROLES;
   const isSuperAdmin = (session?.user as any)?.role === "super_admin";
 
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -95,7 +102,7 @@ export default function AdminUsersPage() {
             <div>
               <label className={labelClass}>Role *</label>
               <select className={inputClass} value={newRole} onChange={(e) => setNewRole(e.target.value)}>
-                {ASSIGNABLE_ROLES.map((r) => (
+                {assignableRoles.map((r) => (
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
@@ -205,7 +212,7 @@ export default function AdminUsersPage() {
                       }}
                       className="bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-2 py-1.5 font-body text-[12px] text-[var(--app-text)] outline-none"
                     >
-                      {ASSIGNABLE_ROLES.map((r) => (
+                      {assignableRoles.map((r) => (
                         <option key={r.value} value={r.value}>{r.label}</option>
                       ))}
                     </select>

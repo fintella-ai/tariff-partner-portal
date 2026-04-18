@@ -293,9 +293,10 @@ export async function sendForSigning(
     recipients,
     reminders: true,
     apply_signing_order: options.recipients.length > 1,
-    // embedded_signing stays false — we construct the signing URL ourselves
-    // from the document ID: https://www.signwell.com/docs/{id}/
-    embedded_signing: false,
+    // embedded_signing: true makes SignWell return a signing URL in the
+    // response. We NEVER use iframes — the URL opens in a new browser tab
+    // via window.open(). This flag is required to get the URL.
+    embedded_signing: true,
   };
 
   if (usingTemplate) {
@@ -343,9 +344,13 @@ export async function sendForSigning(
 
   const doc = await res.json();
 
-  // Construct the signing URL from the document ID
-  // Format: https://www.signwell.com/docs/{id}/
-  const signingUrl = doc.id ? `https://www.signwell.com/docs/${doc.id}/` : null;
+  // Extract signing URL from response — opens in new tab, never iframe
+  const signingUrl =
+    doc.embedded_signing_url ||
+    doc.recipients_with_urls?.[0]?.embedded_signing_url ||
+    doc.recipients?.[0]?.embedded_signing_url ||
+    doc.signees?.[0]?.embedded_signing_url ||
+    null;
 
   return { documentId: doc.id, status: "pending", embeddedSigningUrl: signingUrl };
 }
