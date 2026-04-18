@@ -413,12 +413,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      {/* ── FLOATING TOP-RIGHT BUTTONS ── */}
+      {/* ── FLOATING TOP-RIGHT BUTTONS (desktop/tablet only — mobile has them inline in header) ── */}
+      {!device.isMobile && (
       <div
         className="fixed z-[902] flex items-center gap-2"
         style={{
-          top: device.isMobile ? "calc(env(safe-area-inset-top, 12px) + 56px)" : "20px",
-          right: device.isMobile ? "16px" : "24px",
+          top: "20px",
+          right: "24px",
         }}
       >
         <a
@@ -430,6 +431,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </a>
         <NotificationBell draggable />
       </div>
+      )}
 
       {/* ══ MAIN CONTENT ══ */}
       <div
@@ -476,8 +478,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <>
               {/* Safe area spacer for iPhone notch/Dynamic Island */}
               <div style={{ paddingTop: "env(safe-area-inset-top, 12px)" }} />
-              {/* Top bar: Sign Out (left) — Fintella (center) — spacer (right, balanced) */}
-              <div className="flex justify-between items-center py-3 gap-2">
+              {/* Logo — use uploaded logo or fallback to text */}
+              <div className="flex justify-center py-3">
+                {logoUrl ? (
+                  <img src={logoUrl} alt={firmShort} className="max-h-12 object-contain" />
+                ) : (
+                  <div className="font-display text-[18px] font-bold text-brand-gold tracking-[2px]">
+                    {firmShort}
+                  </div>
+                )}
+              </div>
+              <div className="border-b border-[var(--app-border)] mb-3" />
+              {/* Sign Out (left) — Support + Bell (right) */}
+              <div className="flex justify-between items-center mb-3">
                 <button
                   onClick={() => signOut({ callbackUrl: "/login" })}
                   aria-label="Sign out"
@@ -485,20 +498,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   Sign Out
                 </button>
-                <div className="text-center min-w-0 px-1">
-                  <div className="font-display text-[18px] font-bold text-brand-gold tracking-[2px] truncate">
-                    {firmShort}
-                  </div>
-                  <div className="font-body text-[8px] text-[var(--app-text-muted)] tracking-[0.5px] mt-0.5 leading-tight truncate">
-                    {FIRM_NAME}
-                  </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href="/dashboard/support"
+                    className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
+                    title="Support"
+                  >
+                    🎫
+                  </a>
+                  <NotificationBell />
                 </div>
-                {/* Right slot kept empty to balance the centered title.
-                    The floating NotificationBell already occupies the
-                    top-right corner for all mobile viewports. */}
-                <div className="min-h-[44px] min-w-[44px]" />
               </div>
-              {/* Divider below header bar */}
               <div className="border-b border-[var(--app-border)] mb-3" />
             </>
           )}
