@@ -481,7 +481,7 @@ Retry-After: 17
                   category: "Conditionally Required",
                   colorVar: "--doc-red",
                   fields: ["estimated_refund_amount", "firm_fee_rate"],
-                  desc: "When transitioning a deal into client_engaged (contract signed), in_process, or closedwon, BOTH of these must be present — either in the PATCH body or already on the deal from a prior update. firm_fee_amount is NOT required; it is derived from refund × rate.",
+                  desc: "client_engaged (contract signed): only firm_fee_rate is required. in_process and closedwon: BOTH estimated_refund_amount and firm_fee_rate must be present — either in the PATCH body or already on the deal from a prior update. firm_fee_amount is NOT required; it is derived from refund × rate.",
                 },
                 {
                   category: "Deal Stage",
