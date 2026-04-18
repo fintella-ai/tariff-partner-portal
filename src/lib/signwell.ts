@@ -293,10 +293,12 @@ export async function sendForSigning(
     recipients,
     reminders: true,
     apply_signing_order: options.recipients.length > 1,
-    // embedded_signing: true makes SignWell return a signing URL in the
-    // response. We NEVER use iframes — the URL opens in a new browser tab
-    // via window.open(). This flag is required to get the URL.
+    // embedded_signing: true makes SignWell return a signing URL.
+    // We NEVER iframe — always window.open() in new tab.
+    // embedded_signing_notifications: true tells SignWell to email
+    // the next signer after the previous one completes.
     embedded_signing: true,
+    embedded_signing_notifications: true,
   };
 
   if (usingTemplate) {
