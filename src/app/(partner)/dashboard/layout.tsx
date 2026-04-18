@@ -479,9 +479,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <>
               {/* Safe area spacer for iPhone notch/Dynamic Island */}
               <div style={{ paddingTop: "env(safe-area-inset-top, 12px)" }} />
-              {/* Logo section — black background */}
-              <div className="border-b border-[var(--app-border)]" />
-              <div className="flex justify-center py-5 -mx-4 px-4 bg-black">
+              {/* Logo section — black background, full-bleed dividers */}
+              <div className="-mx-4 border-b border-[var(--app-border)]" />
+              <div className="flex justify-center py-6 -mx-4 px-4 bg-black">
                 {logoUrl ? (
                   <img src={logoUrl} alt={firmShort} className="max-h-20 object-contain" />
                 ) : (
@@ -490,8 +490,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                 )}
               </div>
-              <div className="border-b border-[var(--app-border)] mb-3" />
-              {/* Sign Out (left) — Support + Bell (right) */}
+              <div className="-mx-4 border-b border-[var(--app-border)] mb-3" />
+              {/* Sign Out (left) — Submit Client + Referral Links + Support + Bell (right) */}
               <div className="flex justify-between items-center mb-3">
                 <button
                   onClick={() => signOut({ callbackUrl: "/login" })}
@@ -501,6 +501,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   Sign Out
                 </button>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => navigate("/dashboard/submit-client")}
+                    className={`font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all flex items-center justify-center gap-1 min-h-[44px] ${
+                      isActive("/dashboard/submit-client")
+                        ? "bg-brand-gold/15 border-brand-gold/40 text-brand-gold"
+                        : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold hover:bg-brand-gold/10"
+                    }`}
+                  >
+                    💼 Submit
+                  </button>
+                  <button
+                    onClick={() => navigate("/dashboard/referral-links")}
+                    className={`font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all flex items-center justify-center gap-1 min-h-[44px] ${
+                      isActive("/dashboard/referral-links")
+                        ? "bg-purple-500/15 border-purple-500/40 text-purple-400"
+                        : "bg-purple-500/[0.06] border-purple-500/20 text-purple-400 hover:bg-purple-500/10"
+                    }`}
+                  >
+                    👥 Refer
+                  </button>
                   <a
                     href="/dashboard/support"
                     className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
@@ -511,31 +531,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <NotificationBell />
                 </div>
               </div>
-              <div className="border-b border-[var(--app-border)] mb-3" />
-              {/* Submit Client + Referral Links */}
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <button
-                  onClick={() => navigate("/dashboard/submit-client")}
-                  className={`flex-1 font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2.5 transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
-                    isActive("/dashboard/submit-client")
-                      ? "bg-brand-gold/15 border-brand-gold/40 text-brand-gold"
-                      : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold hover:bg-brand-gold/10"
-                  }`}
-                >
-                  💼 Submit Client
-                </button>
-                <button
-                  onClick={() => navigate("/dashboard/referral-links")}
-                  className={`flex-1 font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2.5 transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
-                    isActive("/dashboard/referral-links")
-                      ? "bg-purple-500/15 border-purple-500/40 text-purple-400"
-                      : "bg-purple-500/[0.06] border-purple-500/20 text-purple-400 hover:bg-purple-500/10"
-                  }`}
-                >
-                  👥 Referral Links
-                </button>
-              </div>
-              <div className="border-b border-[var(--app-border)] mb-3" />
+              <div className="-mx-4 border-b border-[var(--app-border)] mb-3" />
             </>
           )}
 
