@@ -217,7 +217,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         ) : logoUrl ? (
           <div className="mb-2">
-            <img src={logoUrl} alt={firmShort} className="max-h-32 w-full px-1 object-contain" />
+            <img src={logoUrl} alt={firmShort} className="max-h-40 w-full object-contain" />
           </div>
         ) : (
           <div className="font-display text-sm font-bold text-brand-gold tracking-[1px]">
@@ -481,7 +481,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="-mx-5 border-b border-[var(--app-border)]" />
               <div className="flex justify-center py-8 -mx-5 px-5 bg-black">
                 {logoUrl ? (
-                  <img src={logoUrl} alt={firmShort} className="max-h-28 object-contain" />
+                  <img src={logoUrl} alt={firmShort} className="max-h-36 object-contain" />
                 ) : (
                   <div className="font-display text-[22px] font-bold text-brand-gold tracking-[2px]">
                     {firmShort}
