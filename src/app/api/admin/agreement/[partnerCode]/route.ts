@@ -31,6 +31,21 @@ export async function GET(
   }
 
   try {
+    // Co-signer URL lookup
+    const action = req.nextUrl.searchParams.get("action");
+    if (action === "cosigner_url") {
+      const docId = req.nextUrl.searchParams.get("docId");
+      if (!docId) return NextResponse.json({ error: "docId required" }, { status: 400 });
+
+      const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
+      const cosignerEmail = settings?.fintellaSignerEmail;
+      if (!cosignerEmail) return NextResponse.json({ cosignerUrl: null });
+
+      const { getEmbeddedSigningUrl } = await import("@/lib/signwell");
+      const cosignerUrl = await getEmbeddedSigningUrl(docId, cosignerEmail);
+      return NextResponse.json({ cosignerUrl });
+    }
+
     const agreements = await prisma.partnershipAgreement.findMany({
       where: { partnerCode: params.partnerCode },
       orderBy: { version: "desc" },
