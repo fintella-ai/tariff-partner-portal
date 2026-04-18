@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useResizableColumns } from "@/components/ui/ResizableTable";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useDevice } from "@/lib/useDevice";
@@ -18,6 +19,7 @@ interface Invite {
 }
 
 export default function ReferralLinksPage() {
+  const { columnWidths: inviteCols, getResizeHandler: inviteResize } = useResizableColumns([80, 80, 100, 130, 150, 100]);
   const { data: session } = useSession();
   const device = useDevice();
   const router = useRouter();
@@ -337,15 +339,15 @@ export default function ReferralLinksPage() {
 
           {/* Desktop table */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left font-body text-sm">
+            <table className="w-full text-left font-body text-sm" style={{ tableLayout: "fixed" }}>
               <thead>
                 <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3 text-center">Rate</th>
-                  <th className="px-4 py-3 text-center">Tier</th>
-                  <th className="px-4 py-3 text-center">Status</th>
-                  <th className="px-4 py-3 text-center">Created</th>
-                  <th className="px-4 py-3 text-center">Used By</th>
-                  <th className="px-4 py-3 text-center">Action</th>
+                  <th className="px-4 py-3 text-center" style={{ width: inviteCols[0], position: "relative" }}>Rate<span {...inviteResize(0)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: inviteCols[1], position: "relative" }}>Tier<span {...inviteResize(1)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: inviteCols[2], position: "relative" }}>Status<span {...inviteResize(2)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: inviteCols[3], position: "relative" }}>Created<span {...inviteResize(3)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: inviteCols[4], position: "relative" }}>Used By<span {...inviteResize(4)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: inviteCols[5], position: "relative" }}>Action<span {...inviteResize(5)} /></th>
                 </tr>
               </thead>
               <tbody>

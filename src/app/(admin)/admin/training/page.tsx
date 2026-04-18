@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useResizableColumns } from "@/components/ui/ResizableTable";
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 
@@ -145,6 +146,11 @@ const VIEW_TABS: { id: ViewTab; label: string }[] = [
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
 export default function AdminTrainingPage() {
+  // Resizable column hooks
+  const { columnWidths: moduleCols, getResizeHandler: moduleResize } = useResizableColumns([250, 120, 100, 100, 80, 100]);
+  const { columnWidths: resourceCols, getResizeHandler: resourceResize } = useResizableColumns([250, 120, 100, 100, 100]);
+  const { columnWidths: faqCols, getResizeHandler: faqResize } = useResizableColumns([300, 120, 100, 80, 100]);
+
   // Active view tab
   const [view, setView] = useState<ViewTab>("modules");
 
@@ -849,26 +855,32 @@ export default function AdminTrainingPage() {
 
           {/* Desktop Table */}
           <div className="hidden md:block card overflow-x-auto">
-            <table className="w-full text-left font-body text-sm">
+            <table className="w-full text-left font-body text-sm" style={{ tableLayout: "fixed" }}>
               <thead>
                 <tr className="border-b border-[var(--app-border)]">
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: moduleCols[0], position: "relative" }}>
                     Title
+                    <span {...moduleResize(0)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: moduleCols[1], position: "relative" }}>
                     Category
+                    <span {...moduleResize(1)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: moduleCols[2], position: "relative" }}>
                     Duration
+                    <span {...moduleResize(2)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: moduleCols[3], position: "relative" }}>
                     Published
+                    <span {...moduleResize(3)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: moduleCols[4], position: "relative" }}>
                     Sort
+                    <span {...moduleResize(4)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: moduleCols[5], position: "relative" }}>
                     Actions
+                    <span {...moduleResize(5)} />
                   </th>
                 </tr>
               </thead>
@@ -1288,23 +1300,28 @@ export default function AdminTrainingPage() {
 
           {/* Desktop Table */}
           <div className="hidden md:block card overflow-x-auto">
-            <table className="w-full text-left font-body text-sm">
+            <table className="w-full text-left font-body text-sm" style={{ tableLayout: "fixed" }}>
               <thead>
                 <tr className="border-b border-[var(--app-border)]">
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[0], position: "relative" }}>
                     Title
+                    <span {...resourceResize(0)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[1], position: "relative" }}>
                     Type
+                    <span {...resourceResize(1)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[2], position: "relative" }}>
                     File Size
+                    <span {...resourceResize(2)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[3], position: "relative" }}>
                     Published
+                    <span {...resourceResize(3)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[4], position: "relative" }}>
                     Actions
+                    <span {...resourceResize(4)} />
                   </th>
                 </tr>
               </thead>
@@ -1582,23 +1599,28 @@ export default function AdminTrainingPage() {
 
           {/* Desktop Table */}
           <div className="hidden md:block card overflow-x-auto">
-            <table className="w-full text-left font-body text-sm">
+            <table className="w-full text-left font-body text-sm" style={{ tableLayout: "fixed" }}>
               <thead>
                 <tr className="border-b border-[var(--app-border)]">
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: faqCols[0], position: "relative" }}>
                     Question
+                    <span {...faqResize(0)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: faqCols[1], position: "relative" }}>
                     Category
+                    <span {...faqResize(1)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: faqCols[2], position: "relative" }}>
                     Published
+                    <span {...faqResize(2)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: faqCols[3], position: "relative" }}>
                     Sort
+                    <span {...faqResize(3)} />
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: faqCols[4], position: "relative" }}>
                     Actions
+                    <span {...faqResize(4)} />
                   </th>
                 </tr>
               </thead>

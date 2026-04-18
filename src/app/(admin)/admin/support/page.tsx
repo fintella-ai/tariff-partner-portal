@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import PartnerLink from "@/components/ui/PartnerLink";
 import { fmtDateTime } from "@/lib/format";
+import { useResizableColumns } from "@/components/ui/ResizableTable";
 
 type Ticket = {
   id: string;
@@ -107,6 +108,7 @@ const statusLabel: Record<string, string> = {
 const fmtDate = fmtDateTime;
 
 export default function SupportTicketsPage() {
+  const { columnWidths: ticketColWidths, getResizeHandler: getTicketResizeHandler } = useResizableColumns([200, 150, 120, 100, 100, 150, 80]);
   const [tab, setTab] = useState<Tab>("All");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, open: 0, inProgress: 0, resolved: 0 });
@@ -356,16 +358,16 @@ export default function SupportTicketsPage() {
         <>
           {/* Desktop table */}
           <div className="hidden md:block card overflow-x-auto">
-            <table className="w-full text-left font-body text-sm">
+            <table className="w-full text-left font-body text-sm" style={{ tableLayout: "fixed" }}>
               <thead>
                 <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3 text-center">Subject</th>
-                  <th className="px-4 py-3 text-center">Partner</th>
-                  <th className="px-4 py-3 text-center">Category</th>
-                  <th className="px-4 py-3 text-center">Priority</th>
-                  <th className="px-4 py-3 text-center">Status</th>
-                  <th className="px-4 py-3 text-center">Last Activity</th>
-                  <th className="px-4 py-3 text-center">Action</th>
+                  <th className="px-4 py-3 text-center" style={{ width: ticketColWidths[0], position: "relative" }}>Subject<span {...getTicketResizeHandler(0)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: ticketColWidths[1], position: "relative" }}>Partner<span {...getTicketResizeHandler(1)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: ticketColWidths[2], position: "relative" }}>Category<span {...getTicketResizeHandler(2)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: ticketColWidths[3], position: "relative" }}>Priority<span {...getTicketResizeHandler(3)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: ticketColWidths[4], position: "relative" }}>Status<span {...getTicketResizeHandler(4)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: ticketColWidths[5], position: "relative" }}>Last Activity<span {...getTicketResizeHandler(5)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: ticketColWidths[6], position: "relative" }}>Action<span {...getTicketResizeHandler(6)} /></th>
                 </tr>
               </thead>
               <tbody>

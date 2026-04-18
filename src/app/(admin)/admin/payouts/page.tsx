@@ -5,6 +5,7 @@ import { fmt$ } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
 import DealLink from "@/components/ui/DealLink";
 import ReportingTabs from "@/components/ui/ReportingTabs";
+import { useResizableColumns } from "@/components/ui/ResizableTable";
 
 type Payout = {
   id: string;
@@ -61,6 +62,7 @@ function fmtMonth(d: string) {
 }
 
 export default function PayoutManagementPage() {
+  const { columnWidths: payoutColWidths, getResizeHandler: getPayoutResizeHandler } = useResizableColumns([150, 120, 80, 100, 120, 100, 100, 100]);
   const [tab, setTab] = useState<Tab>("Due");
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [stats, setStats] = useState<PayoutStats>({ totalDue: 0, totalPending: 0, totalPaid: 0, partnersToPay: 0 });
@@ -199,17 +201,17 @@ export default function PayoutManagementPage() {
         <>
           {/* Desktop table */}
           <div className="hidden md:block card overflow-x-auto">
-            <table className="w-full text-left font-body text-sm">
+            <table className="w-full text-left font-body text-sm" style={{ tableLayout: "fixed" }}>
               <thead>
                 <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3 text-center">Partner</th>
-                  <th className="px-4 py-3 text-center">Deal</th>
-                  <th className="px-4 py-3 text-center">Tier</th>
-                  <th className="px-4 py-3 text-center">Amount</th>
-                  <th className="px-4 py-3 text-center">Period</th>
-                  <th className="px-4 py-3 text-center">Status</th>
-                  <th className="px-4 py-3 text-center">Stripe</th>
-                  <th className="px-4 py-3 text-center">Action</th>
+                  <th className="px-4 py-3 text-center" style={{ width: payoutColWidths[0], position: "relative" }}>Partner<span {...getPayoutResizeHandler(0)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: payoutColWidths[1], position: "relative" }}>Deal<span {...getPayoutResizeHandler(1)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: payoutColWidths[2], position: "relative" }}>Tier<span {...getPayoutResizeHandler(2)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: payoutColWidths[3], position: "relative" }}>Amount<span {...getPayoutResizeHandler(3)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: payoutColWidths[4], position: "relative" }}>Period<span {...getPayoutResizeHandler(4)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: payoutColWidths[5], position: "relative" }}>Status<span {...getPayoutResizeHandler(5)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: payoutColWidths[6], position: "relative" }}>Stripe<span {...getPayoutResizeHandler(6)} /></th>
+                  <th className="px-4 py-3 text-center" style={{ width: payoutColWidths[7], position: "relative" }}>Action<span {...getPayoutResizeHandler(7)} /></th>
                 </tr>
               </thead>
               <tbody>

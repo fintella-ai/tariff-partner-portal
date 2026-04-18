@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import PartnerLink from "@/components/ui/PartnerLink";
+import { useResizableColumns } from "@/components/ui/ResizableTable";
 
 type DocEntry = {
   id: string;
@@ -35,6 +36,7 @@ function fmtDate(d: string | null) {
 
 export default function DocumentTrackingPage() {
   const router = useRouter();
+  const { columnWidths: docColWidths, getResizeHandler: getDocResizeHandler } = useResizableColumns([150, 150, 200, 100, 130, 100]);
   const [tab, setTab] = useState<Tab>("All");
   const [documents, setDocuments] = useState<DocEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,15 +133,15 @@ export default function DocumentTrackingPage() {
 
       {/* Desktop table */}
       <div className="hidden md:block card overflow-x-auto">
-        <table className="w-full text-left font-body text-sm">
+        <table className="w-full text-left font-body text-sm" style={{ tableLayout: "fixed" }}>
           <thead>
             <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
-              <th className="px-4 py-3 text-center">Partner</th>
-              <th className="px-4 py-3 text-center">Document Type</th>
-              <th className="px-4 py-3 text-center">File Name</th>
-              <th className="px-4 py-3 text-center">Status</th>
-              <th className="px-4 py-3 text-center">Upload Date</th>
-              <th className="px-4 py-3 text-center">Actions</th>
+              <th className="px-4 py-3 text-center" style={{ width: docColWidths[0], position: "relative" }}>Partner<span {...getDocResizeHandler(0)} /></th>
+              <th className="px-4 py-3 text-center" style={{ width: docColWidths[1], position: "relative" }}>Document Type<span {...getDocResizeHandler(1)} /></th>
+              <th className="px-4 py-3 text-center" style={{ width: docColWidths[2], position: "relative" }}>File Name<span {...getDocResizeHandler(2)} /></th>
+              <th className="px-4 py-3 text-center" style={{ width: docColWidths[3], position: "relative" }}>Status<span {...getDocResizeHandler(3)} /></th>
+              <th className="px-4 py-3 text-center" style={{ width: docColWidths[4], position: "relative" }}>Upload Date<span {...getDocResizeHandler(4)} /></th>
+              <th className="px-4 py-3 text-center" style={{ width: docColWidths[5], position: "relative" }}>Actions<span {...getDocResizeHandler(5)} /></th>
             </tr>
           </thead>
           <tbody>

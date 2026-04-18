@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { fmtDate, fmtDateTime, fmtPhone } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
+import { useResizableColumns } from "@/components/ui/ResizableTable";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -165,6 +166,11 @@ type InboxFilter = (typeof inboxFilters)[number];
 export default function CommunicationsPage() {
   const [activeTab, setActiveTab] = useState<MainTab>("Inbox");
   const [partnerIdMap, setPartnerIdMap] = useState<Record<string, string>>({});
+
+  // Resizable column hooks
+  const { columnWidths: inboxColWidths, getResizeHandler: getInboxResizeHandler } = useResizableColumns([250, 300, 150, 100, 100]);
+  const { columnWidths: smsColWidths, getResizeHandler: getSmsResizeHandler } = useResizableColumns([200, 180, 150, 120]);
+  const { columnWidths: phoneColWidths, getResizeHandler: getPhoneResizeHandler } = useResizableColumns([180, 180, 160, 150, 100, 150]);
 
   // Fetch partner name→id map for clickable links
   useEffect(() => {
@@ -477,14 +483,14 @@ export default function CommunicationsPage() {
 
         {/* Desktop table */}
         <div className="hidden md:block card overflow-x-auto">
-          <table className="w-full text-left font-body text-sm">
+          <table className="w-full text-left font-body text-sm" style={{ tableLayout: "fixed" }}>
             <thead>
               <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
-                <th className="px-4 py-3 text-center">Sender</th>
-                <th className="px-4 py-3 text-center">Subject</th>
-                <th className="px-4 py-3 text-center">Date</th>
-                <th className="px-4 py-3 text-center">Status</th>
-                <th className="px-4 py-3 text-center">Action</th>
+                <th className="px-4 py-3 text-center" style={{ width: inboxColWidths[0], position: "relative" }}>Sender<span {...getInboxResizeHandler(0)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: inboxColWidths[1], position: "relative" }}>Subject<span {...getInboxResizeHandler(1)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: inboxColWidths[2], position: "relative" }}>Date<span {...getInboxResizeHandler(2)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: inboxColWidths[3], position: "relative" }}>Status<span {...getInboxResizeHandler(3)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: inboxColWidths[4], position: "relative" }}>Action<span {...getInboxResizeHandler(4)} /></th>
               </tr>
             </thead>
             <tbody>
@@ -1443,13 +1449,13 @@ export default function CommunicationsPage() {
           </div>
 
           {/* Desktop table */}
-          <table className="w-full text-left font-body text-sm hidden sm:table">
+          <table className="w-full text-left font-body text-sm hidden sm:table" style={{ tableLayout: "fixed" }}>
             <thead>
               <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
-                <th className="px-4 py-3 text-center">Partner</th>
-                <th className="px-4 py-3 text-center">Phone</th>
-                <th className="px-4 py-3 text-center">Opt-In Date</th>
-                <th className="px-4 py-3 text-center">Messages Sent</th>
+                <th className="px-4 py-3 text-center" style={{ width: smsColWidths[0], position: "relative" }}>Partner<span {...getSmsResizeHandler(0)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: smsColWidths[1], position: "relative" }}>Phone<span {...getSmsResizeHandler(1)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: smsColWidths[2], position: "relative" }}>Opt-In Date<span {...getSmsResizeHandler(2)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: smsColWidths[3], position: "relative" }}>Messages Sent<span {...getSmsResizeHandler(3)} /></th>
               </tr>
             </thead>
             <tbody>
@@ -1577,15 +1583,15 @@ export default function CommunicationsPage() {
 
         {/* Call log table */}
         <div className="card overflow-x-auto">
-          <table className="w-full text-left font-body text-sm">
+          <table className="w-full text-left font-body text-sm" style={{ tableLayout: "fixed" }}>
             <thead>
               <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
-                <th className="px-4 py-3 text-center">When</th>
-                <th className="px-4 py-3 text-center">Partner</th>
-                <th className="px-4 py-3 text-center">Number</th>
-                <th className="px-4 py-3 text-center">Initiated By</th>
-                <th className="px-4 py-3 text-center">Duration</th>
-                <th className="px-4 py-3 text-center">Status</th>
+                <th className="px-4 py-3 text-center" style={{ width: phoneColWidths[0], position: "relative" }}>When<span {...getPhoneResizeHandler(0)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: phoneColWidths[1], position: "relative" }}>Partner<span {...getPhoneResizeHandler(1)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: phoneColWidths[2], position: "relative" }}>Number<span {...getPhoneResizeHandler(2)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: phoneColWidths[3], position: "relative" }}>Initiated By<span {...getPhoneResizeHandler(3)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: phoneColWidths[4], position: "relative" }}>Duration<span {...getPhoneResizeHandler(4)} /></th>
+                <th className="px-4 py-3 text-center" style={{ width: phoneColWidths[5], position: "relative" }}>Status<span {...getPhoneResizeHandler(5)} /></th>
               </tr>
             </thead>
             <tbody>

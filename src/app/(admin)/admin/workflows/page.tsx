@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useResizableColumns } from "@/components/ui/ResizableTable";
 import {
   TRIGGER_KEYS,
   TRIGGER_LABELS,
@@ -508,6 +509,7 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Automations tab ──────────────────────────────────────────────────────────
 
 function AutomationsTab() {
+  const { columnWidths: autoCols, getResizeHandler: autoResize } = useResizableColumns([200, 150, 150, 150, 80, 80]);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -562,12 +564,15 @@ function AutomationsTab() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl" style={{ border: "1px solid var(--app-border)" }}>
-          <table className="w-full">
+          <table className="w-full" style={{ tableLayout: "fixed" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--app-border)" }}>
-                {["Name", "Trigger", "Actions", "Last Run", "Enabled", ""].map((h) => (
-                  <th key={h} className="font-body text-[11px] theme-text-muted uppercase tracking-wide text-center px-4 py-3">{h}</th>
-                ))}
+                <th className="font-body text-[11px] theme-text-muted uppercase tracking-wide text-center px-4 py-3" style={{ width: autoCols[0], position: "relative" }}>Name<span {...autoResize(0)} /></th>
+                <th className="font-body text-[11px] theme-text-muted uppercase tracking-wide text-center px-4 py-3" style={{ width: autoCols[1], position: "relative" }}>Trigger<span {...autoResize(1)} /></th>
+                <th className="font-body text-[11px] theme-text-muted uppercase tracking-wide text-center px-4 py-3" style={{ width: autoCols[2], position: "relative" }}>Actions<span {...autoResize(2)} /></th>
+                <th className="font-body text-[11px] theme-text-muted uppercase tracking-wide text-center px-4 py-3" style={{ width: autoCols[3], position: "relative" }}>Last Run<span {...autoResize(3)} /></th>
+                <th className="font-body text-[11px] theme-text-muted uppercase tracking-wide text-center px-4 py-3" style={{ width: autoCols[4], position: "relative" }}>Enabled<span {...autoResize(4)} /></th>
+                <th className="font-body text-[11px] theme-text-muted uppercase tracking-wide text-center px-4 py-3" style={{ width: autoCols[5], position: "relative" }}><span {...autoResize(5)} /></th>
               </tr>
             </thead>
             <tbody>
