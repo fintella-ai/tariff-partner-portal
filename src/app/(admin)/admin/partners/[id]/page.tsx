@@ -1737,7 +1737,7 @@ export default function PartnerDetailPage() {
                       </div>
                       {c.recordingUrl && (
                         <a
-                          href={c.recordingUrl}
+                          href={`/api/twilio/recording?url=${encodeURIComponent(c.recordingUrl)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-body text-[11px] text-brand-gold hover:underline mt-1 inline-block"

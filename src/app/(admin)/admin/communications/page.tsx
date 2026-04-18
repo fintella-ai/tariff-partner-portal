@@ -1624,7 +1624,7 @@ export default function CommunicationsPage() {
                       </span>
                       {c.recordingUrl && (
                         <a
-                          href={c.recordingUrl}
+                          href={`/api/twilio/recording?url=${encodeURIComponent(c.recordingUrl)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="ml-2 font-body text-[11px] text-brand-gold hover:underline"
