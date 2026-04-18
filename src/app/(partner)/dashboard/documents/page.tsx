@@ -123,13 +123,8 @@ export default function DocumentsPage() {
 
   // Open embedded signing for a pending agreement
   const handleOpenSigning = () => {
-    // Open signing URL in a new tab — SignWell blocks iframe embedding
     const url = agreementData?.embeddedSigningUrl;
-    if (url) {
-      window.open(url, "_blank");
-    } else {
-      alert("Signing link is being prepared. Please check your email from SignWell or try again in a moment.");
-    }
+    if (url) window.open(url, "_blank");
   };
 
   // Called when signing is completed in the embedded modal
@@ -222,12 +217,14 @@ export default function DocumentsPage() {
                   Sent on {fmtDateTime(agreementData?.sentDate)}. Review and sign your partnership agreement to activate your account.
                 </p>
               </div>
-              <button
-                onClick={handleOpenSigning}
-                className="shrink-0 btn-gold text-[12px] px-5 py-2.5 min-h-[44px]"
-              >
-                ✍️ Sign Now
-              </button>
+              {agreementData?.embeddedSigningUrl && (
+                <button
+                  onClick={handleOpenSigning}
+                  className="shrink-0 btn-gold text-[12px] px-5 py-2.5 min-h-[44px]"
+                >
+                  ✍️ Sign Now
+                </button>
+              )}
             </div>
           </div>
         ) : (
