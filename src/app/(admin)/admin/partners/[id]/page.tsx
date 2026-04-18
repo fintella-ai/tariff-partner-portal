@@ -399,11 +399,11 @@ export default function PartnerDetailPage() {
       <div className="flex gap-1 mb-6 overflow-x-auto border-b border-[var(--app-border)]">
         {([
           { id: "info", label: "Info" },
+          { id: "communications", label: "Communications" },
           { id: "downline", label: "Downline" },
           { id: "commission", label: "Commission" },
           { id: "payout", label: "Payout" },
           { id: "documents", label: "Documents" },
-          { id: "communications", label: "Communications" },
         ] as const).map((t) => (
           <button
             key={t.id}
