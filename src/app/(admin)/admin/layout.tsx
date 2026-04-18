@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { FIRM_SHORT } from "@/lib/constants";
@@ -65,6 +65,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // "admin.<itemId>". See PortalSettings.navLabels / navIcons.
   const [navLabels, setNavLabels] = useState<Record<string, string>>({});
   const [navIcons, setNavIcons] = useState<Record<string, string>>({});
+  // Unread chat count — poll every 15s to blink the Live Chat button
+  const [unreadChats, setUnreadChats] = useState(0);
+  const fetchUnreadChats = useCallback(() => {
+    fetch("/api/admin/chat")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.sessions) {
+          const total = (data.sessions as Array<{ unreadCount: number }>).reduce(
+            (sum, s) => sum + (s.unreadCount || 0), 0
+          );
+          setUnreadChats(total);
+        }
+      })
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    fetchUnreadChats();
+    const interval = setInterval(fetchUnreadChats, 15000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadChats]);
+
   // Custom admin nav order from settings (empty = use default)
   const [adminNavOrder, setAdminNavOrder] = useState<string[]>([]);
 
@@ -403,10 +424,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex items-center gap-2">
               <a
                 href="/admin/chat"
-                className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
-                title="Live Chat"
+                className={`relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300 ${
+                  unreadChats > 0 ? "animate-pulse shadow-[0_0_16px_rgba(196,160,80,0.5)]" : ""
+                }`}
+                title={unreadChats > 0 ? `Live Chat (${unreadChats} unread)` : "Live Chat"}
               >
                 💬<span className="hidden lg:inline font-medium">Live Chat</span>
+                {unreadChats > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    {unreadChats > 99 ? "99+" : unreadChats}
+                  </span>
+                )}
               </a>
               <a
                 href="/admin/support"
