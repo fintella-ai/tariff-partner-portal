@@ -649,29 +649,55 @@ function CommissionsPageContent() {
               }`}
             >
               {t.label}
-              {t.id === "payout-pending" && ledger.filter((e) => e.status === "pending").length > 0 && (
-                <span className="ml-1.5 text-[10px] bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 rounded-full px-1.5">{ledger.filter((e) => e.status === "pending").length}</span>
-              )}
-              {t.id === "payout-due" && ledger.filter((e) => e.status === "due").length > 0 && (
-                <span className="ml-1.5 text-[10px] bg-blue-500/15 text-blue-400 border border-blue-500/20 rounded-full px-1.5">{ledger.filter((e) => e.status === "due").length}</span>
-              )}
-              {t.id === "payout-paid" && ledger.filter((e) => e.status === "paid").length > 0 && (
-                <span className="ml-1.5 text-[10px] bg-green-500/15 text-green-400 border border-green-500/20 rounded-full px-1.5">{ledger.filter((e) => e.status === "paid").length}</span>
-              )}
+              {(() => {
+                const allEntries = ledger.length > 0 ? ledger : [
+                  ...directDeals.map((d: any) => ({ status: d.l1CommissionStatus || "pending" })),
+                  ...downlineDeals.map((d: any) => ({ status: d.l2CommissionStatus || "pending" })),
+                ];
+                const statusKey = t.id.replace("payout-", "");
+                const count = statusKey === "all" ? 0 : allEntries.filter((e: any) => e.status === statusKey).length;
+                if (count === 0) return null;
+                const colors = { pending: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20", due: "bg-blue-500/15 text-blue-400 border-blue-500/20", paid: "bg-green-500/15 text-green-400 border-green-500/20" };
+                return <span className={`ml-1.5 text-[10px] ${(colors as any)[statusKey] || ""} border rounded-full px-1.5`}>{count}</span>;
+              })()}
             </button>
           ))}
         </div>
 
         {(() => {
+          // Build entries from ledger if available, otherwise from deals
+          const entries = ledger.length > 0 ? ledger : [
+            ...directDeals.map((d: any) => ({
+              id: `deal-l1-${d.id}`,
+              dealName: d.dealName,
+              dealId: d.id,
+              tier: "l1",
+              amount: d.l1CommissionAmount || 0,
+              status: d.l1CommissionStatus || "pending",
+              createdAt: d.createdAt,
+            })),
+            ...downlineDeals.map((d: any) => ({
+              id: `deal-l2-${d.id}`,
+              dealName: d.dealName,
+              dealId: d.id,
+              tier: "l2",
+              amount: d.l2CommissionAmount || 0,
+              status: d.l2CommissionStatus || "pending",
+              createdAt: d.createdAt,
+            })),
+          ];
+
+          const statusFilter = payoutTab.replace("payout-", "");
           const filtered = payoutTab === "payout-all"
-            ? ledger
-            : ledger.filter((e) => e.status === payoutTab.replace("payout-", ""));
+            ? entries
+            : entries.filter((e: any) => e.status === statusFilter);
+
           if (filtered.length === 0) {
             return (
               <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">
                 {payoutTab === "payout-all"
-                  ? "No commission ledger entries yet. Entries are created when deals reach Closed Won."
-                  : `No ${payoutTab.replace("payout-", "")} entries.`}
+                  ? "No commission entries yet."
+                  : `No ${statusFilter} entries.`}
               </div>
             );
           }
