@@ -39,7 +39,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   dev:          { id: "dev", href: "/admin/dev", icon: "🛠️", label: "Development" },
   workflows:    { id: "workflows", href: "/admin/workflows", icon: "⚡", label: "Workflows" },
   features:     { id: "features", href: "/admin/features", icon: "💡", label: "Feature Requests" },
-  support:      { id: "support", href: "/admin/support", icon: "🛟", label: "Support" },
+  support:      { id: "support", href: "/admin/support", icon: "🎧", label: "Support" },
   chat:         { id: "chat", href: "/admin/chat", icon: "💬", label: "Live Chat" },
 };
 
@@ -441,7 +441,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
                 title="Support Ticket"
               >
-                🎫<span className="hidden lg:inline font-medium">Support Ticket</span>
+                🎧<span className="hidden lg:inline font-medium">Support Ticket</span>
               </a>
               <NotificationBell draggable />
             </div>
