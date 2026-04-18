@@ -176,6 +176,18 @@ export async function POST(
       },
     });
 
+    // Notify the partner via notification bell
+    await prisma.notification.create({
+      data: {
+        recipientType: "partner",
+        recipientId: partnerCode,
+        type: "document_request",
+        title: "Partnership Agreement Sent",
+        message: "Your partnership agreement is ready to sign. Go to Documents to review and sign.",
+        link: "/dashboard/documents",
+      },
+    }).catch(() => {});
+
     // Phase 15a — fire transactional "agreement ready to sign" email.
     // Best-effort; never blocks the API response.
     sendAgreementReadyEmail(
