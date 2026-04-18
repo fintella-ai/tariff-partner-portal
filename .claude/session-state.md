@@ -1,47 +1,60 @@
 # Session State
 
-🕒 Last updated: 2026-04-18 — post-reboot session: #265–#270 all merged, Custom Commissions split into its own tab
+🕒 Last updated: 2026-04-18 (evening) — HubSpot/Frost Law inbound payload mapping is live and verified end-to-end
 
 ## 🌿 Git state
-- **main HEAD:** `3b9acb8` — refactor(admin): split Custom Commissions + Enterprise Reporting into their own tab (#270)
-- **origin/main HEAD:** `3b9acb8` — in sync
-- **Feature branches in flight:** none
-- **Working tree:** clean on `main`
+- **main HEAD:** `8fcee18` — feat(webhook): WEBHOOK_SKIP_HMAC env flag (#280)
+- **origin/main HEAD:** same, in sync
+- **Open PRs:** none
+- **Working tree:** clean on main
 
-## ✅ What's done (this session)
-- **PR #265 — EP waterfall consumes L1 rate snapshot** — merged pre-reboot
-- **PR #266 — SignWell doc PDF proxy** — merged pre-reboot (session-gated `/api/signwell/document?docId=…` → 302 to pre-signed S3)
-- **PR #267 — session-state.md refresh** — merged pre-reboot
-- **PR #268 — specs for live chat deal links + Full Reporting sort arrows** — merged (docs only, zero runtime impact)
-  - Design docs at `docs/superpowers/specs/2026-04-18-{live-chat-deal-links,full-reporting-sort-arrows}-design.md`
-- **PR #269 — fix(settings): L1 commission rate is per-partner, not a fixed 25%** — merged
-  - Admin Settings → Commissions tab was showing a hardcoded "25%" as if every L1 earned that rate. Real model: admin picks 10/15/20/25% per recruitment invite, same as L2/L3
-  - Replaced hero card with rate badges, rewrote waterfall example, synced CLAUDE.md "Commission waterfall" bullets to match `src/lib/commission.ts`
-- **PR #270 — refactor(admin): Custom Commissions gets its own top-level tab** — merged
-  - `/admin/custom-commissions` is a new page carrying both the EP management view and the Enterprise Reporting deal breakdown
-  - `/admin/revenue` shrank from 1011 → 455 lines, now single-view
-  - `ReportingTabs` order: Reports · Revenue · Custom Commissions · Payouts
+## ✅ What's done (this session, end-to-end)
+- **#268** specs for live-chat-deal-links + Full-Reporting-sort-arrows (docs)
+- **#269** fix(settings): L1 commission rate is per-partner, not fixed 25%
+- **#270** refactor: Custom Commissions split into its own /admin/custom-commissions tab
+- **#271** chore(session): earlier-day session-state refresh
+- **#272** docs(plan): implementation plans for live-chat deal links + sort arrows
+- **#273** fix(notifications): deep-link admin bell clicks to exact page (partner detail `?tab=documents`)
+- **#274** docs(spec): outbound network adapter — sub-spec 1 of 4 (core plumbing)
+- **#275** docs(plan): outbound network adapter implementation plan
+- **#276** style(webhook-guide): double logo size
+- **#277** feat(webhook): WEBHOOK_AUTH_BYPASS env flag (skips auth + HMAC)
+- **#278** feat(webhook): map HubSpot Frost Law payload to Deal — schema cols `externalDealId` + `rawPayload`, `client_qualified` stage, HubSpot numeric stage-ID map, alias additions (`jobtitle`, `import_good_to_us`, `hs_object_id`, `hs_pipeline_stage`), admin deal expansion shows HubSpot ID + Raw Payload panel
+- **#279** style(admin): center-align Date column in /admin/deals
+- **#280** feat(webhook): WEBHOOK_SKIP_HMAC env flag (keeps API-key auth, skips HMAC only)
+
+## 🧪 Verified
+- Test deal `cmo4qvk720000z8e7ltlvnbzv` (Terralyst Steel & Cattle Co., PTNABC123) created end-to-end via the Hozier HubSpot payload with the real `X-Fintella-Api-Key` header. All fields mapped, externalDealId stored, rawPayload visible in the admin expansion, stage → `closedlost`, closedLostReason → "disqualified" from HubSpot ID `3468521175`.
+
+## 🌐 Vercel env (production) — known state
+- `WEBHOOK_SKIP_HMAC=true` — ACTIVE; lets authenticated calls through without HMAC signing (HubSpot Automation Actions don't sign bodies)
+- `FROST_LAW_API_KEY` — set to Frost's real key; enforced via `X-Fintella-Api-Key` header
+- `WEBHOOK_SECRET` — still set but effectively dormant while `WEBHOOK_SKIP_HMAC=true`
+- `WEBHOOK_AUTH_BYPASS` — should be REMOVED (was broader bypass; superseded by `WEBHOOK_SKIP_HMAC`). If still present it still works — it just does more than needed.
 
 ## 🔄 What's in flight
-- Nothing open — zero PRs, clean `main`
+- Nothing open. Clean checkpoint.
 
 ## 🎯 What's next
-1. **`writing-plans` for the two merged specs** (live chat deal links + Full Reporting sort arrows) — produces the implementation plans that drive the next two feature PRs
-2. **Smoke-test `/admin/custom-commissions` on prod** — click through ReportingTabs, try Add EP / Add L1 / Terminate as super_admin
-3. **Admin chat reply UI** — wire reply input to `/api/admin/chat` POST (reply path still TODO per CLAUDE.md task queue)
-4. **HMAC enforcement on `/api/webhook/referral`** — flip log-only → hard-reject when Frost Law cuts over
-5. **Phase 18b** — Next.js 14 → 16 migration (dedicated session, deferred)
+1. **Delete the stale "Hozier Tantalum" test deal** from pre-mapping era if it's cluttering /admin/deals (the fresh test deal `cmo4qvk72…` is the canonical one)
+2. **`writing-plans` for the two specs in #268** — live chat deal links + Full Reporting sort arrows are speccd and plann'd (plans merged in #272), next step is implementation PRs. Dispatch parallel subagents or inline.
+3. **Outbound network adapter sub-spec 1** — plan at `docs/superpowers/plans/2026-04-18-outbound-network-adapter.md` is ready; implementation not started. Follow-on sub-specs 2 (public intake form UI), 3 (inbound status webhook keyed by externalDealId), 4 (admin per-network config UI) deferred until sub-spec 1 lands.
+4. **Live chat reply UI, HMAC cleanup, Phase 18b Next.js 14→16** — still on the longer-term queue
 
 ## 🧠 Context that matters for resuming
-- **Commission model correction (from #269/CLAUDE.md):** L1 rate is per-partner (10/15/20/25%), picked by admin at recruitment. Total waterfall = L1's assigned rate, not a fixed 25%. The code in `src/lib/commission.ts` has been correct since #264; only the UI copy was stale
-- **Custom Commissions lives at `/admin/custom-commissions`** now, not as a sub-tab of `/admin/revenue`. Same `/api/admin/enterprise` endpoint, same super-admin mutation gate via `isSuperAdmin` in page
-- **Specs for next two features** are committed at `docs/superpowers/specs/2026-04-18-*-design.md`. Treat them as the source of truth when implementing
-- **Merge-to-main protocol:** always ask for explicit "ok to merge" before squash-merging, even when CI is green — user rule saved in memory
-- SignWell send/sign flow is considered "done, don't touch" as of PRs #149–#249
-- All DB data is test/seed — safe to test against production
+- Frost Law uses HubSpot. Their inbound calls come from `HubSpot Connect 2.0 / AutomationActionsExecutionService-web` with `X-Fintella-Api-Key` header. Timeout budget ~44s.
+- Our `utm_content` / `partner_code` field in HubSpot stores OUR `partnerCode`; HubSpot's `hs_object_id` is THEIR deal ID and is now stored in our `Deal.externalDealId`.
+- HubSpot pipeline stage IDs → internal stages:
+  - `3468521172` Meeting Booked → `consultation_booked`
+  - `3467318997` Meeting Missed → `client_no_show`
+  - `3468521174` Qualified → `client_qualified` (NEW stage, inserted before `client_engaged`)
+  - `3468521175` Disqualified → `closedlost` + `closedLostReason: "disqualified"`
+- `Deal.rawPayload` column stores the full inbound JSON (first 20KB) as a failsafe — any field we didn't map to a column is at least visible in the admin expansion's collapsible "Raw Source Payload" panel
+- All DB data is test/seed; safe to wipe and retest
 
 ## 📂 Relevant files for the next task
-- Live chat deal links spec: `docs/superpowers/specs/2026-04-18-live-chat-deal-links-design.md`
-  - Files to touch: `src/app/api/admin/chat/route.ts`, `src/lib/linkifyDeals.ts` (new), `src/lib/__tests__/linkifyDeals.test.ts` (new), `src/app/(admin)/admin/chat/page.tsx`
-- Full Reporting sort arrows spec: `docs/superpowers/specs/2026-04-18-full-reporting-sort-arrows-design.md`
-  - Files to touch: `src/components/ui/SortHeader.tsx` (new), `src/lib/sortRows.ts` (new), `src/app/(partner)/dashboard/reporting/page.tsx`, plus cleanups on `src/app/(admin)/admin/{reports,revenue}/page.tsx` to import the shared SortHeader
+- Inbound webhook handler: `src/app/api/webhook/referral/route.ts` (extractor, stage map, HMAC bypass)
+- Deal model: `prisma/schema.prisma` (`externalDealId @unique`, `rawPayload` added)
+- Stage labels: `src/lib/constants.ts` (STAGE_LABELS with `client_qualified`)
+- Admin deal expansion: `src/app/(admin)/admin/deals/page.tsx` (HubSpot ID badge + Raw Payload panel)
+- Outbound spec + plan: `docs/superpowers/specs/2026-04-18-outbound-network-adapter-design.md`, `docs/superpowers/plans/2026-04-18-outbound-network-adapter.md`
