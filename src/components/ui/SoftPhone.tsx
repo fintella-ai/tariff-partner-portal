@@ -156,7 +156,23 @@ export default function SoftPhone() {
       }
       setState("connecting");
       try {
-        const c = await device.connect({ params: { To: phone } });
+        // Create a CallLog entry so the recording webhook can match it
+        let logId: string | null = null;
+        try {
+          const logRes = await fetch("/api/twilio/softphone-log", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ toPhone: phone, partnerName }),
+          });
+          if (logRes.ok) {
+            const logData = await logRes.json();
+            logId = logData.logId || null;
+          }
+        } catch {}
+
+        const connectParams: Record<string, string> = { To: phone };
+        if (logId) connectParams.logId = logId;
+        const c = await device.connect({ params: connectParams });
         callRef.current = c;
         c.on("ringing", () => setState("ringing"));
         c.on("accept", () => { setState("in-call"); startDurationTimer(); });

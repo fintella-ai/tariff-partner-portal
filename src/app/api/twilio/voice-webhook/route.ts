@@ -104,7 +104,8 @@ function buildBridgeTwiml(
 
 function buildSoftphoneOutboundTwiml(
   toPhone: string,
-  recordingEnabled: boolean
+  recordingEnabled: boolean,
+  logId?: string | null
 ): string {
   // Browser softphone → partner dial. The admin is already connected
   // over WebRTC when this runs, so we only need to <Dial> the partner's
@@ -114,11 +115,11 @@ function buildSoftphoneOutboundTwiml(
   const safeNumber = escapeXml(toPhone);
   const callerAttr = callerId ? ` callerId="${escapeXml(callerId)}"` : "";
 
-  // Recording for softphone: uses CallSid-based lookup in the recording
-  // webhook since there's no logId for browser-initiated calls.
+  // Recording for softphone: pass logId so recording webhook can match
   let recordingAttrs = "";
   if (recordingEnabled) {
-    const cbUrl = `${PORTAL_URL}/api/twilio/recording-webhook`;
+    const cbBase = `${PORTAL_URL}/api/twilio/recording-webhook`;
+    const cbUrl = logId ? `${cbBase}?logId=${encodeURIComponent(logId)}` : cbBase;
     recordingAttrs =
       ` record="record-from-answer-dual"` +
       ` recordingStatusCallback="${escapeXml(cbUrl)}"` +
@@ -156,8 +157,17 @@ async function handle(req: NextRequest): Promise<NextResponse> {
     try {
       const form = await req.formData();
       const toForm = String(form.get("To") || "");
+      const softphoneLogId = String(form.get("logId") || "");
       if (toForm && /^\+[1-9]\d{6,14}$/.test(toForm)) {
-        return twiml(buildSoftphoneOutboundTwiml(toForm, recordingEnabled));
+        // Update CallLog with the CallSid from this Twilio leg
+        const callSid = String(form.get("CallSid") || "");
+        if (softphoneLogId && callSid) {
+          prisma.callLog.update({
+            where: { id: softphoneLogId },
+            data: { providerCallSid: callSid, status: "ringing" },
+          }).catch(() => {});
+        }
+        return twiml(buildSoftphoneOutboundTwiml(toForm, recordingEnabled, softphoneLogId || null));
       }
     } catch {
       // fall through to error

@@ -1,0 +1,50 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { normalizePhone } from "@/lib/format";
+
+/**
+ * POST /api/twilio/softphone-log
+ * Creates a CallLog entry for a softphone-initiated call so the
+ * recording webhook can match it via logId.
+ */
+export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const role = (session.user as any).role;
+  if (!["super_admin", "admin", "accounting", "partner_support"].includes(role))
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const toPhone = normalizePhone(body.toPhone) || body.toPhone || "";
+
+    // Try to match the phone to a partner
+    let partnerCode: string | null = null;
+    if (toPhone) {
+      const partner = await prisma.partner.findFirst({
+        where: { OR: [{ mobilePhone: toPhone }, { phone: toPhone }] },
+        select: { partnerCode: true },
+      });
+      partnerCode = partner?.partnerCode || null;
+    }
+
+    const log = await prisma.callLog.create({
+      data: {
+        partnerCode,
+        direction: "outbound",
+        toPhone,
+        fromPhone: process.env.TWILIO_FROM_NUMBER || "",
+        initiatedByEmail: (session.user as any).email || null,
+        initiatedByName: (session.user as any).name || null,
+        status: "initiated",
+      },
+    });
+
+    return NextResponse.json({ logId: log.id });
+  } catch (err: any) {
+    console.error("[softphone-log] error:", err);
+    return NextResponse.json({ error: "Failed to create log" }, { status: 500 });
+  }
+}
