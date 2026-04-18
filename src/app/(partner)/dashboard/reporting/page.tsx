@@ -299,29 +299,67 @@ export default function PartnerReportingPage() {
           <div className="card">
             {(() => {
               const deals = dealsSubTab === "direct" ? directDeals : downlineDeals;
-              if (deals.length === 0) return <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">{dealsSubTab === "direct" ? "No direct deals yet." : "No downline deals yet."}</div>;
-              return deals.map((deal, idx) => {
-                const commAmt = dealsSubTab === "direct" ? deal.l1CommissionAmount : (deal.l2CommissionAmount || 0);
-                const commStatus = dealsSubTab === "direct" ? deal.l1CommissionStatus : (deal.l2CommissionStatus || "pending");
-                return (
-                  <div key={deal.id} className={`px-4 sm:px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate flex-1">{deal.dealName}</div>
-                      <StageBadge stage={deal.stage} />
-                    </div>
-                    <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-2">
-                      {dealsSubTab === "downline" ? `Via ${deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode} · ` : ""}{fmtDate(deal.createdAt)}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="font-body text-[12px] text-[var(--app-text-muted)]">Refund: {fmt$(deal.estimatedRefundAmount)}</div>
-                      <div className="flex items-center gap-3">
-                        <div className="font-display text-[14px] font-semibold text-brand-gold">{fmt$(commAmt)}</div>
-                        <StatusBadge status={commStatus} />
+              const isDownline = dealsSubTab === "downline";
+              if (deals.length === 0) return <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">{isDownline ? "No downline deals yet." : "No direct deals yet."}</div>;
+              return device.isMobile ? (
+                <div>
+                  {deals.map((deal, idx) => {
+                    const commAmt = isDownline ? (deal.l2CommissionAmount || 0) : deal.l1CommissionAmount;
+                    const commStatus = isDownline ? (deal.l2CommissionStatus || "pending") : deal.l1CommissionStatus;
+                    return (
+                      <div key={deal.id} className={`px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0 ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate flex-1">{deal.dealName}</div>
+                          <StageBadge stage={deal.stage} />
+                        </div>
+                        <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-2">{isDownline ? `Via ${deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode} · ` : ""}{fmtDate(deal.createdAt)}</div>
+                        <div className="flex items-center justify-between">
+                          <div className="font-body text-[12px] text-[var(--app-text-muted)]">Refund: {fmt$(deal.estimatedRefundAmount)}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="font-display text-sm font-semibold text-brand-gold">{fmt$(commAmt)}</div>
+                            <StatusBadge status={commStatus} />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              });
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-[var(--app-border)]">
+                        <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Deal</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Date</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Refund</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {deals.map((deal, idx) => {
+                        const commAmt = isDownline ? (deal.l2CommissionAmount || 0) : deal.l1CommissionAmount;
+                        const commStatus = isDownline ? (deal.l2CommissionStatus || "pending") : deal.l1CommissionStatus;
+                        const partner = isDownline ? (deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode) : null;
+                        return (
+                          <tr key={deal.id} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                            <td className="px-4 sm:px-6 py-3.5">
+                              <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
+                              {partner && <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">via {partner}</div>}
+                            </td>
+                            <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
+                            <td className="px-3 py-3.5 text-center"><StageBadge stage={deal.stage} /></td>
+                            <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</td>
+                            <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(commAmt)}</td>
+                            <td className="px-3 py-3.5 text-center"><StatusBadge status={commStatus} /></td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
             })()}
           </div>
         </>
@@ -403,9 +441,9 @@ export default function PartnerReportingPage() {
             ) : (
               downlineDeals.length === 0 ? (
                 <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">No downline deals yet.</div>
-              ) : (
+              ) : device.isMobile ? (
                 downlineDeals.map((deal, idx) => (
-                  <div key={deal.id} className={`px-4 sm:px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                  <div key={deal.id} className={`px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0 ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate flex-1">{deal.dealName}</div>
                       <StageBadge stage={deal.stage} />
@@ -413,13 +451,42 @@ export default function PartnerReportingPage() {
                     <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-2">Via {deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode} · {fmtDate(deal.createdAt)}</div>
                     <div className="flex items-center justify-between">
                       <div className="font-body text-[12px] text-[var(--app-text-muted)]">Refund: {fmt$(deal.estimatedRefundAmount)}</div>
-                      <div className="flex items-center gap-3">
-                        <div className="font-display text-[14px] font-semibold text-brand-gold">{fmt$(deal.l2CommissionAmount)}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-display text-sm font-semibold text-brand-gold">{fmt$(deal.l2CommissionAmount)}</div>
                         <StatusBadge status={deal.l2CommissionStatus} />
                       </div>
                     </div>
                   </div>
                 ))
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-[var(--app-border)]">
+                        <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Deal</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Partner</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Date</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Refund</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {downlineDeals.map((deal, idx) => (
+                        <tr key={deal.id} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                          <td className="px-4 sm:px-6 py-3.5 font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</td>
+                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-secondary)]">{deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode}</td>
+                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
+                          <td className="px-3 py-3.5 text-center"><StageBadge stage={deal.stage} /></td>
+                          <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</td>
+                          <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(deal.l2CommissionAmount)}</td>
+                          <td className="px-3 py-3.5 text-center"><StatusBadge status={deal.l2CommissionStatus} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )
             )}
           </div>
@@ -484,30 +551,57 @@ export default function PartnerReportingPage() {
               const hasDirect = showDirect && directDeals.length > 0;
               const hasDownline = showDownline && downlineDeals.length > 0;
               if (!hasDirect && !hasDownline) return <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">No commission entries for this filter.</div>;
-              return (
+              const commDeals = [
+                ...(showDirect ? directDeals.map((d) => ({ ...d, _tier: "l1" as const, _amt: d.l1CommissionAmount, _status: d.l1CommissionStatus })) : []),
+                ...(showDownline ? downlineDeals.map((d) => ({ ...d, _tier: "l2" as const, _amt: d.l2CommissionAmount, _status: d.l2CommissionStatus })) : []),
+              ];
+              return device.isMobile ? (
                 <div>
-                  {showDirect && directDeals.map((deal) => (
-                    <div key={deal.id} className="px-4 sm:px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
-                        <div className="font-body text-[11px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</div>
+                  {commDeals.map((deal) => (
+                    <div key={deal.id + deal._tier} className="px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0">
+                      <div className="flex justify-between items-center mb-1">
+                        <div className="font-body text-[13px] text-[var(--app-text)] truncate flex-1 mr-3">{deal.dealName}</div>
+                        <StatusBadge status={deal._status} />
                       </div>
-                      <span className="font-body text-[10px] text-brand-gold font-semibold bg-brand-gold/10 border border-brand-gold/20 rounded px-1.5 py-0.5">L1</span>
-                      <div className="font-display text-[14px] font-semibold text-brand-gold">{fmt$(deal.l1CommissionAmount)}</div>
-                      <StatusBadge status={deal.l1CommissionStatus} />
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-body text-[10px] font-semibold rounded px-1.5 py-0.5 ${deal._tier === "l1" ? "text-brand-gold bg-brand-gold/10 border border-brand-gold/20" : "text-purple-400 bg-purple-500/10 border border-purple-500/20"}`}>{deal._tier.toUpperCase()}</span>
+                          <span className="font-body text-[11px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</span>
+                        </div>
+                        <div className={`font-display text-sm font-semibold ${deal._tier === "l1" ? "text-brand-gold" : "text-purple-400"}`}>{fmt$(deal._amt)}</div>
+                      </div>
                     </div>
                   ))}
-                  {showDownline && downlineDeals.map((deal) => (
-                    <div key={deal.id} className="px-4 sm:px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
-                        <div className="font-body text-[11px] text-[var(--app-text-muted)]">via {deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode} · {fmtDate(deal.createdAt)}</div>
-                      </div>
-                      <span className="font-body text-[10px] text-purple-400 font-semibold bg-purple-500/10 border border-purple-500/20 rounded px-1.5 py-0.5">L2</span>
-                      <div className="font-display text-[14px] font-semibold text-purple-400">{fmt$(deal.l2CommissionAmount)}</div>
-                      <StatusBadge status={deal.l2CommissionStatus} />
-                    </div>
-                  ))}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-[var(--app-border)]">
+                        <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Deal</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Date</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Tier</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {commDeals.map((deal, idx) => (
+                        <tr key={deal.id + deal._tier} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                          <td className="px-4 sm:px-6 py-3.5">
+                            <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
+                            {deal._tier === "l2" && <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">via {deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode}</div>}
+                          </td>
+                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
+                          <td className="px-3 py-3.5 text-center">
+                            <span className={`font-body text-[10px] font-semibold rounded px-1.5 py-0.5 ${deal._tier === "l1" ? "text-brand-gold bg-brand-gold/10 border border-brand-gold/20" : "text-purple-400 bg-purple-500/10 border border-purple-500/20"}`}>{deal._tier.toUpperCase()}</span>
+                          </td>
+                          <td className={`px-3 py-3.5 text-center font-display text-[14px] font-semibold ${deal._tier === "l1" ? "text-brand-gold" : "text-purple-400"}`}>{fmt$(deal._amt)}</td>
+                          <td className="px-3 py-3.5 text-center"><StatusBadge status={deal._status} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               );
             })()}
