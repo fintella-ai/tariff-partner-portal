@@ -150,6 +150,24 @@ export async function POST(req: NextRequest) {
             message: "Your partnership agreement signature is complete. Awaiting Fintella co-signer to finalize.",
           },
         }).catch(() => {});
+
+        // Notify ALL admins to co-sign
+        const admins = await prisma.user.findMany({
+          where: { role: { in: ["super_admin", "admin"] } },
+          select: { email: true },
+        });
+        for (const admin of admins) {
+          await prisma.notification.create({
+            data: {
+              recipientType: "admin",
+              recipientId: admin.email,
+              type: "document_request",
+              title: "Partner Agreement Ready for Co-sign",
+              message: `Partner ${agreement.partnerCode} has signed their agreement. Click to co-sign and complete.`,
+              link: `/admin/partners/p-${agreement.partnerCode.toLowerCase()}`,
+            },
+          }).catch(() => {});
+        }
       }
     }
 

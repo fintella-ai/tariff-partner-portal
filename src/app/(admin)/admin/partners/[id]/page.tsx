@@ -1150,11 +1150,11 @@ export default function PartnerDetailPage() {
               {agreement?.status === "approved" ? "signed & approved" : agreement?.status?.replace("_", " ") || "none"}
             </span>
           </div>
-          {agreement?.status === "pending" && agreement.embeddedSigningUrl && (
+          {(agreement?.status === "pending" || agreement?.status === "partner_signed") && (agreement.embeddedSigningUrl || agreement.cosignerSigningUrl) && (
             <div className="mt-2 flex flex-col gap-1.5">
               <div>
                 <a
-                  href={agreement.embeddedSigningUrl}
+                  href={agreement.embeddedSigningUrl || "#"}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 font-body text-[12px] text-brand-gold hover:text-brand-gold/80 underline underline-offset-2 transition-colors"
