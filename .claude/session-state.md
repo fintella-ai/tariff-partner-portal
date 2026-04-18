@@ -1,12 +1,16 @@
 # Session State
 
-🕒 Last updated: 2026-04-18 (evening) — HubSpot/Frost Law inbound payload mapping is live and verified end-to-end
+🕒 Last updated: 2026-04-18 (late evening) — John signing off, 16 PRs merged today, HubSpot inbound mapping verified end-to-end
 
 ## 🌿 Git state
-- **main HEAD:** `8fcee18` — feat(webhook): WEBHOOK_SKIP_HMAC env flag (#280)
+- **main HEAD:** `87cc857` — feat(admin): "Unknown" label for unmatched-partner deals (#283)
 - **origin/main HEAD:** same, in sync
 - **Open PRs:** none
 - **Working tree:** clean on main
+
+## 🆕 Added after end-of-day checkpoint (#281)
+- **#282** feat(admin): partner name above code in /admin/deals rows, name links to partner profile
+- **#283** feat(admin): unmatched-partner deals show "Unknown" in italic, no link, code still visible underneath
 
 ## ✅ What's done (this session, end-to-end)
 - **#268** specs for live-chat-deal-links + Full-Reporting-sort-arrows (docs)
