@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendCommissionPaidEmail } from "@/lib/sendgrid";
 import { createTransfer } from "@/lib/stripe";
+import { MAX_COMMISSION_RATE } from "@/lib/constants";
 
 /**
  * GET /api/admin/payouts
@@ -94,7 +95,15 @@ export async function GET(req: NextRequest) {
 
         for (const deal of epDeals) {
           const firmFee = deal.firmFeeAmount || deal.estimatedRefundAmount * (deal.firmFeeRate || 0.20);
-          const overrideAmount = firmFee * ep.overrideRate;
+          // Per-deal waterfall: EP earns (totalRate - actual L1 rate on the
+          // deal). Preferred source is the l1CommissionRate snapshot stored
+          // at deal creation; for deals that predate the snapshot column we
+          // fall back to MAX_COMMISSION_RATE (0.25) to preserve prior behavior.
+          // Clamp at 0 so a data-entry error (EP.totalRate < L1 rate) can't
+          // generate a negative payout.
+          const l1Rate = deal.l1CommissionRate ?? MAX_COMMISSION_RATE;
+          const epOverrideRate = Math.max(0, ep.totalRate - l1Rate);
+          const overrideAmount = firmFee * epOverrideRate;
           if (overrideAmount <= 0) continue;
 
           // Determine status based on deal stage
