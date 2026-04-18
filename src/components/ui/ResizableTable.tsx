@@ -67,7 +67,7 @@ export function useResizableColumns(
         document.body.style.userSelect = "none";
       },
       className:
-        "absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-brand-gold/40 transition-colors z-10",
+        "absolute right-0 top-0 bottom-0 w-px cursor-col-resize bg-[var(--app-border)] hover:w-1 hover:bg-brand-gold/60 transition-all z-10",
       style: { touchAction: "none" } as React.CSSProperties,
     }),
     [columnWidths]
