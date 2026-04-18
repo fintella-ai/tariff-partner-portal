@@ -1072,15 +1072,18 @@ export default function SettingsPage() {
             The firm fee rate is negotiated per deal at the deal level.
           </p>
 
-          {/* L1 Rate — fixed */}
+          {/* L1 Rate — per-partner, admin-chosen */}
           <div className="mb-6 p-4 rounded-lg bg-brand-gold/[0.06] border border-brand-gold/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-body text-[12px] font-semibold text-brand-gold uppercase tracking-wider">L1 Commission Rate</div>
-                <p className="font-body text-[11px] text-[var(--app-text-muted)] mt-1">All L1 partners earn 25% of the firm fee on their direct deals. This is the maximum total commission across all tiers.</p>
-              </div>
-              <div className="font-display text-3xl font-bold text-brand-gold">25%</div>
+            <div className="font-body text-[12px] font-semibold text-brand-gold uppercase tracking-wider mb-2">L1 Commission Rate</div>
+            <div className="flex gap-2 mb-2">
+              <span className="font-body text-[11px] bg-brand-gold/10 text-brand-gold border border-brand-gold/20 rounded-full px-2.5 py-0.5">10%</span>
+              <span className="font-body text-[11px] bg-brand-gold/10 text-brand-gold border border-brand-gold/20 rounded-full px-2.5 py-0.5">15%</span>
+              <span className="font-body text-[11px] bg-brand-gold/10 text-brand-gold border border-brand-gold/20 rounded-full px-2.5 py-0.5">20%</span>
+              <span className="font-body text-[11px] bg-brand-gold/10 text-brand-gold border border-brand-gold/20 rounded-full px-2.5 py-0.5">25%</span>
             </div>
+            <p className="font-body text-[11px] text-[var(--app-text-muted)]">
+              Admins choose one of these rates when creating a new L1 recruitment invite. The rate applies to all of that partner&apos;s direct deals and caps the downline waterfall total.
+            </p>
           </div>
 
           {/* L2 & L3 Info */}
@@ -1093,7 +1096,7 @@ export default function SettingsPage() {
                 <span className="font-body text-[11px] bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full px-2.5 py-0.5">20%</span>
               </div>
               <p className="font-body text-[11px] text-[var(--app-text-muted)]">
-                L1 partners choose one of these rates when recruiting an L2 partner. The L1 earns the override (25% minus L2 rate).
+                L1 partners choose one of these rates when recruiting an L2 partner. The L1 earns the override (L1&apos;s rate minus L2&apos;s rate).
               </p>
             </div>
             <div className="p-4 rounded-lg" style={{ background: "var(--app-card-bg)", border: "1px solid var(--app-border)" }}>
@@ -1130,21 +1133,21 @@ export default function SettingsPage() {
             <div className="space-y-2 font-body text-[12px] text-[var(--app-text-muted)]">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-brand-gold" />
-                <span><strong className="text-brand-gold">L1 direct deal:</strong> L1 earns 25% of firm fee</span>
+                <span><strong className="text-brand-gold">L1 direct deal:</strong> L1 earns their assigned rate (10–25%) of firm fee</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-purple-400" />
-                <span><strong className="text-purple-400">L2 deal (at 20%):</strong> L2 earns 20%, L1 override = 5%</span>
+                <span><strong className="text-purple-400">L2 deal:</strong> L2 earns their assigned rate, L1 override = L1&apos;s rate − L2&apos;s rate</span>
               </div>
               {l3Enabled && (
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-400" />
-                  <span><strong className="text-blue-400">L3 deal (at 10%):</strong> L3 earns 10%, L2 override = 10%, L1 override = 5%</span>
+                  <span><strong className="text-blue-400">L3 deal:</strong> L3 earns their rate, L2 override = L2&apos;s rate − L3&apos;s rate, L1 override = L1&apos;s rate − L2&apos;s rate</span>
                 </div>
               )}
               <div className="flex items-center gap-2 pt-1" style={{ borderTop: "1px solid var(--app-border)" }}>
                 <span className="w-2 h-2 rounded-full bg-green-400" />
-                <span><strong className="text-green-400">Total:</strong> Always 25% of firm fee across all tiers</span>
+                <span><strong className="text-green-400">Total:</strong> Always equals the L1 partner&apos;s assigned rate (never exceeds it)</span>
               </div>
             </div>
           </div>

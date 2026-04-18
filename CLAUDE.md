@@ -38,12 +38,13 @@ Self-sustaining partner management platform. Next.js 14 (App Router) + React 18 
 
 ## Commission waterfall
 
-- **L1 direct deal**: L1 = 25% of firm fee
-- **L2 deal**: L2 = assigned rate (10/15/20%), L1 override = 25% − L2 rate
-- **L3 deal** (if enabled): L3 = assigned rate (10/15%), L2 override = L2 rate − L3 rate, L1 override = 25% − L2 rate
-- **Total across all tiers: always 25% of firm fee**
-- Rates set via `RecruitmentInvite` tokens — L1 picks the rate when generating the invite
+- **L1 direct deal**: L1 = their assigned rate (10/15/20/25%) of firm fee
+- **L2 deal**: L2 = their assigned rate (10/15/20%), L1 override = L1 rate − L2 rate
+- **L3 deal** (if enabled): L3 = their assigned rate (10/15%), L2 override = L2 rate − L3 rate, L1 override = L1 rate − L2 rate
+- **Total across all tiers: always equals the L1 partner's assigned rate** (never exceeds it; 25% is the max cap)
+- L1 rate is picked by an admin when creating the L1 recruitment invite; L2/L3 rates are picked by the upline partner when recruiting downline
 - Each rate maps to a SignWell agreement template (configured in admin Settings → Agreements)
+- `Deal.l1CommissionRate` snapshots the L1's rate at deal creation (PR #264) so later rate changes don't retro-affect in-flight deals
 - Shared helper: `computeDealCommissions()` in `src/lib/commission.ts` — walks the partner chain, calls `calcWaterfallCommissions`, returns ledger entries. Used by both the webhook PATCH handler and the admin Mark Payment Received route.
 
 ## Three-phase commission ledger lifecycle (post-PR #79)
