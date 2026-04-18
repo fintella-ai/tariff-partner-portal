@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 import { getPermissions } from "@/lib/permissions";
@@ -70,12 +70,19 @@ export default function PartnerDetailPage() {
   const permissions = getPermissions((session?.user as any)?.role || "admin");
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   // Tabs on the partner detail page. "info" (default) covers the main
   // landing card — partner info, address, admin utilities. All the other
   // long sections have been split into their own tabs so the page is no
   // longer a giant vertical scroll.
   type PartnerTab = "info" | "downline" | "commission" | "payout" | "documents" | "communications";
-  const [activeTab, setActiveTab] = useState<PartnerTab>("info");
+  const PARTNER_TABS: PartnerTab[] = ["info", "downline", "commission", "payout", "documents", "communications"];
+  // Honor ?tab=<name> so notification deep-links open the right section.
+  const initialTab: PartnerTab = (() => {
+    const t = searchParams?.get("tab");
+    return (t && (PARTNER_TABS as string[]).includes(t)) ? (t as PartnerTab) : "info";
+  })();
+  const [activeTab, setActiveTab] = useState<PartnerTab>(initialTab);
   const [partner, setPartner] = useState<Partner | null>(null);
   const [downline, setDownline] = useState<Partner[]>([]);
   const [l3Partners, setL3Partners] = useState<Partner[]>([]);

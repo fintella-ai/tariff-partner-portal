@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
             type: "agreement_signed",
             title: "Partnership Agreement Signed",
             message: "Your partnership agreement has been signed and is now active. You can now submit deals.",
+            link: "/dashboard/documents",
           },
         });
 
@@ -190,6 +191,7 @@ export async function POST(req: NextRequest) {
             type: "agreement_signed",
             title: "Your Signature Complete",
             message: "Your partnership agreement signature is complete. Awaiting Fintella co-signer to finalize.",
+            link: "/dashboard/documents",
           },
         }).catch(() => {});
 
@@ -206,7 +208,7 @@ export async function POST(req: NextRequest) {
               type: "document_request",
               title: "Partner Agreement Ready for Co-sign",
               message: `Partner ${agreement.partnerCode} has signed their agreement. Click to co-sign and complete.`,
-              link: `/admin/partners/p-${agreement.partnerCode.toLowerCase()}`,
+              link: `/admin/partners/p-${agreement.partnerCode.toLowerCase()}?tab=documents`,
             },
           }).catch(() => {});
         }
