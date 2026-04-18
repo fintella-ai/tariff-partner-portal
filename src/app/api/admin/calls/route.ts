@@ -53,12 +53,33 @@ export async function GET(req: NextRequest) {
     };
   }
 
-  const enriched = calls.map((c) => ({
-    ...c,
-    partnerName: c.partnerCode ? partnerMap[c.partnerCode]?.name || null : null,
-    partnerId: c.partnerCode ? partnerMap[c.partnerCode]?.id || null : null,
-    partnerCompany: c.partnerCode ? partnerMap[c.partnerCode]?.company || null : null,
-  }));
+  // Build phone→partner map for calls without partnerCode (legacy entries)
+  const phoneMap: Record<string, { id: string; name: string; company: string | null }> = {};
+  if (calls.some((c) => !c.partnerCode)) {
+    const allPartners = await prisma.partner.findMany({
+      select: { id: true, partnerCode: true, firstName: true, lastName: true, companyName: true, mobilePhone: true, phone: true },
+    });
+    for (const p of allPartners) {
+      const name = `${p.firstName} ${p.lastName}`.trim() || p.partnerCode;
+      const entry = { id: p.id, name, company: p.companyName };
+      if (p.mobilePhone) phoneMap[p.mobilePhone] = entry;
+      if (p.phone) phoneMap[p.phone] = entry;
+      // Also add to partnerMap if not already there
+      if (!partnerMap[p.partnerCode]) partnerMap[p.partnerCode] = entry;
+    }
+  }
+
+  const enriched = calls.map((c) => {
+    const byCode = c.partnerCode ? partnerMap[c.partnerCode] : null;
+    const byPhone = !byCode ? phoneMap[c.toPhone] : null;
+    const match = byCode || byPhone;
+    return {
+      ...c,
+      partnerName: match?.name || null,
+      partnerId: match?.id || null,
+      partnerCompany: match?.company || null,
+    };
+  });
 
   const stats = {
     total: enriched.length,
