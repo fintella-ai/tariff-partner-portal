@@ -8,6 +8,7 @@ import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { fmt$, fmtDate } from "@/lib/format";
 import { FIRM_SHORT, DEFAULT_FIRM_FEE_RATE } from "@/lib/constants";
+import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
 
 type PageTab = "overview" | "deals" | "downline" | "commissions";
 
@@ -20,6 +21,7 @@ export default function PartnerReportingPage() {
   const [directDeals, setDirectDeals] = useState<any[]>([]);
   const [downlineDeals, setDownlineDeals] = useState<any[]>([]);
   const [downlinePartners, setDownlinePartners] = useState<any[]>([]);
+  const [l3Partners, setL3Partners] = useState<any[]>([]);
   const [ledger, setLedger] = useState<any[]>([]);
   const [commissionRate, setCommissionRate] = useState(0.25);
   const [tier, setTier] = useState("l1");
@@ -28,6 +30,7 @@ export default function PartnerReportingPage() {
   const [pageTab, setPageTab] = useState<PageTab>("overview");
   const [dealsSubTab, setDealsSubTab] = useState<"direct" | "downline">("direct");
   const [downlineSubTab, setDownlineSubTab] = useState<"partners" | "deals">("partners");
+  const [partnerView, setPartnerView] = useState<"list" | "tree">("list");
   const [commSubTab, setCommSubTab] = useState<"all" | "direct" | "downline">("all");
 
   // Filters (overview tab)
@@ -47,6 +50,7 @@ export default function PartnerReportingPage() {
         setDirectDeals(data.directDeals || []);
         setDownlineDeals(data.downlineDeals || []);
         setDownlinePartners(data.downlinePartners || []);
+        setL3Partners(data.l3Partners || []);
       }
       if (commRes.ok) {
         const data = await commRes.json();
@@ -293,18 +297,65 @@ export default function PartnerReportingPage() {
               downlinePartners.length === 0 ? (
                 <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">No downline partners yet. Share your recruitment link to build your team.</div>
               ) : (
-                downlinePartners.map((p, idx) => (
-                  <div key={p.id} className={`px-4 sm:px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 flex items-center justify-between ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
-                    <div>
-                      <div className="font-body text-[13px] font-medium text-[var(--app-text)]">{p.firstName} {p.lastName}</div>
-                      <div className="font-body text-[11px] text-[var(--app-text-muted)]">{p.partnerCode} · {p.companyName || "—"}</div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`font-body text-[10px] font-semibold rounded-full px-2.5 py-0.5 ${p.status === "active" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"}`}>{p.status}</span>
-                      {p.commissionRate && <span className="font-body text-[11px] text-brand-gold">{Math.round(p.commissionRate * 100)}%</span>}
+                <>
+                  {/* List / Tree toggle */}
+                  <div className="px-4 sm:px-6 py-3 border-b border-[var(--app-border)] flex justify-end">
+                    <div className="flex bg-[var(--app-input-bg)] rounded-lg p-0.5">
+                      <button onClick={() => setPartnerView("list")} className={`font-body text-[11px] px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${partnerView === "list" ? "bg-brand-gold/15 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"}`}>
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                        List
+                      </button>
+                      <button onClick={() => setPartnerView("tree")} className={`font-body text-[11px] px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${partnerView === "tree" ? "bg-brand-gold/15 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"}`}>
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v4m0 0a4 4 0 014 4h2a2 2 0 012 2v2M12 8a4 4 0 00-4 4H6a2 2 0 00-2 2v2m8-8v4m0 0a2 2 0 012 2v2m-2-4a2 2 0 00-2 2v2" /></svg>
+                        Tree
+                      </button>
                     </div>
                   </div>
-                ))
+                  {partnerView === "tree" ? (
+                    (() => {
+                      const rootPartner: TreePartner = {
+                        id: "self",
+                        partnerCode: user?.partnerCode || "YOU",
+                        firstName: user?.name?.split(" ")[0] || "You",
+                        lastName: user?.name?.split(" ").slice(1).join(" ") || "",
+                        status: "active",
+                        children: downlinePartners.map((p) => ({
+                          id: p.id,
+                          partnerCode: p.partnerCode,
+                          firstName: p.firstName,
+                          lastName: p.lastName,
+                          status: p.status,
+                          commissionRate: p.commissionRate,
+                          children: l3Partners
+                            .filter((l3) => l3.referredByPartnerCode === p.partnerCode)
+                            .map((l3) => ({
+                              id: l3.id,
+                              partnerCode: l3.partnerCode,
+                              firstName: l3.firstName,
+                              lastName: l3.lastName,
+                              status: l3.status,
+                              commissionRate: (l3 as any).commissionRate,
+                              children: [],
+                            })),
+                        })),
+                      };
+                      return <DownlineTree root={rootPartner} isMobile={device.isMobile} />;
+                    })()
+                  ) : (
+                    downlinePartners.map((p, idx) => (
+                      <div key={p.id} className={`px-4 sm:px-6 py-3.5 border-b border-[var(--app-border)] last:border-b-0 flex items-center justify-between ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                        <div>
+                          <div className="font-body text-[13px] font-medium text-[var(--app-text)]">{p.firstName} {p.lastName}</div>
+                          <div className="font-body text-[11px] text-[var(--app-text-muted)]">{p.partnerCode} · {p.companyName || "—"}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`font-body text-[10px] font-semibold rounded-full px-2.5 py-0.5 ${p.status === "active" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"}`}>{p.status}</span>
+                          {p.commissionRate && <span className="font-body text-[11px] text-brand-gold">{Math.round(p.commissionRate * 100)}%</span>}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </>
               )
             ) : (
               downlineDeals.length === 0 ? (

@@ -480,8 +480,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {/* Safe area spacer for iPhone notch/Dynamic Island */}
               <div style={{ paddingTop: "env(safe-area-inset-top, 12px)" }} />
               {/* Logo section — black background, full-bleed dividers */}
-              <div className="-mx-4 border-b border-[var(--app-border)]" />
-              <div className="flex justify-center py-8 -mx-4 px-4 bg-black">
+              <div className="-mx-5 border-b border-[var(--app-border)]" />
+              <div className="flex justify-center py-8 -mx-5 px-5 bg-black">
                 {logoUrl ? (
                   <img src={logoUrl} alt={firmShort} className="max-h-28 object-contain" />
                 ) : (
@@ -490,7 +490,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                 )}
               </div>
-              <div className="-mx-4 border-b border-[var(--app-border)] mb-3" />
+              <div className="-mx-5 border-b border-[var(--app-border)] mb-3" />
               {/* Submit Client + Referral Links + Support + Bell */}
               <div className="flex items-center justify-center gap-2 mb-3">
                   <button
@@ -522,7 +522,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </a>
                   <NotificationBell />
               </div>
-              <div className="-mx-4 border-b border-[var(--app-border)] mb-3" />
+              <div className="-mx-5 border-b border-[var(--app-border)] mb-3" />
             </>
           )}
 
