@@ -132,8 +132,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         try { setNavLabels(JSON.parse(settings.navLabels || "{}")); } catch {}
         try { setNavIcons(JSON.parse(settings.navIcons || "{}")); } catch {}
         try {
-          const order = JSON.parse(settings.adminNavOrder || "[]");
-          if (Array.isArray(order) && order.length > 0) setAdminNavOrder(order);
+          let order = JSON.parse(settings.adminNavOrder || "[]");
+          if (Array.isArray(order) && order.length > 0) {
+            // Migrate legacy IDs: reports/revenue/payouts → reporting
+            const legacyIds = ["reports", "revenue", "payouts"];
+            if (order.some((id: string) => legacyIds.includes(id))) {
+              const insertAt = Math.min(
+                ...legacyIds.map((id: string) => order.indexOf(id)).filter((i: number) => i >= 0)
+              );
+              order = order.filter((id: string) => !legacyIds.includes(id));
+              if (!order.includes("reporting")) {
+                order.splice(insertAt >= 0 && insertAt < order.length ? insertAt : order.length, 0, "reporting");
+              }
+            }
+            // Drop unknown IDs, keep only valid ones
+            order = order.filter((id: string) => id in ADMIN_NAV_ITEMS_MAP);
+            setAdminNavOrder(order);
+          }
         } catch {}
       })
       .catch(() => {});
