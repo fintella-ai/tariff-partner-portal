@@ -368,6 +368,7 @@ export default function SettingsPage() {
         callRecordingEnabled,
       };
 
+      console.log("[settings] Saving — liveChatEnabled:", body.liveChatEnabled, "callRecordingEnabled:", body.callRecordingEnabled);
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -375,10 +376,13 @@ export default function SettingsPage() {
       });
 
       if (res.ok) {
+        const result = await res.json().catch(() => ({}));
+        console.log("[settings] Saved OK — liveChatEnabled:", result.settings?.liveChatEnabled);
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       } else {
         const err = await res.json().catch(() => ({}));
+        console.error("[settings] Save failed:", err);
         alert(`Failed to save: ${err.error || res.statusText}`);
       }
     } catch (e: any) {
