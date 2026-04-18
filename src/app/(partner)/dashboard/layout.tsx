@@ -481,9 +481,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div style={{ paddingTop: "env(safe-area-inset-top, 12px)" }} />
               {/* Logo section — black background, full-bleed dividers */}
               <div className="-mx-4 border-b border-[var(--app-border)]" />
-              <div className="flex justify-center py-6 -mx-4 px-4 bg-black">
+              <div className="flex justify-center py-8 -mx-4 px-4 bg-black">
                 {logoUrl ? (
-                  <img src={logoUrl} alt={firmShort} className="max-h-20 object-contain" />
+                  <img src={logoUrl} alt={firmShort} className="max-h-28 object-contain" />
                 ) : (
                   <div className="font-display text-[22px] font-bold text-brand-gold tracking-[2px]">
                     {firmShort}
@@ -501,7 +501,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold hover:bg-brand-gold/10"
                     }`}
                   >
-                    💼 Submit
+                    💼 Submit Client
                   </button>
                   <button
                     onClick={() => navigate("/dashboard/referral-links")}
@@ -511,7 +511,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         : "bg-purple-500/[0.06] border-purple-500/20 text-purple-400 hover:bg-purple-500/10"
                     }`}
                   >
-                    👥 Refer
+                    👥 Referral Links
                   </button>
                   <a
                     href="/dashboard/support"
