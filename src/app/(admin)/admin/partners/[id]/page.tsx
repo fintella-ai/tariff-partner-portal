@@ -220,19 +220,19 @@ export default function PartnerDetailPage() {
     setCallingPartner(true);
     setCallMessage(null);
 
+    const phoneNumber = partner.mobilePhone || partner.phone;
     const softphone = typeof window !== "undefined" ? window.__fintellaSoftphone : undefined;
-    if (softphone && partner.mobilePhone) {
+    if (softphone && phoneNumber) {
       softphone.call(
-        partner.mobilePhone,
+        phoneNumber,
         `${partner.firstName} ${partner.lastName}`.trim()
       );
-      // Still write a CallLog row so the comms tab shows it.
-      fetch("/api/twilio/call", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ partnerCode: partner.partnerCode }),
-      }).catch(() => {});
       setCallMessage("Softphone dialing — see the floating softphone panel.");
+      setCallingPartner(false);
+      return;
+    }
+    if (!phoneNumber) {
+      setCallMessage("No phone number on file for this partner.");
       setCallingPartner(false);
       return;
     }
