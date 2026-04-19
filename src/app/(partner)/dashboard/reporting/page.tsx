@@ -138,6 +138,17 @@ export default function PartnerReportingPage() {
     [filtered, overviewSort, overviewDir, overviewAccessors]
   );
 
+  const myDealsAccessors = useMemo(() => ({
+    status: (d: any) => d.l1CommissionStatus,
+    commission: (d: any) => d.l1CommissionAmount,
+    createdAt: (d: any) => d.createdAt,
+  }), []);
+
+  const sortedDirectDeals = useMemo(
+    () => [...directDeals].sort((a, b) => compareRows(a, b, myDealsSort, myDealsDir, myDealsAccessors)),
+    [directDeals, myDealsSort, myDealsDir, myDealsAccessors]
+  );
+
   // Metrics
   const totalL1 = directDeals.reduce((s, d) => s + Number(d.l1CommissionAmount || 0), 0);
   const totalL2 = downlineDeals.reduce((s, d) => s + Number(d.l2CommissionAmount || 0), 0);
@@ -354,7 +365,7 @@ export default function PartnerReportingPage() {
         <>
           <div className="card">
             {(() => {
-              const deals = directDeals;
+              const deals = sortedDirectDeals;
               const isDownline = false;
               if (deals.length === 0) return <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">{isDownline ? "No downline deals yet." : "No direct deals yet."}</div>;
               return device.isMobile ? (
@@ -385,14 +396,28 @@ export default function PartnerReportingPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-[var(--app-border)]">
-                        <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Deal</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Date</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Refund</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Fee %</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Comm %</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                        {(() => {
+                          const on = (k: string) => cycleSort(k, myDealsSort, myDealsDir, setMyDealsSort, setMyDealsDir);
+                          const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
+                            <th className={props.className || "px-3 py-3 text-center"}>
+                              {props.sortable === false ? (
+                                <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+                              ) : (
+                                <SortHeader label={props.label} sortKey={props.k} currentSort={myDealsSort} currentDir={myDealsDir} onSort={on} />
+                              )}
+                            </th>
+                          );
+                          return (<>
+                            <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
+                            <H label="Date" k="createdAt" />
+                            <H label="Stage" k="stage" />
+                            <H label="Refund" k="estimatedRefundAmount" />
+                            <H label="Fee %" k="firmFeeRate" />
+                            <H label="Comm %" k="commRate" sortable={false} />
+                            <H label="Status" k="status" />
+                            <H label="Commission" k="commission" />
+                          </>);
+                        })()}
                       </tr>
                     </thead>
                     <tbody>
