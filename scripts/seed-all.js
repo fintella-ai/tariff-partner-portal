@@ -469,6 +469,17 @@ async function main() {
   });
   console.log("✓ Portal settings initialized");
 
+  // ── Admin Team Chat: ensure singleton global thread ───────────────────
+  const existingGlobalThread = await prisma.adminChatThread.findFirst({
+    where: { type: "global" },
+  });
+  if (existingGlobalThread) {
+    console.log("✓ Admin team-chat global thread already exists: " + existingGlobalThread.id);
+  } else {
+    const t = await prisma.adminChatThread.create({ data: { type: "global" } });
+    console.log("✓ Admin team-chat global thread created: " + t.id);
+  }
+
   console.log("\n✅ All seed data complete.");
 }
 
