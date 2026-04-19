@@ -5,24 +5,9 @@ import { fmt$, fmtDate } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
 import DealLink from "@/components/ui/DealLink";
 import ReportingTabs from "@/components/ui/ReportingTabs";
+import SortHeader, { type SortDir } from "@/components/ui/SortHeader";
 
-type SortDir = "asc" | "desc";
 type SortKey = string;
-
-function SortHeader({ label, sortKey, currentSort, currentDir, onSort }: {
-  label: string; sortKey: string; currentSort: string; currentDir: SortDir; onSort: (key: string) => void;
-}) {
-  const isActive = currentSort === sortKey;
-  return (
-    <button onClick={() => onSort(sortKey)} className="flex items-center gap-1 font-body text-[10px] tracking-[1px] uppercase theme-text-muted hover:text-brand-gold transition-colors text-left">
-      {label}
-      <span className={`text-[8px] flex flex-col leading-none ${isActive ? "text-brand-gold" : "theme-text-faint"}`}>
-        <span className={isActive && currentDir === "asc" ? "text-brand-gold" : ""}>&#9650;</span>
-        <span className={isActive && currentDir === "desc" ? "text-brand-gold" : ""}>&#9660;</span>
-      </span>
-    </button>
-  );
-}
 
 const FINTELLA_FEE_RATE = 0.40; // Fintella receives 40% of firm fee
 const PARTNER_RATE = 0.25;  // Partners receive 25% of firm fee

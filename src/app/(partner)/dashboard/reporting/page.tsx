@@ -9,6 +9,8 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { fmt$, fmtDate, fmtDateTime } from "@/lib/format";
 import { FIRM_SHORT, DEFAULT_FIRM_FEE_RATE } from "@/lib/constants";
 import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
+import SortHeader, { type SortDir } from "@/components/ui/SortHeader";
+import { compareRows } from "@/lib/sortRows";
 
 type PageTab = "overview" | "deals" | "downline" | "commissions";
 
@@ -40,6 +42,29 @@ export default function PartnerReportingPage() {
   const [stageFilter, setStageFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // ── Sort state (one pair per table) ──
+  const [overviewSort, setOverviewSort] = useState<string>("createdAt");
+  const [overviewDir, setOverviewDir] = useState<SortDir>("desc");
+  const [myDealsSort, setMyDealsSort] = useState<string>("createdAt");
+  const [myDealsDir, setMyDealsDir] = useState<SortDir>("desc");
+  const [downlinePartnersSort, setDownlinePartnersSort] = useState<string>("firstName");
+  const [downlinePartnersDir, setDownlinePartnersDir] = useState<SortDir>("asc");
+  const [downlineDealsSort, setDownlineDealsSort] = useState<string>("createdAt");
+  const [downlineDealsDir, setDownlineDealsDir] = useState<SortDir>("desc");
+  const [commSort, setCommSort] = useState<string>("createdAt");
+  const [commDir, setCommDir] = useState<SortDir>("desc");
+
+  const cycleSort = (
+    key: string,
+    current: string,
+    dir: SortDir,
+    setKey: (k: string) => void,
+    setDir: (d: SortDir) => void
+  ) => {
+    if (current === key) setDir(dir === "asc" ? "desc" : "asc");
+    else { setKey(key); setDir("asc"); }
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -101,6 +126,50 @@ export default function PartnerReportingPage() {
     }
     return result;
   }, [allDeals, sourceFilter, stageFilter, statusFilter, searchQuery, partnerNameMap]);
+
+  const overviewAccessors = useMemo(() => ({
+    commission: (d: any) => (d.source === "direct" ? d.l1CommissionAmount : (d.l2CommissionAmount || 0)),
+    status: (d: any) => (d.source === "direct" ? d.l1CommissionStatus : (d.l2CommissionStatus || "pending")),
+    createdAt: (d: any) => d.createdAt,
+  }), []);
+
+  const sortedFiltered = useMemo(
+    () => [...filtered].sort((a, b) => compareRows(a, b, overviewSort, overviewDir, overviewAccessors)),
+    [filtered, overviewSort, overviewDir, overviewAccessors]
+  );
+
+  const myDealsAccessors = useMemo(() => ({
+    status: (d: any) => d.l1CommissionStatus,
+    commission: (d: any) => d.l1CommissionAmount,
+    createdAt: (d: any) => d.createdAt,
+  }), []);
+
+  const sortedDirectDeals = useMemo(
+    () => [...directDeals].sort((a, b) => compareRows(a, b, myDealsSort, myDealsDir, myDealsAccessors)),
+    [directDeals, myDealsSort, myDealsDir, myDealsAccessors]
+  );
+
+  const downlinePartnersAccessors = useMemo(() => ({
+    firstName: (p: any) => `${p.firstName || ""} ${p.lastName || ""}`.trim(),
+    override: (p: any) => Math.max(0, commissionRate - (p.commissionRate || 0)),
+  }), [commissionRate]);
+
+  const sortedDownlinePartners = useMemo(
+    () => [...downlinePartners].sort((a, b) => compareRows(a, b, downlinePartnersSort, downlinePartnersDir, downlinePartnersAccessors)),
+    [downlinePartners, downlinePartnersSort, downlinePartnersDir, downlinePartnersAccessors]
+  );
+
+  const downlineDealsAccessors = useMemo(() => ({
+    submittingPartner: (d: any) => d.submittingPartnerName || partnerNameMap[d.partnerCode || ""] || d.partnerCode || "",
+    commission: (d: any) => d.l2CommissionAmount || 0,
+    status: (d: any) => d.l2CommissionStatus || "pending",
+    createdAt: (d: any) => d.createdAt,
+  }), [partnerNameMap]);
+
+  const sortedDownlineDeals = useMemo(
+    () => [...downlineDeals].sort((a, b) => compareRows(a, b, downlineDealsSort, downlineDealsDir, downlineDealsAccessors)),
+    [downlineDeals, downlineDealsSort, downlineDealsDir, downlineDealsAccessors]
+  );
 
   // Metrics
   const totalL1 = directDeals.reduce((s, d) => s + Number(d.l1CommissionAmount || 0), 0);
@@ -251,19 +320,33 @@ export default function PartnerReportingPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[var(--app-border)]">
-                      <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Deal</th>
-                      <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Date</th>
-                      <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Source</th>
-                      <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
-                      <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Refund</th>
-                      <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Fee %</th>
-                      <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Comm %</th>
-                      <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                      <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                      {(() => {
+                        const on = (k: string) => cycleSort(k, overviewSort, overviewDir, setOverviewSort, setOverviewDir);
+                        const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
+                          <th className={props.className || "px-3 py-3 text-center"}>
+                            {props.sortable === false ? (
+                              <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+                            ) : (
+                              <SortHeader label={props.label} sortKey={props.k} currentSort={overviewSort} currentDir={overviewDir} onSort={on} />
+                            )}
+                          </th>
+                        );
+                        return (<>
+                          <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
+                          <H label="Date" k="createdAt" />
+                          <H label="Source" k="source" />
+                          <H label="Stage" k="stage" />
+                          <H label="Refund" k="estimatedRefundAmount" />
+                          <H label="Fee %" k="firmFeeRate" />
+                          <H label="Comm %" k="commRate" sortable={false} />
+                          <H label="Status" k="status" />
+                          <H label="Commission" k="commission" />
+                        </>);
+                      })()}
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((deal, idx) => {
+                    {sortedFiltered.map((deal, idx) => {
                       const commAmt = deal.source === "direct" ? deal.l1CommissionAmount : (deal.l2CommissionAmount || 0);
                       const commStatus = deal.source === "direct" ? deal.l1CommissionStatus : (deal.l2CommissionStatus || "pending");
                       const partnerName = deal.source === "downline" ? (deal.submittingPartnerName || partnerNameMap[deal.partnerCode || ""] || deal.partnerCode) : null;
@@ -304,7 +387,7 @@ export default function PartnerReportingPage() {
         <>
           <div className="card">
             {(() => {
-              const deals = directDeals;
+              const deals = sortedDirectDeals;
               const isDownline = false;
               if (deals.length === 0) return <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">{isDownline ? "No downline deals yet." : "No direct deals yet."}</div>;
               return device.isMobile ? (
@@ -335,14 +418,28 @@ export default function PartnerReportingPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-[var(--app-border)]">
-                        <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Deal</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Date</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Refund</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Fee %</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Comm %</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                        {(() => {
+                          const on = (k: string) => cycleSort(k, myDealsSort, myDealsDir, setMyDealsSort, setMyDealsDir);
+                          const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
+                            <th className={props.className || "px-3 py-3 text-center"}>
+                              {props.sortable === false ? (
+                                <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+                              ) : (
+                                <SortHeader label={props.label} sortKey={props.k} currentSort={myDealsSort} currentDir={myDealsDir} onSort={on} />
+                              )}
+                            </th>
+                          );
+                          return (<>
+                            <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
+                            <H label="Date" k="createdAt" />
+                            <H label="Stage" k="stage" />
+                            <H label="Refund" k="estimatedRefundAmount" />
+                            <H label="Fee %" k="firmFeeRate" />
+                            <H label="Comm %" k="commRate" sortable={false} />
+                            <H label="Status" k="status" />
+                            <H label="Commission" k="commission" />
+                          </>);
+                        })()}
                       </tr>
                     </thead>
                     <tbody>
@@ -462,17 +559,31 @@ export default function PartnerReportingPage() {
                       <table className="w-full">
                         <thead>
                           <tr className="border-b border-[var(--app-border)]">
-                            <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Partner</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Code</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Company</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Their Rate</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Your Override</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Your Total</th>
+                            {(() => {
+                              const on = (k: string) => cycleSort(k, downlinePartnersSort, downlinePartnersDir, setDownlinePartnersSort, setDownlinePartnersDir);
+                              const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
+                                <th className={props.className || "px-3 py-3 text-center"}>
+                                  {props.sortable === false ? (
+                                    <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+                                  ) : (
+                                    <SortHeader label={props.label} sortKey={props.k} currentSort={downlinePartnersSort} currentDir={downlinePartnersDir} onSort={on} />
+                                  )}
+                                </th>
+                              );
+                              return (<>
+                                <H label="Partner" k="firstName" className="px-4 sm:px-6 py-3 text-left" />
+                                <H label="Code" k="partnerCode" />
+                                <H label="Company" k="companyName" />
+                                <H label="Status" k="status" />
+                                <H label="Their Rate" k="commissionRate" />
+                                <H label="Your Override" k="override" />
+                                <H label="Your Total" k="yourTotal" sortable={false} />
+                              </>);
+                            })()}
                           </tr>
                         </thead>
                         <tbody>
-                          {downlinePartners.map((p, idx) => {
+                          {sortedDownlinePartners.map((p, idx) => {
                             const theirRate = p.commissionRate || 0;
                             const override = commissionRate - theirRate;
                             return (
@@ -519,18 +630,32 @@ export default function PartnerReportingPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-[var(--app-border)]">
-                        <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Deal</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Partner</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Date</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Refund</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Fee %</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                        {(() => {
+                          const on = (k: string) => cycleSort(k, downlineDealsSort, downlineDealsDir, setDownlineDealsSort, setDownlineDealsDir);
+                          const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
+                            <th className={props.className || "px-3 py-3 text-center"}>
+                              {props.sortable === false ? (
+                                <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+                              ) : (
+                                <SortHeader label={props.label} sortKey={props.k} currentSort={downlineDealsSort} currentDir={downlineDealsDir} onSort={on} />
+                              )}
+                            </th>
+                          );
+                          return (<>
+                            <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
+                            <H label="Partner" k="submittingPartner" />
+                            <H label="Date" k="createdAt" />
+                            <H label="Stage" k="stage" />
+                            <H label="Refund" k="estimatedRefundAmount" />
+                            <H label="Fee %" k="firmFeeRate" />
+                            <H label="Status" k="status" />
+                            <H label="Commission" k="commission" />
+                          </>);
+                        })()}
                       </tr>
                     </thead>
                     <tbody>
-                      {downlineDeals.map((deal, idx) => (
+                      {sortedDownlineDeals.map((deal, idx) => (
                         <tr key={deal.id} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
                           <td className="px-4 sm:px-6 py-3.5 font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</td>
                           <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-secondary)]">{deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode}</td>
@@ -613,6 +738,14 @@ export default function PartnerReportingPage() {
                 ...(showDirect ? directDeals.map((d) => ({ ...d, _tier: "l1" as const, _amt: d.l1CommissionAmount, _status: d.l1CommissionStatus })) : []),
                 ...(showDownline ? downlineDeals.map((d) => ({ ...d, _tier: "l2" as const, _amt: d.l2CommissionAmount, _status: d.l2CommissionStatus })) : []),
               ];
+              const commAccessors: Record<string, (d: any) => unknown> = {
+                dealName: (d) => d.dealName,
+                createdAt: (d) => d.createdAt,
+                tier: (d) => d._tier,
+                status: (d) => d._status,
+                commission: (d) => d._amt,
+              };
+              const sortedCommDeals = [...commDeals].sort((a, b) => compareRows(a, b, commSort, commDir, commAccessors));
               return device.isMobile ? (
                 <div>
                   {commDeals.map((deal) => (
@@ -636,15 +769,25 @@ export default function PartnerReportingPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-[var(--app-border)]">
-                        <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Deal</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Date</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Tier</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                        {(() => {
+                          const on = (k: string) => cycleSort(k, commSort, commDir, setCommSort, setCommDir);
+                          const H = (props: { label: string; k: string; className?: string }) => (
+                            <th className={props.className || "px-3 py-3 text-center"}>
+                              <SortHeader label={props.label} sortKey={props.k} currentSort={commSort} currentDir={commDir} onSort={on} />
+                            </th>
+                          );
+                          return (<>
+                            <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
+                            <H label="Date" k="createdAt" />
+                            <H label="Tier" k="tier" />
+                            <H label="Status" k="status" />
+                            <H label="Commission" k="commission" />
+                          </>);
+                        })()}
                       </tr>
                     </thead>
                     <tbody>
-                      {commDeals.map((deal, idx) => (
+                      {sortedCommDeals.map((deal, idx) => (
                         <tr key={deal.id + deal._tier} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
                           <td className="px-4 sm:px-6 py-3.5">
                             <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>

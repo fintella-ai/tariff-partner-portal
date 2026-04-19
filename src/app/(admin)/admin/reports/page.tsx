@@ -4,23 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { fmt$ } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
 import ReportingTabs from "@/components/ui/ReportingTabs";
-
-type SortDir = "asc" | "desc";
-
-function SortHeader({ label, sortKey, currentSort, currentDir, onSort }: {
-  label: string; sortKey: string; currentSort: string; currentDir: SortDir; onSort: (key: string) => void;
-}) {
-  const isActive = currentSort === sortKey;
-  return (
-    <button onClick={() => onSort(sortKey)} className="flex items-center gap-1 font-body text-[10px] tracking-[1px] uppercase theme-text-muted hover:text-brand-gold transition-colors text-left">
-      {label}
-      <span className={`text-[8px] flex flex-col leading-none ${isActive ? "text-brand-gold" : "theme-text-faint"}`}>
-        <span className={isActive && currentDir === "asc" ? "text-brand-gold" : ""}>&#9650;</span>
-        <span className={isActive && currentDir === "desc" ? "text-brand-gold" : ""}>&#9660;</span>
-      </span>
-    </button>
-  );
-}
+import SortHeader, { type SortDir } from "@/components/ui/SortHeader";
 
 type Stats = {
   totalPipeline: number;
