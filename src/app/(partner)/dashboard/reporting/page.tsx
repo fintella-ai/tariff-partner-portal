@@ -149,6 +149,16 @@ export default function PartnerReportingPage() {
     [directDeals, myDealsSort, myDealsDir, myDealsAccessors]
   );
 
+  const downlinePartnersAccessors = useMemo(() => ({
+    firstName: (p: any) => `${p.firstName || ""} ${p.lastName || ""}`.trim(),
+    override: (p: any) => Math.max(0, commissionRate - (p.commissionRate || 0)),
+  }), [commissionRate]);
+
+  const sortedDownlinePartners = useMemo(
+    () => [...downlinePartners].sort((a, b) => compareRows(a, b, downlinePartnersSort, downlinePartnersDir, downlinePartnersAccessors)),
+    [downlinePartners, downlinePartnersSort, downlinePartnersDir, downlinePartnersAccessors]
+  );
+
   // Metrics
   const totalL1 = directDeals.reduce((s, d) => s + Number(d.l1CommissionAmount || 0), 0);
   const totalL2 = downlineDeals.reduce((s, d) => s + Number(d.l2CommissionAmount || 0), 0);
@@ -537,17 +547,31 @@ export default function PartnerReportingPage() {
                       <table className="w-full">
                         <thead>
                           <tr className="border-b border-[var(--app-border)]">
-                            <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Partner</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Code</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Company</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Their Rate</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Your Override</th>
-                            <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Your Total</th>
+                            {(() => {
+                              const on = (k: string) => cycleSort(k, downlinePartnersSort, downlinePartnersDir, setDownlinePartnersSort, setDownlinePartnersDir);
+                              const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
+                                <th className={props.className || "px-3 py-3 text-center"}>
+                                  {props.sortable === false ? (
+                                    <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+                                  ) : (
+                                    <SortHeader label={props.label} sortKey={props.k} currentSort={downlinePartnersSort} currentDir={downlinePartnersDir} onSort={on} />
+                                  )}
+                                </th>
+                              );
+                              return (<>
+                                <H label="Partner" k="firstName" className="px-4 sm:px-6 py-3 text-left" />
+                                <H label="Code" k="partnerCode" />
+                                <H label="Company" k="companyName" />
+                                <H label="Status" k="status" />
+                                <H label="Their Rate" k="commissionRate" />
+                                <H label="Your Override" k="override" />
+                                <H label="Your Total" k="yourTotal" sortable={false} />
+                              </>);
+                            })()}
                           </tr>
                         </thead>
                         <tbody>
-                          {downlinePartners.map((p, idx) => {
+                          {sortedDownlinePartners.map((p, idx) => {
                             const theirRate = p.commissionRate || 0;
                             const override = commissionRate - theirRate;
                             return (
