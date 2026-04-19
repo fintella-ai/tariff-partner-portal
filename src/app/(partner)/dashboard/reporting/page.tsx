@@ -738,6 +738,14 @@ export default function PartnerReportingPage() {
                 ...(showDirect ? directDeals.map((d) => ({ ...d, _tier: "l1" as const, _amt: d.l1CommissionAmount, _status: d.l1CommissionStatus })) : []),
                 ...(showDownline ? downlineDeals.map((d) => ({ ...d, _tier: "l2" as const, _amt: d.l2CommissionAmount, _status: d.l2CommissionStatus })) : []),
               ];
+              const commAccessors: Record<string, (d: any) => unknown> = {
+                dealName: (d) => d.dealName,
+                createdAt: (d) => d.createdAt,
+                tier: (d) => d._tier,
+                status: (d) => d._status,
+                commission: (d) => d._amt,
+              };
+              const sortedCommDeals = [...commDeals].sort((a, b) => compareRows(a, b, commSort, commDir, commAccessors));
               return device.isMobile ? (
                 <div>
                   {commDeals.map((deal) => (
@@ -761,15 +769,25 @@ export default function PartnerReportingPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-[var(--app-border)]">
-                        <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Deal</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Date</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Tier</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                        <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                        {(() => {
+                          const on = (k: string) => cycleSort(k, commSort, commDir, setCommSort, setCommDir);
+                          const H = (props: { label: string; k: string; className?: string }) => (
+                            <th className={props.className || "px-3 py-3 text-center"}>
+                              <SortHeader label={props.label} sortKey={props.k} currentSort={commSort} currentDir={commDir} onSort={on} />
+                            </th>
+                          );
+                          return (<>
+                            <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
+                            <H label="Date" k="createdAt" />
+                            <H label="Tier" k="tier" />
+                            <H label="Status" k="status" />
+                            <H label="Commission" k="commission" />
+                          </>);
+                        })()}
                       </tr>
                     </thead>
                     <tbody>
-                      {commDeals.map((deal, idx) => (
+                      {sortedCommDeals.map((deal, idx) => (
                         <tr key={deal.id + deal._tier} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
                           <td className="px-4 sm:px-6 py-3.5">
                             <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
