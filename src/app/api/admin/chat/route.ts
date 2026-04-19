@@ -36,6 +36,12 @@ export async function GET(req: NextRequest) {
         select: { firstName: true, lastName: true, companyName: true, email: true, id: true },
       });
 
+      const partnerDeals = await prisma.deal.findMany({
+        where: { partnerCode: chatSession.partnerCode },
+        select: { id: true, dealName: true, legalEntityName: true, clientLastName: true },
+        orderBy: { createdAt: "desc" },
+      });
+
       return NextResponse.json({
         session: {
           ...chatSession,
@@ -44,6 +50,7 @@ export async function GET(req: NextRequest) {
           partnerEmail: partner?.email || null,
           companyName: partner?.companyName || null,
         },
+        partnerDeals,
       });
     }
 
