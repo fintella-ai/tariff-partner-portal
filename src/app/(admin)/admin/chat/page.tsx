@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import PartnerLink from "@/components/ui/PartnerLink";
+import { linkifyDealMentions, type LinkifyDeal } from "@/lib/linkifyDeals";
 
 type ChatSession = {
   id: string;
@@ -37,6 +38,7 @@ type SessionDetail = {
   companyName: string | null;
   status: string;
   messages: ChatMessage[];
+  partnerDeals: LinkifyDeal[];
 };
 
 export default function AdminChatPage() {
@@ -121,7 +123,7 @@ export default function AdminChatPage() {
       fetch(`/api/admin/chat?sessionId=${selectedId}`)
         .then((r) => r.json())
         .then((data) => {
-          if (data.session) setDetail(data.session);
+          if (data.session) setDetail({ ...data.session, partnerDeals: data.partnerDeals || [] });
         })
         .catch(() => {});
     }, 3000);
@@ -137,7 +139,7 @@ export default function AdminChatPage() {
     setSelectedId(id);
     fetch(`/api/admin/chat?sessionId=${id}`)
       .then((r) => r.json())
-      .then((data) => setDetail(data.session))
+      .then((data) => setDetail(data.session ? { ...data.session, partnerDeals: data.partnerDeals || [] } : null))
       .catch(() => {});
   }
 
@@ -154,7 +156,7 @@ export default function AdminChatPage() {
       // Refresh
       const r = await fetch(`/api/admin/chat?sessionId=${selectedId}`);
       const data = await r.json();
-      if (data.session) setDetail(data.session);
+      if (data.session) setDetail({ ...data.session, partnerDeals: data.partnerDeals || [] });
       fetchSessions();
     } catch (e) {
       console.error(e);
@@ -330,7 +332,25 @@ export default function AdminChatPage() {
                       <div className="font-body text-[11px] font-semibold mb-1" style={{ color: msg.senderType === "admin" ? "var(--app-gold-text, #c4a050)" : "var(--app-text-secondary)" }}>
                         {msg.senderName || (msg.senderType === "admin" ? "Support Agent" : "Partner")}
                       </div>
-                      <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed whitespace-pre-wrap">{msg.content}</div>
+                      <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed whitespace-pre-wrap">
+                        {msg.senderType === "partner"
+                          ? linkifyDealMentions(msg.content, detail.partnerDeals).map((seg, i) =>
+                              seg.type === "link" ? (
+                                <a
+                                  key={i}
+                                  href={seg.href}
+                                  target="_blank"
+                                  rel="noopener"
+                                  className="text-brand-gold underline underline-offset-2 hover:text-brand-gold/80"
+                                >
+                                  {seg.value}
+                                </a>
+                              ) : (
+                                <span key={i}>{seg.value}</span>
+                              )
+                            )
+                          : msg.content}
+                      </div>
                       <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1.5">{timeAgo(msg.createdAt)}</div>
                     </div>
                   </div>
