@@ -45,7 +45,7 @@ export default function InstallPrompt() {
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center"
-      style={{ background: "linear-gradient(180deg, #060a18 0%, #0c1630 50%, #060a18 100%)" }}
+      style={{ background: "#000000" }}
     >
       <div className="w-full max-w-md mx-auto px-6 py-10 text-center">
         {/* Logo */}
