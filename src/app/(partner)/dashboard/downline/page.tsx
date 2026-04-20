@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useDevice } from "@/lib/useDevice";
 import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -12,6 +13,47 @@ import { fmt$, fmtDate } from "@/lib/format";
 import { DEFAULT_L2_RATE, DEFAULT_FIRM_FEE_RATE } from "@/lib/constants";
 
 type PartnerView = "list" | "tree";
+
+// Opens/creates a DM thread with a downline partner, then navigates there.
+// Renders nothing special — strictly additive "Message" button for eligible
+// counterparties (direct child of the logged-in partner).
+function MessageButton({ counterpartyCode, size = "sm" }: { counterpartyCode: string; size?: "sm" | "xs" }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const sizeClass = size === "xs"
+    ? "text-[10px] px-2 py-1"
+    : "text-[11px] px-2.5 py-1.5";
+  return (
+    <button
+      onClick={async (e) => {
+        e.stopPropagation();
+        if (busy) return;
+        setBusy(true);
+        try {
+          const r = await fetch("/api/partner-dm/threads", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ counterpartyCode }),
+          });
+          if (!r.ok) {
+            const d = await r.json().catch(() => ({}));
+            alert(d.error || `Failed to open DM (${r.status})`);
+            return;
+          }
+          const d = await r.json();
+          router.push(`/dashboard/messages/${d.thread.id}`);
+        } finally {
+          setBusy(false);
+        }
+      }}
+      disabled={busy}
+      title="Message this partner"
+      className={`font-body ${sizeClass} rounded-lg border border-blue-500/30 text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors disabled:opacity-40 whitespace-nowrap`}
+    >
+      💬 Message
+    </button>
+  );
+}
 
 export default function DownlinePage() {
   const device = useDevice();
@@ -215,6 +257,11 @@ export default function DownlinePage() {
                     </span>
                     <span>Joined {fmtDate(p.signupDate)}</span>
                   </div>
+                  {p.status === "active" && (
+                    <div className="mt-2 flex justify-end">
+                      <MessageButton counterpartyCode={p.partnerCode} />
+                    </div>
+                  )}
                   {p.status === "pending" && (
                     <label className="mt-2 w-full font-body text-[11px] text-green-400/70 border border-green-400/20 rounded-lg px-3 py-2 hover:bg-green-400/10 transition-colors cursor-pointer text-center block">
                       Upload Signed Agreement
@@ -313,6 +360,9 @@ export default function DownlinePage() {
                       <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">Under Review</span>
                     ) : (
                       <span className="font-body text-[10px] text-green-400">&#10003; Active</span>
+                    )}
+                    {p.status === "active" && (
+                      <MessageButton counterpartyCode={p.partnerCode} size="xs" />
                     )}
                   </div>
                 </div>

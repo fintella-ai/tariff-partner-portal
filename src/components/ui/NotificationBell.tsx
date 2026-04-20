@@ -25,6 +25,9 @@ const TYPE_ICONS: Record<string, string> = {
   admin_mention: "👋",
   channel_announcement: "📣",
   channel_reply: "💬",
+  partner_dm_message: "💬",
+  partner_dm_flag: "🚩",
+  partner_dm_flag_outcome: "✅",
 };
 
 export default function NotificationBell({ draggable = false }: { draggable?: boolean } = {}) {
