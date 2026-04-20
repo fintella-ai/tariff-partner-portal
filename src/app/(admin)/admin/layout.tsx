@@ -21,7 +21,7 @@ const isGroup = (n: NavItem): n is NavGroup => (n as NavGroup).children !== unde
 // IDs here must match ADMIN_NAV_ITEMS map below.
 const ADMIN_NAV_IDS_DEFAULT = [
   "partners", "deals", "reporting",
-  "communications", "partnerSupport",
+  "communications", "internalChats", "partnerSupport",
   "training", "conference", "documents",
   "settings", "users", "features", "dev",
 ];
@@ -43,8 +43,16 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
       { id: "communications:sms",         href: "/admin/communications?tab=sms",         icon: "📱", label: "SMS" },
       { id: "communications:phone",       href: "/admin/communications?tab=phone",       icon: "📞", label: "Phone" },
       { id: "communications:automations", href: "/admin/communications?tab=automations", icon: "⚡", label: "Automations" },
-      { id: "communications:team-chat",   href: "/admin/team-chat",                      icon: "💬", label: "Team Chat" },
-      { id: "communications:channels",    href: "/admin/channels",                       icon: "📣", label: "Channels" },
+    ],
+  },
+  internalChats: {
+    id: "internalChats",
+    icon: "💬",
+    label: "Internal Chats",
+    children: [
+      { id: "internalChats:team-chat", href: "/admin/team-chat",        icon: "💬", label: "Team Chat" },
+      { id: "internalChats:channels",  href: "/admin/channels",         icon: "📣", label: "Channels" },
+      { id: "internalChats:dmflags",   href: "/admin/partner-dm-flags", icon: "🚩", label: "DM Flags" },
     ],
   },
   partnerSupport: {
@@ -54,7 +62,6 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
     children: [
       { id: "partnerSupport:tickets",  href: "/admin/support?tab=tickets",  icon: "📩", label: "Support Tickets" },
       { id: "partnerSupport:livechat", href: "/admin/support?tab=livechat", icon: "💬", label: "Live Chat Support" },
-      { id: "partnerSupport:dmflags",  href: "/admin/support?tab=dmflags",  icon: "🚩", label: "DM Flags" },
     ],
   },
   training:     { id: "training", href: "/admin/training", icon: "📖", label: "Training" },
