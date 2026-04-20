@@ -68,6 +68,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "partners", label: "Partners", icon: "👥" },
   { id: "deals", label: "Deals", icon: "📋" },
   { id: "communications", label: "Communications", icon: "💬" },
+  { id: "internalChats", label: "Internal Chats", icon: "💬" },
   { id: "partnerSupport", label: "Partner Support", icon: "🎧" },
   { id: "training", label: "Training", icon: "📖" },
   { id: "conference", label: "Live Weekly", icon: "📹" },
