@@ -23,6 +23,7 @@ const MAIN_NAV = [
   { id: "referral-links", href: "/dashboard/referral-links", icon: "🔗", label: "Referral Links", shortLabel: "Links" },
   { id: "documents", href: "/dashboard/documents", icon: "📁", label: "Documents", shortLabel: "Docs" },
   { id: "support", href: "/dashboard/support", icon: "📩", label: "Support", shortLabel: "Help" },
+  { id: "announcements", href: "/dashboard/announcements", icon: "📣", label: "Announcements", shortLabel: "Announce" },
   { id: "conference", href: "/dashboard/conference", icon: "📹", label: "Live Weekly Call!", shortLabel: "Live" },
   { id: "ai-assistant", href: "/dashboard/ai-assistant", icon: "🤖", label: "PartnerOS AI", shortLabel: "AI" },
   { id: "feature-request", href: "/dashboard/feature-request", icon: "💡", label: "Feature Requests", shortLabel: "Ideas" },

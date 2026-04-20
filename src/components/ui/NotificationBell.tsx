@@ -23,6 +23,8 @@ const TYPE_ICONS: Record<string, string> = {
   payout_processed: "💳",
   system: "🔔",
   admin_mention: "👋",
+  channel_announcement: "📣",
+  channel_reply: "💬",
 };
 
 export default function NotificationBell({ draggable = false }: { draggable?: boolean } = {}) {

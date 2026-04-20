@@ -20,7 +20,7 @@ const isGroup = (n: NavItem): n is NavGroup => (n as NavGroup).children !== unde
 // IDs here must match ADMIN_NAV_ITEMS map below.
 const ADMIN_NAV_IDS_DEFAULT = [
   "partners", "deals", "communications", "training", "conference", "documents",
-  "reporting", "settings", "users", "dev", "workflows", "features", "support", "chat", "teamChat",
+  "reporting", "settings", "users", "dev", "workflows", "features", "support", "chat", "teamChat", "channels",
 ];
 
 const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
@@ -43,6 +43,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   support:      { id: "support", href: "/admin/support", icon: "📩", label: "Support" },
   chat:         { id: "chat", href: "/admin/chat", icon: "💬", label: "Live Chat" },
   teamChat:     { id: "teamChat", href: "/admin/team-chat", icon: "💬", label: "Team Chat" },
+  channels:     { id: "channels", href: "/admin/channels", icon: "📣", label: "Channels" },
 };
 
 function CollapseIcon({ collapsed }: { collapsed: boolean }) {
