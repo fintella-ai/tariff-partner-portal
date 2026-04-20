@@ -235,10 +235,22 @@ Send L1 invites. Monitor:
 ## 🟩 Phase 2 — Post-launch follow-ons (non-blocking, land when ready)
 
 ### 2.1 Twilio SMS (waiting on A2P 10DLC campaign approval)
-When Twilio confirms approval:
-- Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_ADMIN_PHONE` on Vercel production
+
+**Pre-launch stance (as of 2026-04-20):** A2P campaign registered (Standard package) but NOT yet approved. Campaign approval is in progress — typical TCR window is 10-15 business days from submission.
+
+**Keep the three Twilio env vars UNSET on Vercel during the gap.** Rationale: if the vars are set while A2P is pending, every SMS send attempt hits Twilio, gets rejected with `Error 30034: unregistered for A2P`, and writes `SmsLog` rows with `status="failed"`. That clutters audit logs and can trigger the Sentry alert rule on every signup.
+
+With the vars unset, the demo gate in `src/lib/twilio.ts` short-circuits before any API call — `SmsLog` rows cleanly show `status="demo"`. Zero noise.
+
+**When Twilio confirms campaign approval:**
+- Add (or re-add) these three vars on Vercel Production:
+  - `TWILIO_ACCOUNT_SID`
+  - `TWILIO_AUTH_TOKEN`
+  - `TWILIO_ADMIN_PHONE`
 - Redeploy. SMS flows auto-enable (no code change). Welcome SMS + agreement-ready SMS fire on new signups.
-- Monitor `SmsLog` — `status` column should start showing `"sent"` instead of `"demo"`.
+- Monitor `SmsLog` — `status` column should start showing `"sent"` / `"delivered"` instead of `"demo"`.
+
+**Check A2P status at:** Twilio Console → Messaging → Services → [your service] → Campaigns. Status should flip from `IN_REVIEW` / `PENDING` → `APPROVED`.
 
 ### 2.2 Twilio Voice
 Same pattern as SMS. Voice bridge works via env vars; state-by-state consent + recording deferred to a dedicated phase.
