@@ -1,14 +1,17 @@
 "use client";
+
 import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import EmailInboxTab from "./EmailInboxTab";
-import EmailComposeTab from "./EmailComposeTab";
-import EmailTemplatesTab from "./EmailTemplatesTab";
-import SmsTab from "./SmsTab";
-import PhoneTab from "./PhoneTab";
+import EmailInboxTabImpl from "./EmailInboxTabImpl";
+import EmailComposeTabImpl from "./EmailComposeTabImpl";
+import EmailTemplatesTabImpl from "./EmailTemplatesTabImpl";
+import SmsTabImpl from "./SmsTabImpl";
+import PhoneTabImpl from "./PhoneTabImpl";
 import WorkflowsPanel from "../workflows/WorkflowsPanel";
+import TeamChatPanel from "../team-chat/TeamChatPanel";
+import ChannelsListPanel from "../channels/ChannelsListPanel";
 
-type Tab = "email" | "sms" | "phone" | "automations";
+type Tab = "email" | "sms" | "phone" | "automations" | "team-chat" | "channels";
 type EmailView = "inbox" | "compose" | "templates";
 
 const TABS: { id: Tab; label: string }[] = [
@@ -16,6 +19,8 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "sms",         label: "SMS" },
   { id: "phone",       label: "Phone" },
   { id: "automations", label: "Automations" },
+  { id: "team-chat",   label: "Team Chat" },
+  { id: "channels",    label: "Channels" },
 ];
 
 const EMAIL_VIEWS: { id: EmailView; label: string }[] = [
@@ -24,6 +29,13 @@ const EMAIL_VIEWS: { id: EmailView; label: string }[] = [
   { id: "templates", label: "Templates" },
 ];
 
+/**
+ * Communications hub host page. Owns the single header + the top-level
+ * pill bar. Each section below is a focused `*Impl` component that owns
+ * its own state. The hub replaces the old 1700-line `EmailTemplatesTab`
+ * bundle which had its own pill bar + h2 and caused duplicate UI when
+ * mounted inside this host.
+ */
 function CommunicationsHostInner() {
   const params = useSearchParams();
   const router = useRouter();
@@ -31,23 +43,35 @@ function CommunicationsHostInner() {
   const urlView = params?.get("view");
 
   const [tab, setTab] = useState<Tab>((TABS.some((t) => t.id === urlTab) ? urlTab : "email") as Tab);
-  const [emailView, setEmailView] = useState<EmailView>((EMAIL_VIEWS.some((v) => v.id === urlView) ? urlView : "templates") as EmailView);
+  const [emailView, setEmailView] = useState<EmailView>((EMAIL_VIEWS.some((v) => v.id === urlView) ? urlView : "inbox") as EmailView);
 
+  const pushUrl = (qs: URLSearchParams) => {
+    router.replace(`/admin/communications?${qs.toString()}`);
+  };
   const onSelectTab = (t: Tab) => {
     setTab(t);
     const qs = new URLSearchParams();
     qs.set("tab", t);
     if (t === "email") qs.set("view", emailView);
-    router.replace(`/admin/communications?${qs.toString()}`);
+    pushUrl(qs);
   };
   const onSelectEmailView = (v: EmailView) => {
     setEmailView(v);
     const qs = new URLSearchParams({ tab: "email", view: v });
-    router.replace(`/admin/communications?${qs.toString()}`);
+    pushUrl(qs);
   };
 
   return (
     <div>
+      {/* Single hub header — no section component repeats this. */}
+      <h2 className="font-display text-xl sm:text-2xl font-bold mb-2">
+        Communications Hub
+      </h2>
+      <p className="font-body text-sm text-[var(--app-text-muted)] mb-6">
+        Manage partner email, SMS, phone, automations, and internal team chat from one place.
+      </p>
+
+      {/* Top-level pill bar */}
       <div className="flex gap-2 mb-6 overflow-x-auto">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => onSelectTab(t.id)}
@@ -57,6 +81,7 @@ function CommunicationsHostInner() {
         ))}
       </div>
 
+      {/* Email — secondary sub-tab bar (Inbox / Compose / Templates) */}
       {tab === "email" && (
         <>
           <div className="flex gap-1 mb-6 border-b border-[var(--app-border)] overflow-x-auto">
@@ -67,14 +92,19 @@ function CommunicationsHostInner() {
                 }`}>{v.label}</button>
             ))}
           </div>
-          {emailView === "inbox"     && <EmailInboxTab />}
-          {emailView === "compose"   && <EmailComposeTab />}
-          {emailView === "templates" && <EmailTemplatesTab />}
+          {emailView === "inbox"     && <EmailInboxTabImpl />}
+          {emailView === "compose"   && <EmailComposeTabImpl />}
+          {emailView === "templates" && <EmailTemplatesTabImpl />}
         </>
       )}
-      {tab === "sms"         && <SmsTab />}
-      {tab === "phone"       && <PhoneTab />}
+
+      {tab === "sms"         && <SmsTabImpl />}
+      {tab === "phone"       && <PhoneTabImpl />}
+      {/* Automations === the existing Workflows page — same panel, mounted
+          inside the hub so admins never have to context-switch. */}
       {tab === "automations" && <WorkflowsPanel />}
+      {tab === "team-chat"   && <TeamChatPanel />}
+      {tab === "channels"    && <ChannelsListPanel />}
     </div>
   );
 }
