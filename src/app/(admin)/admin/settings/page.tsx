@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { getPermissions } from "@/lib/permissions";
+import { reconcileNavOrder } from "@/lib/reconcileNavOrder";
 
 /**
  * Compress an image file to a smaller base64 data URL.
@@ -67,6 +68,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "partners", label: "Partners", icon: "👥" },
   { id: "deals", label: "Deals", icon: "📋" },
   { id: "communications", label: "Communications", icon: "💬" },
+  { id: "partnerSupport", label: "Partner Support", icon: "🎧" },
   { id: "training", label: "Training", icon: "📖" },
   { id: "conference", label: "Live Weekly", icon: "📹" },
   { id: "documents", label: "Documents", icon: "📁" },
@@ -74,10 +76,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "settings", label: "Settings", icon: "⚙️" },
   { id: "users", label: "Admin Users", icon: "🔐" },
   { id: "dev", label: "Development", icon: "🛠️" },
-  { id: "workflows", label: "Workflows", icon: "⚡" },
   { id: "features", label: "Feature Requests", icon: "💡" },
-  { id: "support", label: "Support", icon: "📩" },
-  { id: "chat", label: "Live Chat", icon: "💬" },
 ];
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
@@ -262,13 +261,10 @@ export default function SettingsPage() {
               aOrder.splice(insertAt >= 0 ? insertAt : aOrder.length, 0, "reporting");
             }
           }
-          // Drop any IDs not in the valid set
-          const validIds = new Set(ALL_ADMIN_NAV_ITEMS.map((n) => n.id));
-          aOrder = aOrder.filter((id: string) => validIds.has(id));
-          // Append any new items not in saved order
-          for (const item of ALL_ADMIN_NAV_ITEMS) {
-            if (!aOrder.includes(item.id)) aOrder.push(item.id);
-          }
+          // Reconcile against the current registry — drops stale IDs
+          // (workflows, chat, support after consolidation) and appends new
+          // group IDs (partnerSupport) that are missing from the saved order.
+          aOrder = reconcileNavOrder(aOrder, ALL_ADMIN_NAV_ITEMS.map((n) => n.id));
           setAdminNavOrder(aOrder);
         }
       } catch {}
