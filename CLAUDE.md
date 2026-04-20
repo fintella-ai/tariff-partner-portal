@@ -9,13 +9,15 @@ Self-sustaining partner management platform. Next.js 14 (App Router) + React 18 
 
 ## ⚠️ Development status (read first)
 
-**Pre-launch / pure build-out mode.** The portal is NOT live to real customers. Every row in every database (local, preview, production) is test data Claude or John seeded. Implications:
+**LIVE — real partner data in production.** The portal flipped out of demo mode on 2026-04-20 per `docs/launch-status.md`. `FINTELLA_LIVE_MODE=true` on Vercel production gates the build-time seed from re-creating test partners/deals. Implications:
 
-- Safe to freely test, seed, reset, or wipe any environment
-- Safe to run `prisma db push --accept-data-loss` without hesitation
-- Smoke-testing goes directly against production (`fintella.partners`) instead of Vercel preview
-- Do NOT add "this writes to the real DB" style warnings for routine test actions
-- Update this section when the first real customer signs up
+- **Production DB is NOT disposable.** Real partner rows, real commissions, real audit logs.
+- **Do NOT run `prisma db push --accept-data-loss` casually.** Only for strictly-additive schema changes. Any column drop or type change needs a planned migration.
+- **Do NOT wipe production data** without an explicit John instruction AND a Neon snapshot taken first.
+- Smoke-test schema changes against a Vercel preview deployment FIRST, not directly on prod.
+- Post-launch hardening still in progress: `WEBHOOK_SKIP_HMAC=true` stays until Frost Law's HubSpot workflow adds HMAC signing, at which point flip to `false` and HMAC enforcement returns.
+- Twilio SMS: env vars UNSET until TCR approves the A2P 10DLC campaign. Sends stay in demo mode until approval lands; re-add the three Twilio vars when it does.
+- Add "this writes to the real DB" warnings for any potentially destructive action.
 
 ## Architecture: hub-and-spoke
 
