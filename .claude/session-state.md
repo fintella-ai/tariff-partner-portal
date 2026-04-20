@@ -1,17 +1,26 @@
 # Session State
 
-🕒 Last updated: 2026-04-20 — Deal rawPayload is now a chronological event log; admin Team Chat live; announcement channels impl pending
+🕒 Last updated: 2026-04-20 — announcement channels LIVE; Deal rawPayload event log live; admin Team Chat live
 
 ## 🌿 Git state
-- **main HEAD:** `fcbe186` — feat(webhook): append every POST + PATCH body to Deal.rawPayload event log (#297)
+- **main HEAD:** `7b1a80d` — feat(admin): admin announcement channels + partner replies + SSE (#299)
 - **origin/main HEAD:** same, in sync
 - **Open non-dependabot PRs:** 0
 - **Open dependabot PRs:** 5 (#287–#291) — see below; do NOT auto-merge
 - **Working tree:** clean
 
 ## ✅ This session (2026-04-20)
+- **#299** feat(admin): admin announcement channels + partner replies + SSE — SHIPPED. 4 new Prisma models (`AnnouncementChannel`, `ChannelMembership`, `ChannelMessage`, `ChannelReplyThread`, `ChannelReplyMessage`), 13 API routes, 3 pages (`/admin/channels` list+detail, `/dashboard/announcements`), 3 compose components (`SegmentRuleBuilder`, `CallLinkComposer`, `AnnouncementCard`), additive signup segment re-eval. 31 files, +2,234 lines. Webhook handler `/api/webhook/referral` confirmed untouched.
 - **#297** feat(webhook): Deal.rawPayload is now a JSON array of every inbound POST + PATCH body. Capped at 20 entries / 50KB total / 10KB per body (FIFO-drop oldest on overflow). Legacy single-body rows wrap cleanly as a synthetic "POST @ unknown time" first event. Admin `/admin/deals` expansion renders each event as its own card with POST/PATCH badge + timestamp + pretty-printed JSON.
 - **#296** feat(admin): two-line date/time format in `/admin/deals` DATE column. Added `fmtTime()` helper to `src/lib/format.ts`.
+
+## 🔌 Shared SSE infrastructure notes
+- Postgres LISTEN/NOTIFY channel name stayed as `admin_chat_events` (NOT renamed to `portal_chat_events`) to avoid silently breaking the existing Team Chat stream. Both Team Chat and announcement channels publish to this single channel.
+- Publisher helper `src/lib/portalChatEvents.ts` introduced by #299 generalizes the event union. `src/lib/adminChatEvents.ts` is now a thin alias re-export so existing Team Chat code (`publishAdminChatEvent`, `AdminChatEvent`) keeps working without modification.
+- Stream consumers filter incoming events:
+  - Team Chat stream (`/api/admin/team-chat/stream`) filters by `threadId`
+  - Announcement channel streams (`/api/admin/channels/stream`, `/api/announcements/stream`) filter by `channelId` + `event.startsWith("channel.")`
+- No crosstalk possible by design.
 
 ## ✅ Recent prior sessions
 - **2026-04-19:** admin Team Chat shipped (#292 spec, #293 impl with 4 Prisma models + SSE + MentionInput); announcement channels spec+plan merged as #294; live chat deal mentions (#285); Full Reporting sort arrows (#286); partner-name-above-code + "Unknown" fallback (#282, #283).
@@ -26,13 +35,22 @@
   - Active on both POST (deal creation) and PATCH (stage updates).
 
 ## 🎯 What's next
-1. **Implement announcement channels** — 16-task plan at `docs/superpowers/plans/2026-04-19-admin-announcement-channels.md`. Dispatch subagent for a PR like we did for #293.
-2. **Brainstorm partner-to-downline DM** — sibling feature from 2026-04-19 brainstorm. Permission decided: tier B (parent↔direct-child bidirectional, L1↔L2 + L2↔L3, no skip-level). Privacy decided: tier D (flag-to-super_admin abuse reporting).
-3. **Admin presence directory** (green/red lights in Team Chat) — needs spec+plan. Heartbeat via `UserPresence` or session-ping table.
-4. **Notification bell mentions rollup** — verify existing `admin_mention` plumbing; add a "Mentions" filter tab in the bell dropdown.
-5. **Live Weekly table formatting + resizable columns** — apply existing ResizableTable primitive; center-align Host→Actions headers; bump Host padding; drag dividers with double-click fit-to-size.
-6. **Outbound network adapter sub-spec 1 implementation** — plan at `docs/superpowers/plans/2026-04-18-outbound-network-adapter.md`.
-7. **Phase 18b** — Next.js 14→16 migration (dedicated session).
+1. **Brainstorm partner-to-downline DM** — sibling feature from 2026-04-19 brainstorm. Permission decided: tier B (parent↔direct-child bidirectional, L1↔L2 + L2↔L3, no skip-level). Privacy decided: tier D (flag-to-super_admin abuse reporting).
+2. **Admin presence directory** (green/red lights in Team Chat) — needs spec+plan. Heartbeat via `UserPresence` or session-ping table.
+3. **Notification bell mentions rollup** — verify existing `admin_mention` plumbing; add a "Mentions" filter tab in the bell dropdown.
+4. **Live Weekly table formatting + resizable columns** — apply existing ResizableTable primitive; center-align Host→Actions headers; bump Host padding; drag dividers with double-click fit-to-size.
+5. **Outbound network adapter sub-spec 1 implementation** — plan at `docs/superpowers/plans/2026-04-18-outbound-network-adapter.md`.
+6. **Phase 18b** — Next.js 14→16 migration (dedicated session).
+
+## 🧪 Post-#299 smoke plan (prod deploy just finished)
+- Visit `/admin/channels` as super_admin — confirm sidebar entry loads, "+ New Channel" modal works
+- Create a test channel with segment rule `tier in [l1] AND status eq active` — verify auto-seeded membership
+- Manually add a non-matching partner → joins; manually remove a matching one → sticky (resync won't re-add)
+- Post a text announcement → every member gets a Notification; SSE push verified via a second browser tab
+- Post a `call_link` announcement (e.g. https://meet.google.com/xyz) → prominent card with "Join Call" button in new tab
+- As a partner member, reply from `/dashboard/announcements` → admin's reply-thread inbox shows unread badge
+- Admin responds in the reply thread → partner sees admin message in their own thread only
+- Archive the channel → hidden from partner UI, admin can still see the archived list
 
 ## 🧠 Context that matters for resuming
 - `/api/webhook/referral` is no longer hands-off for payload-log work — #297 touched it additively (append to rawPayload inside the existing `tx.deal.update` call). Other changes to that file still need explicit John approval because partners are actively testing POST/PATCH.
