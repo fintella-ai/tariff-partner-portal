@@ -3,13 +3,11 @@ import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import SupportTicketsPanel from "./SupportTicketsPanel";
 import LiveChatPanel from "../chat/LiveChatPanel";
-import DmFlagsListPanel from "../partner-dm-flags/DmFlagsListPanel";
 
-type Tab = "tickets" | "livechat" | "dmflags";
+type Tab = "tickets" | "livechat";
 const TABS: { id: Tab; label: string }[] = [
   { id: "tickets",  label: "Support Tickets" },
   { id: "livechat", label: "Live Chat Support" },
-  { id: "dmflags",  label: "DM Flags" },
 ];
 
 function SupportHostInner() {
@@ -38,7 +36,6 @@ function SupportHostInner() {
       </div>
       {tab === "tickets"  && <SupportTicketsPanel />}
       {tab === "livechat" && <LiveChatPanel />}
-      {tab === "dmflags"  && <DmFlagsListPanel />}
     </div>
   );
 }
