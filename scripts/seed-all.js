@@ -3,6 +3,19 @@ const bcrypt = require("bcryptjs");
 
 console.log("[seed] DATABASE_URL:", process.env.DATABASE_URL ? "(set)" : "(not set)");
 
+// FINTELLA_LIVE_MODE gates the non-idempotent parts of the seed pipeline.
+// When set to "true", we SKIP seeding test partners + test deals so the
+// build doesn't re-create them on every deploy post-launch. Admin user,
+// portal settings, email templates, conference entries, workflow defaults,
+// and the admin-team-chat global thread still seed idempotently — those
+// are bootstrap config, not test data.
+const LIVE_MODE = process.env.FINTELLA_LIVE_MODE === "true";
+if (LIVE_MODE) {
+  console.log("[seed] FINTELLA_LIVE_MODE=true — skipping test-data seed (partners, deals)");
+} else {
+  console.log("[seed] FINTELLA_LIVE_MODE not set — seeding full test data (pre-launch mode)");
+}
+
 const prisma = new PrismaClient();
 
 async function main() {
@@ -74,21 +87,28 @@ async function main() {
     }
   }
 
-  // ── Partners ──────────────────────────────────────────────────────────
-  const partners = [
-    { id: "p-john", partnerCode: "PTNJRO001", email: "john@fintellaconsulting.com", firstName: "John", lastName: "Orlando", phone: "(410) 497-5947", status: "active", referredByPartnerCode: null, notes: "Founding partner." },
-    { id: "p-sarah", partnerCode: "PTNSC8K2F", email: "s.chen@cpagroup.com", firstName: "Sarah", lastName: "Chen", phone: "(212) 555-0202", status: "active", referredByPartnerCode: "PTNJRO001" },
-    { id: "p-mike", partnerCode: "PTNMT3X7Q", email: "m.torres@advisors.com", firstName: "Mike", lastName: "Torres", phone: "(305) 555-0303", status: "active", referredByPartnerCode: "PTNJRO001" },
-    { id: "p-lisa", partnerCode: "PTNLP9W4R", email: "l.park@tradelaw.com", firstName: "Lisa", lastName: "Park", phone: "(415) 555-0404", status: "pending", referredByPartnerCode: "PTNJRO001" },
-    { id: "p-david", partnerCode: "PTNDK5M8J", email: "d.kim@imports.co", firstName: "David", lastName: "Kim", phone: "(713) 555-0505", status: "active", referredByPartnerCode: "PTNSC8K2F" },
-  ];
+  // ── Partners (test data — skipped in live mode) ───────────────────────
+  if (LIVE_MODE) {
+    console.log("✓ Partner seed SKIPPED (FINTELLA_LIVE_MODE=true)");
+  } else {
+    const partners = [
+      { id: "p-john", partnerCode: "PTNJRO001", email: "john@fintellaconsulting.com", firstName: "John", lastName: "Orlando", phone: "(410) 497-5947", status: "active", referredByPartnerCode: null, notes: "Founding partner." },
+      { id: "p-sarah", partnerCode: "PTNSC8K2F", email: "s.chen@cpagroup.com", firstName: "Sarah", lastName: "Chen", phone: "(212) 555-0202", status: "active", referredByPartnerCode: "PTNJRO001" },
+      { id: "p-mike", partnerCode: "PTNMT3X7Q", email: "m.torres@advisors.com", firstName: "Mike", lastName: "Torres", phone: "(305) 555-0303", status: "active", referredByPartnerCode: "PTNJRO001" },
+      { id: "p-lisa", partnerCode: "PTNLP9W4R", email: "l.park@tradelaw.com", firstName: "Lisa", lastName: "Park", phone: "(415) 555-0404", status: "pending", referredByPartnerCode: "PTNJRO001" },
+      { id: "p-david", partnerCode: "PTNDK5M8J", email: "d.kim@imports.co", firstName: "David", lastName: "Kim", phone: "(713) 555-0505", status: "active", referredByPartnerCode: "PTNSC8K2F" },
+    ];
 
-  for (const p of partners) {
-    await prisma.partner.upsert({ where: { id: p.id }, update: {}, create: p });
+    for (const p of partners) {
+      await prisma.partner.upsert({ where: { id: p.id }, update: {}, create: p });
+    }
+    console.log("✓ " + partners.length + " partners seeded");
   }
-  console.log("✓ " + partners.length + " partners seeded");
 
-  // ── Deals ─────────────────────────────────────────────────────────────
+  // ── Deals (test data — skipped in live mode) ──────────────────────────
+  if (LIVE_MODE) {
+    console.log("✓ Deal seed SKIPPED (FINTELLA_LIVE_MODE=true)");
+  } else {
   const deals = [
     {
       id: "deal-1", dealName: "Acme Electronics Import LLC", partnerCode: "PTNJRO001",
@@ -166,6 +186,7 @@ async function main() {
     });
   }
   console.log("✓ " + deals.length + " deals seeded (including test deal)");
+  }
 
   // ── Conference Schedule (Live Weekly) ─────────────────────────────────
   // 1 active upcoming call + 7 past recordings. Mirrors scripts/seed-conference.ts
