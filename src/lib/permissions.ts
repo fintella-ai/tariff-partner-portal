@@ -15,33 +15,32 @@ export type AdminRole = "super_admin" | "admin" | "accounting" | "partner_suppor
 // Which sidebar nav items each role can see.
 //
 // Notes on consolidation (2026-04-20):
-//   - `communications` is now a group containing Email/SMS/Phone/Automations
-//     children (those child IDs are `communications:*`).
-//   - `internalChats` is a group containing Team Chat / Channels / DM Flags
-//     children (child IDs are `internalChats:*`). Accounting is excluded.
-//   - `partnerSupport` is a group containing Support Tickets / Live Chat
-//     children (child IDs are `partnerSupport:*`).
-//   - Legacy top-level IDs (workflows, chat, support, teamChat, channels,
-//     partnerDmFlags) are no longer in the registry; the layout's
-//     `reconcileNavOrder` helper silently drops them from saved nav orders.
-//   - `reporting` is synthetic: the layout shows the Reporting row if any of
-//     `reports`/`revenue`/`payouts` is visible to the role. Those three
+//   - `communications` is a flat leaf pointing at /admin/communications.
+//     That hub page owns its own in-page tabs (Email / SMS / Phone /
+//     Automations / Team Chat / Channels) — same pattern as Reporting.
+//   - `internalChats` is a flat leaf pointing at /admin/internal-chats.
+//     That hub page owns tabs for Team Chat / Channels / DM Flags.
+//     Accounting is excluded.
+//   - `partnerSupport` is a flat leaf pointing at /admin/support. That
+//     hub page owns tabs for Support Tickets / Live Chat Support.
+//   - Legacy namespaced child IDs (e.g. `communications:email`,
+//     `internalChats:team-chat`, `partnerSupport:tickets`) are no longer
+//     in the registry. The layout's `reconcileNavOrder` helper silently
+//     drops them from saved nav orders on first render after deploy.
+//   - `reporting` is synthetic: the layout shows the Reporting row if any
+//     of `reports`/`revenue`/`payouts` is visible to the role. Those three
 //     finance-page IDs remain in each role's list below.
 export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
   super_admin: [
     "partners", "deals",
-    "communications", "communications:email", "communications:sms", "communications:phone", "communications:automations",
-    "internalChats", "internalChats:team-chat", "internalChats:channels", "internalChats:dmflags",
-    "partnerSupport", "partnerSupport:tickets", "partnerSupport:livechat",
+    "communications", "internalChats", "partnerSupport",
     "training", "conference", "documents",
     "payouts", "revenue", "reports",
     "settings", "users", "dev", "features",
   ],
   admin: [
     "partners", "deals",
-    "communications", "communications:email", "communications:sms", "communications:phone", "communications:automations",
-    "internalChats", "internalChats:team-chat", "internalChats:channels", "internalChats:dmflags",
-    "partnerSupport", "partnerSupport:tickets", "partnerSupport:livechat",
+    "communications", "internalChats", "partnerSupport",
     "training", "conference", "documents",
     "payouts", "reports",
     "settings",
@@ -53,9 +52,7 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
   ],
   partner_support: [
     "partners", "deals",
-    "communications", "communications:email", "communications:sms", "communications:phone", "communications:automations",
-    "internalChats", "internalChats:team-chat", "internalChats:channels", "internalChats:dmflags",
-    "partnerSupport", "partnerSupport:tickets", "partnerSupport:livechat",
+    "communications", "internalChats", "partnerSupport",
     "training", "conference", "documents",
     "payouts",
     "settings",

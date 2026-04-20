@@ -34,36 +34,14 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   // bar rendered at the top of each page so the user can switch between
   // them in-context.
   reporting:    { id: "reporting", href: "/admin/reports", icon: "📈", label: "Reporting" },
-  communications: {
-    id: "communications",
-    icon: "💬",
-    label: "Communications",
-    children: [
-      { id: "communications:email",       href: "/admin/communications?tab=email",       icon: "📧", label: "Email" },
-      { id: "communications:sms",         href: "/admin/communications?tab=sms",         icon: "📱", label: "SMS" },
-      { id: "communications:phone",       href: "/admin/communications?tab=phone",       icon: "📞", label: "Phone" },
-      { id: "communications:automations", href: "/admin/communications?tab=automations", icon: "⚡", label: "Automations" },
-    ],
-  },
-  internalChats: {
-    id: "internalChats",
-    icon: "💬",
-    label: "Internal Chats",
-    children: [
-      { id: "internalChats:team-chat", href: "/admin/team-chat",        icon: "💬", label: "Team Chat" },
-      { id: "internalChats:channels",  href: "/admin/channels",         icon: "📣", label: "Channels" },
-      { id: "internalChats:dmflags",   href: "/admin/partner-dm-flags", icon: "🚩", label: "DM Flags" },
-    ],
-  },
-  partnerSupport: {
-    id: "partnerSupport",
-    icon: "🎧",
-    label: "Partner Support",
-    children: [
-      { id: "partnerSupport:tickets",  href: "/admin/support?tab=tickets",  icon: "📩", label: "Support Tickets" },
-      { id: "partnerSupport:livechat", href: "/admin/support?tab=livechat", icon: "💬", label: "Live Chat Support" },
-    ],
-  },
+  // Communications / Internal Chats / Partner Support are flat leaves. Each
+  // one is a single sidebar entry pointing at its top-level hub page, and the
+  // hub page owns its own in-page tabbed navigation (same pattern as
+  // Reporting). This avoids duplicate tab bars and shorter mental model for
+  // super admins.
+  communications:  { id: "communications",  href: "/admin/communications",  icon: "💬", label: "Communications" },
+  internalChats:   { id: "internalChats",   href: "/admin/internal-chats",  icon: "💬", label: "Internal Chats" },
+  partnerSupport:  { id: "partnerSupport",  href: "/admin/support",         icon: "🎧", label: "Partner Support" },
   training:     { id: "training", href: "/admin/training", icon: "📖", label: "Training" },
   conference:   { id: "conference", href: "/admin/conference", icon: "📹", label: "Live Weekly" },
   documents:    { id: "documents", href: "/admin/documents", icon: "📁", label: "Documents" },
