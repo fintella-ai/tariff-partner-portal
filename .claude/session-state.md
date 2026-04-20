@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-20 — admin nav fully consolidated (Communications + Internal Chats + Partner Support); partner DM live; announcement channels live; admin Team Chat live
+🕒 Last updated: 2026-04-20 — Communications Hub cleaned (no duplicate tab bar); sidebar groups flattened to leaves; admin nav consolidated; partner DM / announcement channels / Team Chat all live
 
 ## 🌿 Git state
-- **main HEAD:** `23e9325` — feat(admin): Internal Chats group (Team Chat + Channels + DM Flags) (#307)
+- **main HEAD:** `942bc3b` — fix(admin): flat sidebar leaves + Communications Hub cleanup (#309)
 - **origin/main HEAD:** same, in sync
 - **Open non-dependabot PRs:** 0
 - **Open dependabot PRs:** 5 (#287–#291)
@@ -42,8 +42,13 @@ All 7 of the extracted / tabbed routes continue to work:
 - `/admin/team-chat`, `/admin/channels`, `/admin/workflows`, `/admin/chat`, `/admin/support`, `/admin/partner-dm-flags` (thin-wrapper pages rendering extracted panels)
 - `/admin/internal-chats`, `/admin/communications`, `/admin/support` (tabbed hosts)
 
-## ⚠️ Known stub state on Communications host
-The existing `/admin/communications/page.tsx` pre-consolidation was a 1702-line multi-tab component bundling Email Templates + Inbox + Compose + SMS + Phone + Automations. The nav consolidation subagent preserved that ENTIRE component as `EmailTemplatesTab.tsx` to avoid breaking existing functionality, and stubbed the four new top-level pill tabs (Inbox/Compose/SMS/Phone) as "coming soon" placeholders. **All existing email-template + Communications functionality is reachable via Communications → Email → Templates**, but the new top-level Inbox/Compose/SMS/Phone pill tabs are placeholders pending a future split-spec.
+## ✅ Communications Hub fully split (as of #309)
+The 1702-line legacy `EmailTemplatesTab.tsx` bundle was split into 6 focused section components:
+`EmailInboxTabImpl.tsx`, `EmailComposeTabImpl.tsx`, `EmailTemplatesTabImpl.tsx`, `SmsTabImpl.tsx`, `PhoneTabImpl.tsx`, plus `_shared.ts` for types/constants. The `Automations` pill wires to `WorkflowsPanel` (legacy `renderAutomations()` was discovered to be a 4-row hardcoded demo — dropped). No more duplicate tab bar. No more duplicate "Communications Hub" h2. All sections render cleanly within the host's pill + sub-tab navigation. "Use template" button in Templates prefills Compose via sessionStorage + router.push.
+
+## 🗺️ Current sidebar (flat leaves for three formerly-grouped entries)
+- Communications, Internal Chats, Partner Support are each a single clickable leaf pointing to their respective tabbed hub page (same pattern as Reporting).
+- `ROLE_VISIBLE_NAV` simplified — namespaced child IDs no longer needed.
 
 ## 🔌 Shared infrastructure
 - **Postgres LISTEN/NOTIFY:** `admin_chat_events` channel (all surfaces)
@@ -52,12 +57,11 @@ The existing `/admin/communications/page.tsx` pre-consolidation was a 1702-line 
 - **`reconcileNavOrder`:** silent migration of saved navigation-order values with stale IDs; gracefully appends new IDs
 
 ## 🎯 What's next
-1. **Communications host stub split** — replace the Inbox/Compose/SMS/Phone placeholders with real UIs. Needs brainstorm → spec → plan. The old 1702-line bundle has all the functionality; it just needs unbundling into four focused components.
-2. **Admin presence directory** (green/red lights in Team Chat) — needs spec+plan
-3. **Notification bell mentions rollup** — verify + enhance existing plumbing
-4. **Live Weekly table formatting + resizable columns** — apply existing ResizableTable primitive
-5. **Outbound network adapter sub-spec 1 implementation** — plan from 2026-04-18
-6. **Phase 18b** — Next.js 14→16 migration (dedicated session)
+1. **Admin presence directory** (green/red lights in Team Chat) — needs spec+plan
+2. **Notification bell mentions rollup** — verify + enhance existing plumbing
+3. **Live Weekly table formatting + resizable columns** — apply existing ResizableTable primitive
+4. **Outbound network adapter sub-spec 1 implementation** — plan from 2026-04-18
+5. **Phase 18b** — Next.js 14→16 migration (dedicated session)
 
 ## 🧠 Context that matters for resuming
 - Admin nav consolidation is DONE — no further structural work needed on the sidebar; future additions go into existing groups (Communications / Internal Chats / Partner Support) or become new top-level entries.
