@@ -111,10 +111,21 @@ Open Vercel → Project `tariff-partner-portal-iwki` → Settings → Environmen
 - Single Sender Verification is the interim path for sending from `john@fintellaconsulting.com` while domain auth completes
 - Status today: DNS added 2026-04-14, should be propagated
 
-### 0.3 Neon DB backup verification
-Neon gives free 7-day point-in-time restore on all tiers. Confirm in Neon dashboard:
-- Project has recent automatic backups showing in the Backups tab
-- PITR window covers at least last 24h
+### 0.3 Neon DB backup strategy
+
+Current posture (as of 2026-04-20): Neon project `trln-db` on **Free tier**. Important:
+
+- **Instant point-in-time restore: past 6 hours only.** Free-tier window. Covers intra-day "oops bad query" scenarios but NOT week-over-week recovery.
+- **Scheduled automatic snapshots: NOT included on free tier.** Requires Neon Scale tier (~$19/mo) to unlock.
+- **Manual snapshots: available on free tier.** Create them at key moments via Backup & Restore → "Create snapshot".
+
+**What this means for launch-day DB cleanup in Phase 1:**
+
+Before running the wipe in § 1.2, **take a manual snapshot** labeled "pre-launch-wipe" via Neon dashboard. This gives an explicit rollback target if the wipe removes something it shouldn't. 6-hour PITR would cover it but only if you notice within 6 hours.
+
+After the wipe + before first real signup, **take a second manual snapshot** labeled "clean-slate-launch". Use this to return to the freshly-wiped state if initial launch-day activity corrupts something.
+
+**Optional upgrade consideration:** if you want automatic daily snapshots + longer PITR window (7 days) without having to remember to create manual snapshots, Neon Scale tier is the path. Not required for launch — manual snapshots at the two key moments above are sufficient.
 
 ### 0.4 Sentry alert routing
 - Open Sentry project → Alerts → Rules
@@ -135,7 +146,14 @@ Each step is verifiable. If step N fails, abort and don't proceed to N+1.
 ### 1.1 Merge this launch-prep PR
 Lands `FINTELLA_LIVE_MODE` env flag + seed-script guard. Zero runtime impact until the env var is set.
 
-### 1.2 DB cleanup (once-off)
+### 1.2 DB cleanup (once-off) — with manual snapshots bracketing the operation
+
+**Immediately before step 1.2 starts:**
+Open Neon → project `trln-db` → Backup & Restore → **Create snapshot** labeled `pre-launch-wipe`. Wait for "Ready." Do NOT skip this — 6-hour PITR is a weak-tea substitute if something goes wrong Thursday.
+
+**Immediately after the wipe completes + before any real signup activity:**
+Create another snapshot labeled `clean-slate-launch`. This is your "reset to empty" anchor if the first day of real traffic ingests bad data.
+
 
 **Keep:**
 - `User` rows (admin accounts) — super_admin exists; seed script skips when it sees one
