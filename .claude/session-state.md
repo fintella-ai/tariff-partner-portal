@@ -1,73 +1,51 @@
 # Session State
 
-🕒 Last updated: 2026-04-20 — announcement channels LIVE; Deal rawPayload event log live; admin Team Chat live
+🕒 Last updated: 2026-04-20 — partner-DM LIVE; announcement channels LIVE; admin Team Chat LIVE; admin nav consolidation spec+plan ready for impl
 
 ## 🌿 Git state
-- **main HEAD:** `7b1a80d` — feat(admin): admin announcement channels + partner replies + SSE (#299)
+- **main HEAD:** `226baf9` — docs: admin nav consolidation spec + plan (#302)
 - **origin/main HEAD:** same, in sync
 - **Open non-dependabot PRs:** 0
-- **Open dependabot PRs:** 5 (#287–#291) — see below; do NOT auto-merge
+- **Open dependabot PRs:** 5 (#287–#291)
 - **Working tree:** clean
 
 ## ✅ This session (2026-04-20)
-- **#299** feat(admin): admin announcement channels + partner replies + SSE — SHIPPED. 4 new Prisma models (`AnnouncementChannel`, `ChannelMembership`, `ChannelMessage`, `ChannelReplyThread`, `ChannelReplyMessage`), 13 API routes, 3 pages (`/admin/channels` list+detail, `/dashboard/announcements`), 3 compose components (`SegmentRuleBuilder`, `CallLinkComposer`, `AnnouncementCard`), additive signup segment re-eval. 31 files, +2,234 lines. Webhook handler `/api/webhook/referral` confirmed untouched.
-- **#297** feat(webhook): Deal.rawPayload is now a JSON array of every inbound POST + PATCH body. Capped at 20 entries / 50KB total / 10KB per body (FIFO-drop oldest on overflow). Legacy single-body rows wrap cleanly as a synthetic "POST @ unknown time" first event. Admin `/admin/deals` expansion renders each event as its own card with POST/PATCH badge + timestamp + pretty-printed JSON.
-- **#296** feat(admin): two-line date/time format in `/admin/deals` DATE column. Added `fmtTime()` helper to `src/lib/format.ts`.
+- **#303** feat: partner-to-downline DM with flag→throttle→review flow — SHIPPED. 5 new Prisma models, 11 API routes, partnerDmGate (10/10 unit tests), rate-limit ladder (60/hr baseline → 1/hr throttled → suspended), flag-review pipeline, SSE streams, `/dashboard/messages` partner UI, `/admin/partner-dm-flags` admin inbox, `FlagButton` component, sidebar entries. 27 files, +1,496 lines. Webhook handler `/api/webhook/referral` confirmed untouched.
+- **#302** docs: admin nav consolidation spec + plan — MERGED. Blocks on #303 landing first (which it has). Ready for subagent dispatch.
+- **#301** docs: partner-to-downline DM spec + plan
+- **#300** chore(session): checkpoint after announcement channels
+- **#299** feat(admin): admin announcement channels + partner replies + SSE
+- **#297** feat(webhook): Deal.rawPayload is now a JSON array of every inbound POST + PATCH body
+- **#296** feat(admin): two-line date/time in /admin/deals
 
-## 🔌 Shared SSE infrastructure notes
-- Postgres LISTEN/NOTIFY channel name stayed as `admin_chat_events` (NOT renamed to `portal_chat_events`) to avoid silently breaking the existing Team Chat stream. Both Team Chat and announcement channels publish to this single channel.
-- Publisher helper `src/lib/portalChatEvents.ts` introduced by #299 generalizes the event union. `src/lib/adminChatEvents.ts` is now a thin alias re-export so existing Team Chat code (`publishAdminChatEvent`, `AdminChatEvent`) keeps working without modification.
-- Stream consumers filter incoming events:
-  - Team Chat stream (`/api/admin/team-chat/stream`) filters by `threadId`
-  - Announcement channel streams (`/api/admin/channels/stream`, `/api/announcements/stream`) filter by `channelId` + `event.startsWith("channel.")`
-- No crosstalk possible by design.
-
-## ✅ Recent prior sessions
-- **2026-04-19:** admin Team Chat shipped (#292 spec, #293 impl with 4 Prisma models + SSE + MentionInput); announcement channels spec+plan merged as #294; live chat deal mentions (#285); Full Reporting sort arrows (#286); partner-name-above-code + "Unknown" fallback (#282, #283).
-- **2026-04-18:** HubSpot → Deal inbound mapping verified end-to-end via live curl. `WEBHOOK_SKIP_HMAC=true` active. `FROST_LAW_API_KEY` set to Frost's real key. Hozier test deal (`cmo4qvk720000z8e7ltlvnbzv`) created through the full flow.
-
-## 🧪 Verified in production
-- HubSpot stage IDs → internal stages — live in `HUBSPOT_STAGE_MAP` at `src/app/api/webhook/referral/route.ts`:
-  - `3468521172` → `consultation_booked` (Meeting Booked)
-  - `3467318997` → `client_no_show` (Meeting Missed)
-  - `3468521174` → `client_qualified` (Qualified)
-  - `3468521175` → `closedlost` + `closedLostReason: "disqualified"` (Disqualified)
-  - Active on both POST (deal creation) and PATCH (stage updates).
+## 🔌 Shared infrastructure
+- **Postgres LISTEN/NOTIFY channel:** `admin_chat_events` (kept original name despite plan renaming proposals — avoids breaking Team Chat stream)
+- **`src/lib/portalChatEvents.ts`** `PortalChatEvent` union now covers: Team Chat message events, announcement-channel events, partner_dm message events, partner_dm flag events
+- **Stream consumers** filter by surface-specific keys (threadId, channelId, flagId) — zero crosstalk
+- **`pg` npm package** installed in #293 (required for LISTEN outside Prisma)
 
 ## 🎯 What's next
-1. **Brainstorm partner-to-downline DM** — sibling feature from 2026-04-19 brainstorm. Permission decided: tier B (parent↔direct-child bidirectional, L1↔L2 + L2↔L3, no skip-level). Privacy decided: tier D (flag-to-super_admin abuse reporting).
-2. **Admin presence directory** (green/red lights in Team Chat) — needs spec+plan. Heartbeat via `UserPresence` or session-ping table.
-3. **Notification bell mentions rollup** — verify existing `admin_mention` plumbing; add a "Mentions" filter tab in the bell dropdown.
-4. **Live Weekly table formatting + resizable columns** — apply existing ResizableTable primitive; center-align Host→Actions headers; bump Host padding; drag dividers with double-click fit-to-size.
-5. **Outbound network adapter sub-spec 1 implementation** — plan at `docs/superpowers/plans/2026-04-18-outbound-network-adapter.md`.
-6. **Phase 18b** — Next.js 14→16 migration (dedicated session).
-
-## 🧪 Post-#299 smoke plan (prod deploy just finished)
-- Visit `/admin/channels` as super_admin — confirm sidebar entry loads, "+ New Channel" modal works
-- Create a test channel with segment rule `tier in [l1] AND status eq active` — verify auto-seeded membership
-- Manually add a non-matching partner → joins; manually remove a matching one → sticky (resync won't re-add)
-- Post a text announcement → every member gets a Notification; SSE push verified via a second browser tab
-- Post a `call_link` announcement (e.g. https://meet.google.com/xyz) → prominent card with "Join Call" button in new tab
-- As a partner member, reply from `/dashboard/announcements` → admin's reply-thread inbox shows unread badge
-- Admin responds in the reply thread → partner sees admin message in their own thread only
-- Archive the channel → hidden from partner UI, admin can still see the archived list
+1. **Implement admin nav consolidation (#302 plan)** — dispatch subagent for the 14-task plan at `docs/superpowers/plans/2026-04-20-admin-nav-consolidation.md`. 17 → 11 top-level nav entries. All existing routes preserved via thin wrappers.
+2. **Admin presence directory** (green/red lights in Team Chat) — needs spec+plan
+3. **Notification bell mentions rollup** — verify + enhance
+4. **Live Weekly table formatting + resizable columns** — apply existing ResizableTable primitive
+5. **Outbound network adapter sub-spec 1** — plan from 2026-04-18
+6. **Phase 18b** — Next.js 14→16 migration
 
 ## 🧠 Context that matters for resuming
-- `/api/webhook/referral` is no longer hands-off for payload-log work — #297 touched it additively (append to rawPayload inside the existing `tx.deal.update` call). Other changes to that file still need explicit John approval because partners are actively testing POST/PATCH.
-- SSE bus shared: `portal_chat_events` channel via Postgres LISTEN/NOTIFY. Admin Team Chat uses it now; announcement channels will share it.
-- `pg` npm package is installed (added in #293) — required for SSE handlers that `LISTEN` outside Prisma.
-- All DB data is test/seed — safe to wipe and retest.
+- **Partner DM privacy posture:** admins NEVER browse partner↔partner threads. Only a 20-message window around a specifically-flagged message is visible, surfaced exclusively through `/api/admin/partner-dm-flags/[id]`.
+- **Flag workflow:** partner flags → sender auto-throttled to 1 msg/hr → super_admin, admin, partner_support all can review (accounting excluded) → dismiss lifts throttle / confirm promotes to suspend → super_admin can manually lift a suspension.
+- **Partner DM permission gate:** `canPartnersDm` in `src/lib/partnerDmGate.ts` — L1↔direct L2, L2↔direct L3 only. No skip-level, no siblings.
+- **Admin nav consolidation plan** is blocked on no dependency now — safe to dispatch whenever user says go.
 
 ## 📂 Relevant files for the next task
-- Announcement channels impl: `docs/superpowers/plans/2026-04-19-admin-announcement-channels.md` — 16 tasks with complete code blocks, ready for subagent dispatch
-- Partner DM brainstorm: `src/app/(admin)/admin/chat/page.tsx` (existing partner-support chat pattern to clone), `prisma/schema.prisma` (Partner.referredByPartnerCode chain)
-- Admin presence: `prisma/schema.prisma` (new `UserPresence` table), `src/app/(admin)/admin/team-chat/page.tsx` (add directory pane)
-- Live Weekly table: locate `ResizableTable` primitive (shipped per earlier session)
+- Nav consolidation impl: `docs/superpowers/plans/2026-04-20-admin-nav-consolidation.md` (14 tasks, ready for subagent)
+- Admin presence directory: needs brainstorm
+- Live Weekly table fix: locate `ResizableTable` primitive, apply to conference page
 
 ## 📌 Dependabot status (open, do NOT auto-merge per CLAUDE.md)
-- **#287** postcss 8.5.9 → 8.5.10 (patch) — safe-ish
-- **#288** next-auth 5.0-beta.30 → 5.0-beta.31 — beta, risky
-- **#289** typescript 5.9.3 → **6.0.3 (MAJOR)** — blocked per dedicated-session rule
-- **#290** @anthropic-ai/sdk 0.88 → 0.90 — 0.x minor = breaking per semver convention
-- **#291** @sentry/nextjs 10.48 → 10.49 — likely safe
-Leave for a dedicated triage session.
+- #287 postcss 8.5.9 → 8.5.10 (patch) — safe-ish
+- #288 next-auth 5.0-beta.30 → 5.0-beta.31 — beta risky
+- #289 typescript 5.9.3 → **6.0.3 (MAJOR)** — blocked per dedicated-session rule
+- #290 @anthropic-ai/sdk 0.88 → 0.90 — 0.x minor = breaking
+- #291 @sentry/nextjs 10.48 → 10.49 — likely safe
