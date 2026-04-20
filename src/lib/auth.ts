@@ -11,59 +11,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        partnerCode: { label: "Partner Code", type: "text" },
       },
       async authorize(credentials) {
         const email = credentials?.email as string;
         const password = credentials?.password as string;
-        const partnerCode = credentials?.partnerCode as string;
 
-        if (!email) return null;
+        if (!email || !password) return null;
 
-        try {
-          // Find partner by email
-          const partner = await prisma.partner.findFirst({
-            where: { email },
-          });
+        const partner = await prisma.partner.findFirst({
+          where: { email: email.trim() },
+        });
 
-          if (partner) {
-            if (partner.status === "blocked") return null;
+        if (!partner) return null;
+        if (partner.status === "blocked") return null;
+        if (!partner.passwordHash) return null;
 
-            // If partner has a password, authenticate with email + password
-            if (partner.passwordHash && password) {
-              const valid = await compare(password, partner.passwordHash);
-              if (!valid) return null;
-            } else if (partnerCode) {
-              // Legacy: authenticate with email + partner code
-              if (partner.partnerCode !== partnerCode.toUpperCase()) return null;
-            } else {
-              return null;
-            }
+        const valid = await compare(password, partner.passwordHash);
+        if (!valid) return null;
 
-            return {
-              id: partner.id,
-              email: partner.email,
-              name: `${partner.firstName} ${partner.lastName}`,
-              role: "partner",
-              partnerCode: partner.partnerCode,
-            };
-          }
-        } catch {
-          // DB may not be ready yet
-        }
-
-        // Demo mode fallback
-        if (partnerCode) {
-          return {
-            id: "demo",
-            email,
-            name: "Demo Partner",
-            role: "partner",
-            partnerCode,
-          };
-        }
-
-        return null;
+        return {
+          id: partner.id,
+          email: partner.email,
+          name: `${partner.firstName} ${partner.lastName}`,
+          role: "partner",
+          partnerCode: partner.partnerCode,
+        };
       },
     }),
     Credentials({
@@ -79,34 +51,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!email || !password) return null;
 
-        try {
-          const user = await prisma.user.findUnique({ where: { email } });
-          if (user) {
-            const valid = await compare(password, user.passwordHash);
-            if (!valid) return null;
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name || user.email,
-              role: user.role,
-            };
-          }
-        } catch {
-          // Table may not exist yet
-        }
+        const user = await prisma.user.findUnique({ where: { email: email.trim() } });
+        if (!user) return null;
 
-        // Demo mode
-        const isDemo = !process.env.HUBSPOT_PRIVATE_TOKEN || process.env.HUBSPOT_PRIVATE_TOKEN === "YOUR_PRIVATE_APP_TOKEN";
-        if (isDemo) {
-          return {
-            id: "demo-admin",
-            email,
-            name: "Admin User",
-            role: "admin",
-          };
-        }
+        const valid = await compare(password, user.passwordHash);
+        if (!valid) return null;
 
-        return null;
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name || user.email,
+          role: user.role,
+        };
       },
     }),
   ],

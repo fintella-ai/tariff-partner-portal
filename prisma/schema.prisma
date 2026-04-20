@@ -1094,3 +1094,17 @@ model PartnerDmReadState {
 
   @@unique([threadId, partnerCode])
 }
+
+// ─── PASSWORD RESET TOKENS ──────────────────────────────────────────────────
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  email     String
+  role      String   // "partner" | "admin"
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}
