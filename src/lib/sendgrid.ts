@@ -913,3 +913,47 @@ export async function sendMonthlyNewsletterToAllPartners(): Promise<{
   }
   return { sent, failed, skipped };
 }
+
+/**
+ * Password-reset email — fired by POST /api/auth/forgot-password.
+ * Single-use link with a 1-hour TTL. Kept deliberately terse/hardcoded
+ * (no EmailTemplate row) so a DB mishap can't silently break recovery.
+ */
+export async function sendPasswordResetEmail(opts: {
+  email: string;
+  name: string | null;
+  resetUrl: string;
+  role: "partner" | "admin";
+}): Promise<SendEmailResult> {
+  const displayName = opts.name?.trim() || "there";
+  const heading = "Reset your password";
+  const bodyHtml = `
+    <p>Hi ${escapeHtml(displayName)},</p>
+    <p>We received a request to reset the password for your ${opts.role === "admin" ? "admin" : "partner"} account at ${escapeHtml(FIRM_SHORT)}.</p>
+    <p>Click the button below to choose a new password. This link expires in <strong>1 hour</strong> and can only be used once.</p>
+    <p style="color:#6b7280;font-size:13px;">If you didn't request this, you can safely ignore this email — your password won't change.</p>`;
+  const bodyText = `Hi ${displayName},
+
+We received a request to reset the password for your ${opts.role === "admin" ? "admin" : "partner"} account at ${FIRM_SHORT}.
+
+Open this link to choose a new password (expires in 1 hour, single-use):
+${opts.resetUrl}
+
+If you didn't request this, you can safely ignore this email — your password won't change.`;
+  const { html, text } = emailShell({
+    preheader: `Reset your ${FIRM_SHORT} password — link expires in 1 hour.`,
+    heading,
+    bodyHtml,
+    bodyText,
+    ctaLabel: "Reset password",
+    ctaUrl: opts.resetUrl,
+  });
+  return sendEmail({
+    to: opts.email,
+    toName: opts.name || undefined,
+    subject: `Reset your ${FIRM_SHORT} password`,
+    html,
+    text,
+    template: "password_reset",
+  });
+}
