@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     where: { id: params.id },
     data: { content: body.content, editedAt: new Date() },
   });
-  await publishPortalChatEvent({ event: "partner_dm.message.updated" as any, threadId: updated.threadId, messageId: updated.id } as any);
+  await publishPortalChatEvent({ event: "partner_dm.message.updated", threadId: updated.threadId, messageId: updated.id });
   return NextResponse.json({ message: updated });
 }
 
@@ -38,6 +38,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     where: { id: params.id },
     data: { deletedAt: new Date() },
   });
-  await publishPortalChatEvent({ event: "partner_dm.message.deleted" as any, threadId: updated.threadId, messageId: updated.id } as any);
+  await publishPortalChatEvent({ event: "partner_dm.message.deleted", threadId: updated.threadId, messageId: updated.id });
   return NextResponse.json({ ok: true });
 }

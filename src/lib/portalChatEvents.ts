@@ -14,7 +14,12 @@ export type PortalChatEvent =
   | { event: "channel.announcement.created"; channelId: string; messageId: string }
   | { event: "channel.announcement.updated"; channelId: string; messageId: string }
   | { event: "channel.announcement.deleted"; channelId: string; messageId: string }
-  | { event: "channel.reply.created"; channelId: string; threadId: string; messageId: string };
+  | { event: "channel.reply.created"; channelId: string; threadId: string; messageId: string }
+  // Partner-to-downline DM events
+  | { event: "partner_dm.message.created"; threadId: string; messageId: string }
+  | { event: "partner_dm.message.updated"; threadId: string; messageId: string }
+  | { event: "partner_dm.message.deleted"; threadId: string; messageId: string }
+  | { event: "partner_dm.flag.created"; flagId: string; messageId: string };
 
 /** Fire a Postgres NOTIFY so SSE subscribers see the event. Best-effort. */
 export async function publishPortalChatEvent(event: PortalChatEvent): Promise<void> {

@@ -66,7 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     },
   }).catch(() => {});
 
-  await publishPortalChatEvent({ event: "partner_dm.message.created" as any, threadId: params.id, messageId: msg.id } as any);
+  await publishPortalChatEvent({ event: "partner_dm.message.created", threadId: params.id, messageId: msg.id });
 
   return NextResponse.json({ message: msg }, { status: 201 });
 }
