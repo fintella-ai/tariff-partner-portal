@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/format";
 import { computeDealCommissions, getL1CommissionRateSnapshot } from "@/lib/commission";
 import { sendDealStatusUpdateEmail } from "@/lib/sendgrid";
+import { appendDealPayload } from "@/lib/appendDealPayload";
 
 /**
  * ═════════════════════════════════════════════════════════════════════════════
@@ -596,7 +597,7 @@ async function postHandler(req: NextRequest): Promise<Response> {
           stage: initialStage,
           externalStage: externalStage || null,
           externalDealId: externalDealId,
-          rawPayload: rawBody.slice(0, 20_000),
+          rawPayload: appendDealPayload(null, { method: "POST", body: rawBody }),
           closedLostReason: initialClosedLostReason,
           clientFirstName: firstName || null,
           clientLastName: lastName || null,
@@ -751,6 +752,11 @@ async function patchHandler(req: NextRequest): Promise<Response> {
     }
 
     const data: Record<string, any> = {};
+
+    // Append this PATCH payload to the deal's event log (capped, JSON array in
+    // Deal.rawPayload). Always included regardless of which business fields
+    // the PATCH touches, so the log is a complete history of inbound calls.
+    data.rawPayload = appendDealPayload(deal.rawPayload, { method: "PATCH", body: rawBody });
 
     // Deal stage — stored AS-IS in externalStage per PR #12 architectural
     // decision (preserves Frost Law's audit-grade source of truth even for

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useResizableColumns } from "@/components/ui/ResizableTable";
 import { fmt$, fmtDate, fmtDateTime, fmtTime } from "@/lib/format";
 import { resolveDealFinancials, formatRate } from "@/lib/dealCalc";
+import { parseDealPayloadLog } from "@/lib/appendDealPayload";
 import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
 import PartnerLink from "@/components/ui/PartnerLink";
@@ -535,16 +536,30 @@ export default function AdminDealsPage() {
                     </div>
                   )}
 
-                  {/* Raw source payload (collapsible failsafe for fields we didn't map to columns) */}
-                  {(deal as any).rawPayload && (
-                    <details className="mb-3 p-2.5 rounded-lg" style={{ background: "var(--app-input-bg)", border: "1px solid var(--app-border)" }}>
-                      <summary className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider cursor-pointer select-none">Raw Source Payload (inbound JSON)</summary>
-                      <pre className="font-mono text-[11px] text-[var(--app-text-secondary)] mt-2 overflow-x-auto whitespace-pre-wrap break-all">{(() => {
-                        try { return JSON.stringify(JSON.parse((deal as any).rawPayload), null, 2); }
-                        catch { return (deal as any).rawPayload; }
-                      })()}</pre>
-                    </details>
-                  )}
+                  {/* Raw source payload event log — chronological array of POST + PATCH bodies */}
+                  {(deal as any).rawPayload && (() => {
+                    const events = parseDealPayloadLog((deal as any).rawPayload);
+                    if (events.length === 0) return null;
+                    return (
+                      <details className="mb-3 p-2.5 rounded-lg" style={{ background: "var(--app-input-bg)", border: "1px solid var(--app-border)" }}>
+                        <summary className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider cursor-pointer select-none">Raw Source Payloads ({events.length} event{events.length !== 1 ? "s" : ""})</summary>
+                        <div className="mt-2 space-y-2">
+                          {events.map((evt, i) => (
+                            <div key={i} className="p-2 rounded" style={{ background: "var(--app-card-bg)", border: "1px solid var(--app-border)" }}>
+                              <div className="font-body text-[10px] text-[var(--app-text-muted)] mb-1 flex items-center gap-2">
+                                <span className={`font-mono px-1.5 py-0.5 rounded ${evt.method === "POST" ? "bg-blue-500/15 text-blue-400" : "bg-purple-500/15 text-purple-400"}`}>{evt.method}</span>
+                                <span>{evt.ts === "1970-01-01T00:00:00.000Z" ? "(time unknown — legacy entry)" : new Date(evt.ts).toLocaleString()}</span>
+                              </div>
+                              <pre className="font-mono text-[11px] text-[var(--app-text-secondary)] overflow-x-auto whitespace-pre-wrap break-all">{(() => {
+                                try { return JSON.stringify(JSON.parse(evt.body), null, 2); }
+                                catch { return evt.body; }
+                              })()}</pre>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    );
+                  })()}
 
                   {/* Consultation Date/Time */}
                   {(deal.consultBookedDate || deal.consultBookedTime) && (
