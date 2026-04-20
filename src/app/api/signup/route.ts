@@ -207,6 +207,50 @@ export async function POST(req: NextRequest) {
         : Promise.resolve(),
     ]);
 
+    // Additive: re-evaluate segment rules on all non-archived channels for this new partner.
+    try {
+      const channels = await prisma.announcementChannel.findMany({
+        where: { archivedAt: null, segmentRule: { not: null } },
+        select: { id: true, segmentRule: true },
+      });
+      if (channels.length > 0) {
+        const { parseSegmentRule, evaluateSegmentRule } = await import("@/lib/channelSegments");
+        const profile = await prisma.partnerProfile.findUnique({
+          where: { partnerCode: partner.partnerCode },
+          select: { state: true },
+        });
+        const signedAgreement = await prisma.partnershipAgreement.count({
+          where: { partnerCode: partner.partnerCode, status: { in: ["signed", "approved"] } },
+        }) > 0;
+        const subject = {
+          tier: partner.tier,
+          status: partner.status,
+          l3Enabled: partner.l3Enabled,
+          profile: profile ?? null,
+          signedAgreement,
+        };
+        for (const c of channels) {
+          if (!c.segmentRule) continue;
+          const parsed = parseSegmentRule(c.segmentRule);
+          if (!parsed.ok) continue;
+          if (evaluateSegmentRule(parsed.value, subject)) {
+            await prisma.channelMembership.upsert({
+              where: { channelId_partnerCode: { channelId: c.id, partnerCode: partner.partnerCode } },
+              update: {}, // do NOT overwrite an existing manual-remove
+              create: {
+                channelId: c.id,
+                partnerCode: partner.partnerCode,
+                source: "segment",
+                addedByEmail: "system",
+              },
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[signup] segment re-eval failed:", (e as Error).message);
+    }
+
     return NextResponse.json({
       success: true,
       partnerCode,
