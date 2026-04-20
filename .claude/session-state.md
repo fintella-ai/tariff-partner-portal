@@ -1,13 +1,28 @@
 # Session State
 
-🕒 Last updated: 2026-04-20 — launch checklist + FINTELLA_LIVE_MODE seed guard shipped; portal ready for Phase 0/1 go-live sequence when John is ready
+🕒 Last updated: 2026-04-20 evening — Phase 1 launch executing; DB wiped + seed guard live + auth hardening + install-prompt polish shipped; E2E smoke test + announce pending. Mobile/PWA audit DEFERRED to tonight when John is home from the office.
 
 ## 🌿 Git state
-- **main HEAD:** `af01427` — feat(launch): FINTELLA_LIVE_MODE flag + refreshed launch checklist (#311)
-- **origin/main HEAD:** same, in sync
-- **Open non-dependabot PRs:** 0
+- **main HEAD:** `76da68f` — ui(install-prompt): white text + larger typography + https URL (#320) [may advance further this session]
+- **origin/main HEAD:** same
+- **Open non-dependabot PRs:** #321 install-prompt width + centered card headers (awaiting merge)
 - **Open dependabot PRs:** 5 (#287–#291)
 - **Working tree:** clean
+
+## 🚦 Launch sequence status (2026-04-20)
+- ✅ Step 1: `pre-launch-wipe` Neon snapshot taken
+- ✅ Step 2: `FINTELLA_LIVE_MODE=true` set on Vercel Production
+- ✅ Step 3: DB wipe executed — 10 partners / 9 deals / 52 notifications / 24 AI msgs cleared; 47 webhook logs + 1311 email logs + 8 conference entries + 7 templates + 3 admin users + 1 portal settings row + 1 global team-chat thread preserved
+- ✅ Step 4: `clean-slate-launch` Neon snapshot taken (Launch tier)
+- ✅ Step 5: Vercel redeploy — build log confirmed `[seed] FINTELLA_LIVE_MODE=true — skipping test-data seed`
+- ✅ Step 6: PR #316 merged — CLAUDE.md header flipped to "LIVE — real partner data"
+- ✅ Step 6b (unplanned but critical): PR #317 merged — `security(auth): remove demo fallbacks + add password reset flow`. Prior code let any email+password combo log in as admin, any email+partner-code as partner. New: bcrypt-only auth, /forgot-password + /reset-password flow via SendGrid, PasswordResetToken Prisma model (additive)
+- ✅ Step 6c: PRs #318 + #319 + #320 + (#321 pending) — install-prompt polish: 3x logo, immediate visible Continue link, solid black bg, pure white typography, bigger sizes, iPhone+Android instruction cards, `https://fintella.partners` highlighted URL, widened container + centered card headers
+- ⏸️ **Step 7: E2E smoke test** — PENDING. Needs to be run on prod by John after current Vercel deploy finishes.
+- ⏸️ **Step 8: Announce to real partners** — PENDING. Blocked on Step 7.
+
+## 📋 Deferred (pick back up when John is home tonight)
+- **Mobile + PWA optimization audit** — John flagged he wants a comprehensive sweep: walk the 10 highest-traffic routes (`/login`, `/signup`, `/dashboard/home`, `/dashboard/deals`, `/dashboard/commissions`, `/dashboard/submit-client`, `/dashboard/downline`, `/dashboard/reporting`, InstallPrompt, `/forgot-password`/`/reset-password`) + the PWA setup (manifest.json, service worker, safe-area handling, offline fallback, theme color, splash screens). Flag: cramped layouts <640px, touch targets <44px, horizontal overflow, hardcoded colors that break dark mode, missing pt-safe/pb-safe on fixed elements, PWA manifest gaps. Deliver a numbered severity-ranked punch list, then John picks which to fix pre-launch vs post-launch.
 
 ## ✅ This session (2026-04-20)
 - **#307** feat(admin): Internal Chats group — Team Chat, Channels, DM Flags moved from Communications/Partner Support into their own `/admin/internal-chats` tabbed host. 6 files, +76/-25 lines. 12 top-level nav entries.
