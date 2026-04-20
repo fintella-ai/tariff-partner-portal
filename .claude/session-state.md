@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-20 — Communications Hub cleaned (no duplicate tab bar); sidebar groups flattened to leaves; admin nav consolidated; partner DM / announcement channels / Team Chat all live
+🕒 Last updated: 2026-04-20 — launch checklist + FINTELLA_LIVE_MODE seed guard shipped; portal ready for Phase 0/1 go-live sequence when John is ready
 
 ## 🌿 Git state
-- **main HEAD:** `942bc3b` — fix(admin): flat sidebar leaves + Communications Hub cleanup (#309)
+- **main HEAD:** `af01427` — feat(launch): FINTELLA_LIVE_MODE flag + refreshed launch checklist (#311)
 - **origin/main HEAD:** same, in sync
 - **Open non-dependabot PRs:** 0
 - **Open dependabot PRs:** 5 (#287–#291)
@@ -56,12 +56,33 @@ The 1702-line legacy `EmailTemplatesTab.tsx` bundle was split into 6 focused sec
 - **`pg` npm package:** required for LISTEN outside Prisma (installed in #293)
 - **`reconcileNavOrder`:** silent migration of saved navigation-order values with stale IDs; gracefully appends new IDs
 
-## 🎯 What's next
-1. **Admin presence directory** (green/red lights in Team Chat) — needs spec+plan
-2. **Notification bell mentions rollup** — verify + enhance existing plumbing
-3. **Live Weekly table formatting + resizable columns** — apply existing ResizableTable primitive
-4. **Outbound network adapter sub-spec 1 implementation** — plan from 2026-04-18
-5. **Phase 18b** — Next.js 14→16 migration (dedicated session)
+## 🎯 What's next — launch sequence (per docs/launch-status.md on main)
+
+**Phase 0 (pre-launch prep, zero customer impact — do anytime):**
+- Vercel env var audit (confirm `SIGNWELL_API_KEY` / `FROST_LAW_API_KEY` / `WEBHOOK_SKIP_HMAC` / `NEXT_PUBLIC_SENTRY_DSN` all set; confirm `WEBHOOK_AUTH_BYPASS` removed)
+- SendGrid domain auth → click Verify
+- Confirm Neon 7-day PITR backups active
+- Verify Sentry alert rules → real inbox
+
+**Phase 1 (launch day, strict order):**
+1. DB cleanup — wipe test partners/deals/notifications/logs; keep admin/templates/settings/workflows
+2. Set `FINTELLA_LIVE_MODE=true` on Vercel Production
+3. Set `SENDGRID_API_KEY` on Vercel Production
+4. Set `ANTHROPIC_API_KEY` on Vercel Production
+5. Trigger redeploy, verify build log shows seed skipping test data
+6. Update CLAUDE.md header to "Live — real partner data"
+7. Run E2E smoke test (signup → agreement → deal → payment → payout → email → AI)
+8. Announce
+
+**Phase 2 (post-launch, non-blocking):**
+- Twilio SMS when A2P 10DLC approved (env vars only, no code change)
+- Twilio Voice same pattern
+- HMAC enforcement when Frost Law adds signing
+- Outbound network adapter sub-spec 1 (plan ready at `docs/superpowers/plans/2026-04-18-outbound-network-adapter.md`)
+- Admin presence directory (needs spec+plan)
+- Notification bell mentions rollup
+- Live Weekly table formatting + resizable columns
+- Phase 18b Next.js 14→16 migration
 
 ## 🧠 Context that matters for resuming
 - Admin nav consolidation is DONE — no further structural work needed on the sidebar; future additions go into existing groups (Communications / Internal Chats / Partner Support) or become new top-level entries.
