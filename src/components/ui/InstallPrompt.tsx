@@ -60,10 +60,10 @@ export default function InstallPrompt() {
         </div>
 
         {/* Heading */}
-        <h1 className="font-display text-2xl sm:text-3xl font-bold text-white mb-3">
+        <h1 className="font-display text-3xl sm:text-4xl font-bold text-white mb-3">
           Get the Fintella App
         </h1>
-        <p className="font-body text-sm text-white/60 mb-8 max-w-sm mx-auto leading-relaxed">
+        <p className="font-body text-base sm:text-lg text-white font-semibold mb-8 max-w-sm mx-auto leading-relaxed">
           Add Fintella to your home screen for instant access to your deals, commissions, and partner portal.
         </p>
 
@@ -76,7 +76,7 @@ export default function InstallPrompt() {
             >
               Install Fintella App
             </button>
-            <p className="font-body text-xs text-white/30 mt-3">
+            <p className="font-body text-sm text-white font-medium mt-3">
               Or tap the browser menu and select &quot;Add to Home Screen&quot;
             </p>
           </div>
@@ -114,12 +114,12 @@ export default function InstallPrompt() {
                   </svg>
                 </div>
                 <div>
-                  <div className="font-body text-sm font-semibold text-white">Open in Safari to Install</div>
-                  <div className="font-body text-[11px] text-white/50">iPhone requires Safari to add apps to your home screen</div>
+                  <div className="font-body text-base font-bold text-white">Open in Safari to Install</div>
+                  <div className="font-body text-sm text-white font-medium">iPhone requires Safari to add apps to your home screen</div>
                 </div>
               </div>
-              <p className="font-body text-[13px] text-white/70 leading-relaxed mb-4">
-                Copy the link below and paste it into <strong className="text-white">Safari</strong> to install the Fintella app on your home screen.
+              <p className="font-body text-base text-white font-medium leading-relaxed mb-4">
+                Copy the link below and paste it into <strong className="text-white font-bold">Safari</strong> to install the Fintella app on your home screen.
               </p>
               <button
                 onClick={() => {
@@ -137,7 +137,7 @@ export default function InstallPrompt() {
               </button>
             </div>
             <div className="text-center">
-              <p className="font-body text-[11px] text-white/30">Then in Safari: Share → Add to Home Screen → Add</p>
+              <p className="font-body text-sm text-white font-medium">Then in Safari: Share → Add to Home Screen → Add</p>
             </div>
           </div>
         )}
@@ -153,39 +153,39 @@ export default function InstallPrompt() {
                 >
                   Install Fintella App
                 </button>
-                <p className="font-body text-xs text-white/30 mt-3">
+                <p className="font-body text-sm text-white font-medium mt-3">
                   Installs as a standalone desktop app
                 </p>
               </>
             ) : (
-              <div className="p-5 rounded-xl border border-white/10 bg-white/5 mb-6">
-                <p className="font-body text-sm text-white/70 leading-relaxed">
-                  For the best experience, visit <span className="text-[#c4a050] font-semibold">fintella.partners</span> on your phone and add it to your home screen.
+              <div className="p-5 rounded-xl border border-white/20 bg-white/5 mb-6">
+                <p className="font-body text-base text-white font-semibold leading-relaxed">
+                  For the best experience, visit <span className="text-[#c4a050] font-bold">https://fintella.partners</span> on your phone and add it to your home screen.
                 </p>
               </div>
             )}
 
             {/* Always-visible platform instructions (both iPhone + Android) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-              <div className="p-4 rounded-xl border border-[#c4a050]/20 bg-[#c4a050]/[0.04]">
-                <div className="font-display text-sm font-bold text-white mb-3 flex items-center gap-2">
+              <div className="p-5 rounded-xl border border-[#c4a050]/30 bg-[#c4a050]/[0.06]">
+                <div className="font-display text-lg font-bold text-white mb-3 flex items-center gap-2 flex-wrap">
                   <span className="text-[#c4a050]">iPhone</span>
-                  <span className="text-white/40 font-body text-xs font-normal">(Safari required)</span>
+                  <span className="text-white font-body text-sm font-semibold">(Safari required)</span>
                 </div>
-                <ol className="font-body text-[13px] text-white/75 leading-relaxed space-y-1.5 list-decimal list-inside">
-                  <li>Open <span className="text-[#c4a050]">fintella.partners</span> in Safari</li>
+                <ol className="font-body text-base text-white font-medium leading-relaxed space-y-2 list-decimal list-inside">
+                  <li>Open <span className="text-[#c4a050] font-bold">https://fintella.partners</span> in Safari</li>
                   <li>Tap the Share button (square + up arrow) at the bottom</li>
                   <li>Scroll down and tap &quot;Add to Home Screen&quot;</li>
                   <li>Tap &quot;Add&quot; in the top-right corner</li>
                 </ol>
               </div>
-              <div className="p-4 rounded-xl border border-[#c4a050]/20 bg-[#c4a050]/[0.04]">
-                <div className="font-display text-sm font-bold text-white mb-3 flex items-center gap-2">
+              <div className="p-5 rounded-xl border border-[#c4a050]/30 bg-[#c4a050]/[0.06]">
+                <div className="font-display text-lg font-bold text-white mb-3 flex items-center gap-2 flex-wrap">
                   <span className="text-[#c4a050]">Android</span>
-                  <span className="text-white/40 font-body text-xs font-normal">(Chrome recommended)</span>
+                  <span className="text-white font-body text-sm font-semibold">(Chrome recommended)</span>
                 </div>
-                <ol className="font-body text-[13px] text-white/75 leading-relaxed space-y-1.5 list-decimal list-inside">
-                  <li>Open <span className="text-[#c4a050]">fintella.partners</span> in Chrome</li>
+                <ol className="font-body text-base text-white font-medium leading-relaxed space-y-2 list-decimal list-inside">
+                  <li>Open <span className="text-[#c4a050] font-bold">https://fintella.partners</span> in Chrome</li>
                   <li>Tap the menu icon (⋮) in the top-right</li>
                   <li>Tap &quot;Add to Home Screen&quot; or &quot;Install app&quot;</li>
                   <li>Tap &quot;Add&quot; or &quot;Install&quot; to confirm</li>
@@ -197,13 +197,13 @@ export default function InstallPrompt() {
 
         {/* App preview badges */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/20">
             <span className="w-2 h-2 rounded-full bg-green-400" />
-            <span className="font-body text-[11px] text-white/50">Instant Access</span>
+            <span className="font-body text-sm text-white font-semibold">Instant Access</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/20">
             <span className="w-2 h-2 rounded-full bg-[#c4a050]" />
-            <span className="font-body text-[11px] text-white/50">No App Store</span>
+            <span className="font-body text-sm text-white font-semibold">No App Store</span>
           </span>
         </div>
 
@@ -211,7 +211,7 @@ export default function InstallPrompt() {
         <div>
           <button
             onClick={dismiss}
-            className="font-body text-lg sm:text-xl font-semibold text-white/80 hover:text-[#c4a050] transition-colors py-3 px-6"
+            className="font-body text-xl sm:text-2xl font-bold text-white hover:text-[#c4a050] transition-colors py-3 px-6"
           >
             Continue to Portal &rarr;
           </button>
@@ -223,12 +223,12 @@ export default function InstallPrompt() {
 
 function Step({ num, icon, text }: { num: number; icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-4 p-4 rounded-xl border border-[#c4a050]/20 bg-[#c4a050]/[0.04] text-left">
-      <div className="w-8 h-8 rounded-full bg-[#c4a050]/20 flex items-center justify-center shrink-0">
-        <span className="font-display text-sm font-bold text-[#c4a050]">{num}</span>
+    <div className="flex items-center gap-4 p-4 rounded-xl border border-[#c4a050]/30 bg-[#c4a050]/[0.06] text-left">
+      <div className="w-9 h-9 rounded-full bg-[#c4a050]/25 flex items-center justify-center shrink-0">
+        <span className="font-display text-base font-bold text-[#c4a050]">{num}</span>
       </div>
       {icon && <div className="text-[#c4a050] shrink-0">{icon}</div>}
-      <div className="font-body text-sm text-white/80">{text}</div>
+      <div className="font-body text-base text-white font-semibold">{text}</div>
     </div>
   );
 }
