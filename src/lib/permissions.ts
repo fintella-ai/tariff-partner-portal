@@ -12,12 +12,49 @@
 
 export type AdminRole = "super_admin" | "admin" | "accounting" | "partner_support";
 
-// Which sidebar nav items each role can see
+// Which sidebar nav items each role can see.
+//
+// Notes on consolidation (2026-04-20):
+//   - `communications` is now a group containing Email/SMS/Phone/Automations/
+//     Team Chat/Channels children (those child IDs are `communications:*`).
+//   - `partnerSupport` is a group containing Support Tickets/Live Chat/DM Flags
+//     children (child IDs are `partnerSupport:*`).
+//   - Legacy top-level IDs (workflows, chat, support, teamChat, channels,
+//     partnerDmFlags) are no longer in the registry; the layout's
+//     `reconcileNavOrder` helper silently drops them from saved nav orders.
+//   - `reporting` is synthetic: the layout shows the Reporting row if any of
+//     `reports`/`revenue`/`payouts` is visible to the role. Those three
+//     finance-page IDs remain in each role's list below.
 export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
-  super_admin: ["partners", "deals", "communications", "training", "conference", "documents", "support", "chat", "teamChat", "channels", "partnerDmFlags", "payouts", "revenue", "reports", "settings", "users", "dev", "features", "workflows"],
-  admin: ["partners", "deals", "communications", "training", "conference", "documents", "support", "chat", "teamChat", "channels", "partnerDmFlags", "payouts", "reports", "settings"],
-  accounting: ["deals", "documents", "payouts", "revenue", "reports", "teamChat", "channels"],
-  partner_support: ["partners", "deals", "communications", "training", "conference", "documents", "support", "chat", "teamChat", "channels", "partnerDmFlags", "payouts", "settings"],
+  super_admin: [
+    "partners", "deals",
+    "communications", "communications:email", "communications:sms", "communications:phone", "communications:automations", "communications:team-chat", "communications:channels",
+    "partnerSupport", "partnerSupport:tickets", "partnerSupport:livechat", "partnerSupport:dmflags",
+    "training", "conference", "documents",
+    "payouts", "revenue", "reports",
+    "settings", "users", "dev", "features",
+  ],
+  admin: [
+    "partners", "deals",
+    "communications", "communications:email", "communications:sms", "communications:phone", "communications:automations", "communications:team-chat", "communications:channels",
+    "partnerSupport", "partnerSupport:tickets", "partnerSupport:livechat", "partnerSupport:dmflags",
+    "training", "conference", "documents",
+    "payouts", "reports",
+    "settings",
+  ],
+  accounting: [
+    "deals", "documents",
+    "payouts", "revenue", "reports",
+    "communications", "communications:team-chat", "communications:channels",
+  ],
+  partner_support: [
+    "partners", "deals",
+    "communications", "communications:email", "communications:sms", "communications:phone", "communications:automations", "communications:team-chat", "communications:channels",
+    "partnerSupport", "partnerSupport:tickets", "partnerSupport:livechat", "partnerSupport:dmflags",
+    "training", "conference", "documents",
+    "payouts",
+    "settings",
+  ],
 };
 
 // Specific permission flags per role
