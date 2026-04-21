@@ -91,6 +91,10 @@ export default function AdminPartnersPage() {
   const [formPhone, setFormPhone] = useState("");
   const [formCode, setFormCode] = useState("");
   const [formReferrer, setFormReferrer] = useState("");
+  const [formTier, setFormTier] = useState<"l1" | "l2" | "l3">("l1");
+  const [formRate, setFormRate] = useState<number>(0.25);
+  const [formRateMode, setFormRateMode] = useState<"standard" | "custom">("standard");
+  const [formCustomPct, setFormCustomPct] = useState<string>("");
   const [formError, setFormError] = useState("");
 
   // Invite L1 partner modal
@@ -252,10 +256,24 @@ export default function AdminPartnersPage() {
 
   // ── Derived state ─────────────────────────────────────────────────────────
 
+  const resolvedFormRate = (): number | null => {
+    if (formRateMode === "custom") {
+      const pct = parseFloat(formCustomPct);
+      if (!isFinite(pct) || pct <= 0 || pct > 50) return null;
+      return Math.round(pct * 100) / 10000;
+    }
+    return formRate;
+  };
+
   const handleAdd = async () => {
     setFormError("");
     if (!formFirst.trim() || !formLast.trim() || !formEmail.trim()) {
       setFormError("First name, last name, and email are required.");
+      return;
+    }
+    const rate = resolvedFormRate();
+    if (rate == null) {
+      setFormError("Custom rate must be between 1% and 50%.");
       return;
     }
     try {
@@ -269,6 +287,8 @@ export default function AdminPartnersPage() {
           phone: formPhone.trim() || null,
           partnerCode: formCode.trim() || undefined,
           referredByPartnerCode: formReferrer.trim() || null,
+          tier: formTier,
+          commissionRate: rate,
         }),
       });
       if (!res.ok) {
@@ -278,6 +298,7 @@ export default function AdminPartnersPage() {
       }
       setShowForm(false);
       setFormFirst(""); setFormLast(""); setFormEmail(""); setFormPhone(""); setFormCode(""); setFormReferrer("");
+      setFormTier("l1"); setFormRate(0.25); setFormRateMode("standard"); setFormCustomPct("");
       fetchPartners();
     } catch {
       setFormError("Connection error");
@@ -470,6 +491,49 @@ export default function AdminPartnersPage() {
             <input className={inputClass} value={formPhone} onChange={(e) => setFormPhone(e.target.value)} placeholder="Phone" />
             <input className={inputClass} value={formCode} onChange={(e) => setFormCode(e.target.value)} placeholder="Partner Code (auto-generated)" />
             <input className={inputClass} value={formReferrer} onChange={(e) => setFormReferrer(e.target.value)} placeholder="Referred By (partner code)" />
+            <select className={inputClass} value={formTier} onChange={(e) => setFormTier(e.target.value as "l1" | "l2" | "l3")}>
+              <option value="l1">Tier: L1</option>
+              <option value="l2">Tier: L2</option>
+              <option value="l3">Tier: L3</option>
+            </select>
+            {formRateMode === "standard" ? (
+              <select
+                className={inputClass}
+                value={formRate}
+                onChange={(e) => {
+                  if (e.target.value === "__custom__") {
+                    setFormRateMode("custom");
+                  } else {
+                    setFormRate(parseFloat(e.target.value));
+                  }
+                }}
+              >
+                {ALLOWED_L1_RATES.map((r) => (
+                  <option key={r} value={r}>{Math.round(r * 100)}% commission</option>
+                ))}
+                <option value="__custom__">Custom rate…</option>
+              </select>
+            ) : (
+              <div className="flex gap-2 items-center">
+                <input
+                  className={`${inputClass} flex-1`}
+                  type="number"
+                  min={1}
+                  max={50}
+                  step={0.5}
+                  value={formCustomPct}
+                  onChange={(e) => setFormCustomPct(e.target.value)}
+                  placeholder="Custom % (e.g. 28)"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setFormRateMode("standard"); setFormCustomPct(""); setFormRate(0.25); }}
+                  className="font-body text-[11px] theme-text-muted hover:text-brand-gold transition-colors"
+                >
+                  Standard
+                </button>
+              </div>
+            )}
           </div>
           <div className="flex gap-3 mt-4">
             <button onClick={handleAdd} className="btn-gold text-[12px] px-5 py-2.5">Create Partner</button>

@@ -102,6 +102,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Tier + commission rate. Accept optional body fields; fall back to L1 @ 25%
+    // (Prisma defaults) if the admin didn't pass them. Custom rates are allowed
+    // in (0, 0.50] — same envelope as the L1 invite flow.
+    const tier = (typeof body.tier === "string" && ["l1", "l2", "l3"].includes(body.tier))
+      ? body.tier
+      : "l1";
+    let commissionRate: number | undefined = undefined;
+    if (body.commissionRate != null) {
+      const r = parseFloat(body.commissionRate);
+      if (!isFinite(r) || r <= 0 || r > 0.5) {
+        return NextResponse.json(
+          { error: "Commission rate must be between 1% and 50%." },
+          { status: 400 }
+        );
+      }
+      commissionRate = r;
+    }
+
     const partner = await prisma.partner.create({
       data: {
         partnerCode,
@@ -113,6 +131,8 @@ export async function POST(req: NextRequest) {
         referredByPartnerCode: body.referredByPartnerCode || null,
         l3Enabled: body.l3Enabled || false,
         notes: body.notes || null,
+        tier,
+        ...(commissionRate !== undefined && { commissionRate }),
       },
     });
 
