@@ -400,6 +400,11 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "ref"
     );
 
+    // Enterprise Partner tracking — utm_medium carries the EA's own internal
+    // L1 code when the referring partner is reselling under their own portal.
+    // Raw, no normalization; may be null if this isn't an EA-sourced deal.
+    const epLevel1 = get("utm_medium", "utmmedium", "utm_Medium");
+
     // Client contact info
     const firstName = get(
       "first_name",
@@ -615,6 +620,7 @@ async function postHandler(req: NextRequest): Promise<Response> {
           annualImportValue: annualImportValue || null,
           importerOfRecord: importerOfRecord || null,
           affiliateNotes: affiliateNotes || null,
+          epLevel1: epLevel1 || null,
           consultBookedDate: consultBookedDate || null,
           consultBookedTime: consultBookedTime || null,
           l1CommissionRate: l1RateSnapshot,

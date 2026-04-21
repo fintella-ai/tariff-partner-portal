@@ -446,6 +446,13 @@ model Deal {
   annualImportValue     String?   // dropdown value (e.g. "$1M - $5M")
   importerOfRecord      String?   // who is listed as importer of record
   affiliateNotes        String?   // affiliate notes from referral form
+  // Enterprise Partner tracking — carried via utm_medium on the client-submission
+  // link when the referring partner is an Enterprise Account reselling their own
+  // downstream L1s. Raw string, no normalization (EA's own coding). Set ONLY on
+  // the initial POST to /api/webhook/referral; status-update PATCHes do not
+  // touch this field. Editable in admin only by super_admin. Used later to
+  // post status updates back to the EA's portal keyed on this value.
+  epLevel1              String?
   // Deal tracking
   stage                 String    @default("new_lead")
   externalStage         String?   // raw deal stage from external system (Frost Law / HubSpot)

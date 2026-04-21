@@ -82,6 +82,19 @@ export async function PUT(
     if (body.notes !== undefined) data.notes = body.notes || null;
     if (body.closeDate !== undefined) data.closeDate = body.closeDate ? new Date(body.closeDate) : null;
 
+    // EP Level 1 — only super_admin may change this. Reject the whole
+    // request if a non-super_admin tries, rather than silently dropping
+    // the field, so the caller knows their attempted edit didn't land.
+    if (body.epLevel1 !== undefined) {
+      if (role !== "super_admin") {
+        return NextResponse.json(
+          { error: "Only super_admin can edit EP Level 1" },
+          { status: 403 }
+        );
+      }
+      data.epLevel1 = strOrNull(body.epLevel1);
+    }
+
     const deal = await prisma.deal.update({
       where: { id: params.id },
       data,

@@ -359,6 +359,14 @@ function DealDetail({ deal, onSupport }: { deal: any; onSupport: () => void }) {
         </div>
       )}
 
+      {/* Enterprise Partner tag — read-only for partners */}
+      {deal.epLevel1 && (
+        <div className="mb-4">
+          <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">EP Level 1</div>
+          <div className="font-body text-[13px] text-[var(--app-text-secondary)] mt-0.5 font-mono">{deal.epLevel1}</div>
+        </div>
+      )}
+
       {/* Financials */}
       <div className="mb-4">
         <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-3">Financial Summary</div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { useResizableColumns } from "@/components/ui/ResizableTable";
 import { fmt$, fmtDate, fmtDateTime, fmtTime } from "@/lib/format";
 import { resolveDealFinancials, formatRate } from "@/lib/dealCalc";
@@ -46,6 +47,7 @@ type Deal = {
   annualImportValue: string | null;
   importerOfRecord: string | null;
   affiliateNotes: string | null;
+  epLevel1: string | null;
   // Deal tracking
   stage: string;
   consultBookedDate: string | null;
@@ -74,6 +76,9 @@ type Deal = {
 type SortField = "dealName" | "estimatedRefundAmount" | "firmFeeAmount" | "l1CommissionAmount" | "createdAt" | "stage";
 
 export default function AdminDealsPage() {
+  const { data: session } = useSession();
+  const isSuperAdmin = (session?.user as any)?.role === "super_admin";
+
   // 9 columns: Deal, Partner, Stage, Refund, Fee%, Firm Fee, Comm%, Commission, Date
   const { columnWidths: dealCols, getResizeHandler: dealResize } = useResizableColumns(
     [200, 140, 120, 120, 70, 110, 70, 110, 100],
@@ -84,6 +89,7 @@ export default function AdminDealsPage() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [editEpLevel1, setEditEpLevel1] = useState("");
 
   // Filters
   const [search, setSearch] = useState("");
@@ -233,6 +239,7 @@ export default function AdminDealsPage() {
         annualImportValue: deal.annualImportValue || "",
         importerOfRecord: deal.importerOfRecord || "",
       });
+      setEditEpLevel1(deal.epLevel1 || "");
       // Fetch deal notes
       fetchDealNotes(deal.id);
     }
@@ -283,6 +290,10 @@ export default function AdminDealsPage() {
             .filter(Boolean)
             .join(" ")
             .trim(),
+          // Only super_admin can modify EP Level 1. Omit the key entirely for
+          // other roles so the server-side guard doesn't see an attempted edit
+          // and 403 the whole save.
+          ...(isSuperAdmin ? { epLevel1: editEpLevel1 } : {}),
         }),
       });
       setExpandedId(null);
@@ -608,6 +619,26 @@ export default function AdminDealsPage() {
                       <div className="font-body text-[12px] text-[var(--app-text-secondary)] mt-1 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg p-3 whitespace-pre-line">{deal.affiliateNotes}</div>
                     </div>
                   )}
+                  <div className="mt-3">
+                    <label className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">
+                      EP Level 1
+                      {!isSuperAdmin && (
+                        <span className="ml-2 text-[9px] text-[var(--app-text-faint)] normal-case tracking-normal">(super_admin only)</span>
+                      )}
+                    </label>
+                    {isSuperAdmin ? (
+                      <input
+                        className={`${inputClass} w-full sm:w-1/2`}
+                        value={editEpLevel1}
+                        onChange={(e) => setEditEpLevel1(e.target.value)}
+                        placeholder="— (set by utm_medium on client submission)"
+                      />
+                    ) : (
+                      <div className="font-body text-[13px] text-[var(--app-text)] mt-0.5">
+                        {deal.epLevel1 || <span className="text-[var(--app-text-faint)]">— (not set)</span>}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* ── Deal Management ── */}
