@@ -53,50 +53,20 @@ const LEADERBOARD = [
   { rank: 10, name: "Partner #916", deals: 2,  revenue: 24800 },
 ];
 
-const UPCOMING_EVENTS = [
-  {
-    icon: "\u{1F4DE}",
-    title: "Weekly Partner Training Call",
-    body: "Join us every Wednesday at 2pm EST for tips on maximizing referrals.",
-    date: "Mar 26, 2026",
-    cta: "Join Call",
-  },
-  {
-    icon: "\u{1F3A5}",
-    title: "Q2 Kickoff Webinar",
-    body: "Learn about new product lines and updated commission structures for Q2.",
-    date: "Apr 1, 2026",
-    cta: "Register",
-  },
-  {
-    icon: "\u{1F389}",
-    title: "Partner Appreciation Happy Hour",
-    body: "Virtual networking event for our top partners. Prizes and giveaways!",
-    date: "Apr 10, 2026",
-    cta: "RSVP",
-  },
-];
+interface UpcomingEvent {
+  icon: string;
+  title: string;
+  body: string;
+  date: string;
+  cta: string;
+}
 
-const REFERRAL_OPPS = [
-  {
-    title: "Recruit Sub-Partners",
-    body: "Earn L2 commissions on every deal your sub-partners close. Share your recruitment link today.",
-    cta: "Get Recruitment Link",
-    primary: true,
-  },
-  {
-    title: "Cross-Referral Program",
-    body: "Know businesses that need trade compliance consulting? Earn a flat $500 referral bonus per engagement.",
-    cta: "Learn More",
-    primary: false,
-  },
-  {
-    title: "Volume Bonus",
-    body: "Close 10+ deals in a quarter and earn a 2% bonus on all commissions.",
-    cta: "View Progress",
-    primary: false,
-  },
-];
+interface ReferralOpp {
+  title: string;
+  description: string;
+  cta: string;
+  highlighted: boolean;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    HELPERS
@@ -136,6 +106,8 @@ export default function HomePage() {
   const firstName = user?.name?.split(" ")[0] || "Partner";
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
+  const [referralOpps, setReferralOpps] = useState<ReferralOpp[]>([]);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -144,14 +116,18 @@ export default function HomePage() {
         if (d?.settings?.leaderboardEnabled !== undefined) {
           setLeaderboardEnabled(d.settings.leaderboardEnabled);
         }
-        if (typeof d?.settings?.announcements === "string") {
+        const parseJsonArray = <T,>(value: unknown): T[] => {
+          if (typeof value !== "string") return [];
           try {
-            const parsed = JSON.parse(d.settings.announcements);
-            if (Array.isArray(parsed)) setAnnouncements(parsed);
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
           } catch {
-            setAnnouncements([]);
+            return [];
           }
-        }
+        };
+        setAnnouncements(parseJsonArray<Announcement>(d?.settings?.announcements));
+        setUpcomingEvents(parseJsonArray<UpcomingEvent>(d?.settings?.upcomingEvents));
+        setReferralOpps(parseJsonArray<ReferralOpp>(d?.settings?.referralOpportunities));
       })
       .catch(() => {});
   }, []);
@@ -303,6 +279,7 @@ export default function HomePage() {
       </div>}
 
       {/* ══════════════════ SECTION 3: UPCOMING EVENTS ══════════════════ */}
+      {upcomingEvents.length > 0 && (
       <div className="mb-6 sm:mb-8 animate-fade-up">
         <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4">
           Upcoming Events
@@ -310,25 +287,31 @@ export default function HomePage() {
         <div
           className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"} ${device.gap}`}
         >
-          {UPCOMING_EVENTS.map((e, i) => (
-            <div key={i} className={`card ${device.cardPadding} flex flex-col`}>
-              <div className="text-3xl mb-3">{e.icon}</div>
+          {upcomingEvents.map((e, i) => (
+            <div key={`${e.title}-${i}`} className={`card ${device.cardPadding} flex flex-col`}>
+              {e.icon && <div className="text-3xl mb-3">{e.icon}</div>}
               <div className="font-body text-sm font-semibold text-[var(--app-text)] mb-1.5">
                 {e.title}
               </div>
               <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-3 flex-1">
                 {e.body}
               </p>
-              <div className="font-body text-[11px] text-[var(--app-text-faint)] mb-4">{e.date}</div>
-              <button className="w-full font-body text-[11px] tracking-[1px] uppercase text-brand-gold border border-brand-gold/30 rounded-lg px-4 py-2.5 hover:bg-brand-gold/10 transition-colors">
-                {e.cta}
-              </button>
+              {e.date && (
+                <div className="font-body text-[11px] text-[var(--app-text-faint)] mb-4">{e.date}</div>
+              )}
+              {e.cta && (
+                <button className="w-full font-body text-[11px] tracking-[1px] uppercase text-brand-gold border border-brand-gold/30 rounded-lg px-4 py-2.5 hover:bg-brand-gold/10 transition-colors">
+                  {e.cta}
+                </button>
+              )}
             </div>
           ))}
         </div>
       </div>
+      )}
 
       {/* ══════════════════ SECTION 4: REFERRAL OPPORTUNITIES ══════════════════ */}
+      {referralOpps.length > 0 && (
       <div className="animate-fade-up">
         <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-1">
           Expand Your Earnings
@@ -339,38 +322,41 @@ export default function HomePage() {
         <div
           className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"} ${device.gap}`}
         >
-          {REFERRAL_OPPS.map((r, i) => (
+          {referralOpps.map((r, i) => (
             <div
-              key={i}
+              key={`${r.title}-${i}`}
               className={`${device.cardPadding} ${device.borderRadius} border flex flex-col ${
-                r.primary
+                r.highlighted
                   ? "border-brand-gold/25 bg-brand-gold/[0.04]"
                   : "border-[var(--app-border)] bg-[var(--app-card-bg)]"
               }`}
             >
               <div
                 className={`font-body text-sm font-semibold mb-2 ${
-                  r.primary ? "text-brand-gold" : "text-[var(--app-text)]"
+                  r.highlighted ? "text-brand-gold" : "text-[var(--app-text)]"
                 }`}
               >
                 {r.title}
               </div>
               <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-4 flex-1">
-                {r.body}
+                {r.description}
               </p>
-              <button
-                className={`w-full font-body text-[11px] tracking-[1px] uppercase rounded-lg px-4 py-2.5 transition-colors ${
-                  r.primary
-                    ? "bg-brand-gold text-black font-semibold hover:bg-brand-gold/90"
-                    : "text-brand-gold border border-brand-gold/30 hover:bg-brand-gold/10"
-                }`}
-              >
-                {r.cta}
-              </button>
+              {r.cta && (
+                <button
+                  className={`w-full font-body text-[11px] tracking-[1px] uppercase rounded-lg px-4 py-2.5 transition-colors ${
+                    r.highlighted
+                      ? "bg-brand-gold text-black font-semibold hover:bg-brand-gold/90"
+                      : "text-brand-gold border border-brand-gold/30 hover:bg-brand-gold/10"
+                  }`}
+                >
+                  {r.cta}
+                </button>
+              )}
             </div>
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }
