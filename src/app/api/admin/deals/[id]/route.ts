@@ -95,6 +95,39 @@ export async function PUT(
       data.epLevel1 = strOrNull(body.epLevel1);
     }
 
+    // Partner reassignment — super_admin only. Some deals come in with an
+    // invalid partnerCode (partner shared a malformed referral link) and
+    // render as "Unknown" everywhere. This lets super_admin swap the
+    // partnerCode to the real one so the deal attributes + commission
+    // chain work going forward. Verified against the Partner table so the
+    // reassignment can only resolve to a real row.
+    if (body.partnerCode !== undefined) {
+      if (role !== "super_admin") {
+        return NextResponse.json(
+          { error: "Only super_admin can reassign the submitting partner" },
+          { status: 403 }
+        );
+      }
+      const newCode = String(body.partnerCode || "").trim().toUpperCase();
+      if (!newCode) {
+        return NextResponse.json(
+          { error: "partnerCode cannot be blank" },
+          { status: 400 }
+        );
+      }
+      const exists = await prisma.partner.findUnique({
+        where: { partnerCode: newCode },
+        select: { partnerCode: true },
+      });
+      if (!exists) {
+        return NextResponse.json(
+          { error: `No partner found with code ${newCode}` },
+          { status: 400 }
+        );
+      }
+      data.partnerCode = newCode;
+    }
+
     const deal = await prisma.deal.update({
       where: { id: params.id },
       data,

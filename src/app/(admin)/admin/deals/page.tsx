@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useResizableColumns } from "@/components/ui/ResizableTable";
 import { fmt$, fmtDate, fmtDateTime, fmtTime } from "@/lib/format";
@@ -90,6 +90,10 @@ export default function AdminDealsPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editEpLevel1, setEditEpLevel1] = useState("");
+  const [editPartnerCode, setEditPartnerCode] = useState("");
+  const [partnerSearch, setPartnerSearch] = useState("");
+  const [showPartnerDropdown, setShowPartnerDropdown] = useState(false);
+  const partnerWrapRef = useRef<HTMLDivElement | null>(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -173,6 +177,17 @@ export default function AdminDealsPage() {
 
   useEffect(() => { fetchDeals(); }, [fetchDeals]);
 
+  // Close the partner-reassign combobox when the admin clicks outside.
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (partnerWrapRef.current && !partnerWrapRef.current.contains(e.target as Node)) {
+        setShowPartnerDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
   // Auto-scroll to deep-linked deal after data loads
   useEffect(() => {
     if (deepLinkDealId && deals.length > 0 && expandedId === deepLinkDealId) {
@@ -240,6 +255,13 @@ export default function AdminDealsPage() {
         importerOfRecord: deal.importerOfRecord || "",
       });
       setEditEpLevel1(deal.epLevel1 || "");
+      setEditPartnerCode(deal.partnerCode || "");
+      setPartnerSearch(
+        deal.partnerId && deal.partnerName
+          ? `${deal.partnerName} (${deal.partnerCode})`
+          : (deal.partnerCode || "")
+      );
+      setShowPartnerDropdown(false);
       // Fetch deal notes
       fetchDealNotes(deal.id);
     }
@@ -290,10 +312,11 @@ export default function AdminDealsPage() {
             .filter(Boolean)
             .join(" ")
             .trim(),
-          // Only super_admin can modify EP Level 1. Omit the key entirely for
-          // other roles so the server-side guard doesn't see an attempted edit
-          // and 403 the whole save.
+          // Only super_admin can modify EP Level 1 or reassign the partner.
+          // Omit those keys entirely for other roles so the server-side guard
+          // doesn't see an attempted edit and 403 the whole save.
           ...(isSuperAdmin ? { epLevel1: editEpLevel1 } : {}),
+          ...(isSuperAdmin && editPartnerCode ? { partnerCode: editPartnerCode } : {}),
         }),
       });
       setExpandedId(null);
@@ -619,6 +642,78 @@ export default function AdminDealsPage() {
                       <div className="font-body text-[12px] text-[var(--app-text-secondary)] mt-1 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg p-3 whitespace-pre-line">{deal.affiliateNotes}</div>
                     </div>
                   )}
+                  <div className="mt-3" ref={expandedId === deal.id ? partnerWrapRef : undefined}>
+                    <label className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">
+                      Partner
+                      {!isSuperAdmin && (
+                        <span className="ml-2 text-[9px] text-[var(--app-text-faint)] normal-case tracking-normal">(super_admin only)</span>
+                      )}
+                    </label>
+                    {isSuperAdmin ? (
+                      <div className="relative sm:w-2/3">
+                        <input
+                          className={`${inputClass} w-full`}
+                          value={partnerSearch}
+                          onChange={(e) => {
+                            setPartnerSearch(e.target.value);
+                            setShowPartnerDropdown(true);
+                          }}
+                          onFocus={() => setShowPartnerDropdown(true)}
+                          placeholder="Type partner name or code..."
+                        />
+                        {showPartnerDropdown && (() => {
+                          const q = partnerSearch.trim().toLowerCase();
+                          const matches = partners.filter((p) => {
+                            if (!q) return true;
+                            const full = `${p.firstName} ${p.lastName}`.toLowerCase();
+                            return (
+                              full.includes(q) ||
+                              p.partnerCode.toLowerCase().includes(q)
+                            );
+                          }).slice(0, 10);
+                          if (matches.length === 0) return null;
+                          return (
+                            <div className="absolute z-30 mt-1 w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg shadow-lg max-h-64 overflow-auto">
+                              {matches.map((p) => (
+                                <button
+                                  key={p.partnerCode}
+                                  type="button"
+                                  onClick={() => {
+                                    setEditPartnerCode(p.partnerCode);
+                                    setPartnerSearch(`${p.firstName} ${p.lastName} (${p.partnerCode})`);
+                                    setShowPartnerDropdown(false);
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-[var(--app-input-bg)] border-b border-[var(--app-border)] last:border-b-0 transition"
+                                >
+                                  <div className="font-body text-[12px] text-[var(--app-text)]">
+                                    {p.firstName} {p.lastName}
+                                    <span className="font-mono text-[10px] text-[var(--app-text-muted)] ml-2">({p.partnerCode})</span>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                        <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">
+                          Reassign if the deal came in as &ldquo;Unknown&rdquo; or was attributed to the wrong partner.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="font-body text-[13px] text-[var(--app-text)] mt-0.5">
+                        {deal.partnerId ? (
+                          <>
+                            {deal.partnerName}
+                            <span className="font-mono text-[11px] text-[var(--app-text-muted)] ml-2">({deal.partnerCode})</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="italic text-[var(--app-text-muted)]">Unknown</span>
+                            <span className="font-mono text-[11px] text-[var(--app-text-muted)] ml-2">({deal.partnerCode})</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <div className="mt-3">
                     <label className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">
                       EP Level 1
