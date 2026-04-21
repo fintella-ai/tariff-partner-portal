@@ -673,7 +673,7 @@ export default function AdminDealsPage() {
                           }).slice(0, 10);
                           if (matches.length === 0) return null;
                           return (
-                            <div className="absolute z-30 mt-1 w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg shadow-lg max-h-64 overflow-auto">
+                            <div className="absolute z-30 mt-1 w-full bg-[var(--app-popover-bg)] border border-[var(--app-border)] rounded-lg shadow-lg max-h-64 overflow-auto">
                               {matches.map((p) => (
                                 <button
                                   key={p.partnerCode}

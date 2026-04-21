@@ -272,7 +272,7 @@ export default function ComposeEmailForm({
               className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-[var(--app-text)] placeholder:text-[var(--app-text-faint)] focus:outline-none focus:border-brand-gold/50"
             />
             {showDropdown && (partnerResults.length > 0 || searching) && (
-              <div className="absolute z-20 mt-1 w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg shadow-lg max-h-64 overflow-auto">
+              <div className="absolute z-20 mt-1 w-full bg-[var(--app-popover-bg)] border border-[var(--app-border)] rounded-lg shadow-lg max-h-64 overflow-auto">
                 {searching && (
                   <div className="px-3 py-2 text-xs text-[var(--app-text-muted)]">Searching...</div>
                 )}
