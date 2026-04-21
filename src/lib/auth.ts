@@ -39,6 +39,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
     Credentials({
+      id: "impersonate-login",
+      name: "Impersonate Partner",
+      credentials: {
+        token: { label: "Token", type: "text" },
+      },
+      async authorize(credentials) {
+        const token = credentials?.token as string;
+        if (!token) return null;
+
+        const record = await prisma.impersonationToken.findUnique({ where: { token } });
+        if (!record) return null;
+        if (record.used) return null;
+        if (new Date() > record.expiresAt) return null;
+
+        const partner = await prisma.partner.findUnique({
+          where: { partnerCode: record.partnerCode },
+        });
+        if (!partner) return null;
+        if (partner.status === "blocked") return null;
+
+        await prisma.impersonationToken.update({
+          where: { token },
+          data: { used: true },
+        });
+
+        return {
+          id: partner.id,
+          email: partner.email,
+          name: `${partner.firstName} ${partner.lastName}`,
+          role: "partner",
+          partnerCode: partner.partnerCode,
+        };
+      },
+    }),
+    Credentials({
       id: "admin-login",
       name: "Admin Login",
       credentials: {

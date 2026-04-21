@@ -62,42 +62,8 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/**
- * GET /api/admin/impersonate?token=XXX
- * Validates and consumes an impersonation token.
- */
-export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get("token");
-  if (!token) return NextResponse.json({ error: "Token required" }, { status: 400 });
-
-  try {
-    const record = await prisma.impersonationToken.findUnique({ where: { token } });
-
-    if (!record) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
-    }
-
-    if (record.used) {
-      return NextResponse.json({ error: "Token has already been used" }, { status: 401 });
-    }
-
-    if (new Date() > record.expiresAt) {
-      await prisma.impersonationToken.delete({ where: { token } }).catch(() => {});
-      return NextResponse.json({ error: "Token expired" }, { status: 401 });
-    }
-
-    // Mark as used (single use)
-    await prisma.impersonationToken.update({
-      where: { token },
-      data: { used: true },
-    });
-
-    return NextResponse.json({
-      partnerCode: record.partnerCode,
-      email: record.email,
-      name: record.name,
-    });
-  } catch {
-    return NextResponse.json({ error: "Failed to validate token" }, { status: 500 });
-  }
-}
+// The token is now consumed directly by the `impersonate-login` NextAuth
+// provider in src/lib/auth.ts — no separate GET validation endpoint is
+// needed. Consolidating prevents the token from being burned by two paths
+// (the old flow used to GET-validate first, then sign in; if the sign-in
+// failed the token was already consumed).

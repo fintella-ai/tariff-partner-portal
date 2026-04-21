@@ -15,34 +15,22 @@ function ImpersonateContent() {
 
     (async () => {
       try {
-        // Validate and consume the token
-        const res = await fetch(`/api/admin/impersonate?token=${token}`);
-        if (!res.ok) {
-          const data = await res.json();
-          setError(data.error || "Invalid token");
-          return;
-        }
-
-        const { partnerCode, email } = await res.json();
-        setStatus(`Signing in as ${partnerCode}...`);
-
-        // Sign in as the partner using the partner-login provider
-        const result = await signIn("partner-login", {
-          email,
-          partnerCode,
-          redirect: false,
-        });
-
+        setStatus("Signing in...");
+        const result = await signIn("impersonate-login", { token, redirect: false });
         if (result?.error) {
           setError("Failed to sign in as partner.");
           return;
         }
 
-        // Flag this session as admin impersonation
-        sessionStorage.setItem("adminSudo", "true");
-        sessionStorage.setItem("adminSudoPartner", partnerCode);
+        // Pull partnerCode from the freshly-established session so the sudo
+        // banner knows who we're masquerading as.
+        const sess = await fetch("/api/auth/session").then((r) => r.json()).catch(() => null);
+        const partnerCode = sess?.user?.partnerCode;
+        if (partnerCode) {
+          sessionStorage.setItem("adminSudo", "true");
+          sessionStorage.setItem("adminSudoPartner", partnerCode);
+        }
 
-        // Redirect to partner dashboard
         window.location.href = "/dashboard/home";
       } catch {
         setError("Failed to impersonate partner.");
