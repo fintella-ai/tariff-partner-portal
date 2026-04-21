@@ -10,35 +10,35 @@ import { fmt$ } from "@/lib/format";
    DEMO DATA
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const ANNOUNCEMENTS = [
-  {
-    id: "1",
-    title: "New Commission Tier Available",
-    body: "We've introduced a Level 3 commission structure for partners with 5+ active sub-partners. Contact your partner manager for details.",
-    date: "Mar 22, 2026",
-    badge: "New" as const,
-  },
-  {
-    id: "2",
-    title: "Q1 2026 Payout Schedule",
-    body: "All Q1 commissions will be processed by April 15th. Ensure your W-9 is current in the Documents tab.",
-    date: "Mar 15, 2026",
-    badge: "Important" as const,
-  },
-  {
-    id: "3",
-    title: "Platform Update: Real-Time Deal Tracking",
-    body: "You can now see deal stage changes in real-time on your Overview dashboard. No more waiting for email updates!",
-    date: "Mar 10, 2026",
-    badge: "Update" as const,
-  },
-];
+interface Announcement {
+  title: string;
+  body: string;
+  date: string;
+  badge: string;
+  badgeColor?: string;
+}
 
 const BADGE_STYLES: Record<string, { bg: string; border: string; text: string }> = {
+  // Keyed by the badge *label* (legacy) — kept for backwards compat.
   New:       { bg: "bg-green-500/10",  border: "border-green-500/20",  text: "text-green-400" },
   Important: { bg: "bg-yellow-500/10", border: "border-yellow-500/20", text: "text-yellow-400" },
   Update:    { bg: "bg-blue-500/10",   border: "border-blue-500/20",   text: "text-blue-400" },
 };
+
+// Secondary lookup — admin settings stores a `badgeColor` (green/yellow/blue/red/gray)
+// alongside the free-text `badge` label. Prefer the color if present.
+const BADGE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  green:  { bg: "bg-green-500/10",  border: "border-green-500/20",  text: "text-green-400" },
+  yellow: { bg: "bg-yellow-500/10", border: "border-yellow-500/20", text: "text-yellow-400" },
+  blue:   { bg: "bg-blue-500/10",   border: "border-blue-500/20",   text: "text-blue-400" },
+  red:    { bg: "bg-red-500/10",    border: "border-red-500/20",    text: "text-red-400" },
+  gray:   { bg: "bg-white/5",       border: "border-white/10",      text: "text-white/70" },
+};
+
+function badgeStyle(a: Announcement) {
+  if (a.badgeColor && BADGE_COLORS[a.badgeColor]) return BADGE_COLORS[a.badgeColor];
+  return BADGE_STYLES[a.badge] || BADGE_COLORS.gray;
+}
 
 const LEADERBOARD = [
   { rank: 1,  name: "Partner #847", deals: 12, revenue: 156000 },
@@ -135,6 +135,7 @@ export default function HomePage() {
   const user = session?.user as any;
   const firstName = user?.name?.split(" ")[0] || "Partner";
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -142,6 +143,14 @@ export default function HomePage() {
       .then((d) => {
         if (d?.settings?.leaderboardEnabled !== undefined) {
           setLeaderboardEnabled(d.settings.leaderboardEnabled);
+        }
+        if (typeof d?.settings?.announcements === "string") {
+          try {
+            const parsed = JSON.parse(d.settings.announcements);
+            if (Array.isArray(parsed)) setAnnouncements(parsed);
+          } catch {
+            setAnnouncements([]);
+          }
         }
       })
       .catch(() => {});
@@ -158,16 +167,17 @@ export default function HomePage() {
       </div>
 
       {/* ══════════════════ SECTION 1: ANNOUNCEMENTS ══════════════════ */}
+      {announcements.length > 0 && (
       <div className="mb-6 sm:mb-8 animate-fade-up">
         <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4">
           Announcements
         </h2>
         <div className="flex flex-col gap-3">
-          {ANNOUNCEMENTS.map((a) => {
-            const badge = BADGE_STYLES[a.badge];
+          {announcements.map((a, idx) => {
+            const badge = badgeStyle(a);
             return (
               <div
-                key={a.id}
+                key={`${a.title}-${idx}`}
                 className="card border-l-2 border-l-brand-gold overflow-hidden"
               >
                 <div className="px-4 sm:px-6 py-4 sm:py-5">
@@ -175,22 +185,27 @@ export default function HomePage() {
                     <div className="font-body text-sm font-semibold text-[var(--app-text)] leading-snug">
                       {a.title}
                     </div>
-                    <span
-                      className={`${badge.bg} ${badge.border} ${badge.text} border rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase shrink-0`}
-                    >
-                      {a.badge}
-                    </span>
+                    {a.badge && (
+                      <span
+                        className={`${badge.bg} ${badge.border} ${badge.text} border rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase shrink-0`}
+                      >
+                        {a.badge}
+                      </span>
+                    )}
                   </div>
                   <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-2">
                     {a.body}
                   </p>
-                  <div className="font-body text-[11px] text-[var(--app-text-faint)]">{a.date}</div>
+                  {a.date && (
+                    <div className="font-body text-[11px] text-[var(--app-text-faint)]">{a.date}</div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       </div>
+      )}
 
       {/* ══════════════════ SECTION 2: LEADERBOARD ══════════════════ */}
       {leaderboardEnabled && <div className="mb-6 sm:mb-8 animate-fade-up">
