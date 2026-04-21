@@ -99,6 +99,8 @@ export default function AdminPartnersPage() {
   const [inviteFirst, setInviteFirst] = useState("");
   const [inviteLast, setInviteLast] = useState("");
   const [inviteRate, setInviteRate] = useState<number | "">(0.25);
+  const [inviteRateMode, setInviteRateMode] = useState<"standard" | "custom">("standard");
+  const [inviteCustomPct, setInviteCustomPct] = useState<string>("");
   const [inviteError, setInviteError] = useState("");
   const [inviteResult, setInviteResult] = useState<{ signupUrl: string } | null>(null);
   const [inviteSending, setInviteSending] = useState(false);
@@ -157,16 +159,33 @@ export default function AdminPartnersPage() {
   useEffect(() => { fetchPartners(); }, [fetchPartners]);
   useEffect(() => { fetchInvites(); }, [fetchInvites]);
 
+  const resolvedInviteRate = (): number | null => {
+    if (inviteRateMode === "custom") {
+      const pct = parseFloat(inviteCustomPct);
+      if (!isFinite(pct) || pct <= 0 || pct > 50) return null;
+      return Math.round(pct * 100) / 10000; // pct=28 → 0.28, 2-decimal % precision
+    }
+    return typeof inviteRate === "number" ? inviteRate : null;
+  };
+
   const handleInvite = async () => {
     setInviteError("");
     if (!inviteEmail.trim()) { setInviteError("Email is required."); return; }
-    if (!inviteRate) { setInviteError("Commission rate is required."); return; }
+    const rate = resolvedInviteRate();
+    if (rate == null) {
+      setInviteError(
+        inviteRateMode === "custom"
+          ? "Enter a custom rate between 1% and 50%."
+          : "Commission rate is required."
+      );
+      return;
+    }
     setInviteSending(true);
     try {
       const res = await fetch("/api/admin/invites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail.trim(), firstName: inviteFirst.trim(), lastName: inviteLast.trim(), commissionRate: inviteRate }),
+        body: JSON.stringify({ email: inviteEmail.trim(), firstName: inviteFirst.trim(), lastName: inviteLast.trim(), commissionRate: rate }),
       });
       const data = await res.json();
       if (!res.ok) { setInviteError(data.error || "Failed to send invite"); return; }
@@ -182,6 +201,7 @@ export default function AdminPartnersPage() {
   const resetInvite = () => {
     setShowInvite(false);
     setInviteEmail(""); setInviteFirst(""); setInviteLast(""); setInviteRate(0.25);
+    setInviteRateMode("standard"); setInviteCustomPct("");
     setInviteError(""); setInviteResult(null);
   };
 
@@ -350,22 +370,65 @@ export default function AdminPartnersPage() {
               {inviteError && <div className="mb-3 p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg font-body text-[12px] text-red-400">{inviteError}</div>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <input className={inputClass} value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="Email *" type="email" />
-                <select className={inputClass} value={inviteRate} onChange={(e) => setInviteRate(e.target.value ? parseFloat(e.target.value) : "")}>
-                  <option value="">Select commission rate *</option>
-                  {ALLOWED_L1_RATES.map((r) => (
-                    <option key={r} value={r}>{Math.round(r * 100)}% — L1 Partner</option>
-                  ))}
-                </select>
+                {inviteRateMode === "standard" ? (
+                  <select
+                    className={inputClass}
+                    value={inviteRate}
+                    onChange={(e) => {
+                      if (e.target.value === "__custom__") {
+                        setInviteRateMode("custom");
+                        setInviteRate("");
+                      } else {
+                        setInviteRate(e.target.value ? parseFloat(e.target.value) : "");
+                      }
+                    }}
+                  >
+                    <option value="">Select commission rate *</option>
+                    {ALLOWED_L1_RATES.map((r) => (
+                      <option key={r} value={r}>{Math.round(r * 100)}% — L1 Partner</option>
+                    ))}
+                    <option value="__custom__">Custom rate…</option>
+                  </select>
+                ) : (
+                  <div className="flex gap-2 items-center">
+                    <input
+                      className={`${inputClass} flex-1`}
+                      type="number"
+                      min={1}
+                      max={50}
+                      step={0.5}
+                      value={inviteCustomPct}
+                      onChange={(e) => setInviteCustomPct(e.target.value)}
+                      placeholder="Custom % (e.g. 28)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setInviteRateMode("standard"); setInviteCustomPct(""); setInviteRate(0.25); }}
+                      className="font-body text-[11px] theme-text-muted hover:text-brand-gold transition-colors"
+                    >
+                      Back to standard
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input className={inputClass} value={inviteFirst} onChange={(e) => setInviteFirst(e.target.value)} placeholder="First Name (optional)" />
                 <input className={inputClass} value={inviteLast} onChange={(e) => setInviteLast(e.target.value)} placeholder="Last Name (optional)" />
               </div>
-              {inviteRate && (
-                <div className="mt-3 p-3 rounded-lg bg-brand-gold/5 border border-brand-gold/20 font-body text-[12px] theme-text-muted">
-                  At <strong className="text-brand-gold">{Math.round(Number(inviteRate) * 100)}%</strong>, this partner can offer their recruits rates from <strong>5%</strong> up to <strong>{Math.round((Number(inviteRate) - 0.05) * 100)}%</strong>.
-                </div>
-              )}
+              {(() => {
+                const r = resolvedInviteRate();
+                if (r == null) return null;
+                return (
+                  <div className="mt-3 p-3 rounded-lg bg-brand-gold/5 border border-brand-gold/20 font-body text-[12px] theme-text-muted">
+                    At <strong className="text-brand-gold">{(r * 100).toFixed(r * 100 % 1 === 0 ? 0 : 1)}%</strong>, this partner can offer their recruits rates from <strong>5%</strong> up to <strong>{((r - 0.05) * 100).toFixed((r - 0.05) * 100 % 1 === 0 ? 0 : 1)}%</strong>.
+                    {inviteRateMode === "custom" && (
+                      <div className="mt-1.5 text-[11px] theme-text-faint">
+                        Custom rate — uses the 25% agreement template with rate interpolation via the SignWell <code>commission_rate_percent</code> / <code>commission_rate_text</code> api_ids.
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="flex gap-3 mt-4">
                 <button onClick={handleInvite} disabled={inviteSending} className="btn-gold text-[12px] px-5 min-h-[44px] disabled:opacity-50">{inviteSending ? "Sending..." : "Send Invite"}</button>
                 <button onClick={resetInvite} className="font-body text-[12px] theme-text-muted border border-[var(--app-border)] rounded-lg px-5 min-h-[44px] hover:theme-text-secondary transition-colors">Cancel</button>

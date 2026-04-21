@@ -55,9 +55,14 @@ export async function POST(req: NextRequest) {
     if (commissionRate == null || isNaN(commissionRate)) {
       return NextResponse.json({ error: "Commission rate is required" }, { status: 400 });
     }
-    if (!ALLOWED_L1_RATES.some((r) => Math.abs(r - commissionRate) < 0.001)) {
+    // Custom L1 rates are allowed (e.g. 28% for a negotiated deal). Standard
+    // bands live in ALLOWED_L1_RATES but aren't a hard cap — any rate in
+    // (0, 0.50] is accepted. SignWell templates interpolate the actual rate
+    // via the commission_rate_percent / commission_rate_text api_ids, so
+    // non-standard rates render correctly in the agreement body.
+    if (commissionRate <= 0 || commissionRate > 0.5) {
       return NextResponse.json({
-        error: `Invalid rate. Allowed L1 rates: ${ALLOWED_L1_RATES.map((r) => `${Math.round(r * 100)}%`).join(", ")}`,
+        error: `Invalid rate. Must be between 1% and 50%. Standard rates: ${ALLOWED_L1_RATES.map((r) => `${Math.round(r * 100)}%`).join(", ")}.`,
       }, { status: 400 });
     }
 

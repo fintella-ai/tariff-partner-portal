@@ -74,24 +74,28 @@ export interface PartnerTemplateContext {
 /**
  * Render a decimal commission rate (0.25) as its written-out English word
  * form ("twenty-five") so SignWell templates can embed both a numeric and
- * a textual version of the rate in the contract body. Returns empty string
- * for an unknown rate so the template field just renders blank.
+ * a textual version of the rate in the contract body. The template supplies
+ * the surrounding words ("percent", "%") so this helper returns the bare
+ * spelled number — e.g. "twenty-eight", not "twenty-eight percent".
+ * Returns empty string for a non-integer or out-of-range rate so the
+ * template field just renders blank.
  */
 function commissionRateToText(rate: number | null | undefined): string {
   if (typeof rate !== "number" || !isFinite(rate)) return "";
   const pct = Math.round(rate * 100);
-  const lookup: Record<number, string> = {
-    10: "ten",
-    15: "fifteen",
-    20: "twenty",
-    25: "twenty-five",
-    30: "thirty",
-    35: "thirty-five",
-    40: "forty",
-    45: "forty-five",
-    50: "fifty",
-  };
-  return lookup[pct] || "";
+  if (pct < 1 || pct > 99) return "";
+
+  const ones = [
+    "", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+    "sixteen", "seventeen", "eighteen", "nineteen",
+  ];
+  const tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+  if (pct < 20) return ones[pct];
+  const t = Math.floor(pct / 10);
+  const o = pct % 10;
+  return o === 0 ? tens[t] : `${tens[t]}-${ones[o]}`;
 }
 
 /**
