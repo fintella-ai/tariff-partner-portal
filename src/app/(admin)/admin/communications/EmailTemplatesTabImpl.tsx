@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { stashComposePrefill } from "./EmailComposeTabImpl";
 import { categoryOptions, categoryBadge, type Template } from "./_shared";
+import { ALLOWED_SENDER_EMAILS } from "@/lib/constants";
 
 /**
  * Templates section of the Communications hub. Owns:
@@ -603,13 +604,16 @@ function EditTemplateModal({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[var(--app-text-muted)] text-xs mb-1">From Email</label>
-                  <input
-                    type="email"
-                    placeholder="noreply@fintella.partners"
+                  <select
                     value={t.fromEmail || ""}
                     onChange={(e) => onChange({ ...t, fromEmail: e.target.value || null })}
                     className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-sm text-[var(--app-text)]"
-                  />
+                  >
+                    <option value="">Use global default</option>
+                    {ALLOWED_SENDER_EMAILS.map((addr) => (
+                      <option key={addr} value={addr}>{addr}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-[var(--app-text-muted)] text-xs mb-1">From Name</label>
@@ -623,13 +627,16 @@ function EditTemplateModal({
                 </div>
                 <div>
                   <label className="block text-[var(--app-text-muted)] text-xs mb-1">Reply-To</label>
-                  <input
-                    type="email"
-                    placeholder="support@fintella.partners"
+                  <select
                     value={t.replyTo || ""}
                     onChange={(e) => onChange({ ...t, replyTo: e.target.value || null })}
                     className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-3 py-2 text-sm text-[var(--app-text)]"
-                  />
+                  >
+                    <option value="">Use global default</option>
+                    {ALLOWED_SENDER_EMAILS.map((addr) => (
+                      <option key={addr} value={addr}>{addr}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

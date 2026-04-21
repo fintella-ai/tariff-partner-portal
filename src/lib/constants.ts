@@ -4,6 +4,18 @@ export const FIRM_SHORT = "Fintella";
 export const FIRM_SLOGAN = "Fighting for what's owed, reclaiming what's fair.";
 export const FIRM_PHONE = "(410) 497-5947";
 
+// ─── SENDGRID VERIFIED SENDERS ───────────────────────────────────────────────
+// Addresses that have a matching Single Sender Verification in SendGrid.
+// Surfaced as dropdown suggestions in the admin Email Template editor
+// (From Email + Reply-To fields). Domain auth for fintella.partners means
+// any address on that domain is technically sendable, but verified identities
+// ensure the display name + reply address render correctly.
+// Update this list when new sender identities are verified in SendGrid.
+export const ALLOWED_SENDER_EMAILS: ReadonlyArray<string> = [
+  "noreply@fintella.partners",
+  "support@fintella.partners",
+];
+
 // ─── COMMISSION DEFAULTS ─────────────────────────────────────────────────────
 // Firm fee rate is per-deal (negotiated between firm and client).
 export const DEFAULT_FIRM_FEE_RATE = 0.20;
