@@ -773,12 +773,12 @@ export default function AdminPartnersPage() {
                   <button
                     key={h.label}
                     onClick={() => handleSort(h.col!)}
-                    className="relative font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider flex items-center gap-0.5 hover:text-[var(--app-text-secondary)] transition-colors justify-center"
+                    className="relative w-full font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider flex items-center gap-0.5 hover:text-[var(--app-text-secondary)] transition-colors justify-center"
                   >
                     {h.label}<SortIcon col={h.col} /><span {...partnerResize(i)} />
                   </button>
                 ) : (
-                  <div key={h.label || `col-${i}`} className="relative font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center">{h.label}<span {...partnerResize(i)} /></div>
+                  <div key={h.label || `col-${i}`} className="relative w-full font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider text-center">{h.label}<span {...partnerResize(i)} /></div>
                 )
               ))}
             </div>
@@ -791,9 +791,9 @@ export default function AdminPartnersPage() {
                   style={{ gridTemplateColumns: partnerGridCols }}
                   onClick={() => router.push(`/admin/partners/${p.id}`)}
                 >
-                  <div className="font-body text-[13px] text-[var(--app-text)] font-medium truncate">{p.firstName} {p.lastName}</div>
-                  <div className="font-mono text-[12px] text-[var(--app-text-secondary)]">{p.partnerCode}</div>
-                  <div className="font-mono text-[12px] truncate">
+                  <div className="font-body text-[13px] text-[var(--app-text)] font-medium truncate text-center">{p.firstName} {p.lastName}</div>
+                  <div className="font-mono text-[12px] text-[var(--app-text-secondary)] text-center">{p.partnerCode}</div>
+                  <div className="font-mono text-[12px] truncate text-center">
                     {e164 ? (
                       <button
                         onClick={(evt) => {
@@ -810,7 +810,7 @@ export default function AdminPartnersPage() {
                       <span className="text-[var(--app-text-muted)]">—</span>
                     )}
                   </div>
-                  <div className="font-body text-[12px] text-[var(--app-text-secondary)] truncate">{p.email}</div>
+                  <div className="font-body text-[12px] text-[var(--app-text-secondary)] truncate text-center">{p.email}</div>
                   <div className="text-center">
                     <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[p.status] || statusBadge.active}`}>
                       {p.status}
@@ -821,8 +821,8 @@ export default function AdminPartnersPage() {
                       {p.w9Status === "under_review" ? "review" : p.w9Status}
                     </span>
                   </div>
-                  <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(p.signupDate)}</div>
-                  <div className="text-right">
+                  <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">{fmtDate(p.signupDate)}</div>
+                  <div className="text-center">
                     <span className="font-body text-[11px] text-brand-gold/60 hover:text-brand-gold transition-colors">View →</span>
                   </div>
                 </div>
