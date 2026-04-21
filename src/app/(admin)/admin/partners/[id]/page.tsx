@@ -125,6 +125,8 @@ export default function PartnerDetailPage() {
   // whatever the partner record has, but admins can override to send a
   // different template without first editing the partner.
   const [sendAgreementRate, setSendAgreementRate] = useState<number>(0.25);
+  const [sendAgreementCustomPct, setSendAgreementCustomPct] = useState<string>("");
+  const [sendAgreementIsCustom, setSendAgreementIsCustom] = useState(false);
   const [sendAgreementError, setSendAgreementError] = useState<string | null>(null);
   const [sendingW9, setSendingW9] = useState(false);
   const [uploadingAgreement, setUploadingAgreement] = useState(false);
@@ -942,30 +944,68 @@ export default function PartnerDetailPage() {
         <div className="px-5 py-4 border-b border-[var(--app-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="font-body font-semibold text-sm text-center sm:text-left">Documents &amp; Agreement</div>
           <div className="flex gap-2 flex-wrap justify-center sm:justify-end">
-            <div className="flex items-center gap-2">
-              <select
-                value={sendAgreementRate}
-                onChange={(e) => setSendAgreementRate(parseFloat(e.target.value))}
-                title="Agreement template rate — controls which SignWell template is sent"
-                className="font-body text-[11px] bg-[var(--app-input-bg)] border border-brand-gold/20 text-brand-gold/80 rounded-lg px-2 py-1.5 outline-none focus:border-brand-gold/40"
-              >
-                <option value={0.25} className="bg-[var(--app-bg)]">25% L1</option>
-                <option value={0.20} className="bg-[var(--app-bg)]">20% L2/L3</option>
-                <option value={0.15} className="bg-[var(--app-bg)]">15% L2/L3</option>
-                <option value={0.10} className="bg-[var(--app-bg)]">10% L2/L3</option>
-              </select>
+            <div className="flex items-center gap-2 flex-wrap">
+              {sendAgreementIsCustom ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    step={0.5}
+                    value={sendAgreementCustomPct}
+                    onChange={(e) => setSendAgreementCustomPct(e.target.value)}
+                    placeholder="28"
+                    className="w-20 font-body text-[11px] bg-[var(--app-input-bg)] border border-brand-gold/20 text-brand-gold/80 rounded-lg px-2 py-1.5 outline-none focus:border-brand-gold/40"
+                    title="Custom commission rate %"
+                  />
+                  <span className="font-body text-[11px] text-brand-gold/80">%</span>
+                  <button
+                    type="button"
+                    onClick={() => { setSendAgreementIsCustom(false); setSendAgreementCustomPct(""); }}
+                    className="ml-1 font-body text-[10px] theme-text-muted hover:text-brand-gold"
+                  >
+                    ←
+                  </button>
+                </div>
+              ) : (
+                <select
+                  value={sendAgreementRate}
+                  onChange={(e) => {
+                    if (e.target.value === "__custom__") setSendAgreementIsCustom(true);
+                    else setSendAgreementRate(parseFloat(e.target.value));
+                  }}
+                  title="Agreement template rate — controls which SignWell template is sent"
+                  className="font-body text-[11px] bg-[var(--app-input-bg)] border border-brand-gold/20 text-brand-gold/80 rounded-lg px-2 py-1.5 outline-none focus:border-brand-gold/40"
+                >
+                  <option value={0.25} className="bg-[var(--app-bg)]">25% L1</option>
+                  <option value={0.20} className="bg-[var(--app-bg)]">20% L2/L3</option>
+                  <option value={0.15} className="bg-[var(--app-bg)]">15% L2/L3</option>
+                  <option value={0.10} className="bg-[var(--app-bg)]">10% L2/L3</option>
+                  <option value="__custom__" className="bg-[var(--app-bg)]">Custom…</option>
+                </select>
+              )}
               <button
                 onClick={async () => {
                   setSendingAgreement(true);
                   setSendAgreementError(null);
                   try {
+                    let rateToSend = sendAgreementRate;
+                    if (sendAgreementIsCustom) {
+                      const pct = parseFloat(sendAgreementCustomPct);
+                      if (!isFinite(pct) || pct <= 0 || pct > 50) {
+                        setSendAgreementError("Custom rate must be between 1 and 50.");
+                        setSendingAgreement(false);
+                        return;
+                      }
+                      rateToSend = Math.round(pct * 100) / 10000;
+                    }
                     const res = await fetch(`/api/admin/agreement/${partner.partnerCode}`, {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
                         email,
                         name: `${firstName} ${lastName}`,
-                        rate: sendAgreementRate,
+                        rate: rateToSend,
                       }),
                     });
                     if (!res.ok) {
