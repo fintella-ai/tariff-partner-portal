@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { useResizableColumns } from "@/components/ui/ResizableTable";
 import {
   TRIGGER_KEYS,
   TRIGGER_LABELS,
+  TRIGGER_DESCRIPTIONS,
+  TRIGGER_VARIABLES,
   ACTION_TYPES,
   ACTION_LABELS,
+  ACTION_DESCRIPTIONS,
   type TriggerKey,
   type ActionType,
 } from "@/lib/workflow-engine";
@@ -67,12 +71,142 @@ interface Condition {
 
 // ─── Action editor ─────────────────────────────────────────────────────────────
 
+// ─── Variable reference (click-to-copy chips) ─────────────────────────────────
+
+function VariableReference({ trigger }: { trigger: TriggerKey | null }) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+  const vars = trigger ? TRIGGER_VARIABLES[trigger] : [];
+  if (!trigger || vars.length === 0) return null;
+
+  const copy = async (token: string) => {
+    try {
+      await navigator.clipboard.writeText(token);
+    } catch {
+      // clipboard may be blocked — silent fallback
+    }
+    setCopied(token);
+    setTimeout(() => setCopied((c) => (c === token ? null : c)), 2000);
+  };
+
+  return (
+    <div className="rounded-lg p-3" style={{ background: "var(--app-bg-secondary)", border: "1px solid var(--app-border)" }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="font-body text-xs theme-text-secondary hover:text-brand-gold transition-colors"
+        type="button"
+      >
+        {open ? "▾" : "▸"} Available variables for {TRIGGER_LABELS[trigger]}
+        <span className="ml-2 text-[var(--app-text-faint)]">({vars.length})</span>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-2">
+          <p className="font-body text-[11px] theme-text-muted leading-relaxed">
+            Click a chip to copy its token. Use in action text (e.g. Notification message,
+            Deal note, Email recipient) — the engine replaces it with the real value at fire time.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {vars.map((v) => (
+              <button
+                key={v.token}
+                onClick={() => copy(v.token)}
+                title={`${v.description}${v.example ? ` — e.g. ${v.example}` : ""}`}
+                className={`font-mono text-[11px] px-2 py-1 rounded border transition-colors ${
+                  copied === v.token
+                    ? "bg-green-500/15 border-green-500/40 text-green-400"
+                    : "bg-[var(--app-input-bg)] border-[var(--app-border)] text-brand-gold hover:border-brand-gold/40"
+                }`}
+                type="button"
+              >
+                {copied === v.token ? "Copied!" : v.token}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Email template picker (dropdown of live templates + custom fallback) ─────
+
+interface EmailTemplateKey { key: string; name: string; category: string | null }
+
+function EmailTemplatePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [templates, setTemplates] = useState<EmailTemplateKey[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [customMode, setCustomMode] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/email-templates/keys")
+      .then((r) => (r.ok ? r.json() : { templates: [] }))
+      .then((d) => {
+        const list = Array.isArray(d.templates) ? d.templates : [];
+        setTemplates(list);
+        setLoaded(true);
+        // If the saved value isn't one of the known keys, flip into custom
+        // mode so the admin can still see + edit it.
+        if (value && !list.some((t: EmailTemplateKey) => t.key === value)) {
+          setCustomMode(true);
+        }
+      })
+      .catch(() => setLoaded(true));
+  }, [value]);
+
+  if (customMode) {
+    return (
+      <div className="flex gap-2 items-center">
+        <input
+          placeholder="Custom template key"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 rounded px-2 py-1.5 font-body text-sm theme-input font-mono"
+        />
+        <button
+          type="button"
+          onClick={() => { setCustomMode(false); onChange(""); }}
+          className="font-body text-[11px] theme-text-muted hover:text-brand-gold transition-colors"
+        >
+          Use list
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => {
+        if (e.target.value === "__custom__") { setCustomMode(true); onChange(""); return; }
+        onChange(e.target.value);
+      }}
+      className="w-full rounded px-2 py-1.5 font-body text-sm theme-input"
+    >
+      <option value="">{loaded ? "Select a template…" : "Loading templates…"}</option>
+      {templates.map((t) => (
+        <option key={t.key} value={t.key}>
+          {t.name}{t.category ? ` — ${t.category}` : ""}
+        </option>
+      ))}
+      <option value="__custom__">Custom key…</option>
+    </select>
+  );
+}
+
 function ActionEditor({
   actions,
   onChange,
+  trigger,
 }: {
   actions: ActionConfig[];
   onChange: (a: ActionConfig[]) => void;
+  trigger: TriggerKey | null;
 }) {
   function addAction() {
     onChange([...actions, { type: "webhook.post", config: { url: "" } }]);
@@ -93,12 +227,16 @@ function ActionEditor({
 
   return (
     <div className="space-y-3">
+      {/* Variable reference — visible across all actions, based on the parent trigger */}
+      <VariableReference trigger={trigger} />
+
       {actions.map((a, i) => (
         <div key={i} className="rounded-lg p-3 space-y-2" style={{ border: "1px solid var(--app-border)", background: "var(--app-bg-secondary)" }}>
           <div className="flex items-center gap-2">
             <select
               value={a.type}
               onChange={(e) => updateType(i, e.target.value as ActionType)}
+              title={ACTION_DESCRIPTIONS[a.type]}
               className="flex-1 rounded px-2 py-1.5 font-body text-sm theme-input"
             >
               {ACTION_TYPES.map((t) => (
@@ -112,6 +250,9 @@ function ActionEditor({
             >
               Remove
             </button>
+          </div>
+          <div className="font-body text-[11px] theme-text-faint leading-snug">
+            {ACTION_DESCRIPTIONS[a.type]}
           </div>
 
           {a.type === "webhook.post" && (
@@ -163,14 +304,12 @@ function ActionEditor({
 
           {a.type === "email.send" && (
             <>
-              <input
-                placeholder="Email template key (e.g. commission_paid)"
+              <EmailTemplatePicker
                 value={a.config.template || ""}
-                onChange={(e) => updateConfig(i, "template", e.target.value)}
-                className="w-full rounded px-2 py-1.5 font-body text-sm theme-input"
+                onChange={(v) => updateConfig(i, "template", v)}
               />
               <input
-                placeholder="Recipient email"
+                placeholder="Recipient email (literal or {deal.clientEmail})"
                 value={a.config.recipientEmail || ""}
                 onChange={(e) => updateConfig(i, "recipientEmail", e.target.value)}
                 className="w-full rounded px-2 py-1.5 font-body text-sm theme-input"
@@ -280,11 +419,19 @@ function WorkflowPanel({
 
           <div>
             <label className="block font-body text-xs theme-text-muted mb-1">Trigger *</label>
-            <select value={trigger} onChange={(e) => setTrigger(e.target.value as TriggerKey)} className="w-full rounded px-3 py-2 font-body text-sm theme-input">
+            <select
+              value={trigger}
+              onChange={(e) => setTrigger(e.target.value as TriggerKey)}
+              title={TRIGGER_DESCRIPTIONS[trigger as TriggerKey]}
+              className="w-full rounded px-3 py-2 font-body text-sm theme-input"
+            >
               {TRIGGER_KEYS.map((k) => (
                 <option key={k} value={k}>{TRIGGER_LABELS[k]}</option>
               ))}
             </select>
+            <div className="mt-1 font-body text-[11px] theme-text-faint leading-snug">
+              {TRIGGER_DESCRIPTIONS[trigger as TriggerKey]}
+            </div>
           </div>
 
           {trigger === "deal.stage_changed" && (
@@ -347,7 +494,7 @@ function WorkflowPanel({
 
           <div>
             <label className="block font-body text-xs theme-text-muted mb-2">Actions *</label>
-            <ActionEditor actions={actions} onChange={setActions} />
+            <ActionEditor actions={actions} onChange={setActions} trigger={trigger} />
           </div>
 
           <div className="flex items-center gap-2">
@@ -469,7 +616,9 @@ function SourcePanel({
 
           <div>
             <label className="block font-body text-xs theme-text-muted mb-2">Actions (on incoming request)</label>
-            <ActionEditor actions={actions} onChange={setActions} />
+            {/* WebhookSource has no Fintella trigger; payload shape is arbitrary, so
+                no variable reference is rendered. */}
+            <ActionEditor actions={actions} onChange={setActions} trigger={null} />
           </div>
 
           <div className="flex items-center gap-2">
@@ -883,16 +1032,85 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 ];
 
 export default function WorkflowsPanel() {
+  const { data: session } = useSession();
+  const isSuperAdmin = (session?.user as any)?.role === "super_admin";
   const [tab, setTab] = useState<Tab>("automations");
+  const [showHelp, setShowHelp] = useState(false);
+
+  // Non-super_admin fallback — the /api/admin/workflows* routes already 403
+  // these roles; this keeps the UI honest instead of showing them a broken
+  // configure-anything surface.
+  if (!isSuperAdmin) {
+    return (
+      <div>
+        <div className="mb-6">
+          <h2 className="font-display text-2xl font-bold mb-1">Workflows &amp; Automations</h2>
+          <p className="font-body text-sm theme-text-muted">
+            Super admins only.
+          </p>
+        </div>
+        <div className="card p-6 max-w-2xl">
+          <div className="font-body text-sm text-[var(--app-text-secondary)] leading-relaxed">
+            Automations are restricted to the <strong>super_admin</strong> role because
+            they can fire emails, notifications, and outbound HTTP requests on behalf of
+            the firm. If you need an automation configured, ask a super admin.
+          </div>
+          <div className="font-body text-sm text-[var(--app-text-secondary)] leading-relaxed mt-3">
+            If you're looking to edit an existing email template, head to{" "}
+            <strong>Communications → Email → Templates</strong> instead — that surface is
+            available to all admin roles.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold mb-1">Workflows & Automations</h2>
-        <p className="font-body text-sm theme-text-muted">
-          Trigger actions automatically based on Fintella events, or configure incoming webhook endpoints.
-        </p>
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-display text-2xl font-bold mb-1">Workflows &amp; Automations</h2>
+          <p className="font-body text-sm theme-text-muted">
+            Trigger actions automatically based on Fintella events, or configure incoming webhook endpoints.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowHelp((v) => !v)}
+          className="font-body text-xs px-3 py-1.5 rounded-lg border border-[var(--app-border)] theme-text-muted hover:theme-text-secondary transition-colors shrink-0"
+        >
+          {showHelp ? "Hide help" : "How it works"}
+        </button>
       </div>
+
+      {/* How it works — collapsible */}
+      {showHelp && (
+        <div className="mb-6 p-4 rounded-xl bg-brand-gold/[0.04] border border-brand-gold/20 text-sm font-body text-[var(--app-text-secondary)] leading-relaxed space-y-3">
+          <div>
+            <strong className="text-brand-gold">Automations</strong> fire when something happens in Fintella.
+            Pick a <em>trigger</em> (e.g., a deal moves to Closed Won), optionally add <em>conditions</em>
+            {" "}(e.g., only if the refund is over $100K), and one or more <em>actions</em> (email, deal note,
+            notification, webhook POST). Variables like <code className="text-brand-gold">{"{deal.dealName}"}</code>
+            {" "}in action text are replaced with real values at fire time.
+          </div>
+          <div>
+            <strong className="text-brand-gold">Incoming Sources</strong> are the reverse: external systems POST
+            to a Fintella URL (<code>/api/webhook/&lt;slug&gt;</code>) and trigger actions here.
+          </div>
+          <div className="p-3 rounded-lg bg-[var(--app-input-bg)] border border-[var(--app-border)]">
+            <strong className="text-[var(--app-text)]">Lifecycle emails are separate.</strong> The 8 built-in
+            email templates (welcome, agreement signed, deal status update, commission paid, password reset, etc.)
+            are already fired automatically by hardcoded lifecycle code paths — they do <em>not</em> need an
+            Automation row. Use Automations for <em>additional</em> custom flows on top of those. To edit built-in
+            template copy, go to Communications → Email → Templates.
+          </div>
+          <div>
+            <strong className="text-brand-gold">Variable syntax:</strong> condition <code>field</code> paths use
+            dot notation (<code>deal.stage</code>). Action text and email body variables use{" "}
+            <code>{"{path}"}</code> or <code>{"{{path}}"}</code>. Available variables depend on the selected
+            trigger — expand the "Show available variables" panel inside an automation editor.
+          </div>
+        </div>
+      )}
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 p-1 rounded-xl" style={{ background: "var(--app-bg-secondary)", border: "1px solid var(--app-border)" }}>

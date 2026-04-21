@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import EmailInboxTabImpl from "./EmailInboxTabImpl";
 import EmailComposeTabImpl from "./EmailComposeTabImpl";
 import EmailTemplatesTabImpl from "./EmailTemplatesTabImpl";
@@ -14,11 +15,14 @@ import ChannelsListPanel from "../channels/ChannelsListPanel";
 type Tab = "email" | "sms" | "phone" | "automations" | "team-chat" | "channels";
 type EmailView = "inbox" | "compose" | "templates";
 
-const TABS: { id: Tab; label: string }[] = [
+// Automations is super_admin-only — the /api/admin/workflows* routes enforce
+// this, and filtering the pill here keeps other admin roles from seeing a
+// configure-anything UI that silently 403s on every save.
+const ALL_TABS: { id: Tab; label: string; superAdminOnly?: boolean }[] = [
   { id: "email",       label: "Email" },
   { id: "sms",         label: "SMS" },
   { id: "phone",       label: "Phone" },
-  { id: "automations", label: "Automations" },
+  { id: "automations", label: "Automations", superAdminOnly: true },
   { id: "team-chat",   label: "Team Chat" },
   { id: "channels",    label: "Channels" },
 ];
@@ -39,8 +43,12 @@ const EMAIL_VIEWS: { id: EmailView; label: string }[] = [
 function CommunicationsHostInner() {
   const params = useSearchParams();
   const router = useRouter();
+  const { data: session } = useSession();
+  const isSuperAdmin = (session?.user as any)?.role === "super_admin";
   const urlTab = params?.get("tab");
   const urlView = params?.get("view");
+
+  const TABS = ALL_TABS.filter((t) => !t.superAdminOnly || isSuperAdmin);
 
   const [tab, setTab] = useState<Tab>((TABS.some((t) => t.id === urlTab) ? urlTab : "email") as Tab);
   const [emailView, setEmailView] = useState<EmailView>((EMAIL_VIEWS.some((v) => v.id === urlView) ? urlView : "inbox") as EmailView);

@@ -53,6 +53,98 @@ export const ACTION_LABELS: Record<ActionType, string> = {
   "email.send":           "Send Email",
 };
 
+// ─── Descriptions (surfaced as tooltips in the admin Automations editor) ──────
+
+export const TRIGGER_DESCRIPTIONS: Record<TriggerKey, string> = {
+  "deal.created":       "Fires when a new deal is created — typically from Frost Law's POST to /api/webhook/referral.",
+  "deal.stage_changed": "Fires whenever a deal's internal stage moves (e.g. new_lead → consultation_booked).",
+  "deal.closed_won":    "Fires the moment a deal's stage flips to closedwon.",
+  "deal.closed_lost":   "Fires the moment a deal's stage flips to closedlost.",
+  "partner.created":    "Fires when a new partner account is created (reserved — call site not yet wired).",
+  "partner.activated":  "Fires when a partner's partnership agreement is countersigned and the account flips to active.",
+  "commission.created": "Fires when a CommissionLedger row is first written (reserved — call site not yet wired).",
+  "commission.paid":    "Fires when a commission row is marked paid during payout batch processing.",
+};
+
+export const ACTION_DESCRIPTIONS: Record<ActionType, string> = {
+  "webhook.post":        "POSTs a JSON payload of the trigger event to an external URL you specify.",
+  "notification.create": "Creates an in-portal bell notification for an admin or a partner.",
+  "deal.note":           "Appends a note to the deal referenced by the trigger payload.",
+  "email.send":          "Sends a SendGrid email using one of the Email Templates, with variables interpolated.",
+};
+
+// ─── Variable reference (per-trigger available merge fields) ──────────────────
+// These are the payload keys exposed to conditions + action configs when a
+// workflow fires. Shape is derived from `fireWorkflowTrigger` call sites; keep
+// in sync when new trigger call sites add fields to the payload.
+//
+// Tokens are shown in the admin UI as click-to-copy chips. The engine uses
+// dot-notation for condition `field` paths (e.g. `deal.stage`) and `{path}` /
+// `{{path}}` for string interpolation in action message + email bodies.
+
+export interface TriggerVariable {
+  token: string;       // exactly what gets inserted into an action field
+  description: string; // one-liner the admin sees in the chip tooltip
+  example?: string;    // sample rendered value
+}
+
+export const TRIGGER_VARIABLES: Record<TriggerKey, TriggerVariable[]> = {
+  "deal.created": [
+    { token: "{deal.dealName}",              description: "Deal name",                              example: "ACME Corp — Tariff Refund" },
+    { token: "{deal.partnerCode}",           description: "Submitting partner's code",              example: "PTNJD8K3F" },
+    { token: "{deal.clientName}",            description: "Client display name",                    example: "Jane Doe" },
+    { token: "{deal.clientEmail}",           description: "Client email",                           example: "jane@acme.com" },
+    { token: "{deal.stage}",                 description: "Internal stage",                         example: "new_lead" },
+    { token: "{deal.estimatedRefundAmount}", description: "Estimated refund (number)",              example: "250000" },
+    { token: "{deal.epLevel1}",              description: "Enterprise Partner's internal L1 code (from utm_medium)", example: "EA-ACME-042" },
+  ],
+  "deal.stage_changed": [
+    { token: "{deal.dealName}",    description: "Deal name",                  example: "ACME Corp — Tariff Refund" },
+    { token: "{deal.stage}",       description: "New internal stage (same as newStage)", example: "consultation_booked" },
+    { token: "{previousStage}",    description: "Internal stage before the change",      example: "new_lead" },
+    { token: "{newStage}",         description: "Internal stage after the change",       example: "consultation_booked" },
+    { token: "{deal.partnerCode}", description: "Submitting partner's code",             example: "PTNJD8K3F" },
+    { token: "{deal.clientName}",  description: "Client display name",                   example: "Jane Doe" },
+  ],
+  "deal.closed_won": [
+    { token: "{deal.dealName}",              description: "Deal name",                 example: "ACME Corp — Tariff Refund" },
+    { token: "{deal.partnerCode}",           description: "Submitting partner's code", example: "PTNJD8K3F" },
+    { token: "{deal.firmFeeAmount}",         description: "Firm fee (number)",         example: "50000" },
+    { token: "{deal.actualRefundAmount}",    description: "Actual refund received",    example: "250000" },
+    { token: "{deal.l1CommissionAmount}",    description: "L1 commission (number)",    example: "12500" },
+  ],
+  "deal.closed_lost": [
+    { token: "{deal.dealName}",         description: "Deal name",                 example: "ACME Corp — Tariff Refund" },
+    { token: "{deal.partnerCode}",      description: "Submitting partner's code", example: "PTNJD8K3F" },
+    { token: "{deal.closedLostReason}", description: "Reason the deal was lost",  example: "disqualified" },
+  ],
+  "partner.created": [
+    { token: "{partner.partnerCode}", description: "Partner's code",      example: "PTNJD8K3F" },
+    { token: "{partner.firstName}",   description: "First name",          example: "Jane" },
+    { token: "{partner.lastName}",    description: "Last name",           example: "Doe" },
+    { token: "{partner.email}",       description: "Email address",       example: "jane@firm.com" },
+    { token: "{partner.tier}",        description: "Tier (l1 / l2 / l3)", example: "l1" },
+  ],
+  "partner.activated": [
+    { token: "{partner.partnerCode}",    description: "Partner's code",     example: "PTNJD8K3F" },
+    { token: "{partner.firstName}",      description: "First name",         example: "Jane" },
+    { token: "{partner.lastName}",       description: "Last name",          example: "Doe" },
+    { token: "{partner.email}",          description: "Email address",      example: "jane@firm.com" },
+    { token: "{partner.commissionRate}", description: "Commission rate (decimal, e.g. 0.25 = 25%)", example: "0.25" },
+  ],
+  "commission.created": [
+    { token: "{commission.partnerCode}", description: "Recipient partner code",       example: "PTNJD8K3F" },
+    { token: "{commission.tier}",        description: "Tier (l1 / l2 / l3)",          example: "l1" },
+    { token: "{commission.amount}",      description: "Commission amount (number)",   example: "12500" },
+    { token: "{commission.dealName}",    description: "Source deal name",             example: "ACME Corp — Tariff Refund" },
+  ],
+  "commission.paid": [
+    { token: "{batch.id}",         description: "Payout batch id",                    example: "cln12ab34" },
+    { token: "{batch.createdAt}",  description: "Batch creation timestamp",           example: "2026-04-21T14:05:00Z" },
+    { token: "{entries}",          description: "Array of paid entries (advanced — use in webhook.post JSON, not plain-text)", example: "[…]" },
+  ],
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface WorkflowCondition {
