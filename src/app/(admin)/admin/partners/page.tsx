@@ -418,9 +418,18 @@ export default function AdminPartnersPage() {
               {(() => {
                 const r = resolvedInviteRate();
                 if (r == null) return null;
+                // Downline ceiling is the firm's 25% cap. For standard L1 rates
+                // the practical max is L1 - 5% (leaves room for L1's override);
+                // for custom L1 rates above 25% we clamp at 25% so downline
+                // partners still can't exceed the firm-wide cap.
+                const downlineMax = r > 0.25 ? 0.25 : r - 0.05;
+                const fmt = (n: number) => {
+                  const pct = n * 100;
+                  return pct % 1 === 0 ? `${pct.toFixed(0)}%` : `${pct.toFixed(1)}%`;
+                };
                 return (
                   <div className="mt-3 p-3 rounded-lg bg-brand-gold/5 border border-brand-gold/20 font-body text-[12px] theme-text-muted">
-                    At <strong className="text-brand-gold">{(r * 100).toFixed(r * 100 % 1 === 0 ? 0 : 1)}%</strong>, this partner can offer their recruits rates from <strong>5%</strong> up to <strong>{((r - 0.05) * 100).toFixed((r - 0.05) * 100 % 1 === 0 ? 0 : 1)}%</strong>.
+                    At <strong className="text-brand-gold">{fmt(r)}</strong>, this partner can offer their recruits rates from <strong>5%</strong> up to <strong>{fmt(downlineMax)}</strong>.
                     {inviteRateMode === "custom" && (
                       <div className="mt-1.5 text-[11px] theme-text-faint">
                         Custom rate — uses the 25% agreement template with rate interpolation via the SignWell <code>commission_rate_percent</code> / <code>commission_rate_text</code> api_ids.
