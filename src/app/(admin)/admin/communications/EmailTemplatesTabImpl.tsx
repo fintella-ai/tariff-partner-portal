@@ -35,7 +35,8 @@ export default function EmailTemplatesTabImpl() {
 
   // Templates sub-tab — splits live (wired) from drafts (placeholders) so
   // super admins can see at a glance which templates are actually firing.
-  const [templatesSubTab, setTemplatesSubTab] = useState<"live" | "drafts">("live");
+  const [templatesSubTab, setTemplatesSubTab] = useState<"live" | "disabled" | "drafts">("live");
+  const [templatesCategory, setTemplatesCategory] = useState<string>("all");
 
   // Edit modal state — null means modal closed
   const [editingTpl, setEditingTpl] = useState<Template | null>(null);
@@ -270,25 +271,28 @@ export default function EmailTemplatesTabImpl() {
         </div>
       )}
 
-      {/* Live / Drafts sub-tabs */}
+      {/* Live / Disabled / Drafts sub-tabs */}
       {!templatesLoading && (
-        <div className="flex gap-1 mb-4 border-b border-[var(--app-border)]">
-          {(["live", "drafts"] as const).map((sub) => {
+        <div className="flex gap-1 mb-3 border-b border-[var(--app-border)]">
+          {(["live", "disabled", "drafts"] as const).map((sub) => {
             const count =
               sub === "live"
-                ? templates.filter((t) => !t.isDraft).length
+                ? templates.filter((t) => !t.isDraft && t.enabled).length
+                : sub === "disabled"
+                ? templates.filter((t) => !t.isDraft && !t.enabled).length
                 : templates.filter((t) => t.isDraft).length;
+            const label = sub === "live" ? "Live" : sub === "disabled" ? "Disabled" : "Drafts";
             return (
               <button
                 key={sub}
-                onClick={() => setTemplatesSubTab(sub)}
+                onClick={() => { setTemplatesSubTab(sub); setTemplatesCategory("all"); }}
                 className={`font-body text-[13px] px-4 py-2.5 transition-colors border-b-2 -mb-px ${
                   templatesSubTab === sub
                     ? "text-brand-gold border-brand-gold"
                     : "text-[var(--app-text-muted)] border-transparent hover:text-[var(--app-text-secondary)]"
                 }`}
               >
-                {sub === "live" ? "Live" : "Drafts"}{" "}
+                {label}{" "}
                 <span className="text-[10px] text-[var(--app-text-faint)]">({count})</span>
               </button>
             );
@@ -296,11 +300,62 @@ export default function EmailTemplatesTabImpl() {
         </div>
       )}
 
+      {/* Category filter chips */}
+      {!templatesLoading && (() => {
+        const statusFiltered = templates.filter((t) =>
+          templatesSubTab === "live"
+            ? !t.isDraft && t.enabled
+            : templatesSubTab === "disabled"
+            ? !t.isDraft && !t.enabled
+            : t.isDraft
+        );
+        const categories = Array.from(new Set(statusFiltered.map((t) => t.category).filter(Boolean))).sort();
+        if (categories.length === 0) return null;
+        return (
+          <div className="flex gap-2 mb-4 flex-wrap">
+            <button
+              onClick={() => setTemplatesCategory("all")}
+              className={`text-[11px] px-3 py-1.5 rounded-full border transition-colors ${
+                templatesCategory === "all"
+                  ? "bg-brand-gold/15 text-brand-gold border-brand-gold/40"
+                  : "text-[var(--app-text-muted)] border-[var(--app-border)] hover:text-[var(--app-text-secondary)]"
+              }`}
+            >
+              All <span className="text-[10px] opacity-70">({statusFiltered.length})</span>
+            </button>
+            {categories.map((cat) => {
+              const count = statusFiltered.filter((t) => t.category === cat).length;
+              const active = templatesCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setTemplatesCategory(cat)}
+                  className={`text-[11px] px-3 py-1.5 rounded-full border transition-colors ${
+                    active
+                      ? "bg-brand-gold/15 text-brand-gold border-brand-gold/40"
+                      : "text-[var(--app-text-muted)] border-[var(--app-border)] hover:text-[var(--app-text-secondary)]"
+                  }`}
+                >
+                  {cat} <span className="text-[10px] opacity-70">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* Template cards */}
       {!templatesLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {templates
-            .filter((t) => (templatesSubTab === "live" ? !t.isDraft : t.isDraft))
+            .filter((t) =>
+              templatesSubTab === "live"
+                ? !t.isDraft && t.enabled
+                : templatesSubTab === "disabled"
+                ? !t.isDraft && !t.enabled
+                : t.isDraft
+            )
+            .filter((t) => templatesCategory === "all" || t.category === templatesCategory)
             .map((t) => (
             <div key={t.id} className="card p-5">
               <div className="flex items-start justify-between mb-2 gap-2">
