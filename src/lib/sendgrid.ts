@@ -916,8 +916,10 @@ export async function sendMonthlyNewsletterToAllPartners(): Promise<{
 
 /**
  * Password-reset email — fired by POST /api/auth/forgot-password.
- * Single-use link with a 1-hour TTL. Kept deliberately terse/hardcoded
- * (no EmailTemplate row) so a DB mishap can't silently break recovery.
+ * Single-use link with a 1-hour TTL. Looks up the `password_reset`
+ * template from EmailTemplate so admins can edit copy; falls back to
+ * a hardcoded body if the row is missing or disabled so a DB mishap
+ * can never silently break recovery.
  */
 export async function sendPasswordResetEmail(opts: {
   email: string;
@@ -926,6 +928,42 @@ export async function sendPasswordResetEmail(opts: {
   role: "partner" | "admin";
 }): Promise<SendEmailResult> {
   const displayName = opts.name?.trim() || "there";
+  const firstName = opts.name?.trim().split(/\s+/)[0] || "there";
+  const vars: Record<string, string> = {
+    firstName,
+    fullName: displayName,
+    resetUrl: opts.resetUrl,
+    role: opts.role,
+    roleLabel: opts.role === "admin" ? "admin" : "partner",
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+    portalUrl: PORTAL_URL,
+  };
+
+  const tpl = await loadTemplate("password_reset");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || "Reset password",
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : opts.resetUrl,
+    });
+    return sendEmail({
+      to: opts.email,
+      toName: opts.name || undefined,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "password_reset",
+      replyTo: tpl.replyTo || undefined,
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
   const heading = "Reset your password";
   const bodyHtml = `
     <p>Hi ${escapeHtml(displayName)},</p>

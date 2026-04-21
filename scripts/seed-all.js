@@ -462,6 +462,40 @@ async function main() {
         "portalUrl",
       ]),
     },
+    {
+      key: "password_reset",
+      name: "Password Reset Link",
+      category: "Account Security",
+      subject: "Reset your Fintella password",
+      preheader: "Reset your Fintella password — link expires in 1 hour.",
+      heading: "Reset your password",
+      bodyHtml:
+        "<p>Hi {firstName},</p>" +
+        "<p>We received a request to reset the password for your {roleLabel} account at {firmShort}.</p>" +
+        "<p>Click the button below to choose a new password. This link expires in <strong>1 hour</strong> and can only be used once.</p>" +
+        "<p style=\"color:#6b7280;font-size:13px;\">If you didn't request this, you can safely ignore this email — your password won't change.</p>",
+      bodyText:
+        "Hi {firstName},\n\n" +
+        "We received a request to reset the password for your {roleLabel} account at {firmShort}.\n\n" +
+        "Open this link to choose a new password (expires in 1 hour, single-use):\n{resetUrl}\n\n" +
+        "If you didn't request this, you can safely ignore this email — your password won't change.",
+      ctaLabel: "Reset password",
+      ctaUrl: "{resetUrl}",
+      enabled: true,
+      isDraft: false,
+      description:
+        "Fires from /api/auth/forgot-password whenever a partner or admin submits their email on the Forgot Password page. Token is a single-use 32-byte hex with a 1-hour TTL. If this template is disabled or missing, sendPasswordResetEmail falls back to a hardcoded body so recovery never silently breaks.",
+      variables: JSON.stringify([
+        "firstName",
+        "fullName",
+        "resetUrl",
+        "role",
+        "roleLabel",
+        "firmShort",
+        "firmName",
+        "portalUrl",
+      ]),
+    },
   ];
 
   for (const t of emailTemplates) {
@@ -471,7 +505,7 @@ async function main() {
       create: t,
     });
   }
-  console.log("✓ " + emailTemplates.length + " email templates seeded (all 7 wired)");
+  console.log("✓ " + emailTemplates.length + " email templates seeded (all wired)");
 
   // Backfill: existing production rows that were seeded as drafts before
   // the wiring PR need their isDraft flag flipped off. Upsert update:{} is
