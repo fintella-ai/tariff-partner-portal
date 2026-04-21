@@ -100,8 +100,8 @@ export default function PhoneTabImpl() {
                   : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]";
               return (
                 <tr key={c.id} className="border-b border-[var(--app-border-subtle)] hover:bg-[var(--app-hover)] transition">
-                  <td className="px-4 py-3 text-[var(--app-text-secondary)] whitespace-nowrap">{fmtDateTime(c.createdAt)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 text-center text-[var(--app-text-secondary)] whitespace-nowrap">{fmtDateTime(c.createdAt)}</td>
+                  <td className="px-4 py-3 text-center">
                     {c.partnerId ? (
                       <PartnerLink partnerId={c.partnerId} className="text-[var(--app-text)] font-medium">
                         {c.partnerName || "—"}
@@ -113,12 +113,12 @@ export default function PhoneTabImpl() {
                       <div className="text-[11px] text-[var(--app-text-muted)]">{c.partnerCompany}</div>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono text-[12px] text-[var(--app-text-secondary)]">{c.toPhone || "—"}</td>
-                  <td className="px-4 py-3 text-[12px] text-[var(--app-text-muted)]">
+                  <td className="px-4 py-3 text-center font-mono text-[12px] text-[var(--app-text-secondary)]">{c.toPhone || "—"}</td>
+                  <td className="px-4 py-3 text-center text-[12px] text-[var(--app-text-muted)]">
                     {c.initiatedByName || c.initiatedByEmail || "—"}
                   </td>
-                  <td className="px-4 py-3 font-mono text-[12px]">{fmtDuration(c.durationSeconds)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 text-center font-mono text-[12px]">{fmtDuration(c.durationSeconds)}</td>
+                  <td className="px-4 py-3 text-center">
                     <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge}`}>
                       {c.status || "—"}
                     </span>
