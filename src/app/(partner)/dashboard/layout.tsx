@@ -419,8 +419,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div
         className="fixed z-[902] flex items-center gap-2"
         style={{
-          top: "20px",
-          right: "24px",
+          top: "calc(20px + var(--safe-top))",
+          right: "calc(24px + var(--safe-right))",
         }}
       >
         <a
