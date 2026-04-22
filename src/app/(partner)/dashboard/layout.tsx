@@ -572,38 +572,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </>
           )}
 
-          <div className="flex flex-col items-center text-center">
-            <div className="flex flex-col items-center">
-              <div className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1">
-                Welcome back
-              </div>
-              <h1 className={`font-display ${device.headingSize} font-bold mb-1`}>
-                {user?.name || "Partner"}
-              </h1>
-              <div className="flex gap-2 sm:gap-4 items-center flex-wrap justify-center">
-                <span className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px]">
-                  Code: <strong className="text-brand-gold">{partnerCode}</strong>
-                </span>
-                <span className="font-body text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 rounded-full px-2.5 py-0.5">
-                  Active
-                </span>
-                {!device.isMobile && (
-                  <span className="font-body text-[10px] text-[var(--app-text-faint)]">
-                    {device.os !== "unknown" && `${device.os.toUpperCase()}`}
-                    {device.width > 0 && ` · ${device.width}×${device.height}`}
+          {/* Full-bleed dark header strip sits flush against the outer padding
+              so the welcome band reads as a distinct colored row above the divider. */}
+          <div className="-mx-4 sm:-mx-10 lg:-mx-24 px-4 sm:px-10 lg:px-24 pt-4 pb-5 bg-[var(--app-header-bg)]">
+            <div className="flex flex-col items-center text-center">
+              <div className="flex flex-col items-center">
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1">
+                  Welcome back
+                </div>
+                <h1 className={`font-display ${device.headingSize} font-bold mb-1`}>
+                  {user?.name || "Partner"}
+                </h1>
+                <div className="flex gap-2 sm:gap-4 items-center flex-wrap justify-center">
+                  <span className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px]">
+                    Code: <strong className="text-brand-gold">{partnerCode}</strong>
                   </span>
-                )}
+                  <span className="font-body text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 rounded-full px-2.5 py-0.5">
+                    Active
+                  </span>
+                  {!device.isMobile && (
+                    <span className="font-body text-[10px] text-[var(--app-text-faint)]">
+                      {device.os !== "unknown" && `${device.os.toUpperCase()}`}
+                      {device.width > 0 && ` · ${device.width}×${device.height}`}
+                    </span>
+                  )}
+                </div>
+                <p className="font-body text-[13px] text-[var(--app-text-muted)] mt-2">
+                  {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                </p>
               </div>
-              <p className="font-body text-[13px] text-[var(--app-text-muted)] mt-2">
-                {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-              </p>
             </div>
           </div>
-          {/* Full-bleed divider below the header — breaks out of the content padding. */}
-          <div className="-mx-4 sm:-mx-10 lg:-mx-24 border-b border-[var(--app-border)] mt-5" />
+          {/* Full-bleed divider below the dark header strip. */}
+          <div className="-mx-4 sm:-mx-10 lg:-mx-24 border-b border-[var(--app-border)]" />
         </div>
 
-        {children}
+        {/* Partner page bodies inherit centered text alignment so titles,
+            descriptions, buttons, and data all center by default — matches
+            the home-screen treatment. Individual pages can still override
+            with explicit text-left where a layout demands it. */}
+        <div className="text-center">
+          {children}
+        </div>
 
         {/* ── FOOTER ──
             Sits below the page body on every partner dashboard route.

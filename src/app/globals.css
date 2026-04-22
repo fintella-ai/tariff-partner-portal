@@ -21,6 +21,9 @@
   /* Light mode (default) — high contrast */
   --app-bg: #e4e6ed;
   --app-bg-secondary: #f8f9fb;
+  /* Page header strip — sits above the full-bleed divider. One shade
+     darker than --app-bg so the welcome block reads as a distinct band. */
+  --app-header-bg: #cfd3dd;
   --app-text: #0f172a;
   --app-text-secondary: #1f2937;
   --app-text-muted: #4b5563;
@@ -54,6 +57,9 @@
 [data-theme="dark"] {
   --app-bg: #0c1221;
   --app-bg-secondary: #111828;
+  /* Page header strip — one shade darker than --app-bg for the
+     welcome band above the full-bleed divider. */
+  --app-header-bg: #070c18;
   --app-text: rgba(255, 255, 255, 0.95);
   --app-text-secondary: rgba(255, 255, 255, 0.75);
   --app-text-muted: rgba(255, 255, 255, 0.55);
