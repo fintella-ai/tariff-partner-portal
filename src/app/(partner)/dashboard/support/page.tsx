@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useDevice } from "@/lib/useDevice";
 import { FIRM_PHONE, TICKET_CATEGORIES } from "@/lib/constants";
+import PageTabBar from "@/components/ui/PageTabBar";
 
 type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
 
@@ -205,6 +206,14 @@ export default function SupportPage() {
 
   return (
     <div>
+
+      <PageTabBar
+        title="Partner Support"
+        tabs={[
+          { label: "PartnerOS AI", href: "/dashboard/ai-assistant" },
+          { label: "Support Tickets", href: "/dashboard/support" },
+        ]}
+      />
       <div className="flex justify-between items-start mb-6">
         <div>
           <h2 className={`font-display ${device.isMobile ? "text-lg" : "text-[22px]"} font-bold mb-1.5`}>

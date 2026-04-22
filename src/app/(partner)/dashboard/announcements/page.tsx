@@ -4,6 +4,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import AnnouncementCard from "@/components/ui/AnnouncementCard";
+import PageTabBar from "@/components/ui/PageTabBar";
 
 type ChannelMessage = {
   id: string;
@@ -148,6 +149,16 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+
+      <PageTabBar
+        title="Communications"
+        tabs={[
+          { label: "Live Weekly Call", href: "/dashboard/conference" },
+          { label: "Announcements", href: "/dashboard/announcements" },
+          { label: "Messages", href: "/dashboard/messages" },
+          { label: "Notifications", href: "/dashboard/notifications" },
+        ]}
+      />
       <h1 className="text-2xl font-semibold">📣 Announcements</h1>
       {error && <div className="text-sm text-red-500">{error}</div>}
       {loading && <div className="text-sm opacity-70">Loading…</div>}
