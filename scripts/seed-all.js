@@ -516,6 +516,74 @@ async function main() {
     data: { isDraft: false },
   });
 
+  // ── SMS Templates (Phase 17c) ─────────────────────────────────────────
+  // Mirrors the four hardcoded SMS send helpers in src/lib/twilio.ts.
+  // All seed rows start `enabled: false` — Twilio A2P 10DLC approval is
+  // pending, so flipping these on would be premature. Admin enables each
+  // template from the Communications Hub → SMS → Templates tab after
+  // A2P lands.
+  const smsTemplates = [
+    {
+      key: "welcome",
+      name: "Welcome",
+      category: "Onboarding",
+      body: "Fintella: Welcome {firstName}! Your partner code is {partnerCode}. Watch your email for the partnership agreement. Reply STOP to opt out.",
+      enabled: false,
+      isDraft: false,
+      description: "Fired on partner signup, alongside the welcome email. Skipped if no mobile or smsOptIn=false.",
+      variables: JSON.stringify(["firstName", "partnerCode"]),
+    },
+    {
+      key: "agreement_ready",
+      name: "Agreement Ready to Sign",
+      category: "Onboarding",
+      body: "Fintella: Hi {firstName}, your partnership agreement is ready to sign. Check your email or log in at fintella.partners. Reply STOP to opt out.",
+      enabled: false,
+      isDraft: false,
+      description: "Fired right after the SignWell document is sent.",
+      variables: JSON.stringify(["firstName"]),
+    },
+    {
+      key: "agreement_signed",
+      name: "Agreement Signed — Account Active",
+      category: "Onboarding",
+      body: "Fintella: {firstName}, your agreement is signed and your partner account is now active. Log in at fintella.partners to start submitting clients.",
+      enabled: false,
+      isDraft: false,
+      description: "Fired from the SignWell webhook on document_completed. Confirms activation.",
+      variables: JSON.stringify(["firstName"]),
+    },
+    {
+      key: "signup_notification",
+      name: "Downline Recruit Signed Up",
+      category: "Recruitment",
+      body: "Fintella: Hi {firstName}, {recruitName} just joined your downline as {recruitTier} at {ratePct}%. Upload their signed agreement at fintella.partners/dashboard/downline.",
+      enabled: false,
+      isDraft: false,
+      description: "L1 inviter notification — fires when a recruit they invited completes signup.",
+      variables: JSON.stringify(["firstName", "recruitName", "recruitTier", "ratePct"]),
+    },
+    {
+      key: "opt_in_request",
+      name: "Opt-In Request (Bulk)",
+      category: "Opt-In",
+      body: "Fintella: Hi {firstName}, opt in to partner SMS for deal + commission updates? Reply YES to opt in, STOP to decline. Msg&data rates may apply.",
+      enabled: false,
+      isDraft: false,
+      description: "Sent manually via the bulk opt-in request button on the SMS → Inbox tab. Replying YES flips Partner.smsOptIn = true.",
+      variables: JSON.stringify(["firstName"]),
+    },
+  ];
+
+  for (const t of smsTemplates) {
+    await prisma.smsTemplate.upsert({
+      where: { key: t.key },
+      update: {}, // never overwrite admin edits — flip enabled from the UI
+      create: t,
+    });
+  }
+  console.log("✓ " + smsTemplates.length + " SMS templates seeded (all disabled pending A2P)");
+
   // ── Portal Settings ───────────────────────────────────────────────────
   await prisma.portalSettings.upsert({
     where: { id: "global" },

@@ -53,13 +53,6 @@ export type Template = {
   updatedAt: string;
 };
 
-export type SmsPartner = {
-  id: string;
-  name: string;
-  phone: string;
-  optInDate: string;
-  messagesSent: number;
-};
 
 /* ------------------------------------------------------------------ */
 /*  Shared constants                                                   */
@@ -81,27 +74,4 @@ export const categoryBadge: Record<string, string> = {
   Promotions: "bg-pink-500/20 text-pink-400",
 };
 
-export const demoSmsPartners: SmsPartner[] = [
-  {
-    id: "SMS-001",
-    name: "Sarah Chen",
-    phone: "(4**) ***-**47",
-    optInDate: "2026-01-15",
-    messagesSent: 12,
-  },
-  {
-    id: "SMS-002",
-    name: "Mike Torres",
-    phone: "(3**) ***-**19",
-    optInDate: "2026-02-03",
-    messagesSent: 8,
-  },
-  {
-    id: "SMS-003",
-    name: "Lisa Park",
-    phone: "(7**) ***-**82",
-    optInDate: "2026-02-20",
-    messagesSent: 5,
-  },
-];
 

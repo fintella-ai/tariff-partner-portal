@@ -826,6 +826,33 @@ model InboundEmail {
 // (STOP / START / other), distinguished by the `direction` field. Inbound
 // rows trigger Partner.smsOptIn flips at the route level; this table is
 // the single source of truth for both directions of SMS traffic.
+// ─── SMS TEMPLATE (Phase 17c) ────────────────────────────────────────────────
+// Counterpart to EmailTemplate — admin-editable bodies for the four hardcoded
+// transactional SMS kinds (welcome / agreement_ready / agreement_signed /
+// signup_notification). Each send helper in src/lib/twilio.ts tries this
+// table first; when a row is missing, disabled, or the DB lookup throws,
+// the helper falls back to the hardcoded body so partner-facing flows never
+// break on a template-table outage.
+//
+// Default enabled=false for every row while Twilio A2P 10DLC approval is
+// still pending. Flip to enabled=true per-template after A2P lands.
+model SmsTemplate {
+  id          String   @id @default(cuid())
+  key         String   @unique  // welcome / agreement_ready / ...
+  name        String
+  category    String   // Onboarding / Deal Updates / Commissions / Recruitment / Opt-In
+  body        String   // plain text — keep under ~140 chars for single GSM-7 segment
+  enabled     Boolean  @default(false)
+  isDraft     Boolean  @default(false)
+  description String?
+  variables   String?  // JSON-stringified array of {token, description} — display in editor
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+  @@index([category])
+}
+
 model SmsLog {
   id                String   @id @default(cuid())
   partnerCode       String?  // nullable so we can log sends to recipients without a partner record

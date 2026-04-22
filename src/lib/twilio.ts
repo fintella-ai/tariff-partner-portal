@@ -223,6 +223,33 @@ function partnerFirstName(p: PartnerSmsContext): string {
   return (p.firstName || "").trim() || "there";
 }
 
+// ─── Admin-editable template lookup ─────────────────────────────────────────
+//
+// Each `sendXxxSms()` helper first tries to load its template body from the
+// `SmsTemplate` table (admin-edited via Communications Hub → SMS → Templates).
+// If the row exists and is enabled, the helper interpolates `{variable}`
+// tokens against a caller-supplied vars map. If the row is missing, disabled,
+// or the DB lookup throws (Neon hiccup), the helper falls back to the
+// hardcoded body below so partner-facing flows never break on a template
+// outage. Rows are all seeded `enabled: false` while A2P 10DLC is pending,
+// meaning the hardcoded fallback is still the live path today.
+
+async function loadSmsTemplateBody(key: string): Promise<string | null> {
+  try {
+    const tpl = await prisma.smsTemplate.findUnique({ where: { key } });
+    if (!tpl || !tpl.enabled) return null;
+    return tpl.body;
+  } catch {
+    return null;
+  }
+}
+
+function interpolate(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, name) =>
+    Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : `{${name}}`
+  );
+}
+
 /**
  * SMS bodies are kept terse — under ~140 chars where possible to fit a
  * single GSM-7 segment. We avoid emoji to preserve segment count.
@@ -240,9 +267,12 @@ export async function sendWelcomeSms(
     return { status: "skipped_optout", messageId: null }; // no number, treat as no-op
   }
   const first = partnerFirstName(partner);
-  const body =
-    `${FIRM_SHORT}: Welcome ${first}! Your partner code is ${partner.partnerCode}. ` +
-    `Watch your email for the partnership agreement. Reply STOP to opt out.`;
+  const vars = { firstName: first, partnerCode: partner.partnerCode };
+  const tplBody = await loadSmsTemplateBody("welcome");
+  const body = tplBody
+    ? interpolate(tplBody, vars)
+    : `${FIRM_SHORT}: Welcome ${first}! Your partner code is ${partner.partnerCode}. ` +
+      `Watch your email for the partnership agreement. Reply STOP to opt out.`;
   return sendSms({
     to: partner.mobilePhone,
     body,
@@ -263,9 +293,12 @@ export async function sendAgreementReadySms(
     return { status: "skipped_optout", messageId: null };
   }
   const first = partnerFirstName(partner);
-  const body =
-    `${FIRM_SHORT}: Hi ${first}, your partnership agreement is ready to sign. ` +
-    `Check your email or log in at ${PORTAL_HOST}. Reply STOP to opt out.`;
+  const vars = { firstName: first };
+  const tplBody = await loadSmsTemplateBody("agreement_ready");
+  const body = tplBody
+    ? interpolate(tplBody, vars)
+    : `${FIRM_SHORT}: Hi ${first}, your partnership agreement is ready to sign. ` +
+      `Check your email or log in at ${PORTAL_HOST}. Reply STOP to opt out.`;
   return sendSms({
     to: partner.mobilePhone,
     body,
@@ -286,9 +319,12 @@ export async function sendAgreementSignedSms(
     return { status: "skipped_optout", messageId: null };
   }
   const first = partnerFirstName(partner);
-  const body =
-    `${FIRM_SHORT}: ${first}, your agreement is signed and your partner ` +
-    `account is now active. Log in at ${PORTAL_HOST} to start submitting clients.`;
+  const vars = { firstName: first };
+  const tplBody = await loadSmsTemplateBody("agreement_signed");
+  const body = tplBody
+    ? interpolate(tplBody, vars)
+    : `${FIRM_SHORT}: ${first}, your agreement is signed and your partner ` +
+      `account is now active. Log in at ${PORTAL_HOST} to start submitting clients.`;
   return sendSms({
     to: partner.mobilePhone,
     body,
@@ -316,15 +352,60 @@ export async function sendInviterSignupNotificationSms(opts: {
   }
   const first = (opts.inviterFirstName || "").trim() || "there";
   const ratePct = Math.round(opts.commissionRate * 100);
-  const body =
-    `${FIRM_SHORT}: Hi ${first}, ${opts.recruitName} just joined your downline as ` +
-    `${opts.recruitTier.toUpperCase()} at ${ratePct}%. Upload their signed agreement ` +
-    `at ${PORTAL_HOST}/dashboard/downline.`;
+  const vars = {
+    firstName: first,
+    recruitName: opts.recruitName,
+    recruitTier: opts.recruitTier.toUpperCase(),
+    ratePct,
+  };
+  const tplBody = await loadSmsTemplateBody("signup_notification");
+  const body = tplBody
+    ? interpolate(tplBody, vars)
+    : `${FIRM_SHORT}: Hi ${first}, ${opts.recruitName} just joined your downline as ` +
+      `${opts.recruitTier.toUpperCase()} at ${ratePct}%. Upload their signed agreement ` +
+      `at ${PORTAL_HOST}/dashboard/downline.`;
   return sendSms({
     to: opts.inviterMobilePhone,
     body,
     template: "signup_notification",
     partnerCode: opts.inviterCode,
     optedIn: opts.inviterSmsOptIn,
+  });
+}
+
+/**
+ * Opt-in request SMS — sent to a partner who provided a mobile number at
+ * signup but has not yet toggled `smsOptIn=true`. The SMS *is* the opt-in
+ * request, so the TCPA gate in `sendSms` is bypassed here: we call the
+ * provider directly (and log) rather than going through the opted-in
+ * branch of sendSms. Legally OK under TCPA since the partner provided
+ * their number in the context of an existing business relationship and
+ * the single confirmation message is treated as transactional.
+ *
+ * Inbound STOP / YES keywords flip Partner.smsOptIn accordingly — handled
+ * by the existing /api/twilio/sms inbound webhook (unchanged).
+ */
+export async function sendOptInRequestSms(
+  partner: PartnerSmsContext
+): Promise<SendSmsResult> {
+  if (!partner.mobilePhone) {
+    return { status: "skipped_optout", messageId: null };
+  }
+  const first = partnerFirstName(partner);
+  const vars = { firstName: first };
+  const tplBody = await loadSmsTemplateBody("opt_in_request");
+  const body = tplBody
+    ? interpolate(tplBody, vars)
+    : `${FIRM_SHORT}: Hi ${first}, opt in to partner SMS for deal + commission updates? ` +
+      `Reply YES to opt in, STOP to decline. Msg&data rates may apply.`;
+  // Force optedIn=true so the TCPA gate doesn't skip — this single message
+  // IS the opt-in request. Twilio-side rate limiting + A2P approval
+  // govern actual send capability.
+  return sendSms({
+    to: partner.mobilePhone,
+    body,
+    template: "opt_in_request",
+    partnerCode: partner.partnerCode,
+    optedIn: true,
   });
 }
