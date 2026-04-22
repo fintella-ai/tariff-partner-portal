@@ -115,7 +115,7 @@ export default function MentionInput({ value, onChange, onSubmit, placeholder = 
         className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-xl px-4 py-3 text-[var(--app-text)] font-body text-[13px] outline-none focus:border-brand-gold/30 transition-colors placeholder:text-[var(--app-text-muted)] resize-none"
       />
       {popover && list.length > 0 && (
-        <div className="absolute bottom-full mb-2 left-0 w-full max-w-[320px] bg-[var(--app-bg-secondary)] border border-[var(--app-border)] rounded-xl shadow-xl shadow-black/30 overflow-hidden z-10">
+        <div className="absolute bottom-full mb-2 left-0 w-full max-w-[320px] bg-[var(--app-popover-bg)] border border-[var(--app-border)] rounded-xl shadow-xl shadow-black/30 overflow-hidden z-10">
           {list.map((item: any, i: number) => (
             <button
               key={popover.type === "admin" ? item.email : item.id}

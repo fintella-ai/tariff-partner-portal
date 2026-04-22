@@ -107,7 +107,7 @@ export default function CountryCodeSelect({ selectedCode, onChange }: Props) {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-[min(240px,85vw)] max-h-[240px] overflow-y-auto rounded-lg shadow-xl z-50" style={{ background: "var(--app-bg-secondary)", border: "1px solid var(--app-border)" }}>
+        <div className="absolute top-full left-0 mt-1 w-[min(240px,85vw)] max-h-[240px] overflow-y-auto rounded-lg shadow-xl z-50" style={{ background: "var(--app-popover-bg)", border: "1px solid var(--app-border)" }}>
           {COUNTRIES.map((c) => (
             <button
               key={c.code}

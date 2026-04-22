@@ -186,7 +186,7 @@ export default function NotificationBell({ draggable = false }: { draggable?: bo
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-[340px] max-h-[420px] bg-[var(--app-bg-secondary)] border border-[var(--app-border)] rounded-xl shadow-2xl shadow-black/30 z-[1000] overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-[340px] max-h-[420px] bg-[var(--app-popover-bg)] border border-[var(--app-border)] rounded-xl shadow-2xl shadow-black/30 z-[1000] overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)]">
             <div className="font-body text-sm font-semibold text-[var(--app-text)]">
               Notifications {unreadCount > 0 && <span className="text-brand-gold">({unreadCount})</span>}

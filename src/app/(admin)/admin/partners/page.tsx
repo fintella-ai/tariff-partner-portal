@@ -85,6 +85,7 @@ export default function AdminPartnersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<TabType>("all");
+  const [levelFilter, setLevelFilter] = useState<"all" | "l1" | "l2" | "l3">("all");
   const [showForm, setShowForm] = useState(false);
 
   // Add partner form
@@ -317,7 +318,8 @@ export default function AdminPartnersPage() {
   const filteredPartners = (activeTab === "all" || activeTab === "invited"
     ? partners
     : partners.filter((p) => p.status === activeTab)
-  ).slice().sort((a, b) => {
+  ).filter((p) => levelFilter === "all" ? true : (p.tier || "l1") === levelFilter)
+   .slice().sort((a, b) => {
     let va: string, vb: string;
     if (sortCol === "name") { va = `${a.firstName} ${a.lastName}`.toLowerCase(); vb = `${b.firstName} ${b.lastName}`.toLowerCase(); }
     else if (sortCol === "code") { va = a.partnerCode; vb = b.partnerCode; }
@@ -561,6 +563,39 @@ export default function AdminPartnersPage() {
           </button>
         ))}
       </div>
+
+      {/* Level filter chips — only meaningful for partner rows, not invites */}
+      {activeTab !== "invited" && (() => {
+        const byStatus = activeTab === "all"
+          ? partners
+          : partners.filter((p) => p.status === activeTab);
+        const countByLevel = (k: "l1" | "l2" | "l3") =>
+          byStatus.filter((p) => (p.tier || "l1") === k).length;
+        const chips: { key: "all" | "l1" | "l2" | "l3"; label: string; count: number }[] = [
+          { key: "all", label: "All levels", count: byStatus.length },
+          { key: "l1", label: "L1", count: countByLevel("l1") },
+          { key: "l2", label: "L2", count: countByLevel("l2") },
+          { key: "l3", label: "L3", count: countByLevel("l3") },
+        ];
+        return (
+          <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1">
+            {chips.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => setLevelFilter(c.key)}
+                className={`shrink-0 px-3 rounded-full font-body text-[11px] font-medium transition-colors min-h-[32px] flex items-center gap-1.5 ${
+                  levelFilter === c.key
+                    ? "bg-brand-gold/20 text-brand-gold border border-brand-gold/40"
+                    : "border border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
+                }`}
+              >
+                <span>{c.label}</span>
+                <span className="font-mono text-[10px] opacity-70">{c.count}</span>
+              </button>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Search */}
       <div className="mb-4">
