@@ -1,15 +1,57 @@
 # Session State
 
-🕒 Last updated: 2026-04-22 (late) — Payout Downline Partners feature shipped end-to-end (#368). Plus DealNote star-admin parity (#365) earlier in the session.
+🕒 Last updated: 2026-04-22 (end of day) — 13 PRs shipped. Payout Downline Partners feature end-to-end, full commission-system sync overhaul, Revenue tab + Payouts tab context columns, Enterprise Partner override redesign, deal-delete cascade, webhook automations expanded, and two big architectural queues for tomorrow.
 
 ## 🌿 Git state
-- **main HEAD:** `e7fb23f` — feat: Payout Downline Partners — full implementation (#368)
+- **main HEAD:** `dedff72` — fix(deals/payouts): cascade-delete ledger on Deal delete + hide orphans (#378)
 - **origin/main HEAD:** same, in sync
-- **Open non-dependabot PRs:** 0 (#357 still DRAFT, don't merge; #367 closed as superseded by #368)
+- **Open non-dependabot PRs:** 0 (#357 still DRAFT, don't merge; #367 closed as superseded by #368; #379 closed — skipping in favor of email-workflow migration)
 - **Working tree:** clean
 - **Active branch:** main
 
-## ✅ This session (2026-04-22) — 4 PRs shipped
+## ✅ This session (2026-04-22) — 13 PRs shipped
+
+**Late-session commission + admin UX surgery (from #370 onwards, all tied to exercising PDP on prod):**
+- **#378** fix(deals/payouts): cascade-delete ledger on Deal delete + hide orphans — kills stale Pending rows after deal deletion, refuses delete if any ledger is already paid.
+- **#377** feat(enterprise-partner): flat override rate replaces total-cap model — EP earns `firmFee × overrideRate` flat, not `max(0, totalRate - l1Rate)`. 2% override now sensibly totals 22/27/30% across L1s at 20/25/28%.
+- **#376** feat(admin/payouts): add Refund/Fee %/Firm Fee/Comm % columns to payout table — each ledger row shows its tier's true rate (L2 at 25%, L1 override at 5%).
+- **#375** feat(workflows): Deal Created full payload variables + webhook.post body template — 7 → 23 variables, headers editor, JSON body template with {token} substitution.
+- **#374** feat(admin/deals): undo Mark Payment Received from the Paid badge — split pill with clickable Undo, all 4 admin roles, refuses on already-paid rows.
+- **#373** fix(admin/deals): sync form status state after Mark Payment Received + L3 parity — fixes stale-form-state bug where status dropdowns clobbered server-side flip.
+- **#372** fix(admin/revenue): per-deal commission rates + l3 in sums + stage-aware refunds — drops static 25% assumption, adds L3 to all sums, table now shows per-deal Comm %.
+- **#371** fix(deals): stage-aware refund + resolver-driven firm fee across API + UI — actual refund overrides estimated when closed_won; webhook persists derived firmFeeAmount.
+- **#370** feat(commission): Deal.l3CommissionAmount snapshot + waterfall-based writes — Deal snapshots now mirror true waterfall in both modes, not just ledger entries.
+
+**Earlier in the day:**
+- **#369** chore(session): checkpoint 2026-04-22 — PDP shipped (#368)
+- **#368** feat: Payout Downline Partners — per-L1 lock-at-invite toggle. 14 plan tasks executed via 7 bundled subagents. All 4 existing L1s grandfathered to Disabled.
+- **#366** chore(session): checkpoint for DealNote star-admin parity
+- **#365** feat(admin/deals): ⭐ star super admin can edit/delete deal notes
+
+## 🚫 Closed without merging (context for future)
+- **#367** docs: PDP spec + plan — superseded by #368 which bundled both
+- **#379** fix(cron/newsletter): three-gate hard-disable — skipped, SendGrid queue flush not a code bug; email-workflow migration supersedes
+
+## 🎯 Queued for tomorrow (top of stack)
+
+1. **Email templates → workflow actions** (see `project_fintella_email_workflow_migration` memory). John wants email sends to flow through workflow triggers the same way SMS sends do (#358/#360). Start with brainstorming skill. Keep `password_reset` hardcoded (security). 7 other sends to migrate.
+
+2. **Contabo VPS / MinIO bootstrap** (see `project_fintella_minio_vps_plan` memory). Still queued from earlier. Unblocks PR #357.
+
+3. **Remaining flagged items:**
+   - Live Weekly column formatting + resizable columns
+   - Notification bell mentions rollup (verify #293 plumbing first)
+   - HTTP method selector on webhook.post for PATCH updates
+   - PR #357 multi-file note attachments (blocked on MinIO bootstrap)
+
+## ⚠️ Post-deploy watchlist from today
+
+- **Commission flow is round-trippable end-to-end** — Mark Payment Received ↔ Undo, statuses sync across Deal form + Payouts tab, every tier accounted for in snapshots and ledger.
+- **EP override model flipped** — admins creating enterprise partners after this deploy enter "Override Rate" (e.g. 2), not a total cap. Zero existing EPs in prod so no migration.
+- **Deal deletion now cascades** — ledger + notes + chat threads go with the deal. Refuses on any paid ledger row.
+- **Monthly newsletter is Disabled in admin UI** AND the code path honors that correctly. John got 7 emails today from SendGrid queue-flush, not our code. Decision: rearchitect email sends via workflows instead of hardening the cron (#379 closed).
+
+## ✅ Previous session (2026-04-22 earlier) — 4 PRs shipped
 - **#368** feat: Payout Downline Partners — per-L1 lock-at-invite toggle that switches Fintella between two commission-payout models. Enabled = Fintella sends SignWell to L2/L3 at signup + pays them directly (waterfall). Disabled (default) = Fintella pays L1 full rate, L1 pays downline privately. Additive schema, new `buildLedgerEntries` pure helper with 8/8 unit tests, SignWell auto-dispatch in signup flow mirroring admin/agreement route, admin invite/add-directly checkboxes role-gated to super_admin/admin/partner_support, admin profile read-only state row, partner Reporting surfaces (Enabled badge, Disabled Downline Accounting subsection, L2/L3 paid-by-upline note). 14 plan tasks executed via 7 bundled subagent dispatches. All 4 existing L1s grandfathered to Disabled.
 - **#367** docs: Payout Downline Partners spec + plan. **CLOSED** — superseded by #368 which included both docs and code.
 - **#366** chore(session): checkpoint for DealNote star-admin parity
