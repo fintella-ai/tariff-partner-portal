@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useResizableColumns } from "@/components/ui/ResizableTable";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { fmtDate, fmtPhone, normalizePhone } from "@/lib/format";
 import LevelTag from "@/components/ui/LevelTag";
 
@@ -71,6 +72,10 @@ const inviteStatusBadge: Record<string, string> = {
 };
 
 export default function AdminPartnersPage() {
+  const { data: session } = useSession();
+  const canSetPayoutDownline = ["super_admin", "admin", "partner_support"].includes(
+    (session?.user as any)?.role || ""
+  );
   const router = useRouter();
   // 9 columns: Partner, Level, Code, Phone, Email, Status, W9, Joined, Action
   // Bumped storageKey so anyone with a persisted 8-col width map doesn't see
@@ -110,6 +115,7 @@ export default function AdminPartnersPage() {
   const [inviteRate, setInviteRate] = useState<number | "">(0.25);
   const [inviteRateMode, setInviteRateMode] = useState<"standard" | "custom">("standard");
   const [inviteCustomPct, setInviteCustomPct] = useState<string>("");
+  const [invitePayoutDownlineEnabled, setInvitePayoutDownlineEnabled] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [inviteResult, setInviteResult] = useState<{ signupUrl: string } | null>(null);
   const [inviteSending, setInviteSending] = useState(false);
@@ -194,7 +200,7 @@ export default function AdminPartnersPage() {
       const res = await fetch("/api/admin/invites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail.trim(), firstName: inviteFirst.trim(), lastName: inviteLast.trim(), commissionRate: rate }),
+        body: JSON.stringify({ email: inviteEmail.trim(), firstName: inviteFirst.trim(), lastName: inviteLast.trim(), commissionRate: rate, payoutDownlineEnabled: invitePayoutDownlineEnabled }),
       });
       const data = await res.json();
       if (!res.ok) { setInviteError(data.error || "Failed to send invite"); return; }
@@ -211,6 +217,7 @@ export default function AdminPartnersPage() {
     setShowInvite(false);
     setInviteEmail(""); setInviteFirst(""); setInviteLast(""); setInviteRate(0.25);
     setInviteRateMode("standard"); setInviteCustomPct("");
+    setInvitePayoutDownlineEnabled(false);
     setInviteError(""); setInviteResult(null);
   };
 
@@ -465,6 +472,23 @@ export default function AdminPartnersPage() {
                   </div>
                 );
               })()}
+              {canSetPayoutDownline && (
+                <div className="mt-3 flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    id="invitePayoutDownline"
+                    checked={invitePayoutDownlineEnabled}
+                    onChange={(e) => setInvitePayoutDownlineEnabled(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-[var(--app-border)] bg-[var(--app-input-bg)] accent-brand-gold cursor-pointer"
+                  />
+                  <label htmlFor="invitePayoutDownline" className="font-body text-[12px] text-[var(--app-text-secondary)] cursor-pointer">
+                    <span className="font-semibold">Enable Payout Downline Partners</span>
+                    <span className="block text-[11px] text-[var(--app-text-muted)] mt-0.5">
+                      If enabled, Fintella sends SignWell agreements directly to this L1&apos;s L2 and L3 downline at signup and pays them commissions directly. If disabled (default), this L1 is paid the full commission rate for all downline deals and is responsible for paying their downline themselves.
+                    </span>
+                  </label>
+                </div>
+              )}
               <div className="flex gap-3 mt-4">
                 <button onClick={handleInvite} disabled={inviteSending} className="btn-gold text-[12px] px-5 min-h-[44px] disabled:opacity-50">{inviteSending ? "Sending..." : "Send Invite"}</button>
                 <button onClick={resetInvite} className="font-body text-[12px] theme-text-muted border border-[var(--app-border)] rounded-lg px-5 min-h-[44px] hover:theme-text-secondary transition-colors">Cancel</button>
