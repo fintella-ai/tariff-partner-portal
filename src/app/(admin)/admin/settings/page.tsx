@@ -95,6 +95,7 @@ interface Announcement {
   date: string;
   badge: string;
   badgeColor: string;
+  highlighted?: boolean;
 }
 
 interface UpcomingEvent {
@@ -103,6 +104,7 @@ interface UpcomingEvent {
   body: string;
   date: string;
   cta: string;
+  highlighted?: boolean;
 }
 
 interface ReferralOpp {
@@ -545,12 +547,12 @@ export default function SettingsPage() {
 
   // ── Announcement CRUD ─────────────────────────────────────────────────
 
-  const updateAnnouncement = (idx: number, field: keyof Announcement, value: string) => {
+  const updateAnnouncement = (idx: number, field: keyof Announcement, value: string | boolean) => {
     setAnnouncements((prev) => prev.map((a, i) => i === idx ? { ...a, [field]: value } : a));
   };
 
   const addAnnouncement = () => {
-    setAnnouncements((prev) => [...prev, { title: "", body: "", date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }), badge: "New", badgeColor: "green" }]);
+    setAnnouncements((prev) => [...prev, { title: "", body: "", date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }), badge: "New", badgeColor: "green", highlighted: false }]);
   };
 
   const removeAnnouncement = (idx: number) => {
@@ -559,12 +561,12 @@ export default function SettingsPage() {
 
   // ── Event CRUD ────────────────────────────────────────────────────────
 
-  const updateEvent = (idx: number, field: keyof UpcomingEvent, value: string) => {
+  const updateEvent = (idx: number, field: keyof UpcomingEvent, value: string | boolean) => {
     setUpcomingEvents((prev) => prev.map((e, i) => i === idx ? { ...e, [field]: value } : e));
   };
 
   const addEvent = () => {
-    setUpcomingEvents((prev) => [...prev, { icon: "📅", title: "", body: "", date: "", cta: "Join" }]);
+    setUpcomingEvents((prev) => [...prev, { icon: "📅", title: "", body: "", date: "", cta: "Join", highlighted: false }]);
   };
 
   const removeEvent = (idx: number) => {
@@ -1173,6 +1175,10 @@ export default function SettingsPage() {
                   onChange={(e) => updateAnnouncement(idx, "body", e.target.value)}
                   placeholder="Announcement body text"
                 />
+                <label className="flex items-center gap-2 mt-3 cursor-pointer">
+                  <input type="checkbox" checked={!!ann.highlighted} onChange={(e) => updateAnnouncement(idx, "highlighted", e.target.checked)} className="accent-brand-gold" />
+                  <span className="font-body text-[12px] text-[var(--app-text-secondary)]">Highlighted (featured card)</span>
+                </label>
               </div>
             ))}
           </div>
@@ -1199,6 +1205,10 @@ export default function SettingsPage() {
                   <textarea className={`${inputClass} resize-none`} rows={2} value={ev.body} onChange={(e) => updateEvent(idx, "body", e.target.value)} placeholder="Event description" />
                   <input className={inputClass} value={ev.cta} onChange={(e) => updateEvent(idx, "cta", e.target.value)} placeholder="Button text" />
                 </div>
+                <label className="flex items-center gap-2 mt-3 cursor-pointer">
+                  <input type="checkbox" checked={!!ev.highlighted} onChange={(e) => updateEvent(idx, "highlighted", e.target.checked)} className="accent-brand-gold" />
+                  <span className="font-body text-[12px] text-[var(--app-text-secondary)]">Highlighted (featured card)</span>
+                </label>
               </div>
             ))}
           </div>
