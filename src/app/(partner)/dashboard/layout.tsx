@@ -34,7 +34,6 @@ const MAIN_NAV: Array<{
   { id: "reporting", href: "/dashboard/reporting", icon: "📈", label: "Full Reporting", shortLabel: "Reports" },
   { id: "downline", href: "/dashboard/downline", icon: "👥", label: "Downline", shortLabel: "Team" },
   { id: "referral-links", href: "/dashboard/referral-links", icon: "🔗", label: "Referral Links", shortLabel: "Links" },
-  { id: "documents", href: "/dashboard/documents", icon: "📁", label: "Documents", shortLabel: "Docs" },
   {
     id: "communications",
     href: "/dashboard/conference",
@@ -51,7 +50,7 @@ const MAIN_NAV: Array<{
   {
     id: "partner-support",
     href: "/dashboard/ai-assistant",
-    icon: "🎧",
+    icon: "🙋",
     label: "Partner Support",
     shortLabel: "Help",
     activePaths: ["/dashboard/ai-assistant", "/dashboard/support"],

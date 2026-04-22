@@ -56,14 +56,16 @@ const ALL_NAV_ITEMS = [
   { id: "reporting", label: "Full Reporting", icon: "📈" },
   { id: "downline", label: "Downline", icon: "👥" },
   { id: "referral-links", label: "Referral Links", icon: "🔗" },
-  { id: "documents", label: "Documents", icon: "📁" },
+  // Documents used to be a standalone sidebar item — it now lives as
+  // the rightmost tab inside Full Reporting. Removed from the editor
+  // so admins can't accidentally promote it back to the sidebar.
   // Consolidated groupings — each hosts several pages as tabs on its
   // landing route. The 5 previously-independent IDs (support, announcements,
   // messages, conference, ai-assistant) are replaced by these two. The
   // reconcile-on-load logic in this page silently drops the stale IDs
   // from any existing saved navOrder and appends these two at the tail.
   { id: "communications", label: "Communications", icon: "💬" },
-  { id: "partner-support", label: "Partner Support", icon: "🎧" },
+  { id: "partner-support", label: "Partner Support", icon: "🙋" },
   { id: "feature-request", label: "Feature Requests", icon: "💡" },
 ];
 
