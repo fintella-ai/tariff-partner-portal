@@ -1,15 +1,38 @@
 # Session State
 
-🕒 Last updated: 2026-04-20 — launch checklist + FINTELLA_LIVE_MODE seed guard shipped; portal ready for Phase 0/1 go-live sequence when John is ready
+🕒 Last updated: 2026-04-21 — SMS structure overhaul, ⭐ Star Super Admin tier, modal opacity audit. John heading home, resuming later/tomorrow.
 
 ## 🌿 Git state
-- **main HEAD:** `af01427` — feat(launch): FINTELLA_LIVE_MODE flag + refreshed launch checklist (#311)
+- **main HEAD:** `c38ec97` — fix(admin/communications): make Email Inbox preview modal opaque (#363)
 - **origin/main HEAD:** same, in sync
 - **Open non-dependabot PRs:** 0
-- **Open dependabot PRs:** 5 (#287–#291)
 - **Working tree:** clean
+- **Active branch:** main
 
-## ✅ This session (2026-04-20)
+## ✅ This session (2026-04-21) — 8 PRs shipped
+- **#363** fix(admin/communications): Email Inbox preview modal opacity — bleed-through audit complete, no remaining offenders
+- **#362** fix(admin/users): Edit Admin User modal opacity — `.card` was 4% alpha in dark mode
+- **#361** feat: ⭐ Star Super Admin tier — email-gated on `admin@fintella.partners`, new `src/lib/starSuperAdmin.ts`. Exclusive: edit any admin user (name/email/role/password) + edit/delete admin notes. Password UX is reset-and-reveal-on-save (bcrypt stays one-way, NO plaintext retrieval).
+- **#360** feat(sms): SMS Log sub-tab at end of SMS tab order + All/Unread/Replied drill-down. `sms.sent`/`sms.received`/`sms.opt_in`/`sms.opt_out` triggers + `sms.send` action wired into workflow engine.
+- **#359** ui(admin): Automations moved from Communications Hub to Development page
+- **#358** feat(sms): Communications → SMS restructured into Inbox/Compose/Templates sub-tabs mirroring Email. New `SmsTemplate` model (5 rows seeded `enabled: false` pending A2P). Opted-in / not-opted-in / opted-out rosters + bulk opt-in request.
+- **#357** DRAFT (don't merge) — NoteAttachment polymorphic child table for multi-file note attachments on both AdminNote + DealNote; storage-provider decision still open
+- **#356** feat(admin/partners): Admin Notes gets its own tab + optional single-file attachments
+
+## 🎯 What's next (pick up when you're back)
+- **Top pick:** Verify live on production — open Admin Users → Edit modal (should be opaque, ⭐ badge visible) and Communications → Email → Inbox preview (should be opaque)
+- Extend ⭐ star admin edit/delete to DealNotes for parity with AdminNotes
+- PR #357 multi-file note attachments — revisit storage provider (S3 vs R2 vs keep base64) when ready
+- A2P 10DLC approval watch — flip `SmsTemplate.enabled=true` per-row once TCR clears (feedback memory flags the gate)
+- Other items in `project_fintella_next_tasks` memory
+
+## 🔑 Important context preserved
+- ⭐ Star Super Admin tier (feedback_star_super_admin_tier.md) — never add password retrieval; bcrypt stays one-way
+- Modal opacity rule (feedback_modal_opaque_bg.md) — use `var(--app-bg-secondary)` + `bg-black/80 backdrop-blur-sm` for new modals, never `.card`
+- SMS templates pending A2P (feedback_sms_templates_disabled_pending_a2p.md) — don't auto-enable
+- PR #357 flagged DRAFT (project_fintella_pr357_note_attachments.md) — don't merge
+
+## ✅ Previous session (2026-04-20)
 - **#307** feat(admin): Internal Chats group — Team Chat, Channels, DM Flags moved from Communications/Partner Support into their own `/admin/internal-chats` tabbed host. 6 files, +76/-25 lines. 12 top-level nav entries.
 - **#306** feat(admin): nav consolidation — extracted 6 panel components (TeamChat, Channels, Workflows, LiveChat, SupportTickets, DmFlags), created Communications + Partner Support tabbed hosts, `reconcileNavOrder` helper with 5/5 unit tests, role matrix updated. 23 files, +4,251/-3,954 lines.
 - **#305** docs: Internal Chats spec + plan
