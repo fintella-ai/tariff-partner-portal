@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hashSync } from "bcryptjs";
+import { isStarSuperAdminEmail } from "@/lib/starSuperAdmin";
 
 /**
  * GET /api/admin/users
@@ -27,7 +28,13 @@ export async function GET() {
 
 /**
  * POST /api/admin/users
- * Create or update an admin user. Super admin only.
+ *
+ * Actions:
+ *   create          — super_admin
+ *   delete          — super_admin (plus self-delete + last-super-admin guards)
+ *   update_profile  — ⭐ star super admin only (edit name/email)
+ *   update_role     — ⭐ star super admin only
+ *   reset_password  — ⭐ star super admin only
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -36,10 +43,20 @@ export async function POST(req: NextRequest) {
   if (role !== "super_admin")
     return NextResponse.json({ error: "Only super admins can manage users" }, { status: 403 });
 
+  const sessionEmail = session.user.email || "";
+  const isStar = isStarSuperAdminEmail(sessionEmail);
+
+  // Helper used by every star-gated action so the error message is consistent.
+  const starOnly = () =>
+    NextResponse.json(
+      { error: "Only the star super admin (admin@fintella.partners) can perform this action" },
+      { status: 403 }
+    );
+
   try {
     const body = await req.json();
 
-    // Create new user
+    // Create new user — any super_admin.
     if (body.action === "create") {
       const { email, name, password, userRole } = body;
       if (!email || !password || !userRole) {
@@ -48,12 +65,14 @@ export async function POST(req: NextRequest) {
       if (password.length < 6) {
         return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
       }
-      const isMasterAdmin = session.user.email === "admin@fintella.partners";
-      const allowedRoles = isMasterAdmin
+      const allowedRoles = isStar
         ? ["super_admin", "admin", "accounting", "partner_support"]
         : ["admin", "accounting", "partner_support"];
       if (!allowedRoles.includes(userRole)) {
-        return NextResponse.json({ error: isMasterAdmin ? "Invalid role" : "Only admin@fintella.partners can assign super_admin role" }, { status: 400 });
+        return NextResponse.json(
+          { error: isStar ? "Invalid role" : "Only the star super admin can assign super_admin role" },
+          { status: 400 }
+        );
       }
 
       const existing = await prisma.user.findUnique({ where: { email } });
@@ -74,22 +93,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ user }, { status: 201 });
     }
 
-    // Update user role
+    // Update profile (name + email) — ⭐ STAR ONLY.
+    if (body.action === "update_profile") {
+      if (!isStar) return starOnly();
+      const { userId, name, email } = body;
+      if (!userId) return NextResponse.json({ error: "userId is required" }, { status: 400 });
+
+      const data: { name?: string | null; email?: string } = {};
+      if (typeof name === "string") data.name = name.trim() || null;
+      if (typeof email === "string" && email.trim()) {
+        const normalized = email.trim().toLowerCase();
+        // Reject collisions with an existing row OTHER than this user.
+        const existing = await prisma.user.findUnique({ where: { email: normalized } });
+        if (existing && existing.id !== userId) {
+          return NextResponse.json({ error: "A user with this email already exists" }, { status: 400 });
+        }
+        data.email = normalized;
+      }
+      if (Object.keys(data).length === 0) {
+        return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+      }
+
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data,
+        select: { id: true, email: true, name: true, role: true, createdAt: true },
+      });
+      return NextResponse.json({ user });
+    }
+
+    // Update user role — ⭐ STAR ONLY.
     if (body.action === "update_role") {
+      if (!isStar) return starOnly();
       const { userId, userRole } = body;
       if (!userId || !userRole) {
         return NextResponse.json({ error: "userId and userRole are required" }, { status: 400 });
       }
 
-      // Prevent changing own role
-      const currentUser = await prisma.user.findUnique({ where: { email: session.user.email! } });
+      // Prevent changing own role — star super admin can still do everything
+      // else to their own account, but flipping their own role out of
+      // super_admin would lock them out of this route entirely.
+      const currentUser = await prisma.user.findUnique({ where: { email: sessionEmail } });
       if (currentUser?.id === userId) {
         return NextResponse.json({ error: "You cannot change your own role" }, { status: 400 });
       }
 
-      // Only admin@fintella.partners can assign super_admin
-      if (userRole === "super_admin" && session.user.email !== "admin@fintella.partners") {
-        return NextResponse.json({ error: "Only admin@fintella.partners can assign super_admin role" }, { status: 400 });
+      const allowed = ["super_admin", "admin", "accounting", "partner_support"];
+      if (!allowed.includes(userRole)) {
+        return NextResponse.json({ error: "Invalid role" }, { status: 400 });
       }
 
       const user = await prisma.user.update({
@@ -101,8 +152,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ user });
     }
 
-    // Reset password
+    // Reset password — ⭐ STAR ONLY.
     if (body.action === "reset_password") {
+      if (!isStar) return starOnly();
       const { userId, password } = body;
       if (!userId || !password || password.length < 6) {
         return NextResponse.json({ error: "userId and password (min 6 chars) required" }, { status: 400 });
@@ -116,40 +168,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // Delete user
+    // Delete user — any super_admin (unchanged, kept for cleaning up orphans).
     if (body.action === "delete") {
       const { userId } = body;
       if (!userId) return NextResponse.json({ error: "userId is required" }, { status: 400 });
 
-      // Prevent deleting self — the only hard footgun guard. A super_admin
-      // CAN delete another super_admin (intentional — needed to clean up
-      // orphaned accounts like the legacy `admin@trln.com` row left over
-      // from the pre-rebrand TRLN deployment). The endpoint is already
-      // gated to `role === "super_admin"` at the top of this handler, so
-      // only super admins can reach this branch in the first place.
-      const currentUser = await prisma.user.findUnique({ where: { email: session.user.email! } });
+      const currentUser = await prisma.user.findUnique({ where: { email: sessionEmail } });
       if (currentUser?.id === userId) {
         return NextResponse.json({ error: "You cannot delete your own account" }, { status: 400 });
       }
 
-      // Last-super-admin guard: refuse to delete the final remaining
-      // super_admin in the system. Without this, an admin could lock
-      // themselves and everyone else out of the user-management surface
-      // (no super_admin would mean no one can promote a replacement).
-      // This is a tighter check than the self-delete guard above —
-      // self-delete is blocked even when other super_admins exist; this
-      // additional check blocks deletion of the LAST super_admin even
-      // when the deleter is themselves a super_admin.
+      // Last-super-admin guard.
       const target = await prisma.user.findUnique({ where: { id: userId } });
       if (target?.role === "super_admin") {
-        const superAdminCount = await prisma.user.count({
-          where: { role: "super_admin" },
-        });
+        const superAdminCount = await prisma.user.count({ where: { role: "super_admin" } });
         if (superAdminCount <= 1) {
           return NextResponse.json(
             {
               error:
-                "Cannot delete the last remaining super admin. Promote another user to super_admin first (via direct DB access — the portal UI does not allow super_admin promotion).",
+                "Cannot delete the last remaining super admin. Promote another user to super_admin first.",
             },
             { status: 400 }
           );

@@ -10,6 +10,7 @@ import SoftPhone from "@/components/ui/SoftPhone";
 import { getVisibleNav, getPermissions, ROLE_LABELS, type AdminRole } from "@/lib/permissions";
 import { useTheme } from "@/components/layout/ThemeProvider";
 import { reconcileNavOrder } from "@/lib/reconcileNavOrder";
+import { isStarSuperAdminEmail } from "@/lib/starSuperAdmin";
 
 type NavLeaf = { id: string; href: string; icon: string; label: string };
 type NavGroup = { id: string; icon: string; label: string; children: NavLeaf[] };
@@ -99,6 +100,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const user = session?.user as any;
   const userRole = (user?.role || "admin") as AdminRole;
+  const isStar = isStarSuperAdminEmail(user?.email);
   const visibleNavIds = getVisibleNav(userRole);
   const permissions = getPermissions(userRole);
 
@@ -334,8 +336,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               : (adminName || user?.name || "Admin")}
           </div>
           {!collapsed && (
-            <div className="font-body text-[11px] theme-text-muted tracking-[1px] mt-0.5">
-              {ROLE_LABELS[userRole] || "Administrator"}
+            <div className="font-body text-[11px] theme-text-muted tracking-[1px] mt-0.5 flex items-center gap-1">
+              {isStar && <span title="Star Super Admin" className="text-brand-gold">★</span>}
+              <span>{isStar ? "Star Super Admin" : ROLE_LABELS[userRole] || "Administrator"}</span>
             </div>
           )}
         </div>
@@ -429,7 +432,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 Admin Panel
               </div>
               <h1 className="font-display text-xl sm:text-2xl lg:text-[28px] font-bold mb-1">
-                {adminName || user?.name || "Administrator"} <span className="font-body text-[13px] font-normal theme-text-muted">({ROLE_LABELS[userRole] || "Admin"})</span>
+                {adminName || user?.name || "Administrator"}{" "}
+                <span className="font-body text-[13px] font-normal theme-text-muted">
+                  ({isStar && <span title="Star Super Admin" className="text-brand-gold">★ </span>}
+                  {isStar ? "Star Super Admin" : ROLE_LABELS[userRole] || "Admin"})
+                </span>
               </h1>
             </div>
             <div className="flex items-center gap-2">

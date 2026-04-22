@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 import { getPermissions } from "@/lib/permissions";
+import { isStarSuperAdminEmail } from "@/lib/starSuperAdmin";
 import CountryCodeSelect, { parseMobilePhone, buildMobilePhone } from "@/components/ui/CountryCodeSelect";
 import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
 import ComposeEmailForm from "@/components/admin/ComposeEmailForm";
@@ -69,6 +70,7 @@ const statusBadge: Record<string, string> = {
 export default function PartnerDetailPage() {
   const { data: session } = useSession();
   const isSuperAdmin = (session?.user as any)?.role === "super_admin";
+  const isStarSuperAdmin = isStarSuperAdminEmail((session?.user as any)?.email);
   const permissions = getPermissions((session?.user as any)?.role || "admin");
   const { id } = useParams();
   const router = useRouter();
@@ -91,6 +93,8 @@ export default function PartnerDetailPage() {
   const [documents, setDocuments] = useState<DocEntry[]>([]);
   const [agreement, setAgreement] = useState<Agreement | null>(null);
   const [adminNotes, setAdminNotes] = useState<any[]>([]);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteContent, setEditingNoteContent] = useState("");
   const [codeHistory, setCodeHistory] = useState<any[]>([]);
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -581,22 +585,95 @@ export default function PartnerDetailPage() {
                         {new Date(n.createdAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
                       </div>
                     </div>
-                    <button
-                      onClick={async () => {
-                        await fetch("/api/admin/notes", {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ noteId: n.id, isPinned: !n.isPinned }),
-                        });
-                        fetchPartner();
-                      }}
-                      className="font-body text-[9px] theme-text-muted hover:text-brand-gold transition-colors shrink-0"
-                    >
-                      {n.isPinned ? "Unpin" : "Pin"}
-                    </button>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <button
+                        onClick={async () => {
+                          await fetch("/api/admin/notes", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ noteId: n.id, isPinned: !n.isPinned }),
+                          });
+                          fetchPartner();
+                        }}
+                        className="font-body text-[9px] theme-text-muted hover:text-brand-gold transition-colors"
+                      >
+                        {n.isPinned ? "Unpin" : "Pin"}
+                      </button>
+                      {isStarSuperAdmin && editingNoteId !== n.id && (
+                        <button
+                          onClick={() => {
+                            setEditingNoteId(n.id);
+                            setEditingNoteContent(n.content || "");
+                          }}
+                          className="font-body text-[9px] theme-text-muted hover:text-brand-gold transition-colors"
+                          title="Edit note (★ star super admin only)"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {isStarSuperAdmin && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm("Delete this admin note? This is irreversible.")) return;
+                            const res = await fetch(`/api/admin/notes?noteId=${encodeURIComponent(n.id)}`, { method: "DELETE" });
+                            if (!res.ok) {
+                              const d = await res.json().catch(() => ({}));
+                              alert(d.error || "Failed to delete note");
+                              return;
+                            }
+                            fetchPartner();
+                          }}
+                          className="font-body text-[9px] text-red-400/60 hover:text-red-400 transition-colors"
+                          title="Delete note (★ star super admin only)"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {n.content && (
-                    <div className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed whitespace-pre-wrap">{n.content}</div>
+                  {editingNoteId === n.id ? (
+                    <div className="mt-1">
+                      <textarea
+                        value={editingNoteContent}
+                        onChange={(e) => setEditingNoteContent(e.target.value)}
+                        rows={3}
+                        className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-3 py-2 font-body text-[13px] text-[var(--app-text)] outline-none focus:border-brand-gold/40 transition-colors"
+                      />
+                      <div className="flex gap-2 mt-1.5">
+                        <button
+                          onClick={async () => {
+                            const content = editingNoteContent.trim();
+                            if (!content) return alert("Note content cannot be empty");
+                            const res = await fetch("/api/admin/notes", {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ noteId: n.id, content }),
+                            });
+                            if (!res.ok) {
+                              const d = await res.json().catch(() => ({}));
+                              alert(d.error || "Failed to save note");
+                              return;
+                            }
+                            setEditingNoteId(null);
+                            setEditingNoteContent("");
+                            fetchPartner();
+                          }}
+                          className="font-body text-[11px] text-brand-gold hover:underline"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => { setEditingNoteId(null); setEditingNoteContent(""); }}
+                          className="font-body text-[11px] theme-text-muted hover:text-[var(--app-text)]"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    n.content && (
+                      <div className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed whitespace-pre-wrap">{n.content}</div>
+                    )
                   )}
                   {atts.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
