@@ -241,22 +241,89 @@ export async function computeDealCommissions(
     }
   }
 
+  // Spec §6: resolve the top-of-chain L1's payoutDownlineEnabled. For
+  // L1-direct deals, that's the submitter. For L2/L3 deals, it's the L1
+  // we walked up to. If the chain is incomplete or the L1 is missing,
+  // default to false (Disabled — safer). Used by buildLedgerEntries to
+  // decide whether to emit waterfall rows or collapse to a single L1 row.
+  let payoutDownlineEnabled = false;
+  if (submitter.tier === "l1") {
+    payoutDownlineEnabled = (submitter as any).payoutDownlineEnabled ?? false;
+  } else {
+    const l1Node = chain.find((n) => n.tier === "l1");
+    if (l1Node) {
+      const l1Partner = await db.partner.findUnique({
+        where: { partnerCode: l1Node.partnerCode },
+        select: { payoutDownlineEnabled: true },
+      });
+      payoutDownlineEnabled = l1Partner?.payoutDownlineEnabled ?? false;
+    }
+  }
+
   const waterfall = calcWaterfallCommissions(deal.firmFeeAmount, chain);
 
-  const entries: ComputedLedgerEntry[] = [];
-  const l1Node = chain.find((n) => n.tier === "l1");
-  const l2Node = chain.find((n) => n.tier === "l2");
-  const l3Node = chain.find((n) => n.tier === "l3");
-  if (l1Node && waterfall.l1Amount > 0) {
-    entries.push({ partnerCode: l1Node.partnerCode, tier: "l1", amount: waterfall.l1Amount });
-  }
-  if (l2Node && waterfall.l2Amount > 0) {
-    entries.push({ partnerCode: l2Node.partnerCode, tier: "l2", amount: waterfall.l2Amount });
-  }
-  if (l3Node && waterfall.l3Amount > 0) {
-    entries.push({ partnerCode: l3Node.partnerCode, tier: "l3", amount: waterfall.l3Amount });
-  }
+  const entries = buildLedgerEntries(waterfall, chain, { payoutDownlineEnabled });
 
   const totalAmount = entries.reduce((s, e) => s + e.amount, 0);
   return { entries, chain, totalAmount };
+}
+
+// ─── Ledger Entry Builder ────────────────────────────────────────────────
+// Pure function that decides which ledger rows to write for a deal, based
+// on the waterfall result + chain + the top-of-chain L1's payout-downline
+// setting. Keeps the Enabled/Disabled branch out of computeDealCommissions
+// so we can unit-test it in isolation. Spec §6.
+
+export interface BuildLedgerOptions {
+  payoutDownlineEnabled: boolean;
+}
+
+/** Round to the nearest cent to eliminate IEEE-754 float artifacts from
+ *  rate subtraction (e.g. 0.25 − 0.20 = 0.04999…). All ledger dollar
+ *  amounts are stored as integers (cents × 100) so sub-cent precision
+ *  is meaningless and causes strict-equality test failures.
+ */
+function roundCents(amount: number): number {
+  return Math.round(amount * 100) / 100;
+}
+
+export function buildLedgerEntries(
+  waterfall: WaterfallResult,
+  chain: PartnerChainNode[],
+  options: BuildLedgerOptions
+): ComputedLedgerEntry[] {
+  const l1Node = chain.find((n) => n.tier === "l1");
+  const l2Node = chain.find((n) => n.tier === "l2");
+  const l3Node = chain.find((n) => n.tier === "l3");
+  const submitter = chain[0];
+
+  // Zero firm fee → no entries regardless of mode.
+  if ((waterfall.l1Amount + waterfall.l2Amount + waterfall.l3Amount) === 0) {
+    return [];
+  }
+
+  // Disabled mode: when an L2 or L3 deal runs under a Disabled L1, collapse
+  // to a single L1 row at the FULL L1 rate. The waterfall amounts always
+  // sum to L1's full assigned rate × firm fee (see calcWaterfallCommissions
+  // — totalRate is always set to L1's own rate), so summing them gives
+  // exactly what Fintella owes the L1. L1-direct deals already emit a
+  // single L1 row at full rate in both modes, so we pass them through.
+  const isDownlineDeal = submitter && submitter.tier !== "l1";
+  if (!options.payoutDownlineEnabled && isDownlineDeal && l1Node) {
+    const sum = roundCents(waterfall.l1Amount + waterfall.l2Amount + waterfall.l3Amount);
+    return [{ partnerCode: l1Node.partnerCode, tier: "l1", amount: sum }];
+  }
+
+  // Enabled mode OR L1-direct deal: emit per-tier entries as before.
+  const entries: ComputedLedgerEntry[] = [];
+  if (l1Node && waterfall.l1Amount > 0) {
+    entries.push({ partnerCode: l1Node.partnerCode, tier: "l1", amount: roundCents(waterfall.l1Amount) });
+  }
+  if (l2Node && waterfall.l2Amount > 0) {
+    entries.push({ partnerCode: l2Node.partnerCode, tier: "l2", amount: roundCents(waterfall.l2Amount) });
+  }
+  if (l3Node && waterfall.l3Amount > 0) {
+    entries.push({ partnerCode: l3Node.partnerCode, tier: "l3", amount: roundCents(waterfall.l3Amount) });
+  }
+  return entries;
 }

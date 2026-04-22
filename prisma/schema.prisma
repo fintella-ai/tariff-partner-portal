@@ -41,6 +41,8 @@ model Partner {
   recruitedViaInvite    String?  // token from RecruitmentInvite that created this partner
   // L3 recruitment flag — admin-controlled gate that lets this partner generate L3 invite links
   l3Enabled             Boolean  @default(false)
+  // Payout Downline Partners flag — controls whether Fintella pays L2/L3 downline directly (true) or the L1 receives full rate (false)
+  payoutDownlineEnabled Boolean  @default(false)
   // Communications opt-in
   emailOptIn            Boolean  @default(false)
   smsOptIn              Boolean  @default(false)
@@ -118,6 +120,7 @@ model RecruitmentInvite {
   invitedEmail      String?                 // email the admin invite was sent to (L1 only)
   invitedName       String?                 // display name for the invite email (L1 only)
   expiresAt         DateTime?
+  payoutDownlineEnabled Boolean  @default(false) // Payout Downline Partners flag — carried forward from admin's choice to the Partner row at signup
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

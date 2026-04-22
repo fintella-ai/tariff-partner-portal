@@ -102,6 +102,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const rawFlag = body.payoutDownlineEnabled === true;
+    const tierLower = String(body.tier || "").toLowerCase();
+    const payoutDownlineEnabled = rawFlag && tierLower === "l1";
+    if (payoutDownlineEnabled && role === "accounting") {
+      return NextResponse.json({ error: "accounting role cannot enable Payout Downline Partners" }, { status: 403 });
+    }
+
     // Tier + commission rate. Accept optional body fields; fall back to L1 @ 25%
     // (Prisma defaults) if the admin didn't pass them. Custom rates are allowed
     // in (0, 0.50] — same envelope as the L1 invite flow.
@@ -132,6 +139,7 @@ export async function POST(req: NextRequest) {
         l3Enabled: body.l3Enabled || false,
         notes: body.notes || null,
         tier,
+        payoutDownlineEnabled,
         ...(commissionRate !== undefined && { commissionRate }),
       },
     });

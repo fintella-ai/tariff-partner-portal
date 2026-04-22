@@ -27,6 +27,7 @@ type Partner = {
   tier: string;
   commissionRate: number;
   l3Enabled: boolean;
+  payoutDownlineEnabled: boolean;
   notes: string | null;
   signupDate: string;
 };
@@ -1044,6 +1045,32 @@ export default function PartnerDetailPage() {
       {/* ─── COMMISSION & TIER ────────────────────────────────────── */}
       <div className="card p-5 sm:p-6 mb-6">
         <div className="font-body font-semibold text-sm mb-4">Commission Structure</div>
+
+        {partner.tier === "l1" && (
+          <div className="mb-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg-secondary)] px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="font-body text-[12px] font-semibold text-[var(--app-text)]">
+                  Payout Downline Partners
+                </div>
+                <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 max-w-[520px]">
+                  {partner.payoutDownlineEnabled
+                    ? "Fintella sends SignWell agreements to this L1's L2/L3 downline at signup and pays them commissions directly."
+                    : "This L1 receives the full rate for all downline deals and is responsible for paying their own downline."}
+                </div>
+              </div>
+              <span
+                className={
+                  partner.payoutDownlineEnabled
+                    ? "shrink-0 rounded-full bg-brand-gold/15 text-brand-gold px-3 py-1 font-body text-[11px] font-semibold"
+                    : "shrink-0 rounded-full border border-[var(--app-border)] text-[var(--app-text-muted)] px-3 py-1 font-body text-[11px]"
+                }
+              >
+                {partner.payoutDownlineEnabled ? "Enabled ✓" : "Disabled"}
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
           {/* Tier */}

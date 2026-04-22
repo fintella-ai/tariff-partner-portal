@@ -51,6 +51,11 @@ export async function POST(req: NextRequest) {
     const email = body.email?.trim();
     if (!email) return NextResponse.json({ error: "Email is required" }, { status: 400 });
 
+    const payoutDownlineEnabled = body.payoutDownlineEnabled === true;
+    if (payoutDownlineEnabled && role === "accounting") {
+      return NextResponse.json({ error: "accounting role cannot enable Payout Downline Partners on invites" }, { status: 403 });
+    }
+
     const commissionRate = body.commissionRate != null ? parseFloat(body.commissionRate) : null;
     if (commissionRate == null || isNaN(commissionRate)) {
       return NextResponse.json({ error: "Commission rate is required" }, { status: 400 });
@@ -87,6 +92,7 @@ export async function POST(req: NextRequest) {
         invitedName,
         status: "active",
         expiresAt,
+        payoutDownlineEnabled,
       },
     });
 

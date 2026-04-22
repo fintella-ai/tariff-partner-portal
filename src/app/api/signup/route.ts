@@ -11,6 +11,150 @@ import {
 } from "@/lib/twilio";
 import { hashSync } from "bcryptjs";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
+import {
+  sendForSigning,
+  resolveAgreementTemplateId,
+  buildPartnerTemplateFields,
+} from "@/lib/signwell";
+
+/**
+ * Walk up the chain to find the top-of-chain L1 for a new L2 or L3 partner.
+ * Returns null for L1s (no upline) or when the chain can't be resolved.
+ * Spec §5: the top-of-chain L1's payoutDownlineEnabled flag governs
+ * whether Fintella auto-dispatches a SignWell agreement at signup.
+ */
+async function resolveTopL1ForNewPartner(
+  newPartner: { tier: string; referredByPartnerCode: string | null }
+): Promise<{ partnerCode: string; payoutDownlineEnabled: boolean } | null> {
+  if (newPartner.tier === "l1" || !newPartner.referredByPartnerCode) return null;
+
+  if (newPartner.tier === "l2") {
+    const l1 = await prisma.partner.findUnique({
+      where: { partnerCode: newPartner.referredByPartnerCode },
+      select: { partnerCode: true, tier: true, payoutDownlineEnabled: true },
+    });
+    if (l1?.tier === "l1") return l1 as { partnerCode: string; payoutDownlineEnabled: boolean };
+    return null;
+  }
+
+  if (newPartner.tier === "l3") {
+    const l2 = await prisma.partner.findUnique({
+      where: { partnerCode: newPartner.referredByPartnerCode },
+      select: { referredByPartnerCode: true },
+    });
+    if (!l2?.referredByPartnerCode) return null;
+    const l1 = await prisma.partner.findUnique({
+      where: { partnerCode: l2.referredByPartnerCode },
+      select: { partnerCode: true, tier: true, payoutDownlineEnabled: true },
+    });
+    if (l1?.tier === "l1") return l1 as { partnerCode: string; payoutDownlineEnabled: boolean };
+    return null;
+  }
+
+  return null;
+}
+
+/**
+ * Auto-dispatch Fintella's SignWell agreement to a new L2/L3 partner whose
+ * top-of-chain L1 has payoutDownlineEnabled=true.
+ *
+ * Mirrors the admin agreement send path at
+ * src/app/api/admin/agreement/[partnerCode]/route.ts exactly:
+ * same resolveAgreementTemplateId call, same buildPartnerTemplateFields call,
+ * same sendForSigning argument shape (recipients array, not simplified fields),
+ * same PartnershipAgreement row fields.
+ *
+ * A post-signup notification is written to the partner's bell so they see
+ * "Partnership Agreement Sent" immediately on first login.
+ */
+async function sendFintellaAgreementForPartnerAtSignup(partner: {
+  partnerCode: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  commissionRate: number;
+  tier: string;
+}): Promise<void> {
+  const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
+  if (!settings) throw new Error("PortalSettings missing");
+
+  const effectiveRate = partner.commissionRate;
+  const { templateId, templateRate } = resolveAgreementTemplateId(effectiveRate, settings);
+
+  const partnerName = `${partner.firstName} ${partner.lastName}`.trim();
+
+  const templateFields = buildPartnerTemplateFields({
+    partnerCode: partner.partnerCode,
+    firstName: partner.firstName,
+    lastName: partner.lastName,
+    fullName: partnerName,
+    email: partner.email,
+    phone: partner.phone,
+  });
+
+  // Build recipient list: partner first, then Fintella co-signer.
+  // Matches admin route pattern exactly — co-signer required per memory
+  // feedback_signwell_cosigner_required (omitting it causes SignWell 422s).
+  const recipients = [
+    {
+      id: partner.partnerCode,
+      email: partner.email,
+      name: partnerName,
+      role: "Partner",
+    },
+  ];
+  if (settings.fintellaSignerEmail && settings.fintellaSignerName) {
+    recipients.push({
+      id: "fintella_cosigner",
+      email: settings.fintellaSignerEmail,
+      name: settings.fintellaSignerName,
+      role: (settings as any).fintellaSignerPlaceholder || "Fintella",
+    });
+  }
+
+  // Determine next version (new partner so will be 1, but be safe).
+  const latestVersion = await prisma.partnershipAgreement.findFirst({
+    where: { partnerCode: partner.partnerCode },
+    orderBy: { version: "desc" },
+  });
+  const nextVersion = (latestVersion?.version || 0) + 1;
+
+  const { documentId, embeddedSigningUrl, cosignerSigningUrl } = await sendForSigning({
+    name: `${FIRM_SHORT} Partnership Agreement — ${partnerName}`,
+    subject: `${FIRM_SHORT} Partnership Agreement`,
+    message: `Hi ${partner.firstName}, please review and sign your ${FIRM_NAME} partnership agreement.`,
+    recipients,
+    templateId: templateId || undefined,
+    templateFields,
+  });
+
+  await prisma.partnershipAgreement.create({
+    data: {
+      partnerCode: partner.partnerCode,
+      version: nextVersion,
+      signwellDocumentId: documentId,
+      embeddedSigningUrl: embeddedSigningUrl || null,
+      cosignerSigningUrl: cosignerSigningUrl ?? null,
+      templateRate,
+      templateId: templateId || null,
+      status: "pending",
+      sentDate: new Date(),
+    },
+  });
+
+  // Notify the partner via notification bell so they see it on first login.
+  await prisma.notification.create({
+    data: {
+      recipientType: "partner",
+      recipientId: partner.partnerCode,
+      type: "document_request",
+      title: "Partnership Agreement Sent",
+      message: "Your partnership agreement is ready to sign. Go to Documents to review and sign.",
+      link: "/dashboard/documents",
+    },
+  }).catch(() => {});
+}
 
 function generatePartnerCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -114,6 +258,7 @@ export async function POST(req: NextRequest) {
         emailOptIn: !!emailOptIn,
         smsOptIn: !!smsOptIn,
         optInDate: (emailOptIn || smsOptIn) ? new Date() : null,
+        payoutDownlineEnabled: invite.payoutDownlineEnabled,
       },
     });
 
@@ -131,9 +276,34 @@ export async function POST(req: NextRequest) {
     const partnerName = `${firstName.trim()} ${lastName.trim()}`;
     const ratePercent = Math.round(invite.commissionRate * 100);
 
-    // L2/L3 partners do NOT receive SignWell agreements.
-    // Their L1 upline is responsible for uploading a signed agreement.
-    // Partner stays "pending" until L1 uploads and admin approves.
+    // L2/L3 partners: agreement flow depends on the top-of-chain L1's
+    // payoutDownlineEnabled flag. If Enabled, we auto-dispatch Fintella's
+    // SignWell above (inside the POST handler block). If Disabled (default),
+    // no auto-send — L1 is expected to upload a signed PDF via the admin
+    // agreement surface, same as historical behavior. Spec §5.
+    if (partner.tier !== "l1") {
+      const topL1 = await resolveTopL1ForNewPartner(partner);
+      if (topL1?.payoutDownlineEnabled) {
+        try {
+          await sendFintellaAgreementForPartnerAtSignup({
+            partnerCode: partner.partnerCode,
+            firstName: partner.firstName,
+            lastName: partner.lastName,
+            email: partner.email,
+            phone: partner.phone,
+            commissionRate: partner.commissionRate,
+            tier: partner.tier,
+          });
+        } catch (err) {
+          // Don't fail signup if SignWell hiccups. Partner row exists; admin
+          // can retry from existing admin agreement surface. Log for ops.
+          console.error("[signup] Enabled-mode SignWell auto-dispatch failed", {
+            partnerCode: partner.partnerCode,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    }
 
     // Notify the inviting partner (L1) about the new signup
     await prisma.notification.create({
