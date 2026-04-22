@@ -15,6 +15,7 @@ interface Announcement {
   date: string;
   badge: string;
   badgeColor?: string;
+  highlighted?: boolean;
 }
 
 const BADGE_STYLES: Record<string, { bg: string; border: string; text: string }> = {
@@ -58,6 +59,7 @@ interface UpcomingEvent {
   body: string;
   date: string;
   cta: string;
+  highlighted?: boolean;
 }
 
 interface ReferralOpp {
@@ -195,13 +197,24 @@ export default function HomePage() {
         <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4 text-center">Upcoming Events</h2>
         <div className={`grid ${colsClass(columns)} ${device.gap}`}>
           {upcomingEvents.map((e, i) => (
-            <div key={`${e.title}-${i}`} className={`card ${device.cardPadding} flex flex-col`}>
+            <div
+              key={`${e.title}-${i}`}
+              className={`${device.cardPadding} ${device.borderRadius} border flex flex-col ${
+                e.highlighted
+                  ? "border-brand-gold/25 bg-brand-gold/[0.04]"
+                  : "border-[var(--app-border)] bg-[var(--app-card-bg)]"
+              }`}
+            >
               {e.icon && <div className="text-3xl mb-3">{e.icon}</div>}
-              <div className="font-body text-sm font-semibold text-[var(--app-text)] mb-1.5">{e.title}</div>
+              <div className={`font-body text-sm font-semibold mb-1.5 ${e.highlighted ? "text-brand-gold" : "text-[var(--app-text)]"}`}>{e.title}</div>
               <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-3 flex-1">{e.body}</p>
               {e.date && <div className="font-body text-[11px] text-[var(--app-text-faint)] mb-4">{e.date}</div>}
               {e.cta && (
-                <button className="w-full font-body text-[11px] tracking-[1px] uppercase text-brand-gold border border-brand-gold/30 rounded-lg px-4 py-2.5 hover:bg-brand-gold/10 transition-colors">
+                <button className={`w-full font-body text-[11px] tracking-[1px] uppercase rounded-lg px-4 py-2.5 transition-colors ${
+                  e.highlighted
+                    ? "bg-brand-gold text-black font-semibold hover:bg-brand-gold/90"
+                    : "text-brand-gold border border-brand-gold/30 hover:bg-brand-gold/10"
+                }`}>
                   {e.cta}
                 </button>
               )}
@@ -222,10 +235,19 @@ export default function HomePage() {
           {announcements.map((a, idx) => {
             const badge = badgeStyle(a);
             return (
-              <div key={`${a.title}-${idx}`} className="card border-l-2 border-l-brand-gold overflow-hidden">
+              <div
+                key={`${a.title}-${idx}`}
+                className={`card border-l-2 overflow-hidden ${
+                  a.highlighted
+                    ? "border-l-brand-gold border-brand-gold/25 bg-brand-gold/[0.04]"
+                    : "border-l-brand-gold"
+                }`}
+              >
                 <div className="px-4 sm:px-6 py-4 sm:py-5">
                   <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="font-body text-sm font-semibold text-[var(--app-text)] leading-snug">{a.title}</div>
+                    <div className={`font-body text-sm font-semibold leading-snug ${a.highlighted ? "text-brand-gold" : "text-[var(--app-text)]"}`}>
+                      {a.title}
+                    </div>
                     {a.badge && (
                       <span className={`${badge.bg} ${badge.border} ${badge.text} border rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase shrink-0`}>
                         {a.badge}
