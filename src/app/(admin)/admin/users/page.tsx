@@ -377,8 +377,12 @@ export default function AdminUsersPage() {
       {/* Edit modal — star super admin only. Gate already enforced above,
           but rendered null defensively in case session flips mid-session. */}
       {editUser && isStar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={closeEdit}>
-          <div className="w-full max-w-md card p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={closeEdit}>
+          <div
+            className="w-full max-w-md p-6 rounded-xl border border-[var(--app-border)] shadow-2xl"
+            style={{ backgroundColor: "var(--app-bg-secondary)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display text-lg font-bold">Edit Admin User</h3>
               <button onClick={closeEdit} className="font-body text-[20px] text-[var(--app-text-muted)] hover:text-[var(--app-text)]">×</button>
