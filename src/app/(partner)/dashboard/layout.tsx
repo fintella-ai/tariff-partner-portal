@@ -498,7 +498,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div
           className={`sticky top-0 z-40 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3 mb-5 bg-[var(--app-bg)]/85 backdrop-blur-md border-b border-[var(--app-border)] ${device.isMobile ? "hidden" : ""}`}
         >
-          <div className="flex items-center justify-center gap-2 sm:gap-3 max-w-xl mx-auto">
+          <div className="flex items-center justify-start gap-2 sm:gap-3">
             <button
               onClick={() => navigate("/dashboard/submit-client")}
               className={`flex-1 sm:flex-none font-body text-[12px] sm:text-[13px] font-semibold tracking-wider border rounded-lg px-4 sm:px-5 py-2.5 transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
@@ -575,15 +575,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </>
           )}
 
-          <div className={`flex ${device.isMobile ? "flex-col items-center text-center" : "justify-between items-start"}`}>
-            <div className={device.isMobile ? "flex flex-col items-center" : ""}>
+          <div className="flex flex-col items-center text-center">
+            <div className="flex flex-col items-center">
               <div className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1">
                 Welcome back
               </div>
               <h1 className={`font-display ${device.headingSize} font-bold mb-1`}>
                 {user?.name || "Partner"}
               </h1>
-              <div className={`flex gap-2 sm:gap-4 items-center flex-wrap ${device.isMobile ? "justify-center" : ""}`}>
+              <div className="flex gap-2 sm:gap-4 items-center flex-wrap justify-center">
                 <span className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px]">
                   Code: <strong className="text-brand-gold">{partnerCode}</strong>
                 </span>
@@ -598,9 +598,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 )}
               </div>
             </div>
-            {/* Desktop top-right CTAs moved to the sticky top bar above.
-                Top-right corner is now reserved for the floating
-                NotificationBell only. */}
           </div>
         </div>
 
