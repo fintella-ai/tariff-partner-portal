@@ -171,11 +171,6 @@ export default function LoginPage() {
 
           {mode === "partner" && (
             <div className="font-body text-[11px] theme-text-faint text-center mt-4 leading-relaxed">
-              Don&apos;t have a partner account?{" "}
-              <a href="/getstarted" className="text-brand-gold/70 hover:text-brand-gold transition-colors">
-                Sign up here
-              </a>
-              <br />
               Need help? Email{" "}
               <a href="mailto:support@fintella.partners" className="text-brand-gold/70 hover:text-brand-gold transition-colors">
                 support@fintella.partners
