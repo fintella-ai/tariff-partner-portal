@@ -258,3 +258,129 @@ export async function POST(
     return NextResponse.json({ error: "Failed to mark payment received" }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/admin/deals/[id]/payment-received
+ *
+ * Undo the Mark Payment Received action for a deal. Reverts:
+ *   - all CommissionLedger rows for the deal from status "due" → "pending"
+ *   - Deal.l{1,2,3}CommissionStatus → "pending" for tiers with a ledger row
+ *   - Deal.paymentReceivedAt + paymentReceivedBy → null
+ * Plus writes an audit DealNote recording the undo + who did it.
+ *
+ * Role gate: any admin role can undo (broader than the POST gate — per
+ * product owner's request so any admin can correct an accidental mark-paid
+ * without needing to escalate to super_admin / accounting).
+ *
+ * Safety: fails with 400 if ANY ledger row for the deal has status "paid"
+ * — those represent actual money movement and must be reversed through
+ * the payout-batch flow, not by flipping ledger status back to pending.
+ *
+ * Idempotency: if the deal has no paymentReceivedAt stamp, returns 400
+ * so callers don't silently succeed on a no-op.
+ */
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const role = (session.user as any).role;
+  if (!["super_admin", "admin", "accounting", "partner_support"].includes(role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const adminEmail = (session.user as any).email || "unknown";
+  const adminName = (session.user as any).name || adminEmail;
+
+  try {
+    const deal = await prisma.deal.findUnique({ where: { id: params.id } });
+    if (!deal) {
+      return NextResponse.json({ error: "Deal not found" }, { status: 404 });
+    }
+    if (!deal.paymentReceivedAt) {
+      return NextResponse.json(
+        { error: "Deal has not been marked payment-received — nothing to undo." },
+        { status: 400 }
+      );
+    }
+
+    const ledgerRows = await prisma.commissionLedger.findMany({
+      where: { dealId: deal.id },
+    });
+
+    const paidRows = ledgerRows.filter((r) => r.status === "paid");
+    if (paidRows.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot undo — some commissions for this deal have already been paid out to partners. " +
+            "Reverse the corresponding payout batch first.",
+          paidTiers: paidRows.map((r) => r.tier),
+        },
+        { status: 400 }
+      );
+    }
+
+    const dueRows = ledgerRows.filter((r) => r.status === "due");
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Revert ledger: due → pending. Any row already "pending" stays.
+      const reverted = await tx.commissionLedger.updateMany({
+        where: { dealId: deal.id, status: "due" },
+        data: { status: "pending" },
+      });
+
+      // Revert Deal status fields + clear the payment-received stamp.
+      const updatedDeal = await tx.deal.update({
+        where: { id: deal.id },
+        data: {
+          paymentReceivedAt: null,
+          paymentReceivedBy: null,
+          l1CommissionStatus: dueRows.some((r) => r.tier === "l1")
+            ? "pending"
+            : deal.l1CommissionStatus,
+          l2CommissionStatus: dueRows.some((r) => r.tier === "l2")
+            ? "pending"
+            : deal.l2CommissionStatus,
+          l3CommissionStatus: dueRows.some((r) => r.tier === "l3")
+            ? "pending"
+            : deal.l3CommissionStatus,
+        },
+      });
+
+      const totalReverted = dueRows.reduce((s, r) => s + r.amount, 0);
+      const tierSummary = dueRows
+        .map((r) => `${r.tier.toUpperCase()} ${r.partnerCode} $${r.amount.toFixed(2)}`)
+        .join(", ");
+
+      await tx.dealNote.create({
+        data: {
+          dealId: deal.id,
+          content:
+            `Payment received was UNDONE by ${adminName} (${adminEmail}). ` +
+            `${reverted.count} commission ${reverted.count === 1 ? "entry" : "entries"} ` +
+            `reverted from "due" to "pending" (total $${totalReverted.toFixed(2)})` +
+            (tierSummary ? `: ${tierSummary}.` : "."),
+          authorName: adminName,
+          authorEmail: adminEmail,
+        },
+      });
+
+      return { updatedDeal, reverted: reverted.count, totalReverted };
+    });
+
+    return NextResponse.json({
+      success: true,
+      deal: result.updatedDeal,
+      reverted: result.reverted,
+      totalReverted: result.totalReverted,
+    });
+  } catch (e) {
+    console.error("payment-received undo error:", e);
+    return NextResponse.json({ error: "Failed to undo payment received" }, { status: 500 });
+  }
+}
