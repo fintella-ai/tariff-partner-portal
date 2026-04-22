@@ -166,16 +166,45 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ══════════════════ 2-COLUMN CONTENT GRID (desktop) ══════════════════ */}
-      <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:grid-flow-dense">
+      {/* ══════════════════ SECTION 1: UPCOMING EVENTS (centered, top of feed) ══════════════════ */}
+      {isVisible("events") && upcomingEvents.length > 0 && (
+      <div className="mb-6 sm:mb-8 animate-fade-up max-w-4xl mx-auto">
+        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4 text-center">
+          Upcoming Events
+        </h2>
+        <div
+          className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"} ${device.gap}`}
+        >
+          {upcomingEvents.map((e, i) => (
+            <div key={`${e.title}-${i}`} className={`card ${device.cardPadding} flex flex-col`}>
+              {e.icon && <div className="text-3xl mb-3">{e.icon}</div>}
+              <div className="font-body text-sm font-semibold text-[var(--app-text)] mb-1.5">
+                {e.title}
+              </div>
+              <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-3 flex-1">
+                {e.body}
+              </p>
+              {e.date && (
+                <div className="font-body text-[11px] text-[var(--app-text-faint)] mb-4">{e.date}</div>
+              )}
+              {e.cta && (
+                <button className="w-full font-body text-[11px] tracking-[1px] uppercase text-brand-gold border border-brand-gold/30 rounded-lg px-4 py-2.5 hover:bg-brand-gold/10 transition-colors">
+                  {e.cta}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      )}
 
-      {/* ══════════════════ SECTION 1: ANNOUNCEMENTS ══════════════════ */}
+      {/* ══════════════════ SECTION 2: ANNOUNCEMENTS (2-col card grid on desktop) ══════════════════ */}
       {isVisible("announcements") && announcements.length > 0 && (
-      <div className="mb-6 sm:mb-8 lg:mb-0 animate-fade-up">
-        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4">
+      <div className="mb-6 sm:mb-8 animate-fade-up">
+        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4 text-center">
           Announcements
         </h2>
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {announcements.map((a, idx) => {
             const badge = badgeStyle(a);
             return (
@@ -210,12 +239,12 @@ export default function HomePage() {
       </div>
       )}
 
-      {/* ══════════════════ SECTION 2: LEADERBOARD (spans full grid width) ══════════════════ */}
-      {leaderboardEnabled && isVisible("leaderboard") && <div className="mb-6 sm:mb-8 animate-fade-up lg:col-span-2">
-        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-1">
+      {/* ══════════════════ SECTION 3: LEADERBOARD ══════════════════ */}
+      {leaderboardEnabled && isVisible("leaderboard") && <div className="mb-6 sm:mb-8 animate-fade-up">
+        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-1 text-center">
           Partner Leaderboard &mdash; March 2026
         </h2>
-        <p className="font-body text-[11px] text-[var(--app-text-muted)] mb-4">
+        <p className="font-body text-[11px] text-[var(--app-text-muted)] mb-4 text-center">
           Top performers this month (names hidden for privacy)
         </p>
 
@@ -305,49 +334,17 @@ export default function HomePage() {
         </div>
       </div>}
 
-      {/* ══════════════════ SECTION 3: UPCOMING EVENTS ══════════════════ */}
-      {isVisible("events") && upcomingEvents.length > 0 && (
-      <div className="mb-6 sm:mb-8 lg:mb-0 animate-fade-up">
-        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4">
-          Upcoming Events
-        </h2>
-        <div
-          className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-1"} ${device.gap}`}
-        >
-          {upcomingEvents.map((e, i) => (
-            <div key={`${e.title}-${i}`} className={`card ${device.cardPadding} flex flex-col`}>
-              {e.icon && <div className="text-3xl mb-3">{e.icon}</div>}
-              <div className="font-body text-sm font-semibold text-[var(--app-text)] mb-1.5">
-                {e.title}
-              </div>
-              <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-3 flex-1">
-                {e.body}
-              </p>
-              {e.date && (
-                <div className="font-body text-[11px] text-[var(--app-text-faint)] mb-4">{e.date}</div>
-              )}
-              {e.cta && (
-                <button className="w-full font-body text-[11px] tracking-[1px] uppercase text-brand-gold border border-brand-gold/30 rounded-lg px-4 py-2.5 hover:bg-brand-gold/10 transition-colors">
-                  {e.cta}
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-      )}
-
       {/* ══════════════════ SECTION 4: REFERRAL OPPORTUNITIES ══════════════════ */}
       {isVisible("opportunities") && referralOpps.length > 0 && (
       <div className="animate-fade-up">
-        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-1">
+        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-1 text-center">
           Expand Your Earnings
         </h2>
-        <p className="font-body text-[11px] text-[var(--app-text-muted)] mb-4">
+        <p className="font-body text-[11px] text-[var(--app-text-muted)] mb-4 text-center">
           Additional referral opportunities to grow your income with {FIRM_SHORT}
         </p>
         <div
-          className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-1"} ${device.gap}`}
+          className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"} ${device.gap}`}
         >
           {referralOpps.map((r, i) => (
             <div
@@ -385,7 +382,6 @@ export default function HomePage() {
       </div>
       )}
 
-      </div>{/* /2-col content grid */}
     </div>
   );
 }
