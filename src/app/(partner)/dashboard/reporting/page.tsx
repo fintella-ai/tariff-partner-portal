@@ -11,8 +11,9 @@ import { FIRM_SHORT, DEFAULT_FIRM_FEE_RATE } from "@/lib/constants";
 import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
 import SortHeader, { type SortDir } from "@/components/ui/SortHeader";
 import { compareRows } from "@/lib/sortRows";
+import DocumentsView from "@/components/partner/DocumentsView";
 
-type PageTab = "overview" | "deals" | "downline" | "commissions";
+type PageTab = "overview" | "deals" | "downline" | "commissions" | "documents";
 
 export default function PartnerReportingPage() {
   const { data: session } = useSession();
@@ -213,6 +214,7 @@ export default function PartnerReportingPage() {
           { id: "deals" as const, label: "My Deals" },
           { id: "downline" as const, label: "Downline" },
           { id: "commissions" as const, label: "Commissions" },
+          { id: "documents" as const, label: "Documents" },
         ]).map((t) => (
           <button
             key={t.id}
@@ -919,6 +921,9 @@ export default function PartnerReportingPage() {
           )}
         </>
       )}
+
+      {/* ═══════════════ DOCUMENTS TAB (mounts the shared DocumentsView) ═══════════════ */}
+      {pageTab === "documents" && <DocumentsView />}
     </div>
   );
 }
