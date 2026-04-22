@@ -275,6 +275,11 @@ model TrainingProgress {
 model TrainingResource {
   id          String   @id @default(cuid())
   moduleId    String?  // null = general resource not tied to a module
+  // Category is independent of the linked module (admin may want a resource
+  // in a different category than its parent module). Null = inherit from
+  // the linked module (if any). Free-form string; the admin UI surfaces the
+  // set of categories currently in use for autocomplete.
+  category    String?
   title       String
   description String?
   fileUrl     String

@@ -35,6 +35,7 @@ export async function PUT(
       "fileType",
       "fileSize",
       "moduleId",
+      "category",
       "sortOrder",
       "published",
     ];

@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
       fileType,
       fileSize,
       moduleId,
+      category,
       sortOrder = 0,
       published = true,
     } = body;
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest) {
         fileType,
         fileSize: fileSize || null,
         moduleId: moduleId || null,
+        category: category || null,
         sortOrder,
         published,
       },

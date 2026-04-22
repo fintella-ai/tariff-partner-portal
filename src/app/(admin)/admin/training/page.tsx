@@ -29,6 +29,7 @@ type TrainingResource = {
   fileType: string;
   fileSize: string | null;
   moduleId: string | null;
+  category: string | null;
   sortOrder: number;
   published: boolean;
   createdAt: string;
@@ -77,11 +78,11 @@ const DEMO_MODULES: TrainingModule[] = [
 ];
 
 const DEMO_RESOURCES: TrainingResource[] = [
-  { id: "dr-1", title: "Partner Quick-Start Guide", description: "One-page overview to get started as a Fintella partner.", fileUrl: "/docs/quick-start.pdf", fileType: "pdf", fileSize: "1.2 MB", moduleId: null, sortOrder: 1, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dr-2", title: "Lead Qualification Checklist", description: "Checklist for qualifying tariff relief leads.", fileUrl: "/docs/lead-checklist.pdf", fileType: "checklist", fileSize: "340 KB", moduleId: null, sortOrder: 2, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dr-3", title: "Commission Rate Card", description: "Current commission rates and tier thresholds.", fileUrl: "/docs/rate-card.pdf", fileType: "pdf", fileSize: "280 KB", moduleId: null, sortOrder: 3, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dr-4", title: "Client Intake Template", description: "Template for gathering initial client information.", fileUrl: "/docs/intake-template.docx", fileType: "template", fileSize: "95 KB", moduleId: null, sortOrder: 4, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dr-5", title: "Tariff Relief Program Guide", description: "Comprehensive guide to tariff relief programs and eligibility.", fileUrl: "/docs/program-guide.pdf", fileType: "guide", fileSize: "3.8 MB", moduleId: null, sortOrder: 5, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dr-1", title: "Partner Quick-Start Guide", description: "One-page overview to get started as a Fintella partner.", fileUrl: "/docs/quick-start.pdf", fileType: "pdf", fileSize: "1.2 MB", moduleId: null, category: null, sortOrder: 1, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dr-2", title: "Lead Qualification Checklist", description: "Checklist for qualifying tariff relief leads.", fileUrl: "/docs/lead-checklist.pdf", fileType: "checklist", fileSize: "340 KB", moduleId: null, category: null, sortOrder: 2, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dr-3", title: "Commission Rate Card", description: "Current commission rates and tier thresholds.", fileUrl: "/docs/rate-card.pdf", fileType: "pdf", fileSize: "280 KB", moduleId: null, category: null, sortOrder: 3, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dr-4", title: "Client Intake Template", description: "Template for gathering initial client information.", fileUrl: "/docs/intake-template.docx", fileType: "template", fileSize: "95 KB", moduleId: null, category: null, sortOrder: 4, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dr-5", title: "Tariff Relief Program Guide", description: "Comprehensive guide to tariff relief programs and eligibility.", fileUrl: "/docs/program-guide.pdf", fileType: "guide", fileSize: "3.8 MB", moduleId: null, category: null, sortOrder: 5, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
 ];
 
 const DEMO_FAQS: FAQ[] = [
@@ -148,7 +149,11 @@ const VIEW_TABS: { id: ViewTab; label: string }[] = [
 export default function AdminTrainingPage() {
   // Resizable column hooks
   const { columnWidths: moduleCols, getResizeHandler: moduleResize } = useResizableColumns([250, 120, 100, 100, 80, 100], { storageKey: "training-modules" });
-  const { columnWidths: resourceCols, getResizeHandler: resourceResize } = useResizableColumns([250, 120, 100, 100, 100], { storageKey: "training-resources" });
+  // 8 columns: Title | Module | Category | Sort | Type | File Size | Published | Actions
+  const { columnWidths: resourceCols, getResizeHandler: resourceResize } = useResizableColumns(
+    [260, 150, 130, 70, 100, 90, 90, 130],
+    { storageKey: "training-resources-v2" }
+  );
   const { columnWidths: faqCols, getResizeHandler: faqResize } = useResizableColumns([300, 120, 100, 80, 100], { storageKey: "training-faq" });
 
   // Active view tab
@@ -525,6 +530,23 @@ export default function AdminTrainingPage() {
   };
 
   /** Toggle published status for any item type */
+  // Inline-save a single resource field (moduleId, category, sortOrder).
+  // Optimistic update: mutates local state first, then PUTs. On error the
+  // user's next refetch reverts. Kept thin so the table cells can fire it
+  // directly from onChange/onBlur without plumbing a full reducer.
+  const patchResource = async (resourceId: string, patch: Partial<TrainingResource>) => {
+    setResources((prev) => prev.map((r) => (r.id === resourceId ? { ...r, ...patch } : r)));
+    try {
+      await fetch(`/api/admin/training/resources/${resourceId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+    } catch {
+      // Silently fail — next fetchResources() will reconcile with server state.
+    }
+  };
+
   const togglePublish = async (item: any) => {
     const endpoint =
       view === "modules"
@@ -1308,30 +1330,47 @@ export default function AdminTrainingPage() {
                     <span {...resourceResize(0)} />
                   </th>
                   <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[1], position: "relative" }}>
-                    Type
+                    Module
                     <span {...resourceResize(1)} />
                   </th>
                   <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[2], position: "relative" }}>
-                    File Size
+                    Category
                     <span {...resourceResize(2)} />
                   </th>
                   <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[3], position: "relative" }}>
-                    Published
+                    Sort
                     <span {...resourceResize(3)} />
                   </th>
                   <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[4], position: "relative" }}>
-                    Actions
+                    Type
                     <span {...resourceResize(4)} />
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[5], position: "relative" }}>
+                    File Size
+                    <span {...resourceResize(5)} />
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[6], position: "relative" }}>
+                    Published
+                    <span {...resourceResize(6)} />
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center" style={{ width: resourceCols[7], position: "relative" }}>
+                    Actions
+                    <span {...resourceResize(7)} />
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {resources.map((res) => (
+                {resources.map((res) => {
+                  const linkedModule = res.moduleId ? modules.find((m) => m.id === res.moduleId) : null;
+                  // Category falls back to the linked module's category when
+                  // the resource has no standalone category set.
+                  const effectiveCategory = res.category ?? linkedModule?.category ?? "";
+                  return (
                   <tr
                     key={res.id}
                     className="border-b border-[var(--app-border)] hover:bg-[var(--app-card-bg)] transition"
                   >
-                    <td className="px-4 sm:px-6 py-3">
+                    <td className="px-4 sm:px-6 py-3 text-left">
                       <div className="font-medium text-[var(--app-text)]">{res.title}</div>
                       {res.description && (
                         <div className="text-xs text-[var(--app-text-muted)] mt-0.5 line-clamp-1">
@@ -1339,7 +1378,45 @@ export default function AdminTrainingPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 sm:px-6 py-3">
+                    <td className="px-2 py-3 text-center">
+                      <select
+                        value={res.moduleId ?? ""}
+                        onChange={(e) => patchResource(res.id, { moduleId: e.target.value || null })}
+                        className="w-full max-w-[140px] bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded px-2 py-1 font-body text-[11px] text-[var(--app-text)] outline-none focus:border-brand-gold/40 transition-colors"
+                      >
+                        <option value="">— None —</option>
+                        {modules.map((m) => (
+                          <option key={m.id} value={m.id}>{m.title}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <input
+                        type="text"
+                        list={`cat-options-${res.id}`}
+                        value={effectiveCategory}
+                        onChange={(e) => patchResource(res.id, { category: e.target.value || null })}
+                        placeholder="—"
+                        className="w-full max-w-[120px] bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded px-2 py-1 font-body text-[11px] text-[var(--app-text)] outline-none focus:border-brand-gold/40 transition-colors text-center"
+                      />
+                      <datalist id={`cat-options-${res.id}`}>
+                        {Array.from(new Set(modules.map((m) => m.category).filter(Boolean))).map((c) => (
+                          <option key={c} value={c} />
+                        ))}
+                      </datalist>
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <input
+                        type="number"
+                        value={res.sortOrder}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value, 10);
+                          if (!Number.isNaN(v)) patchResource(res.id, { sortOrder: v });
+                        }}
+                        className="w-full max-w-[60px] bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded px-2 py-1 font-body text-[11px] text-[var(--app-text)] outline-none focus:border-brand-gold/40 transition-colors text-center"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-center">
                       <span
                         className={`inline-block text-[11px] px-2 py-0.5 rounded-full capitalize ${
                           categoryBadge[res.fileType] || "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)]"
@@ -1348,10 +1425,10 @@ export default function AdminTrainingPage() {
                         {res.fileType}
                       </span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 text-[var(--app-text-secondary)]">
+                    <td className="px-4 py-3 text-center text-[var(--app-text-secondary)]">
                       {res.fileSize || "—"}
                     </td>
-                    <td className="px-4 sm:px-6 py-3">
+                    <td className="px-4 py-3 text-center">
                       <span
                         className={`inline-block text-[11px] px-2 py-0.5 rounded-full ${
                           res.published
@@ -1362,8 +1439,8 @@ export default function AdminTrainingPage() {
                         {res.published ? "Published" : "Draft"}
                       </span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3">
-                      <div className="flex gap-3">
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex gap-3 justify-center">
                         <button
                           onClick={() => openEditForm(res)}
                           className="text-xs text-brand-gold/60 hover:text-brand-gold transition"
@@ -1385,11 +1462,12 @@ export default function AdminTrainingPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
                 {resources.length === 0 && (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={8}
                       className="px-4 sm:px-6 py-8 text-center text-[var(--app-text-muted)] text-sm"
                     >
                       No resources found. Click &ldquo;Add Resource&rdquo; to create one.
