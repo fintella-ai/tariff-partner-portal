@@ -167,6 +167,22 @@ export async function sendSms(input: SendSmsInput): Promise<SendSmsResult> {
       providerMessageId: messageId,
       errorMessage: null,
     });
+    // Fire sms.sent workflow trigger — fire-and-forget. Dynamic import
+    // avoids a circular dep with workflow-engine (which imports prisma,
+    // which is already imported at the top of this file).
+    import("@/lib/workflow-engine")
+      .then(({ fireWorkflowTrigger }) =>
+        fireWorkflowTrigger("sms.sent", {
+          sms: {
+            partnerCode: input.partnerCode ?? null,
+            template: input.template,
+            toPhone: to,
+            body: input.body,
+            messageId,
+          },
+        })
+      )
+      .catch(() => {});
     return { status: "sent", messageId };
   } catch (err: any) {
     const message = err?.message || String(err);

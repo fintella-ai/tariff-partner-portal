@@ -21,6 +21,10 @@ export const TRIGGER_KEYS = [
   "partner.activated",
   "commission.created",
   "commission.paid",
+  "sms.sent",
+  "sms.received",
+  "sms.opt_in",
+  "sms.opt_out",
 ] as const;
 
 export type TriggerKey = (typeof TRIGGER_KEYS)[number];
@@ -34,6 +38,10 @@ export const TRIGGER_LABELS: Record<TriggerKey, string> = {
   "partner.activated":  "Partner Activated",
   "commission.created": "Commission Created",
   "commission.paid":    "Commission Paid",
+  "sms.sent":           "SMS Sent",
+  "sms.received":       "SMS Received (Inbound)",
+  "sms.opt_in":         "Partner Opted Into SMS",
+  "sms.opt_out":        "Partner Replied STOP",
 };
 
 // ─── Action types ─────────────────────────────────────────────────────────────
@@ -42,6 +50,7 @@ export const ACTION_TYPES = [
   "notification.create",
   "deal.note",
   "email.send",
+  "sms.send",
 ] as const;
 
 export type ActionType = (typeof ACTION_TYPES)[number];
@@ -51,6 +60,7 @@ export const ACTION_LABELS: Record<ActionType, string> = {
   "notification.create":  "Create Notification",
   "deal.note":            "Add Deal Note",
   "email.send":           "Send Email",
+  "sms.send":             "Send SMS",
 };
 
 // ─── Descriptions (surfaced as tooltips in the admin Automations editor) ──────
@@ -64,6 +74,10 @@ export const TRIGGER_DESCRIPTIONS: Record<TriggerKey, string> = {
   "partner.activated":  "Fires when a partner's partnership agreement is countersigned and the account flips to active.",
   "commission.created": "Fires when a CommissionLedger row is first written (reserved — call site not yet wired).",
   "commission.paid":    "Fires when a commission row is marked paid during payout batch processing.",
+  "sms.sent":           "Fires when an outbound SMS is accepted by Twilio (status=sent). Doesn't fire on demo/failed/skipped_optout.",
+  "sms.received":       "Fires when a partner texts our Twilio number (inbound SMS that isn't a STOP/START keyword).",
+  "sms.opt_in":         "Fires when a partner replies START (or taps the opt-in link) and Partner.smsOptIn flips true.",
+  "sms.opt_out":        "Fires when a partner replies STOP and their smsOptIn flag flips false.",
 };
 
 export const ACTION_DESCRIPTIONS: Record<ActionType, string> = {
@@ -71,6 +85,7 @@ export const ACTION_DESCRIPTIONS: Record<ActionType, string> = {
   "notification.create": "Creates an in-portal bell notification for an admin or a partner.",
   "deal.note":           "Appends a note to the deal referenced by the trigger payload.",
   "email.send":          "Sends a SendGrid email using one of the Email Templates, with variables interpolated.",
+  "sms.send":            "Sends a Twilio SMS using one of the SMS Templates. TCPA-gated — only fires to partners with smsOptIn=true.",
 };
 
 // ─── Variable reference (per-trigger available merge fields) ──────────────────
@@ -142,6 +157,28 @@ export const TRIGGER_VARIABLES: Record<TriggerKey, TriggerVariable[]> = {
     { token: "{batch.id}",         description: "Payout batch id",                    example: "cln12ab34" },
     { token: "{batch.createdAt}",  description: "Batch creation timestamp",           example: "2026-04-21T14:05:00Z" },
     { token: "{entries}",          description: "Array of paid entries (advanced — use in webhook.post JSON, not plain-text)", example: "[…]" },
+  ],
+  "sms.sent": [
+    { token: "{sms.partnerCode}",  description: "Partner the SMS was sent to (may be empty for non-partner sends)", example: "PTNJD8K3F" },
+    { token: "{sms.template}",     description: "Template key used",                  example: "welcome" },
+    { token: "{sms.toPhone}",      description: "Recipient phone in E.164",           example: "+14105551234" },
+    { token: "{sms.body}",         description: "Rendered message body",              example: "Fintella: Welcome Jane!…" },
+    { token: "{sms.messageId}",    description: "Twilio Message SID",                 example: "SM0123abcd…" },
+  ],
+  "sms.received": [
+    { token: "{sms.partnerCode}",  description: "Partner who texted us (looked up by phone)", example: "PTNJD8K3F" },
+    { token: "{sms.fromPhone}",    description: "Sender phone in E.164",              example: "+14105551234" },
+    { token: "{sms.body}",         description: "Inbound message body",               example: "When do I get paid?" },
+  ],
+  "sms.opt_in": [
+    { token: "{partner.partnerCode}", description: "Partner who opted in",            example: "PTNJD8K3F" },
+    { token: "{partner.firstName}",   description: "First name",                      example: "Jane" },
+    { token: "{partner.mobilePhone}", description: "Partner's mobile in E.164",       example: "+14105551234" },
+  ],
+  "sms.opt_out": [
+    { token: "{partner.partnerCode}", description: "Partner who replied STOP",        example: "PTNJD8K3F" },
+    { token: "{partner.firstName}",   description: "First name",                      example: "Jane" },
+    { token: "{partner.mobilePhone}", description: "Partner's mobile in E.164",       example: "+14105551234" },
   ],
 };
 
@@ -294,6 +331,46 @@ async function executeAction(
           fromEmail: tpl.fromEmail || undefined,
           fromName: tpl.fromName || undefined,
           replyTo: tpl.replyTo || undefined,
+        });
+        break;
+      }
+
+      case "sms.send": {
+        const templateKey = String(config.template || "");
+        if (!templateKey) throw new Error("sms.send: template key is required");
+
+        const tpl = await prisma.smsTemplate.findUnique({ where: { key: templateKey } });
+        if (!tpl || !tpl.enabled) throw new Error(`sms.send: template "${templateKey}" not found or disabled`);
+
+        // Resolve recipient — either a partnerCode (TCPA-gated lookup) or an explicit partner from payload.
+        let partnerCode = String(config.partnerCode || "");
+        if (!partnerCode || partnerCode === "deal_partner") {
+          const deal = payload.deal as Record<string, unknown> | undefined;
+          const partner = payload.partner as Record<string, unknown> | undefined;
+          partnerCode = String(deal?.partnerCode || partner?.partnerCode || "");
+        }
+        if (!partnerCode) throw new Error("sms.send: partnerCode could not be resolved");
+
+        const partner = await prisma.partner.findUnique({
+          where: { partnerCode },
+          select: { partnerCode: true, mobilePhone: true, smsOptIn: true, firstName: true, lastName: true },
+        });
+        if (!partner || !partner.mobilePhone) throw new Error(`sms.send: partner ${partnerCode} has no mobile number`);
+
+        const vars = flattenForTemplate(payload);
+        // Also expose partner fields by short name so SMS templates using {firstName} work.
+        vars.firstName = partner.firstName || "";
+        vars.lastName = partner.lastName || "";
+        vars.partnerCode = partner.partnerCode;
+        const body = renderVars(tpl.body, vars);
+
+        const { sendSms } = await import("@/lib/twilio");
+        await sendSms({
+          to: partner.mobilePhone,
+          body,
+          template: templateKey,
+          partnerCode: partner.partnerCode,
+          optedIn: partner.smsOptIn, // TCPA gate — partner must have opted in
         });
         break;
       }

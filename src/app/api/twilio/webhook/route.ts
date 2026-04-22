@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { FIRM_SHORT } from "@/lib/constants";
+import { fireWorkflowTrigger } from "@/lib/workflow-engine";
 
 /**
  * Twilio Inbound SMS Webhook (Phase 15b-fu #2)
@@ -213,6 +214,29 @@ export async function POST(req: NextRequest) {
             err
           )
         );
+
+      // Fire opt-in/opt-out workflow triggers — fire-and-forget.
+      fireWorkflowTrigger(isStart ? "sms.opt_in" : "sms.opt_out", {
+        partner: {
+          partnerCode: partner.partnerCode,
+          firstName: partner.firstName,
+          mobilePhone: fromPhone,
+        },
+      }).catch(() => {});
+    }
+
+    // Fire sms.received for non-keyword inbound messages so admins can
+    // build automations that ping a Slack channel, open a support ticket,
+    // etc. STOP/START are handled by sms.opt_in / sms.opt_out above.
+    if (!isStop && !isStart) {
+      fireWorkflowTrigger("sms.received", {
+        sms: {
+          partnerCode: partner?.partnerCode ?? null,
+          fromPhone,
+          toPhone,
+          body,
+        },
+      }).catch(() => {});
     }
 
     // Auto-reply only for STOP/START so the partner gets immediate
