@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import PageTabBar from "@/components/ui/PageTabBar";
 
 type Thread = {
   id: string;
@@ -38,6 +39,16 @@ export default function MessagesPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
+
+      <PageTabBar
+        title="Communications"
+        tabs={[
+          { label: "Live Weekly Call", href: "/dashboard/conference" },
+          { label: "Announcements", href: "/dashboard/announcements" },
+          { label: "Messages", href: "/dashboard/messages" },
+          { label: "Notifications", href: "/dashboard/notifications" },
+        ]}
+      />
       <h1 className="font-heading text-xl mb-4">💬 Messages</h1>
       <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-4">
         Direct messages with your upline or downline. Skip-level and sibling conversations are not supported.

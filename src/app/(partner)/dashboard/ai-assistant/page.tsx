@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDevice } from "@/lib/useDevice";
+import PageTabBar from "@/components/ui/PageTabBar";
 
 interface Message {
   id: string;
@@ -162,6 +163,14 @@ export default function AiAssistantPage() {
 
   return (
     <div className="flex flex-col" style={{ height: "calc(100vh - 120px)" }}>
+
+      <PageTabBar
+        title="Partner Support"
+        tabs={[
+          { label: "PartnerOS AI", href: "/dashboard/ai-assistant" },
+          { label: "Support Tickets", href: "/dashboard/support" },
+        ]}
+      />
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">

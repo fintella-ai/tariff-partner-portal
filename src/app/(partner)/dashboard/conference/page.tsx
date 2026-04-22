@@ -5,6 +5,7 @@ import { useDevice } from "@/lib/useDevice";
 import { FIRM_SHORT } from "@/lib/constants";
 import { fmtDate } from "@/lib/format";
 import VideoModal from "@/components/ui/VideoModal";
+import PageTabBar from "@/components/ui/PageTabBar";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
@@ -128,6 +129,16 @@ export default function ConferencePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
+
+      <PageTabBar
+        title="Communications"
+        tabs={[
+          { label: "Live Weekly Call", href: "/dashboard/conference" },
+          { label: "Announcements", href: "/dashboard/announcements" },
+          { label: "Messages", href: "/dashboard/messages" },
+          { label: "Notifications", href: "/dashboard/notifications" },
+        ]}
+      />
         <div className="font-body text-sm text-[var(--app-text-muted)]">Loading conference data...</div>
       </div>
     );

@@ -11,7 +11,20 @@ import { useTheme } from "@/components/layout/ThemeProvider";
 
 // ─── NAV STRUCTURE ───────────────────────────────────────────────────────────
 // Main nav items (top section of sidebar)
-const MAIN_NAV = [
+// Each MAIN_NAV item links to a single route, but groupings like
+// Communications and Partner Support own several routes (exposed as
+// tabs on the landing page). `activePaths` lets those items stay
+// highlighted in the sidebar while the partner is on any of the
+// grouped routes. Default active check is `pathname === href ||
+// pathname.startsWith(href + "/")` — see isActive() below.
+const MAIN_NAV: Array<{
+  id: string;
+  href: string;
+  icon: string;
+  label: string;
+  shortLabel: string;
+  activePaths?: string[];
+}> = [
   { id: "home", href: "/dashboard/home", icon: "🏠", label: "Home", shortLabel: "Home" },
   { id: "overview", href: "/dashboard/overview", icon: "📊", label: "Overview", shortLabel: "Stats" },
   { id: "training", href: "/dashboard/training", icon: "📖", label: "Partner Training", shortLabel: "Learn" },
@@ -22,11 +35,27 @@ const MAIN_NAV = [
   { id: "downline", href: "/dashboard/downline", icon: "👥", label: "Downline", shortLabel: "Team" },
   { id: "referral-links", href: "/dashboard/referral-links", icon: "🔗", label: "Referral Links", shortLabel: "Links" },
   { id: "documents", href: "/dashboard/documents", icon: "📁", label: "Documents", shortLabel: "Docs" },
-  { id: "support", href: "/dashboard/support", icon: "📩", label: "Support", shortLabel: "Help" },
-  { id: "announcements", href: "/dashboard/announcements", icon: "📣", label: "Announcements", shortLabel: "Announce" },
-  { id: "messages", href: "/dashboard/messages", icon: "💬", label: "Messages", shortLabel: "DMs" },
-  { id: "conference", href: "/dashboard/conference", icon: "📹", label: "Live Weekly Call!", shortLabel: "Live" },
-  { id: "ai-assistant", href: "/dashboard/ai-assistant", icon: "🤖", label: "PartnerOS AI", shortLabel: "AI" },
+  {
+    id: "communications",
+    href: "/dashboard/conference",
+    icon: "💬",
+    label: "Communications",
+    shortLabel: "Comms",
+    activePaths: [
+      "/dashboard/conference",
+      "/dashboard/announcements",
+      "/dashboard/messages",
+      "/dashboard/notifications",
+    ],
+  },
+  {
+    id: "partner-support",
+    href: "/dashboard/ai-assistant",
+    icon: "🎧",
+    label: "Partner Support",
+    shortLabel: "Help",
+    activePaths: ["/dashboard/ai-assistant", "/dashboard/support"],
+  },
   { id: "feature-request", href: "/dashboard/feature-request", icon: "💡", label: "Feature Requests", shortLabel: "Ideas" },
 ];
 
@@ -220,7 +249,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!device.isDesktop) setSidebarOpen(false);
   }
 
-  function isActive(href: string) {
+  function isActive(href: string, activePaths?: string[]) {
+    if (activePaths && activePaths.length > 0) {
+      return activePaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
+    }
     return pathname === href || pathname.startsWith(href + "/");
   }
 
@@ -267,7 +299,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <NavButton
             key={item.id}
             item={item}
-            isActive={isActive(item.href)}
+            isActive={isActive(item.href, item.activePaths)}
             onClick={() => navigate(item.href)}
             collapsed={isCollapsed}
             customLabel={navLabels[`partner.${item.id}`]}
@@ -419,9 +451,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               key={item.id}
               onClick={() => navigate(item.href)}
               aria-label={item.shortLabel}
-              aria-current={isActive(item.href) ? "page" : undefined}
+              aria-current={isActive(item.href, (item as { activePaths?: string[] }).activePaths) ? "page" : undefined}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3 px-1 min-h-[56px] font-body text-[11px] transition-colors active:scale-95 ${
-                isActive(item.href) ? "text-brand-gold" : "text-[var(--app-text-muted)]"
+                isActive(item.href, (item as { activePaths?: string[] }).activePaths) ? "text-brand-gold" : "text-[var(--app-text-muted)]"
               }`}
             >
               <span className="text-xl leading-none">{item.icon}</span>
