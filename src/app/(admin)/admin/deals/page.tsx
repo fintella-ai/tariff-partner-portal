@@ -9,6 +9,7 @@ import { parseDealPayloadLog } from "@/lib/appendDealPayload";
 import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
 import PartnerLink from "@/components/ui/PartnerLink";
+import { isStarSuperAdminEmail } from "@/lib/starSuperAdmin";
 
 const STAGES = [
   { value: "all", label: "All Stages" },
@@ -78,6 +79,7 @@ type SortField = "dealName" | "estimatedRefundAmount" | "firmFeeAmount" | "l1Com
 export default function AdminDealsPage() {
   const { data: session } = useSession();
   const isSuperAdmin = (session?.user as any)?.role === "super_admin";
+  const isStarSuperAdmin = isStarSuperAdminEmail((session?.user as any)?.email);
 
   // 9 columns: Deal, Partner, Stage, Refund, Fee%, Firm Fee, Comm%, Commission, Date
   const { columnWidths: dealCols, getResizeHandler: dealResize } = useResizableColumns(
@@ -120,6 +122,8 @@ export default function AdminDealsPage() {
   const [dealNotes, setDealNotes] = useState<Record<string, any[]>>({});
   const [dealNoteFiles, setDealNoteFiles] = useState<Record<string, File[]>>({});
   const [dealNotePosting, setDealNotePosting] = useState<Record<string, boolean>>({});
+  const [editingDealNoteId, setEditingDealNoteId] = useState<string | null>(null);
+  const [editingDealNoteContent, setEditingDealNoteContent] = useState("");
 
   // Editable client-submission fields (super_admin / admin / partner_support
   // may need to correct these manually when the referral form came in with
@@ -948,22 +952,95 @@ export default function AdminDealsPage() {
                                   {new Date(n.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} {new Date(n.createdAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
                                 </span>
                               </div>
-                              <button
-                                onClick={async () => {
-                                  await fetch("/api/admin/deal-notes", {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ noteId: n.id, isPinned: !n.isPinned }),
-                                  });
-                                  fetchDealNotes(deal.id);
-                                }}
-                                className="font-body text-[9px] theme-text-muted hover:text-brand-gold transition-colors shrink-0"
-                              >
-                                {n.isPinned ? "Unpin" : "Pin"}
-                              </button>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <button
+                                  onClick={async () => {
+                                    await fetch("/api/admin/deal-notes", {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ noteId: n.id, isPinned: !n.isPinned }),
+                                    });
+                                    fetchDealNotes(deal.id);
+                                  }}
+                                  className="font-body text-[9px] theme-text-muted hover:text-brand-gold transition-colors"
+                                >
+                                  {n.isPinned ? "Unpin" : "Pin"}
+                                </button>
+                                {isStarSuperAdmin && editingDealNoteId !== n.id && (
+                                  <button
+                                    onClick={() => {
+                                      setEditingDealNoteId(n.id);
+                                      setEditingDealNoteContent(n.content || "");
+                                    }}
+                                    className="font-body text-[9px] theme-text-muted hover:text-brand-gold transition-colors"
+                                    title="Edit note (★ star super admin only)"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                                {isStarSuperAdmin && (
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm("Delete this deal note? This is irreversible.")) return;
+                                      const res = await fetch(`/api/admin/deal-notes?noteId=${encodeURIComponent(n.id)}`, { method: "DELETE" });
+                                      if (!res.ok) {
+                                        const d = await res.json().catch(() => ({}));
+                                        alert(d.error || "Failed to delete note");
+                                        return;
+                                      }
+                                      fetchDealNotes(deal.id);
+                                    }}
+                                    className="font-body text-[9px] text-red-400/60 hover:text-red-400 transition-colors"
+                                    title="Delete note (★ star super admin only)"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            {n.content && (
-                              <div className="font-body text-[12px] text-[var(--app-text-secondary)] mt-1 whitespace-pre-wrap">{n.content}</div>
+                            {editingDealNoteId === n.id ? (
+                              <div className="mt-1">
+                                <textarea
+                                  value={editingDealNoteContent}
+                                  onChange={(e) => setEditingDealNoteContent(e.target.value)}
+                                  rows={3}
+                                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-3 py-2 font-body text-[13px] text-[var(--app-text)] outline-none focus:border-brand-gold/40 transition-colors"
+                                />
+                                <div className="flex gap-2 mt-1.5">
+                                  <button
+                                    onClick={async () => {
+                                      const content = editingDealNoteContent.trim();
+                                      if (!content) return alert("Note content cannot be empty");
+                                      const res = await fetch("/api/admin/deal-notes", {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ noteId: n.id, content }),
+                                      });
+                                      if (!res.ok) {
+                                        const d = await res.json().catch(() => ({}));
+                                        alert(d.error || "Failed to save note");
+                                        return;
+                                      }
+                                      setEditingDealNoteId(null);
+                                      setEditingDealNoteContent("");
+                                      fetchDealNotes(deal.id);
+                                    }}
+                                    className="font-body text-[11px] text-brand-gold hover:underline"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => { setEditingDealNoteId(null); setEditingDealNoteContent(""); }}
+                                    className="font-body text-[11px] theme-text-muted hover:text-[var(--app-text)]"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              n.content && (
+                                <div className="font-body text-[12px] text-[var(--app-text-secondary)] mt-1 whitespace-pre-wrap">{n.content}</div>
+                              )
                             )}
                             {atts.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-2">
