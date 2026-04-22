@@ -109,9 +109,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [navLabels, setNavLabels] = useState<Record<string, string>>({});
   const [navIcons, setNavIcons] = useState<Record<string, string>>({});
 
-  // Fetch portal settings
-  useEffect(() => {
-    fetch("/api/settings")
+  // Fetch portal settings. Wrapped in a reusable fn so we can re-fetch
+  // on window focus — lets an admin save nav changes in one tab, switch
+  // to the partner tab, and see the new sidebar immediately (no Ctrl+R).
+  const fetchSettings = useCallback(() => {
+    fetch("/api/settings", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(({ settings }) => {
         if (settings.firmShort) setFirmShort(settings.firmShort);
@@ -121,13 +123,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         try { setHiddenNavItems(JSON.parse(settings.hiddenNavItems || "[]")); } catch {}
         try {
           const order = JSON.parse(settings.navOrder || "[]");
-          if (order.length > 0) setNavOrder(order);
+          setNavOrder(order.length > 0 ? order : []);
         } catch {}
         try { setNavLabels(JSON.parse(settings.navLabels || "{}")); } catch {}
         try { setNavIcons(JSON.parse(settings.navIcons || "{}")); } catch {}
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
+
+  // Refetch settings when the tab regains focus. Instant propagation from
+  // admin save → partner sidebar without a full page reload.
+  useEffect(() => {
+    function onFocus() { fetchSettings(); }
+    function onVisibility() { if (document.visibilityState === "visible") fetchSettings(); }
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [fetchSettings]);
 
   // Chat: fetch session & poll for new messages
   const fetchChat = useCallback(() => {

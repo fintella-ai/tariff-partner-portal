@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Opt out of any static optimization / route-level caching. Partners load
+// this on every dashboard mount to pick up the latest nav order, labels,
+// icons, and hidden items. Caching here would delay admin-side changes
+// reaching partners by minutes-to-hours, which is the bug John reported
+// ("how long does it take to change after save?"). Should be ~instant.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/settings
  * Returns portal settings (public — used by partner portal).
@@ -19,7 +27,13 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ settings });
+    return NextResponse.json({ settings }, {
+      headers: {
+        // Explicit no-store so browser + any intermediary proxies (Vercel
+        // edge, CDN, etc.) don't serve a stale snapshot after an admin save.
+        "Cache-Control": "no-store, must-revalidate",
+      },
+    });
   } catch {
     // Return hardcoded defaults if DB not available
     return NextResponse.json({
