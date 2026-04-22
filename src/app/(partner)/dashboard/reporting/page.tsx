@@ -329,24 +329,24 @@ export default function PartnerReportingPage() {
                       {(() => {
                         const on = (k: string) => cycleSort(k, overviewSort, overviewDir, setOverviewSort, setOverviewDir);
                         const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
+
                           <th className={props.className || "px-3 py-3 text-center"}>
-                            {props.sortable === false ? (
-                              <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
-                            ) : (
-                              <SortHeader label={props.label} sortKey={props.k} currentSort={overviewSort} currentDir={overviewDir} onSort={on} />
-                            )}
+
+                            <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+
                           </th>
+
                         );
                         return (<>
                           <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
-                          <H label="Date" k="createdAt" />
-                          <H label="Source" k="source" />
+                          <H label="Partner" k="source" />
                           <H label="Stage" k="stage" />
                           <H label="Refund" k="estimatedRefundAmount" />
                           <H label="Fee %" k="firmFeeRate" />
+                          <H label="Firm Fee" k="firmFeeAmount" sortable={false} />
                           <H label="Comm %" k="commRate" sortable={false} />
-                          <H label="Status" k="status" />
                           <H label="Commission" k="commission" />
+                          <H label="Date" k="createdAt" />
                         </>);
                       })()}
                     </tr>
@@ -357,6 +357,7 @@ export default function PartnerReportingPage() {
                       const commStatus = deal.source === "direct" ? deal.l1CommissionStatus : (deal.l2CommissionStatus || "pending");
                       const partnerName = deal.source === "downline" ? (deal.submittingPartnerName || partnerNameMap[deal.partnerCode || ""] || deal.partnerCode) : null;
                       const feeRate = deal.firmFeeRate ? `${Math.round(deal.firmFeeRate * 100)}%` : "—";
+                      const firmFeeAmt = deal.firmFeeAmount || (deal.estimatedRefundAmount * (deal.firmFeeRate || 0));
                       const commRate = deal.source === "direct" ? (commissionRate ? `${Math.round(commissionRate * 100)}%` : "—") : "—";
                       return (<React.Fragment key={deal.id + deal.source}>
                         <tr onClick={() => setExpandedDealId(expandedDealId === deal.id ? null : deal.id)} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
@@ -364,16 +365,20 @@ export default function PartnerReportingPage() {
                             <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
                             {partnerName && <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">via {partnerName}</div>}
                           </td>
-                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
                           <td className="px-3 py-3.5 text-center">
-                            <span className={`font-body text-[10px] font-semibold rounded px-1.5 py-0.5 ${deal.source === "direct" ? "text-brand-gold bg-brand-gold/10 border border-brand-gold/20" : "text-purple-400 bg-purple-500/10 border border-purple-500/20"}`}>{deal.source === "direct" ? "L1" : "L2"}</span>
+                            {deal.source === "downline" && partnerName ? (
+                              <div className="font-body text-[12px] text-[var(--app-text-secondary)] truncate">{partnerName}</div>
+                            ) : (
+                              <span className="font-body text-[10px] font-semibold rounded px-1.5 py-0.5 text-brand-gold bg-brand-gold/10 border border-brand-gold/20">You</span>
+                            )}
                           </td>
                           <td className="px-3 py-3.5 text-center"><StageBadge stage={deal.stage} /></td>
                           <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</td>
                           <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{feeRate}</td>
+                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmt$(firmFeeAmt)}</td>
                           <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{commRate}</td>
-                          <td className="px-3 py-3.5 text-center"><StatusBadge status={commStatus} /></td>
                           <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(commAmt)}</td>
+                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
                         </tr>
                         {expandedDealId === deal.id && (
                           <tr><td colSpan={9} className="p-0"><DealDetailPanel deal={deal} /></td></tr>
@@ -427,23 +432,23 @@ export default function PartnerReportingPage() {
                         {(() => {
                           const on = (k: string) => cycleSort(k, myDealsSort, myDealsDir, setMyDealsSort, setMyDealsDir);
                           const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
+
                             <th className={props.className || "px-3 py-3 text-center"}>
-                              {props.sortable === false ? (
-                                <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
-                              ) : (
-                                <SortHeader label={props.label} sortKey={props.k} currentSort={myDealsSort} currentDir={myDealsDir} onSort={on} />
-                              )}
+
+                              <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+
                             </th>
+
                           );
                           return (<>
                             <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
-                            <H label="Date" k="createdAt" />
                             <H label="Stage" k="stage" />
                             <H label="Refund" k="estimatedRefundAmount" />
                             <H label="Fee %" k="firmFeeRate" />
+                            <H label="Firm Fee" k="firmFeeAmount" sortable={false} />
                             <H label="Comm %" k="commRate" sortable={false} />
-                            <H label="Status" k="status" />
                             <H label="Commission" k="commission" />
+                            <H label="Date" k="createdAt" />
                           </>);
                         })()}
                       </tr>
@@ -451,9 +456,9 @@ export default function PartnerReportingPage() {
                     <tbody>
                       {deals.map((deal, idx) => {
                         const commAmt = isDownline ? (deal.l2CommissionAmount || 0) : deal.l1CommissionAmount;
-                        const commStatus = isDownline ? (deal.l2CommissionStatus || "pending") : deal.l1CommissionStatus;
                         const partner = isDownline ? (deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode) : null;
                         const feeRate = deal.firmFeeRate ? `${Math.round(deal.firmFeeRate * 100)}%` : "—";
+                        const firmFeeAmt = deal.firmFeeAmount || (deal.estimatedRefundAmount * (deal.firmFeeRate || 0));
                         const dealCommRate = commissionRate ? `${Math.round(commissionRate * 100)}%` : "—";
                         return (<React.Fragment key={deal.id}>
                           <tr onClick={() => setExpandedDealId(expandedDealId === deal.id ? null : deal.id)} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
@@ -461,13 +466,13 @@ export default function PartnerReportingPage() {
                               <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
                               {partner && <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">via {partner}</div>}
                             </td>
-                            <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
                             <td className="px-3 py-3.5 text-center"><StageBadge stage={deal.stage} /></td>
                             <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</td>
                             <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{feeRate}</td>
+                            <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmt$(firmFeeAmt)}</td>
                             <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{dealCommRate}</td>
-                            <td className="px-3 py-3.5 text-center"><StatusBadge status={commStatus} /></td>
                             <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(commAmt)}</td>
+                            <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
                           </tr>
                           {expandedDealId === deal.id && (
                             <tr><td colSpan={8} className="p-0"><DealDetailPanel deal={deal} /></td></tr>
@@ -568,13 +573,13 @@ export default function PartnerReportingPage() {
                             {(() => {
                               const on = (k: string) => cycleSort(k, downlinePartnersSort, downlinePartnersDir, setDownlinePartnersSort, setDownlinePartnersDir);
                               const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
+
                                 <th className={props.className || "px-3 py-3 text-center"}>
-                                  {props.sortable === false ? (
-                                    <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
-                                  ) : (
-                                    <SortHeader label={props.label} sortKey={props.k} currentSort={downlinePartnersSort} currentDir={downlinePartnersDir} onSort={on} />
-                                  )}
+
+                                  <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+
                                 </th>
+
                               );
                               return (<>
                                 <H label="Partner" k="firstName" className="px-4 sm:px-6 py-3 text-left" />
@@ -639,40 +644,50 @@ export default function PartnerReportingPage() {
                         {(() => {
                           const on = (k: string) => cycleSort(k, downlineDealsSort, downlineDealsDir, setDownlineDealsSort, setDownlineDealsDir);
                           const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
+
                             <th className={props.className || "px-3 py-3 text-center"}>
-                              {props.sortable === false ? (
-                                <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
-                              ) : (
-                                <SortHeader label={props.label} sortKey={props.k} currentSort={downlineDealsSort} currentDir={downlineDealsDir} onSort={on} />
-                              )}
+
+                              <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+
                             </th>
+
                           );
                           return (<>
                             <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
                             <H label="Partner" k="submittingPartner" />
-                            <H label="Date" k="createdAt" />
                             <H label="Stage" k="stage" />
                             <H label="Refund" k="estimatedRefundAmount" />
                             <H label="Fee %" k="firmFeeRate" />
-                            <H label="Status" k="status" />
+                            <H label="Firm Fee" k="firmFeeAmount" sortable={false} />
+                            <H label="Comm %" k="commRate" sortable={false} />
                             <H label="Commission" k="commission" />
+                            <H label="Date" k="createdAt" />
                           </>);
                         })()}
                       </tr>
                     </thead>
                     <tbody>
-                      {sortedDownlineDeals.map((deal, idx) => (
+                      {sortedDownlineDeals.map((deal, idx) => {
+                        const firmFeeAmt = deal.firmFeeAmount || (deal.estimatedRefundAmount * (deal.firmFeeRate || 0));
+                        // Partner's own commission rate on their downline deal. We don't have
+                        // the submitting partner's rate directly in this row, so derive from
+                        // l2CommissionAmount / firmFeeAmount when both are populated; else em-dash.
+                        const commRateNum = firmFeeAmt > 0 && deal.l2CommissionAmount ? (deal.l2CommissionAmount / firmFeeAmt) : null;
+                        const commRate = commRateNum != null ? `${Math.round(commRateNum * 100)}%` : "—";
+                        return (
                         <tr key={deal.id} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
                           <td className="px-4 sm:px-6 py-3.5 font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</td>
                           <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-secondary)]">{deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode}</td>
-                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
                           <td className="px-3 py-3.5 text-center"><StageBadge stage={deal.stage} /></td>
                           <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</td>
                           <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{deal.firmFeeRate ? `${Math.round(deal.firmFeeRate * 100)}%` : "—"}</td>
-                          <td className="px-3 py-3.5 text-center"><StatusBadge status={deal.l2CommissionStatus} /></td>
+                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmt$(firmFeeAmt)}</td>
+                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{commRate}</td>
                           <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-brand-gold">{fmt$(deal.l2CommissionAmount)}</td>
+                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
