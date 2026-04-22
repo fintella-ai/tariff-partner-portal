@@ -172,34 +172,33 @@ function GetStartedContent() {
             </div>
           </div>
 
-          {success.embeddedSigningUrl ? (
-            <div className="card overflow-hidden mb-4">
-              <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid var(--app-border)" }}>
-                <div className="font-body text-[12px] theme-text-muted flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-                  Sign your partnership agreement below
-                </div>
-                <div className="font-body text-[11px] theme-text-faint">Also sent to your email</div>
-              </div>
-              <div className="bg-white" style={{ height: "75vh", minHeight: 500 }}>
-                <iframe src={success.embeddedSigningUrl} className="w-full h-full border-0" title="Partnership Agreement Signing" allow="camera; microphone" />
-              </div>
+          {/* SignWell blocks iframe embedding — open the signing URL in a
+              new tab instead. Matches the dashboard "Sign Now" pattern. */}
+          <div className="card p-6 text-center mb-4">
+            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-500/10 border border-green-500/25 flex items-center justify-center">
+              <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-          ) : (
-            <div className="card p-6 text-center mb-4">
-              <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-500/10 border border-green-500/25 flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <p className="font-body text-[13px] theme-text-secondary leading-relaxed">
-                Your partnership agreement has been sent to your email. Please check your inbox and sign to activate your account.
-              </p>
-            </div>
-          )}
+            <p className="font-body text-[14px] font-semibold text-[var(--app-text)] mb-1">
+              Partnership agreement sent
+            </p>
+            <p className="font-body text-[12px] theme-text-muted leading-relaxed max-w-[420px] mx-auto">
+              A copy has been sent to your email. You can sign it now or later — signing activates your account and unlocks the partner portal.
+            </p>
+            {success.embeddedSigningUrl && (
+              <button
+                onClick={() => window.open(success.embeddedSigningUrl!, "_blank")}
+                className="btn-gold inline-flex items-center gap-2 mt-5 px-6 py-3 text-[13px]"
+              >
+                <span>✍️</span>
+                <span>Sign Agreement Now</span>
+              </button>
+            )}
+          </div>
 
           <div className="text-center">
-            <a href="/login" className="btn-gold inline-block px-8 py-3 text-[13px]">Log In to Your Portal</a>
+            <a href="/login" className="btn-gold inline-block px-8 py-3 text-[13px]">Sign In to Your Portal</a>
             <p className="font-body text-[11px] theme-text-muted mt-3">Use your email and password to log in after signing.</p>
           </div>
         </div>
