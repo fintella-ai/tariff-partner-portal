@@ -9,9 +9,8 @@ import SortHeader, { type SortDir } from "@/components/ui/SortHeader";
 
 type SortKey = string;
 
-const FINTELLA_FEE_RATE = 0.40; // Fintella receives 40% of firm fee
-const PARTNER_RATE = 0.25;  // Partners receive 25% of firm fee
-const FINTELLA_NET_RATE = FINTELLA_FEE_RATE - PARTNER_RATE; // 15% net to Fintella
+const FINTELLA_FEE_RATE = 0.40; // Fintella receives 40% of firm fee (Frost Law contract)
+const MAX_PARTNER_RATE = 0.25;  // Maximum commission rate any partner can have (used for projected pipeline fallback)
 
 interface Deal {
   id: string;
@@ -20,15 +19,64 @@ interface Deal {
   partnerId: string | null;
   stage: string;
   estimatedRefundAmount: number;
+  actualRefundAmount: number | null;
   firmFeeRate: number | null;
   firmFeeAmount: number;
+  l1CommissionRate: number | null;
+  // Server-resolved fallback: deal.l1CommissionRate ?? submittingPartner.commissionRate.
+  // Used as the per-deal commission rate in the Comm % column.
+  effectiveCommissionRate: number | null;
   l1CommissionAmount: number;
   l1CommissionStatus: string;
   l2CommissionAmount: number;
   l2CommissionStatus: string;
+  l3CommissionAmount: number;
+  l3CommissionStatus: string;
   closeDate: string | null;
   createdAt: string;
 }
+
+// Stage-aware refund: closed_won deals prefer actualRefundAmount when set,
+// matching the resolveDealFinancials rule. Used for pipeline + closed-won
+// firm fee derivation when the DB firmFeeAmount is 0.
+const stageAwareRefund = (d: Deal): number => {
+  if (d.stage === "closedwon" && d.actualRefundAmount && d.actualRefundAmount > 0) {
+    return d.actualRefundAmount;
+  }
+  return d.estimatedRefundAmount;
+};
+
+// Effective firm fee: stored value wins (except closed_won with actual set,
+// where we recompute from rate × actual to honor the stage-aware base); else
+// compute from firmFeeRate × refund with 20% default rate fallback for
+// pipeline projections where rate isn't yet set.
+const effectiveFirmFee = (d: Deal): number => {
+  const refund = stageAwareRefund(d);
+  const usingActual = d.stage === "closedwon" && d.actualRefundAmount && d.actualRefundAmount > 0;
+  if (d.firmFeeAmount > 0 && !usingActual) return d.firmFeeAmount;
+  const rate = d.firmFeeRate ?? 0.20;
+  return refund * rate;
+};
+
+// Partner commission total for a deal: sum of all three tier snapshots.
+// These are populated by the webhook's waterfall write (PR #370) regardless
+// of Enabled/Disabled mode, so summing them gives the correct total partner
+// payout for either payout model.
+const partnerCommission = (d: Deal): number =>
+  d.l1CommissionAmount + d.l2CommissionAmount + d.l3CommissionAmount;
+
+// Per-deal commission rate for display. Falls back through the same chain
+// the admin deals table uses: custom per-deal rate → submitting partner's
+// standard rate → null (render "—").
+const commissionRate = (d: Deal): number | null =>
+  d.l1CommissionRate ?? d.effectiveCommissionRate ?? null;
+
+// Pipeline projection: until a deal closes there's no ledger, so project
+// using the partner's standard rate × firm fee.
+const projectedPartnerCommission = (d: Deal): number => {
+  const rate = commissionRate(d) ?? MAX_PARTNER_RATE;
+  return effectiveFirmFee(d) * rate;
+};
 
 const stageBadge: Record<string, string> = {
   new_lead: "bg-gray-500/10 text-gray-400 border border-gray-500/20",
@@ -108,9 +156,8 @@ export default function RevenuePage() {
     }
 
     return [...base].sort((a, b) => {
-      const getFirmFee = (d: Deal) => d.firmFeeAmount || d.estimatedRefundAmount * (d.firmFeeRate || 0.20);
-      const getFintellaGross = (d: Deal) => getFirmFee(d) * FINTELLA_FEE_RATE;
-      const getPartnerComm = (d: Deal) => d.l1CommissionAmount + d.l2CommissionAmount;
+      const getFintellaGross = (d: Deal) => effectiveFirmFee(d) * FINTELLA_FEE_RATE;
+      const getPartnerComm = (d: Deal) => (d.stage === "closedwon" ? partnerCommission(d) : projectedPartnerCommission(d));
       const getFintellaNet = (d: Deal) => getFintellaGross(d) - getPartnerComm(d);
 
       let aVal: string | number = "";
@@ -119,10 +166,11 @@ export default function RevenuePage() {
       switch (sortKey) {
         case "dealName": aVal = a.dealName.toLowerCase(); bVal = b.dealName.toLowerCase(); break;
         case "stage": aVal = a.stage; bVal = b.stage; break;
-        case "dealAmount": aVal = a.estimatedRefundAmount; bVal = b.estimatedRefundAmount; break;
-        case "firmFee": aVal = getFirmFee(a); bVal = getFirmFee(b); break;
+        case "dealAmount": aVal = stageAwareRefund(a); bVal = stageAwareRefund(b); break;
+        case "firmFee": aVal = effectiveFirmFee(a); bVal = effectiveFirmFee(b); break;
         case "fintellaGross": aVal = getFintellaGross(a); bVal = getFintellaGross(b); break;
-        case "partnerComm": aVal = getPartnerComm(a); bVal = getPartnerComm(b); break;
+        case "commRate": aVal = commissionRate(a) ?? 0; bVal = commissionRate(b) ?? 0; break;
+        case "commAmount": aVal = getPartnerComm(a); bVal = getPartnerComm(b); break;
         case "fintellaNet": aVal = getFintellaNet(a); bVal = getFintellaNet(b); break;
         case "date": aVal = a.closeDate || a.createdAt; bVal = b.closeDate || b.createdAt; break;
         default: return 0;
@@ -138,32 +186,26 @@ export default function RevenuePage() {
   const closedWonDeals = deals.filter((d) => d.stage === "closedwon");
   const pipelineDeals = deals.filter((d) => d.stage !== "closedwon" && d.stage !== "closedlost");
 
-  // Closed Won (realized revenue)
-  const totalDealAmountWon = closedWonDeals.reduce((sum, d) => sum + d.estimatedRefundAmount, 0);
-  const totalFirmFeesWon = closedWonDeals.reduce((sum, d) => sum + d.firmFeeAmount, 0);
+  // Closed Won (realized revenue) — stage-aware refund, all three tiers.
+  const totalDealAmountWon = closedWonDeals.reduce((sum, d) => sum + stageAwareRefund(d), 0);
+  const totalFirmFeesWon = closedWonDeals.reduce((sum, d) => sum + effectiveFirmFee(d), 0);
   const totalFintellaGrossWon = totalFirmFeesWon * FINTELLA_FEE_RATE;
-  const totalPartnerCommWon = closedWonDeals.reduce((sum, d) => sum + d.l1CommissionAmount + d.l2CommissionAmount, 0);
+  const totalPartnerCommWon = closedWonDeals.reduce((sum, d) => sum + partnerCommission(d), 0);
   const totalFintellaNetWon = totalFintellaGrossWon - totalPartnerCommWon;
 
-  // Commission breakdown
+  // Commission breakdown — paid vs pending/due. Status is tracked on the
+  // L1 row for simple reporting; the L2/L3 rows flip together during payout.
   const commPaid = closedWonDeals
     .filter((d) => d.l1CommissionStatus === "paid")
-    .reduce((sum, d) => sum + d.l1CommissionAmount + d.l2CommissionAmount, 0);
+    .reduce((sum, d) => sum + partnerCommission(d), 0);
   const commPending = totalPartnerCommWon - commPaid;
 
-  // Pipeline (projected revenue)
-  const totalFirmFeesPipeline = pipelineDeals.reduce((sum, d) => {
-    const feeRate = d.firmFeeRate || 0.20;
-    return sum + d.estimatedRefundAmount * feeRate;
-  }, 0);
+  // Pipeline (projected revenue) — each deal's commission projected at its
+  // own partner's rate, not a flat 25%.
+  const totalFirmFeesPipeline = pipelineDeals.reduce((sum, d) => sum + effectiveFirmFee(d), 0);
   const totalFintellaGrossPipeline = totalFirmFeesPipeline * FINTELLA_FEE_RATE;
-  const totalPartnerCommPipeline = totalFirmFeesPipeline * PARTNER_RATE;
+  const totalPartnerCommPipeline = pipelineDeals.reduce((sum, d) => sum + projectedPartnerCommission(d), 0);
   const totalFintellaNetPipeline = totalFintellaGrossPipeline - totalPartnerCommPipeline;
-
-  // All deals
-  const totalFirmFeesAll = totalFirmFeesWon + totalFirmFeesPipeline;
-  const totalFintellaGrossAll = totalFirmFeesAll * FINTELLA_FEE_RATE;
-  const totalFintellaNetAll = totalFintellaGrossAll - totalPartnerCommWon - totalPartnerCommPipeline;
 
   if (loading) {
     return (
@@ -180,7 +222,7 @@ export default function RevenuePage() {
         <div>
           <h2 className="font-display text-[22px] font-bold mb-1">Company Revenue</h2>
           <p className="font-body text-[13px] theme-text-muted">
-            Fintella receives {Math.round(FINTELLA_FEE_RATE * 100)}% of firm fees. Partner field receives {Math.round(PARTNER_RATE * 100)}%. Net to Fintella: {Math.round(FINTELLA_NET_RATE * 100)}%.
+            Fintella receives {Math.round(FINTELLA_FEE_RATE * 100)}% of firm fees. Partner commission rates vary per deal (up to {Math.round(MAX_PARTNER_RATE * 100)}%); totals below use each deal&rsquo;s own rate.
           </p>
         </div>
       </div>
@@ -198,14 +240,14 @@ export default function RevenuePage() {
           <div className="font-body text-[10px] theme-text-muted mt-1">Of firm fees earned</div>
         </div>
         <div className="stat-card">
-          <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Partner Commissions (25%)</div>
+          <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Partner Commissions</div>
           <div className="font-display text-xl sm:text-2xl font-bold text-red-400">-{fmt$(totalPartnerCommWon)}</div>
           <div className="font-body text-[10px] theme-text-muted mt-1">
             <span className="text-green-400">{fmt$(commPaid)} paid</span> · <span className="text-yellow-400">{fmt$(commPending)} pending</span>
           </div>
         </div>
         <div className="stat-card">
-          <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Fintella Net Revenue (15%)</div>
+          <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Fintella Net Revenue</div>
           <div className="font-display text-xl sm:text-2xl font-bold text-green-400">{fmt$(totalFintellaNetWon)}</div>
           <div className="font-body text-[10px] theme-text-muted mt-1">After partner commissions</div>
         </div>
@@ -324,25 +366,28 @@ export default function RevenuePage() {
           )}
         </div>
 
-        {/* Desktop table */}
+        {/* Desktop table — 9 cols: Deal | Stage | Deal Amt | Firm Fee | Fintella 40% | Comm % | Comm $ | Fintella Net | Date */}
         <div className="hidden sm:block overflow-x-auto">
-          <div className="grid grid-cols-[1.4fr_0.6fr_0.7fr_0.7fr_0.7fr_0.6fr_0.6fr_0.6fr] gap-2 px-5 py-3 min-w-[800px]" style={{ borderBottom: "1px solid var(--app-border)" }}>
+          <div className="grid grid-cols-[1.3fr_0.55fr_0.65fr_0.65fr_0.65fr_0.4fr_0.6fr_0.6fr_0.55fr] gap-2 px-5 py-3 min-w-[880px]" style={{ borderBottom: "1px solid var(--app-border)" }}>
             <SortHeader label="Deal" sortKey="dealName" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortHeader label="Stage" sortKey="stage" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortHeader label="Deal Amt" sortKey="dealAmount" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortHeader label="Firm Fee" sortKey="firmFee" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortHeader label="Fintella 40%" sortKey="fintellaGross" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
-            <SortHeader label="Partner 25%" sortKey="partnerComm" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
+            <SortHeader label="Comm %" sortKey="commRate" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
+            <SortHeader label="Comm $" sortKey="commAmount" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortHeader label="Fintella Net" sortKey="fintellaNet" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
             <SortHeader label="Date" sortKey="date" currentSort={sortKey} currentDir={sortDir} onSort={toggleSort} />
           </div>
           {filtered.map((d) => {
-            const firmFee = d.firmFeeAmount || d.estimatedRefundAmount * (d.firmFeeRate || 0.20);
+            const firmFee = effectiveFirmFee(d);
             const fintellaGross = firmFee * FINTELLA_FEE_RATE;
-            const partnerComm = d.l1CommissionAmount + d.l2CommissionAmount;
-            const fintellaNet = fintellaGross - partnerComm;
+            const partnerCommAmt = d.stage === "closedwon" ? partnerCommission(d) : projectedPartnerCommission(d);
+            const fintellaNet = fintellaGross - partnerCommAmt;
+            const rate = commissionRate(d);
+            const isProjected = d.stage !== "closedwon";
             return (
-              <div key={d.id} className="grid grid-cols-[1.4fr_0.6fr_0.7fr_0.7fr_0.7fr_0.6fr_0.6fr_0.6fr] gap-2 px-5 py-3 items-center min-w-[800px] hover:bg-[var(--app-hover)] transition-colors" style={{ borderBottom: "1px solid var(--app-border)" }}>
+              <div key={d.id} className="grid grid-cols-[1.3fr_0.55fr_0.65fr_0.65fr_0.65fr_0.4fr_0.6fr_0.6fr_0.55fr] gap-2 px-5 py-3 items-center min-w-[880px] hover:bg-[var(--app-hover)] transition-colors" style={{ borderBottom: "1px solid var(--app-border)" }}>
                 <div>
                   <DealLink dealId={d.id} className="font-body text-[13px] font-medium truncate block">{d.dealName}</DealLink>
                   <PartnerLink partnerId={d.partnerId} className="font-mono text-[10px] theme-text-muted">{d.partnerCode}</PartnerLink>
@@ -352,10 +397,15 @@ export default function RevenuePage() {
                     {d.stage.replace("_", " ")}
                   </span>
                 </div>
-                <div className="font-body text-[13px]">{fmt$(d.estimatedRefundAmount)}</div>
+                <div className="font-body text-[13px]">{fmt$(stageAwareRefund(d))}</div>
                 <div className="font-body text-[13px] theme-text-secondary">{fmt$(firmFee)}</div>
                 <div className="font-body text-[13px] text-brand-gold font-semibold">{fmt$(fintellaGross)}</div>
-                <div className="font-body text-[13px] text-red-400">-{fmt$(partnerComm)}</div>
+                <div className="font-body text-[13px] theme-text-secondary">
+                  {rate != null ? `${(rate * 100).toFixed(0)}%` : "—"}
+                </div>
+                <div className={`font-body text-[13px] ${isProjected ? "text-red-400/60 italic" : "text-red-400"}`} title={isProjected ? "Projected — ledger not yet written" : "Actual ledger total"}>
+                  -{fmt$(partnerCommAmt)}
+                </div>
                 <div className="font-display text-[13px] font-semibold text-green-400">{fmt$(fintellaNet)}</div>
                 <div className="font-body text-[11px] theme-text-muted">{d.closeDate ? fmtDate(d.closeDate) : fmtDate(d.createdAt)}</div>
               </div>
@@ -369,10 +419,12 @@ export default function RevenuePage() {
         {/* Mobile cards */}
         <div className="sm:hidden">
           {filtered.map((d) => {
-            const firmFee = d.firmFeeAmount || d.estimatedRefundAmount * (d.firmFeeRate || 0.20);
+            const firmFee = effectiveFirmFee(d);
             const fintellaGross = firmFee * FINTELLA_FEE_RATE;
-            const partnerComm = d.l1CommissionAmount + d.l2CommissionAmount;
-            const fintellaNet = fintellaGross - partnerComm;
+            const partnerCommAmt = d.stage === "closedwon" ? partnerCommission(d) : projectedPartnerCommission(d);
+            const fintellaNet = fintellaGross - partnerCommAmt;
+            const rate = commissionRate(d);
+            const isProjected = d.stage !== "closedwon";
             return (
               <div key={d.id} className="p-4" style={{ borderBottom: "1px solid var(--app-border)" }}>
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -381,15 +433,17 @@ export default function RevenuePage() {
                     {d.stage.replace("_", " ")}
                   </span>
                 </div>
-                <div className="font-body text-[11px] theme-text-muted mb-2">Deal: {fmt$(d.estimatedRefundAmount)} · Fee: {fmt$(firmFee)}</div>
+                <div className="font-body text-[11px] theme-text-muted mb-2">
+                  Deal: {fmt$(stageAwareRefund(d))} · Fee: {fmt$(firmFee)} · {rate != null ? `${(rate * 100).toFixed(0)}% partner rate` : "no rate"}
+                </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
                     <div className="font-body text-[10px] theme-text-muted uppercase">Fintella 40%</div>
                     <div className="font-body text-[13px] text-brand-gold font-semibold">{fmt$(fintellaGross)}</div>
                   </div>
                   <div>
-                    <div className="font-body text-[10px] theme-text-muted uppercase">Partner</div>
-                    <div className="font-body text-[13px] text-red-400">-{fmt$(partnerComm)}</div>
+                    <div className="font-body text-[10px] theme-text-muted uppercase">Comm $</div>
+                    <div className={`font-body text-[13px] ${isProjected ? "text-red-400/60 italic" : "text-red-400"}`}>-{fmt$(partnerCommAmt)}</div>
                   </div>
                   <div>
                     <div className="font-body text-[10px] theme-text-muted uppercase">Net</div>
@@ -401,7 +455,7 @@ export default function RevenuePage() {
           })}
         </div>
 
-        {/* Totals row */}
+        {/* Totals row — uses stage-aware helpers consistent with the table cells above */}
         {filtered.length > 0 && (
           <div className="px-5 py-4 flex items-center justify-between" style={{ borderTop: "2px solid var(--app-border)" }}>
             <div className="font-body text-[12px] font-semibold theme-text-secondary">{filtered.length} deals</div>
@@ -409,27 +463,34 @@ export default function RevenuePage() {
               <div>
                 <div className="font-body text-[9px] theme-text-muted uppercase">Deal Total</div>
                 <div className="font-body text-[13px] font-semibold">
-                  {fmt$(filtered.reduce((sum, d) => sum + d.estimatedRefundAmount, 0))}
+                  {fmt$(filtered.reduce((sum, d) => sum + stageAwareRefund(d), 0))}
                 </div>
               </div>
               <div>
                 <div className="font-body text-[9px] theme-text-muted uppercase">Firm Fees</div>
                 <div className="font-body text-[13px] theme-text-secondary font-semibold">
-                  {fmt$(filtered.reduce((sum, d) => sum + (d.firmFeeAmount || d.estimatedRefundAmount * (d.firmFeeRate || 0.20)), 0))}
+                  {fmt$(filtered.reduce((sum, d) => sum + effectiveFirmFee(d), 0))}
                 </div>
               </div>
               <div>
                 <div className="font-body text-[9px] theme-text-muted uppercase">Fintella 40%</div>
                 <div className="font-body text-[13px] text-brand-gold font-semibold">
-                  {fmt$(filtered.reduce((sum, d) => sum + (d.firmFeeAmount || d.estimatedRefundAmount * (d.firmFeeRate || 0.20)) * FINTELLA_FEE_RATE, 0))}
+                  {fmt$(filtered.reduce((sum, d) => sum + effectiveFirmFee(d) * FINTELLA_FEE_RATE, 0))}
+                </div>
+              </div>
+              <div>
+                <div className="font-body text-[9px] theme-text-muted uppercase">Comm $</div>
+                <div className="font-body text-[13px] text-red-400 font-semibold">
+                  -{fmt$(filtered.reduce((sum, d) => sum + (d.stage === "closedwon" ? partnerCommission(d) : projectedPartnerCommission(d)), 0))}
                 </div>
               </div>
               <div>
                 <div className="font-body text-[9px] theme-text-muted uppercase">Net Revenue</div>
                 <div className="font-display text-[13px] font-bold text-green-400">
                   {fmt$(filtered.reduce((sum, d) => {
-                    const ff = d.firmFeeAmount || d.estimatedRefundAmount * (d.firmFeeRate || 0.20);
-                    return sum + ff * FINTELLA_FEE_RATE - d.l1CommissionAmount - d.l2CommissionAmount;
+                    const ff = effectiveFirmFee(d);
+                    const partner = d.stage === "closedwon" ? partnerCommission(d) : projectedPartnerCommission(d);
+                    return sum + ff * FINTELLA_FEE_RATE - partner;
                   }, 0))}
                 </div>
               </div>
