@@ -108,6 +108,8 @@ export default function HomePage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [referralOpps, setReferralOpps] = useState<ReferralOpp[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [hiddenModules, setHiddenModules] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch("/api/settings")
@@ -128,23 +130,48 @@ export default function HomePage() {
         setAnnouncements(parseJsonArray<Announcement>(d?.settings?.announcements));
         setUpcomingEvents(parseJsonArray<UpcomingEvent>(d?.settings?.upcomingEvents));
         setReferralOpps(parseJsonArray<ReferralOpp>(d?.settings?.referralOpportunities));
+        setVideoUrl(typeof d?.settings?.homeEmbedVideoUrl === "string" ? d.settings.homeEmbedVideoUrl : "");
+        const hidden = parseJsonArray<string>(d?.settings?.homeHiddenModules);
+        setHiddenModules(new Set(hidden.filter((x) => typeof x === "string")));
       })
       .catch(() => {});
   }, []);
 
+  const isVisible = (id: string) => !hiddenModules.has(id);
+
   return (
     <div>
       {/* ══════════════════ WELCOME HEADER ══════════════════ */}
-      <div className={`mb-6 sm:mb-8 animate-fade-up ${device.isMobile ? "text-center" : ""}`}>
+      <div className="mb-6 sm:mb-8 animate-fade-up text-center">
         <h1 className={`font-display ${device.headingSize} font-bold text-[var(--app-text)] mb-1`}>
           Welcome Back, {firstName}
         </h1>
         <p className="font-body text-[13px] text-[var(--app-text-muted)]">{formatDateHeading()}</p>
       </div>
 
+      {/* ══════════════════ WELCOME VIDEO ══════════════════ */}
+      {isVisible("video") && videoUrl && (
+        <div className="mb-6 sm:mb-8 animate-fade-up flex justify-center">
+          <div className="w-full max-w-3xl">
+            <div className="relative w-full overflow-hidden rounded-lg border border-[var(--app-border)] bg-black" style={{ aspectRatio: "16 / 9" }}>
+              <iframe
+                src={videoUrl}
+                className="absolute inset-0 h-full w-full"
+                title="Welcome video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════ 2-COLUMN CONTENT GRID (desktop) ══════════════════ */}
+      <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:grid-flow-dense">
+
       {/* ══════════════════ SECTION 1: ANNOUNCEMENTS ══════════════════ */}
-      {announcements.length > 0 && (
-      <div className="mb-6 sm:mb-8 animate-fade-up">
+      {isVisible("announcements") && announcements.length > 0 && (
+      <div className="mb-6 sm:mb-8 lg:mb-0 animate-fade-up">
         <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4">
           Announcements
         </h2>
@@ -183,8 +210,8 @@ export default function HomePage() {
       </div>
       )}
 
-      {/* ══════════════════ SECTION 2: LEADERBOARD ══════════════════ */}
-      {leaderboardEnabled && <div className="mb-6 sm:mb-8 animate-fade-up">
+      {/* ══════════════════ SECTION 2: LEADERBOARD (spans full grid width) ══════════════════ */}
+      {leaderboardEnabled && isVisible("leaderboard") && <div className="mb-6 sm:mb-8 animate-fade-up lg:col-span-2">
         <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-1">
           Partner Leaderboard &mdash; March 2026
         </h2>
@@ -279,13 +306,13 @@ export default function HomePage() {
       </div>}
 
       {/* ══════════════════ SECTION 3: UPCOMING EVENTS ══════════════════ */}
-      {upcomingEvents.length > 0 && (
-      <div className="mb-6 sm:mb-8 animate-fade-up">
+      {isVisible("events") && upcomingEvents.length > 0 && (
+      <div className="mb-6 sm:mb-8 lg:mb-0 animate-fade-up">
         <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4">
           Upcoming Events
         </h2>
         <div
-          className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"} ${device.gap}`}
+          className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-1"} ${device.gap}`}
         >
           {upcomingEvents.map((e, i) => (
             <div key={`${e.title}-${i}`} className={`card ${device.cardPadding} flex flex-col`}>
@@ -311,7 +338,7 @@ export default function HomePage() {
       )}
 
       {/* ══════════════════ SECTION 4: REFERRAL OPPORTUNITIES ══════════════════ */}
-      {referralOpps.length > 0 && (
+      {isVisible("opportunities") && referralOpps.length > 0 && (
       <div className="animate-fade-up">
         <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-1">
           Expand Your Earnings
@@ -320,7 +347,7 @@ export default function HomePage() {
           Additional referral opportunities to grow your income with {FIRM_SHORT}
         </p>
         <div
-          className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"} ${device.gap}`}
+          className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-1"} ${device.gap}`}
         >
           {referralOpps.map((r, i) => (
             <div
@@ -357,6 +384,8 @@ export default function HomePage() {
         </div>
       </div>
       )}
+
+      </div>{/* /2-col content grid */}
     </div>
   );
 }
