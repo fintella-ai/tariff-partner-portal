@@ -274,6 +274,16 @@ export async function sendForSigning(
     }
   }
 
+  // Case-insensitive placeholder resolver. Admins type the template
+  // placeholder name into PortalSettings (e.g. "Fintella") but the
+  // template definition may use different casing ("fintella"), which
+  // SignWell treats as a different placeholder and 422s with
+  // `missing_placeholder_names`. Resolve to the template's canonical
+  // casing so the binding lands whichever form the admin typed.
+  const placeholderNameLookup: Record<string, string> = {};
+  for (const name of Object.keys(placeholderIdByName)) {
+    placeholderNameLookup[name.toLowerCase()] = name;
+  }
   const recipients = options.recipients.map((r, idx) => {
     const recipient: Record<string, any> = {
       email: r.email,
@@ -281,9 +291,9 @@ export async function sendForSigning(
       signing_order: idx + 1,
     };
     if (usingTemplate) {
-      // Template sends: id must match placeholder id, placeholder_name for binding
-      recipient.id = placeholderIdByName[r.role] || String(idx + 1);
-      recipient.placeholder_name = r.role;
+      const canonical = placeholderNameLookup[r.role.toLowerCase()] || r.role;
+      recipient.id = placeholderIdByName[canonical] || String(idx + 1);
+      recipient.placeholder_name = canonical;
     } else {
       recipient.id = r.id;
     }
