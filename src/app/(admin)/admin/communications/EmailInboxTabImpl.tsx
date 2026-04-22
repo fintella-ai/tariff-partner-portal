@@ -277,11 +277,12 @@ export default function EmailInboxTabImpl() {
       {/* Reply modal */}
       {selectedEmail && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setSelectedEmail(null)}
         >
           <div
-            className="card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6"
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-xl border border-[var(--app-border)] shadow-2xl"
+            style={{ backgroundColor: "var(--app-bg-secondary)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
