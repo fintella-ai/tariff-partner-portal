@@ -130,11 +130,26 @@ export async function POST(req: NextRequest) {
       companyName: companyName?.trim(),
       commissionRate: invite.commissionRate,
     });
-    const { documentId, embeddedSigningUrl } = await sendForSigning({
+    // SignWell templates define 2 placeholders: the Partner + a Fintella
+    // cosigner. Mirror the admin send flow — if PortalSettings has the
+    // firm signer configured, append them as the cosigner. Without this,
+    // SignWell 422s with "missing_placeholder_names: fintella".
+    const recipients: Array<{ id: string; email: string; name: string; role: string }> = [
+      { id: partnerCode, email: email.trim(), name: partnerName, role: "Partner" },
+    ];
+    if (settings?.fintellaSignerEmail && settings?.fintellaSignerName) {
+      recipients.push({
+        id: "fintella_cosigner",
+        email: settings.fintellaSignerEmail,
+        name: settings.fintellaSignerName,
+        role: settings.fintellaSignerPlaceholder || "Fintella",
+      });
+    }
+    const { documentId, embeddedSigningUrl, cosignerSigningUrl } = await sendForSigning({
       name: `${FIRM_SHORT} Partnership Agreement — ${partnerName} (25%)`,
       subject: `${FIRM_SHORT} Partnership Agreement`,
       message: `Hi ${partnerName}, please review and sign your ${FIRM_NAME} partnership agreement.`,
-      recipients: [{ id: partnerCode, email: email.trim(), name: partnerName, role: "Partner" }],
+      recipients,
       templateId,
       templateFields,
     });
@@ -145,6 +160,7 @@ export async function POST(req: NextRequest) {
         version: 1,
         signwellDocumentId: documentId,
         embeddedSigningUrl: embeddedSigningUrl || null,
+        cosignerSigningUrl: cosignerSigningUrl || null,
         templateRate: invite.commissionRate,
         templateId: templateId || null,
         status: "pending",
