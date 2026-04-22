@@ -212,6 +212,18 @@ export default function SettingsPage() {
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
   const [liveChatEnabled, setLiveChatEnabled] = useState(false);
   const [callRecordingEnabled, setCallRecordingEnabled] = useState(false);
+  const [homeEmbedVideoUrl, setHomeEmbedVideoUrl] = useState("");
+  // Partner home modules that are hidden. Admin can toggle on/off
+  // without deleting content — content stays in the DB, just not
+  // rendered when the module id is in this set.
+  const [hiddenModules, setHiddenModules] = useState<Set<string>>(new Set());
+  const toggleModule = (id: string) => {
+    setHiddenModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   // ── Fetch settings ────────────────────────────────────────────────────
 
@@ -291,6 +303,11 @@ export default function SettingsPage() {
       setLeaderboardEnabled(settings.leaderboardEnabled);
       if (settings.liveChatEnabled !== undefined) setLiveChatEnabled(settings.liveChatEnabled);
       if (settings.callRecordingEnabled !== undefined) setCallRecordingEnabled(settings.callRecordingEnabled);
+      setHomeEmbedVideoUrl(settings.homeEmbedVideoUrl || "");
+      try {
+        const hidden = JSON.parse(settings.homeHiddenModules || "[]");
+        if (Array.isArray(hidden)) setHiddenModules(new Set(hidden.filter((x: unknown) => typeof x === "string")));
+      } catch {}
     } catch {
       // Use defaults
     } finally {
@@ -379,6 +396,8 @@ export default function SettingsPage() {
         leaderboardEnabled,
         liveChatEnabled,
         callRecordingEnabled,
+        homeEmbedVideoUrl: homeEmbedVideoUrl.trim() || null,
+        homeHiddenModules: JSON.stringify(Array.from(hiddenModules)),
       };
 
       console.log("[settings] Saving — liveChatEnabled:", body.liveChatEnabled, "callRecordingEnabled:", body.callRecordingEnabled);
@@ -926,12 +945,63 @@ export default function SettingsPage() {
       {/* ═══ HOME PAGE TAB ═══ */}
       {tab === "homepage" && (
         <div className="space-y-6">
-          {/* Leaderboard toggle */}
+          {/* Welcome Video */}
+          <div className="card p-5 sm:p-6">
+            <div className="font-body font-semibold text-sm mb-1">Welcome Video</div>
+            <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-3">
+              Optional embedded video shown centered under the welcome header on the partner Home page. Paste any embed URL — YouTube, Vimeo, Loom, Wistia, or a hosted MP4. Leave blank to hide.
+            </p>
+            <input
+              className={inputClass}
+              value={homeEmbedVideoUrl}
+              onChange={(e) => setHomeEmbedVideoUrl(e.target.value)}
+              placeholder="https://www.youtube.com/embed/... or https://player.vimeo.com/video/..."
+            />
+            <p className="font-body text-[11px] text-[var(--app-text-faint)] mt-2">
+              Tip: YouTube share → Embed → copy the <code className="text-brand-gold/80">src</code> URL. Vimeo/Loom give an embed URL directly.
+            </p>
+          </div>
+
+          {/* Module Visibility */}
+          <div className="card p-5 sm:p-6">
+            <div className="font-body font-semibold text-sm mb-1">Module Visibility</div>
+            <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-4">
+              Turn each Home-page module on or off. Off modules are hidden from partners but their content is preserved so you can turn them back on later.
+            </p>
+            <div className="space-y-2">
+              {[
+                { id: "video", label: "Welcome Video", hint: "Embedded video under the welcome header" },
+                { id: "announcements", label: "Announcements", hint: "Admin announcements card" },
+                { id: "events", label: "Upcoming Events", hint: "Event cards grid" },
+                { id: "opportunities", label: "Referral Opportunities", hint: "Referral opportunity cards" },
+                { id: "leaderboard", label: "Leaderboard", hint: "Top-performing partners podium" },
+              ].map((m) => {
+                const visible = !hiddenModules.has(m.id);
+                return (
+                  <div key={m.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--app-card-bg)] border border-[var(--app-border)]">
+                    <div>
+                      <div className="font-body text-[13px] font-medium">{m.label}</div>
+                      <div className="font-body text-[11px] text-[var(--app-text-muted)]">{m.hint}</div>
+                    </div>
+                    <button
+                      onClick={() => toggleModule(m.id)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${visible ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
+                      aria-label={`Toggle ${m.label}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${visible ? "translate-x-6" : "translate-x-1"}`} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Leaderboard toggle (legacy) */}
           <div className="card p-5 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-body font-semibold text-sm">Leaderboard</div>
-                <p className="font-body text-[12px] text-[var(--app-text-muted)] mt-0.5">Show partner leaderboard on the Home page</p>
+                <div className="font-body font-semibold text-sm">Leaderboard Data</div>
+                <p className="font-body text-[12px] text-[var(--app-text-muted)] mt-0.5">Enable leaderboard data collection (independent of module visibility above)</p>
               </div>
               <button
                 onClick={() => setLeaderboardEnabled(!leaderboardEnabled)}

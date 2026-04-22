@@ -460,6 +460,16 @@ model PortalSettings {
   upcomingEvents String @default("[]")
   referralOpportunities String @default("[]")
   leaderboardEnabled     Boolean @default(true)
+  // Optional embedded video rendered under the welcome header on the
+  // partner home page. Accepts any URL the browser can embed in an
+  // <iframe src> — YouTube, Vimeo, Loom, Wistia, Mux, hosted MP4, etc.
+  homeEmbedVideoUrl      String?
+  // Per-module visibility for the partner home page. JSON array of
+  // module IDs the admin has turned OFF. Recognized IDs: "video",
+  // "announcements", "events", "opportunities", "leaderboard".
+  // Keeps data intact (admin can re-enable later) rather than forcing
+  // a destructive delete when they want to temporarily hide a section.
+  homeHiddenModules      String @default("[]")
   liveChatEnabled        Boolean @default(false) // live support chat on/off
   callRecordingEnabled   Boolean @default(false) // record outbound voice calls (requires Twilio)
   // Timestamps
