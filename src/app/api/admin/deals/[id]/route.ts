@@ -144,6 +144,18 @@ export async function PUT(
 
 /**
  * DELETE /api/admin/deals/[id]
+ *
+ * Deletes a Deal row AND cleans up every related row that references the
+ * deal via a plain `dealId` string (no FK relation, so Prisma doesn't
+ * cascade automatically). This prevents stale "Pending" ledger rows from
+ * lingering on /admin/payouts after the underlying deal has been removed.
+ *
+ * Cleaned up: CommissionLedger rows, DealNote rows, AdminChatThread +
+ * its messages (if one exists for this deal).
+ *
+ * Refuses with 400 if any ledger row is already "paid" — those represent
+ * actual disbursed money and shouldn't disappear silently. In that case
+ * the admin needs to reverse the payout batch first, then delete.
  */
 export async function DELETE(
   req: NextRequest,
@@ -155,8 +167,41 @@ export async function DELETE(
   if (!["super_admin", "admin", "accounting", "partner_support"].includes(role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   try {
-    await prisma.deal.delete({ where: { id: params.id } });
-    return NextResponse.json({ success: true });
+    const paidLedger = await prisma.commissionLedger.findMany({
+      where: { dealId: params.id, status: "paid" },
+      select: { id: true, tier: true, partnerCode: true },
+    });
+    if (paidLedger.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot delete — one or more commissions for this deal have already been paid out. " +
+            "Reverse the corresponding payout batch first.",
+          paidTiers: paidLedger.map((r) => r.tier),
+        },
+        { status: 400 }
+      );
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const ledgerDel = await tx.commissionLedger.deleteMany({ where: { dealId: params.id } });
+      const notesDel = await tx.dealNote.deleteMany({ where: { dealId: params.id } });
+
+      // AdminChatThread.dealId is @unique + nullable — at most one thread
+      // per deal. Its AdminChatMessage children use a FK with onDelete
+      // cascade per the schema, so deleting the thread takes its messages.
+      const threadDel = await tx.adminChatThread.deleteMany({ where: { dealId: params.id } });
+
+      await tx.deal.delete({ where: { id: params.id } });
+
+      return {
+        ledger: ledgerDel.count,
+        notes: notesDel.count,
+        threads: threadDel.count,
+      };
+    });
+
+    return NextResponse.json({ success: true, cleaned: result });
   } catch {
     return NextResponse.json({ error: "Failed to delete deal" }, { status: 500 });
   }

@@ -21,10 +21,27 @@ export async function GET(req: NextRequest) {
     const where: any = {};
     if (statusFilter && statusFilter !== "all") where.status = statusFilter;
 
-    const commissions = await prisma.commissionLedger.findMany({
+    const rawCommissions = await prisma.commissionLedger.findMany({
       where,
       orderBy: { createdAt: "desc" },
     });
+
+    // Filter out ledger rows whose underlying Deal has been deleted. The
+    // DELETE /api/admin/deals/[id] handler cascades to CommissionLedger
+    // going forward, but this defensive filter catches any legacy orphans
+    // that predate the cascade + any edge case where a deal was deleted
+    // outside the API (e.g. direct DB edit). Orphaned rows with status
+    // "paid" are kept (they represent real disbursed money and should
+    // still surface for audit even if the deal row is gone).
+    const ledgerDealIds = Array.from(new Set(rawCommissions.map((c) => c.dealId)));
+    const existingDeals = ledgerDealIds.length > 0
+      ? await prisma.deal.findMany({
+          where: { id: { in: ledgerDealIds } },
+          select: { id: true },
+        })
+      : [];
+    const liveDealIdSet = new Set(existingDeals.map((d) => d.id));
+    const commissions = rawCommissions.filter((c) => liveDealIdSet.has(c.dealId) || c.status === "paid");
 
     // Get partner names
     const partners = await prisma.partner.findMany({
@@ -99,7 +116,16 @@ export async function GET(req: NextRequest) {
     });
 
     // Summary stats
-    const allComm = await prisma.commissionLedger.findMany();
+    // Apply the same orphan filter to the summary stats so totals match
+    // the visible table rows. Paid rows remain included even when orphaned
+    // (audit trail for actual disbursed money).
+    const allRawComm = await prisma.commissionLedger.findMany();
+    const allStatsDealIds = Array.from(new Set(allRawComm.map((c) => c.dealId)));
+    const allExistingStatsDeals = allStatsDealIds.length > 0
+      ? await prisma.deal.findMany({ where: { id: { in: allStatsDealIds } }, select: { id: true } })
+      : [];
+    const allLiveSet = new Set(allExistingStatsDeals.map((d) => d.id));
+    const allComm = allRawComm.filter((c) => allLiveSet.has(c.dealId) || c.status === "paid");
     const totalDue = allComm.filter((c) => c.status === "due").reduce((s, c) => s + c.amount, 0);
     const totalPending = allComm.filter((c) => c.status === "pending").reduce((s, c) => s + c.amount, 0);
     const totalPaid = allComm.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
