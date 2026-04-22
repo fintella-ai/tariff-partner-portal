@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
       totalDeals: allDeals.length,
       totalRefundPipeline: allDeals.reduce((s, d) => s + d.estimatedRefundAmount, 0),
       totalFirmFees: allDeals.reduce((s, d) => s + d.firmFeeAmount, 0),
-      totalCommissions: allDeals.reduce((s, d) => s + d.l1CommissionAmount + d.l2CommissionAmount, 0),
+      totalCommissions: allDeals.reduce((s, d) => s + d.l1CommissionAmount + d.l2CommissionAmount + d.l3CommissionAmount, 0),
       byStage: {
         new_lead: allDeals.filter((d) => d.stage === "new_lead").length,
         no_consultation: allDeals.filter((d) => d.stage === "no_consultation").length,
