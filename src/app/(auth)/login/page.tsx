@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { FIRM_NAME, FIRM_SLOGAN, FIRM_PHONE } from "@/lib/constants";
+import { FIRM_SLOGAN, FIRM_PHONE } from "@/lib/constants";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +12,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
+
+  // Pull the brand logo from PortalSettings so the login chrome matches
+  // whatever the admin uploaded in Settings → Brand (same source the
+  // InstallPrompt + SoftPhone use).
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then(({ settings }) => {
+        if (settings?.logoUrl) setLogoUrl(settings.logoUrl);
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,14 +58,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-10 relative overflow-hidden login-bg">
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-10 relative overflow-hidden" style={{ background: "#000000" }}>
       <style>{`
-        .login-bg { background: radial-gradient(ellipse 70% 60% at 50% 40%, #e8e4df 0%, #f5f6fa 70%); }
-        .login-grid { background-image: linear-gradient(rgba(196,160,80,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(196,160,80,.06) 1px,transparent 1px); }
-        @media (prefers-color-scheme: dark) {
-          .login-bg { background: radial-gradient(ellipse 70% 60% at 50% 40%, #0d1a3a 0%, #080d1c 70%); }
-          .login-grid { background-image: linear-gradient(rgba(196,160,80,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(196,160,80,.02) 1px,transparent 1px); }
-        }
+        .login-grid { background-image: linear-gradient(rgba(196,160,80,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(196,160,80,.04) 1px,transparent 1px); }
       `}</style>
       <div className="absolute inset-0 pointer-events-none login-grid"
         style={{ backgroundSize: "60px 60px" }}
@@ -60,16 +68,24 @@ export default function LoginPage() {
 
       <div className="w-full max-w-[460px] relative z-10">
         <div className="text-center mb-8 sm:mb-10 animate-fade-up">
-          <div className="font-display text-sm sm:text-[15px] font-semibold text-brand-gold tracking-[2px] uppercase mb-5 leading-relaxed">
-            {FIRM_NAME}
-          </div>
-          <h1 className="font-display text-[26px] sm:text-[32px] font-bold mb-3">
+          {/* Brand logo — intentionally sized wider than the "Partner Portal"
+              heading below so the mark carries the page. */}
+          {logoUrl && (
+            <div className="mb-6 flex justify-center">
+              <img
+                src={logoUrl}
+                alt="Fintella"
+                className="w-full max-w-[380px] sm:max-w-[440px] h-auto object-contain"
+              />
+            </div>
+          )}
+          <h1 className="font-display text-[26px] sm:text-[32px] font-bold mb-3 text-white">
             Partner <span className="gold-gradient">Portal</span>
           </h1>
-          <p className="font-body text-[13px] sm:text-sm theme-text-secondary leading-relaxed px-2 italic">
+          <p className="font-body text-[13px] sm:text-sm text-white/75 leading-relaxed px-2 italic">
             {FIRM_SLOGAN}
           </p>
-          <p className="font-body text-[12px] sm:text-[13px] theme-text-muted leading-relaxed px-2 mt-2">
+          <p className="font-body text-[12px] sm:text-[13px] text-white/55 leading-relaxed px-2 mt-2">
             View your pipeline, commissions, and downline activity.
           </p>
         </div>
