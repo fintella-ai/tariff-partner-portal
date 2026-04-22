@@ -823,14 +823,17 @@ export default function PartnerDetailPage() {
             {downline.map((d) => (
               <div
                 key={d.id}
-                className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer flex items-center justify-between"
+                className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer flex items-center justify-between gap-3"
                 onClick={() => router.push(`/admin/partners/${d.id}`)}
               >
-                <div>
-                  <div className="font-body text-[13px] text-[var(--app-text)]">{d.firstName} {d.lastName}</div>
-                  <div className="font-mono text-[11px] text-[var(--app-text-muted)]">{d.partnerCode}</div>
+                <div className="flex items-center gap-3 min-w-0">
+                  <LevelTag tier={d.tier} />
+                  <div className="min-w-0">
+                    <div className="font-body text-[13px] text-[var(--app-text)] truncate">{d.firstName} {d.lastName}</div>
+                    <div className="font-mono text-[11px] text-[var(--app-text-muted)] truncate">{d.partnerCode}</div>
+                  </div>
                 </div>
-                <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[d.status] || statusBadge.active}`}>
+                <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[d.status] || statusBadge.active}`}>
                   {d.status}
                 </span>
               </div>
