@@ -336,7 +336,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               : (adminName || user?.name || "Admin")}
           </div>
           {!collapsed && (
-            <div className="font-body text-[11px] theme-text-muted tracking-[1px] mt-0.5 flex items-center gap-1">
+            <div className="font-body text-[11px] theme-text-muted tracking-[1px] mt-0.5 flex items-center justify-center gap-1">
               {isStar && <span title="Star Super Admin" className="text-brand-gold">★</span>}
               <span>{isStar ? "Star Super Admin" : ROLE_LABELS[userRole] || "Administrator"}</span>
             </div>
