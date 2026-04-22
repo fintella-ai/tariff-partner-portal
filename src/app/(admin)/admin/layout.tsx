@@ -41,7 +41,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   // super admins.
   communications:  { id: "communications",  href: "/admin/communications",  icon: "💬", label: "Communications" },
   internalChats:   { id: "internalChats",   href: "/admin/internal-chats",  icon: "💬", label: "Internal Chats" },
-  partnerSupport:  { id: "partnerSupport",  href: "/admin/support",         icon: "🎧", label: "Partner Support" },
+  partnerSupport:  { id: "partnerSupport",  href: "/admin/support",         icon: "🙋", label: "Partner Support" },
   training:     { id: "training", href: "/admin/training", icon: "📖", label: "Training" },
   conference:   { id: "conference", href: "/admin/conference", icon: "📹", label: "Live Weekly" },
   documents:    { id: "documents", href: "/admin/documents", icon: "📁", label: "Documents" },
