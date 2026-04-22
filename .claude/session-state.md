@@ -1,16 +1,27 @@
 # Session State
 
-🕒 Last updated: 2026-04-22 — ⭐ Star admin edit/delete extended to DealNotes (PR #365). Parity work continues.
+🕒 Last updated: 2026-04-22 (late) — Payout Downline Partners feature shipped end-to-end (#368). Plus DealNote star-admin parity (#365) earlier in the session.
 
 ## 🌿 Git state
-- **main HEAD:** `0f7cdc6` — feat(admin/deals): ⭐ star super admin can edit/delete deal notes (#365)
+- **main HEAD:** `e7fb23f` — feat: Payout Downline Partners — full implementation (#368)
 - **origin/main HEAD:** same, in sync
-- **Open non-dependabot PRs:** 0 (#357 still DRAFT, don't merge)
+- **Open non-dependabot PRs:** 0 (#357 still DRAFT, don't merge; #367 closed as superseded by #368)
 - **Working tree:** clean
 - **Active branch:** main
 
-## ✅ This session (2026-04-22) — 1 PR shipped
-- **#365** feat(admin/deals): ⭐ star super admin can edit/delete deal notes. Backend: PATCH extended to accept `{noteId, content}` (star-gated), new DELETE handler (star-gated, cascades to NoteAttachment). Frontend: Edit/Delete buttons next to Pin on each deal note, inline textarea with Save/Cancel, mirroring the AdminNote pattern from #361.
+## ✅ This session (2026-04-22) — 4 PRs shipped
+- **#368** feat: Payout Downline Partners — per-L1 lock-at-invite toggle that switches Fintella between two commission-payout models. Enabled = Fintella sends SignWell to L2/L3 at signup + pays them directly (waterfall). Disabled (default) = Fintella pays L1 full rate, L1 pays downline privately. Additive schema, new `buildLedgerEntries` pure helper with 8/8 unit tests, SignWell auto-dispatch in signup flow mirroring admin/agreement route, admin invite/add-directly checkboxes role-gated to super_admin/admin/partner_support, admin profile read-only state row, partner Reporting surfaces (Enabled badge, Disabled Downline Accounting subsection, L2/L3 paid-by-upline note). 14 plan tasks executed via 7 bundled subagent dispatches. All 4 existing L1s grandfathered to Disabled.
+- **#367** docs: Payout Downline Partners spec + plan. **CLOSED** — superseded by #368 which included both docs and code.
+- **#366** chore(session): checkpoint for DealNote star-admin parity
+- **#365** feat(admin/deals): ⭐ star super admin can edit/delete deal notes. Backend PATCH for content edits (star-gated), new DELETE (star-gated, cascades to NoteAttachment). Frontend Edit/Delete buttons mirroring AdminNote pattern from #361.
+
+## ⚠️ Post-deploy watchlist for PR #368
+
+Vercel auto-deployed #368 to prod. Three things to watch as real deals flow through:
+
+1. **Commission-behavior flip for existing L1s.** All 4 are grandfathered Disabled. Any L2/L3 deal closing won AFTER deploy writes 1 ledger row (L1 at full rate) instead of the previous 2-3 waterfall rows. Deals already at closed_won with ledger rows written are untouched. Worth confirming no active downline is in-flight with unexpected payouts.
+2. **Cent rounding applied to all new ledger rows.** New rows have clean `$500.00` values; pre-deploy historical rows may have IEEE-754 artifacts (`499.9999…`). Display formatters use `.toFixed(2)` so human-visible totals unchanged, but any exact-sum aggregation comparing old vs new rows may drift sub-cent.
+3. **L3 Downline Accounting is incomplete.** `Deal` schema has only `l1CommissionAmount` + `l2CommissionAmount` (no l3). For L3 deals under a Disabled L1, the Reporting "you owe downline" view shows partial numbers (missing L3's share). L3 deals are rare today since L3 is an opt-in per-L1 flag. Follow-up PR candidate: add `Deal.l3CommissionAmount` or recompute waterfall on-the-fly.
 
 ## ✅ Previous session (2026-04-21) — 8 PRs shipped
 - **#363** fix(admin/communications): Email Inbox preview modal opacity — bleed-through audit complete, no remaining offenders
@@ -23,11 +34,13 @@
 - **#356** feat(admin/partners): Admin Notes gets its own tab + optional single-file attachments
 
 ## 🎯 What's next (pick up when you're back)
-- **Top pick:** Verify live on production post-#365 deploy — open /admin/deals as admin@fintella.partners, expand a deal with notes, confirm ⭐ Edit + Delete appear next to Pin; as a non-star admin confirm Edit + Delete do NOT render
-- Also still pending from 2026-04-21: Admin Users → Edit modal opacity + Email Inbox preview modal opacity (#362/#363) — verify live
+- **Top pick:** Exercise PR #368 E2E on production now that it's deployed — Disabled flow (invite L1 UN-checked → signs → recruits L2 → confirm no auto SignWell → admin uploads → L2 signs → deal → confirm 1 ledger row) AND Enabled flow (checkbox CHECKED → same chain → confirm Fintella auto-sends SignWell at L2 signup → 2 ledger rows on deal close). Also verify admin profile state row + partner Reporting badges on real partner accounts.
+- Also verify #365 live on prod (Edit/Delete buttons on deal notes for star admin, absent for other admins)
+- Follow-up PR candidate: add `Deal.l3CommissionAmount` schema + populate during waterfall write, fixes the L3 Downline Accounting gap flagged in #368 body
 - Live Weekly table: column formatting + resizable columns using existing `ResizableTable` primitive at `/admin/conference`
 - Notification bell mentions rollup — verify #293 plumbing end-to-end first
-- PR #357 multi-file note attachments — revisit storage provider decision (S3 vs R2 vs keep base64)
+- PR #357 multi-file note attachments — flagged; decision landed (MinIO on Contabo VPS per `project_fintella_minio_vps_plan.md`) but John deferred implementation
+- Contabo VPS / MinIO bootstrap — flagged by John, see `project_fintella_minio_vps_plan.md` and plan file at `~/.claude/plans/can-a-vps-contabo-humble-moon.md`
 - A2P 10DLC approval watch — flip `SmsTemplate.enabled=true` per-row once TCR clears
 - Other items in `project_fintella_next_tasks` memory
 
