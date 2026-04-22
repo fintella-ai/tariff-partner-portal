@@ -352,11 +352,47 @@ export default function AdminDealsPage() {
     } catch {}
   };
 
+  const handleUndoPaymentReceived = async (dealId: string, dealName: string) => {
+    if (!confirm(
+      `Undo payment received for "${dealName}"?\n\n` +
+      `This will revert all commission ledger rows from "due" back to "pending", ` +
+      `clear the Paid stamp on this deal, and remove the deal from the active ` +
+      `payout queue. This is not allowed if any commission has already been paid ` +
+      `to a partner — reverse the payout batch first in that case.\n\n` +
+      `Proceed?`
+    )) return;
+    try {
+      const res = await fetch(`/api/admin/deals/${dealId}/payment-received`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to undo payment received");
+        return;
+      }
+      alert(
+        `Payment received undone.\n\n` +
+        `${data.reverted} commission ${data.reverted === 1 ? "entry" : "entries"} ` +
+        `reverted to pending (total $${(data.totalReverted || 0).toFixed(2)}).`
+      );
+      // Re-seed open form state from the server's fresh Deal row so the
+      // status dropdowns revert to "pending" alongside the paid badge
+      // disappearing. Same pattern as handlePaymentReceived.
+      if (data.deal && expandedId === dealId) {
+        if (typeof data.deal.l1CommissionStatus === "string") setEditL1Status(data.deal.l1CommissionStatus);
+        if (typeof data.deal.l2CommissionStatus === "string") setEditL2Status(data.deal.l2CommissionStatus);
+        if (typeof data.deal.l3CommissionStatus === "string") setEditL3Status(data.deal.l3CommissionStatus);
+      }
+      fetchDeals();
+      fetchDealNotes(dealId);
+    } catch {
+      alert("Failed to undo payment received");
+    }
+  };
+
   const handlePaymentReceived = async (dealId: string, dealName: string) => {
     if (!confirm(
       `Mark payment received for "${dealName}"?\n\n` +
       `This will create commission ledger entries (status "due") for L1/L2/L3 ` +
-      `partners and stamp the deal. Cannot be undone via this UI.`
+      `partners and stamp the deal. Can be undone by any admin afterward.`
     )) return;
     try {
       const res = await fetch(`/api/admin/deals/${dealId}/payment-received`, { method: "POST" });
@@ -860,11 +896,20 @@ export default function AdminDealsPage() {
                     </button>
                   )}
                   {deal.paymentReceivedAt && (
-                    <span
-                      className="font-body text-[11px] text-green-400 border border-green-500/20 bg-green-500/5 rounded-lg px-3 py-2"
-                      title={`Stamped by ${deal.paymentReceivedBy || "—"}`}
-                    >
-                      ✓ Paid {new Date(deal.paymentReceivedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    <span className="inline-flex items-stretch rounded-lg border border-green-500/20 bg-green-500/5 overflow-hidden">
+                      <span
+                        className="font-body text-[11px] text-green-400 px-3 py-2"
+                        title={`Stamped by ${deal.paymentReceivedBy || "—"}`}
+                      >
+                        ✓ Paid {new Date(deal.paymentReceivedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </span>
+                      <button
+                        onClick={() => handleUndoPaymentReceived(deal.id, deal.dealName)}
+                        className="font-body text-[10px] text-green-300/70 border-l border-green-500/20 px-2.5 py-2 hover:bg-green-500/15 hover:text-green-200 transition-colors"
+                        title="Undo — reverts ledger rows to pending and clears the Paid stamp (only if no commissions have been paid out yet)"
+                      >
+                        Undo
+                      </button>
                     </span>
                   )}
                   <button onClick={() => handleDeleteDeal(deal.id, deal.dealName)} className="font-body text-[11px] text-red-400/60 border border-red-400/20 rounded-lg px-4 py-2 hover:bg-red-400/10 transition-colors ml-auto">Delete</button>
@@ -1281,8 +1326,16 @@ export default function AdminDealsPage() {
                   </button>
                 )}
                 {deal.paymentReceivedAt && (
-                  <div className="w-full text-center font-body text-[11px] text-green-400 border border-green-500/20 bg-green-500/5 rounded-lg px-3 py-2 mb-2">
-                    ✓ Paid {new Date(deal.paymentReceivedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  <div className="w-full mb-2 flex items-stretch rounded-lg border border-green-500/20 bg-green-500/5 overflow-hidden">
+                    <span className="flex-1 text-center font-body text-[11px] text-green-400 px-3 py-2">
+                      ✓ Paid {new Date(deal.paymentReceivedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </span>
+                    <button
+                      onClick={() => handleUndoPaymentReceived(deal.id, deal.dealName)}
+                      className="font-body text-[10px] text-green-300/70 border-l border-green-500/20 px-3 py-2 hover:bg-green-500/15 hover:text-green-200 transition-colors"
+                    >
+                      Undo
+                    </button>
                   </div>
                 )}
                 <div className="flex gap-2">
