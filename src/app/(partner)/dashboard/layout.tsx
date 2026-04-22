@@ -607,6 +607,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {children}
+
+        {/* ── FOOTER ──
+            Sits below the page body on every partner dashboard route.
+            Shows the configured favicon (falls back to firm initial
+            when no favicon is uploaded) above the copyright line. */}
+        <footer className="mt-12 sm:mt-16 pt-6 pb-4 border-t border-[var(--app-border)] text-center">
+          {faviconUrl ? (
+            <img src={faviconUrl} alt={firmShort} className="mx-auto h-8 w-8 object-contain mb-2 opacity-80" />
+          ) : (
+            <div className="mx-auto h-8 w-8 rounded-full bg-brand-gold/10 border border-brand-gold/20 flex items-center justify-center mb-2">
+              <span className="font-display text-[12px] font-bold text-brand-gold">{firmShort.charAt(0) || "F"}</span>
+            </div>
+          )}
+          <p className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1.5px] uppercase">
+            © Fintella Financial Intelligence Network 2026
+          </p>
+        </footer>
       </div>
 
       {/* ── LIVE CHAT BUTTON ──
