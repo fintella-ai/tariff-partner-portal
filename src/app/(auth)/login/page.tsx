@@ -160,7 +160,10 @@ export default function LoginPage() {
                 Sign up here
               </a>
               <br />
-              Need help? Call {FIRM_PHONE}
+              Need help? Email{" "}
+              <a href="mailto:support@fintella.partners" className="text-brand-gold/70 hover:text-brand-gold transition-colors">
+                support@fintella.partners
+              </a>
             </div>
           )}
         </div>
