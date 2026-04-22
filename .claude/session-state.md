@@ -1,15 +1,18 @@
 # Session State
 
-🕒 Last updated: 2026-04-21 — SMS structure overhaul, ⭐ Star Super Admin tier, modal opacity audit. John heading home, resuming later/tomorrow.
+🕒 Last updated: 2026-04-22 — ⭐ Star admin edit/delete extended to DealNotes (PR #365). Parity work continues.
 
 ## 🌿 Git state
-- **main HEAD:** `c38ec97` — fix(admin/communications): make Email Inbox preview modal opaque (#363)
+- **main HEAD:** `0f7cdc6` — feat(admin/deals): ⭐ star super admin can edit/delete deal notes (#365)
 - **origin/main HEAD:** same, in sync
-- **Open non-dependabot PRs:** 0
+- **Open non-dependabot PRs:** 0 (#357 still DRAFT, don't merge)
 - **Working tree:** clean
 - **Active branch:** main
 
-## ✅ This session (2026-04-21) — 8 PRs shipped
+## ✅ This session (2026-04-22) — 1 PR shipped
+- **#365** feat(admin/deals): ⭐ star super admin can edit/delete deal notes. Backend: PATCH extended to accept `{noteId, content}` (star-gated), new DELETE handler (star-gated, cascades to NoteAttachment). Frontend: Edit/Delete buttons next to Pin on each deal note, inline textarea with Save/Cancel, mirroring the AdminNote pattern from #361.
+
+## ✅ Previous session (2026-04-21) — 8 PRs shipped
 - **#363** fix(admin/communications): Email Inbox preview modal opacity — bleed-through audit complete, no remaining offenders
 - **#362** fix(admin/users): Edit Admin User modal opacity — `.card` was 4% alpha in dark mode
 - **#361** feat: ⭐ Star Super Admin tier — email-gated on `admin@fintella.partners`, new `src/lib/starSuperAdmin.ts`. Exclusive: edit any admin user (name/email/role/password) + edit/delete admin notes. Password UX is reset-and-reveal-on-save (bcrypt stays one-way, NO plaintext retrieval).
@@ -20,10 +23,12 @@
 - **#356** feat(admin/partners): Admin Notes gets its own tab + optional single-file attachments
 
 ## 🎯 What's next (pick up when you're back)
-- **Top pick:** Verify live on production — open Admin Users → Edit modal (should be opaque, ⭐ badge visible) and Communications → Email → Inbox preview (should be opaque)
-- Extend ⭐ star admin edit/delete to DealNotes for parity with AdminNotes
-- PR #357 multi-file note attachments — revisit storage provider (S3 vs R2 vs keep base64) when ready
-- A2P 10DLC approval watch — flip `SmsTemplate.enabled=true` per-row once TCR clears (feedback memory flags the gate)
+- **Top pick:** Verify live on production post-#365 deploy — open /admin/deals as admin@fintella.partners, expand a deal with notes, confirm ⭐ Edit + Delete appear next to Pin; as a non-star admin confirm Edit + Delete do NOT render
+- Also still pending from 2026-04-21: Admin Users → Edit modal opacity + Email Inbox preview modal opacity (#362/#363) — verify live
+- Live Weekly table: column formatting + resizable columns using existing `ResizableTable` primitive at `/admin/conference`
+- Notification bell mentions rollup — verify #293 plumbing end-to-end first
+- PR #357 multi-file note attachments — revisit storage provider decision (S3 vs R2 vs keep base64)
+- A2P 10DLC approval watch — flip `SmsTemplate.enabled=true` per-row once TCR clears
 - Other items in `project_fintella_next_tasks` memory
 
 ## 🔑 Important context preserved
