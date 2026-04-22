@@ -127,6 +127,10 @@ export default function TrainingPage() {
 
   /* ---- Resources state ---- */
   const [resources, setResources] = useState<Resource[]>([]);
+  // Inline document viewer — when non-null, renders a fullscreen overlay
+  // with an iframe embed of the resource so the partner can read without
+  // leaving the portal.
+  const [viewingResource, setViewingResource] = useState<Resource | null>(null);
 
   /* ---- FAQ state ---- */
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
@@ -194,6 +198,17 @@ export default function TrainingPage() {
     fetchData();
     return () => { cancelled = true; };
   }, []);
+
+  // ESC closes the inline document viewer. Only binds when the viewer is
+  // open to avoid a global listener in steady state.
+  useEffect(() => {
+    if (!viewingResource) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setViewingResource(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewingResource]);
 
   /* -------------------------------------------------------------------------- */
   /*  Handlers                                                                  */
@@ -482,21 +497,32 @@ export default function TrainingPage() {
                     <p className="font-body text-[12px] text-[var(--app-text-muted)] mt-1">{r.description}</p>
                   )}
 
-                  {/* Bottom row: file size + download button */}
-                  <div className="flex items-center justify-between mt-3">
-                    {r.fileSize && (
+                  {/* Bottom row: file size + view / download buttons */}
+                  <div className="flex items-center justify-between mt-3 gap-2">
+                    {r.fileSize ? (
                       <span className="text-[10px] text-[var(--app-text-faint)] bg-[var(--app-input-bg)] rounded px-2 py-0.5">
                         {r.fileSize}
                       </span>
-                    )}
-                    <a
-                      href={r.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-body text-[11px] text-brand-gold/70 hover:text-brand-gold border border-brand-gold/20 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors"
-                    >
-                      Download
-                    </a>
+                    ) : <span />}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setViewingResource(r)}
+                        disabled={!r.fileUrl || r.fileUrl === "#"}
+                        className="font-body text-[11px] text-brand-gold/80 hover:text-brand-gold border border-brand-gold/30 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        title={!r.fileUrl || r.fileUrl === "#" ? "Preview unavailable — no file attached" : "Open embedded viewer in this page"}
+                      >
+                        View
+                      </button>
+                      <a
+                        href={r.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-body text-[11px] text-brand-gold/70 hover:text-brand-gold border border-brand-gold/20 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors"
+                      >
+                        Download
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -541,6 +567,65 @@ export default function TrainingPage() {
         videoUrl={videoModal.url}
         title={videoModal.title}
       />
+
+      {/* ------------------------------------------------------------------ */}
+      {/*  Inline Document Viewer — opens when a Resource card's "View" is   */}
+      {/*  clicked. ESC or the × button closes. Opaque panel per the modal    */}
+      {/*  opacity rule (var(--app-bg-secondary) on the frame, bg-black/80    */}
+      {/*  on the backdrop).                                                  */}
+      {/* ------------------------------------------------------------------ */}
+      {viewingResource && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Viewing ${viewingResource.title}`}
+        >
+          <div className="relative w-full max-w-5xl h-[92vh] bg-[var(--app-bg-secondary)] border border-[var(--app-border)] rounded-xl overflow-hidden flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[var(--app-border)]">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-lg shrink-0">{fileTypeIcon(viewingResource.fileType)}</span>
+                <div className="min-w-0">
+                  <div className="font-body text-sm font-semibold text-[var(--app-text)] truncate">{viewingResource.title}</div>
+                  {viewingResource.fileSize && (
+                    <div className="font-body text-[10px] text-[var(--app-text-muted)]">{viewingResource.fileSize}</div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={viewingResource.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-body text-[11px] text-brand-gold/70 hover:text-brand-gold border border-brand-gold/20 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors"
+                  title="Open in new tab"
+                >
+                  Download
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setViewingResource(null)}
+                  aria-label="Close viewer"
+                  className="font-body text-[20px] leading-none text-[var(--app-text-muted)] hover:text-[var(--app-text)] transition-colors w-8 h-8 rounded-lg hover:bg-[var(--app-hover)] flex items-center justify-center"
+                  title="Close (Esc)"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            {/* Embed */}
+            <div className="flex-1 bg-[var(--app-bg)]">
+              <iframe
+                key={viewingResource.id}
+                src={viewingResource.fileUrl}
+                title={viewingResource.title}
+                className="w-full h-full border-0"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
