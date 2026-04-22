@@ -117,7 +117,7 @@ function getDesignTokens(type: DeviceInfo["type"], os: DeviceInfo["os"], brand: 
 
   // Desktop
   return {
-    padding: "px-10 py-9",
+    padding: "px-14 py-9",
     gap: "gap-5",
     cardPadding: "p-6",
     headingSize: "text-[28px]",
@@ -141,7 +141,7 @@ const DEFAULT_DEVICE: DeviceInfo = {
   osVersion: "",
   brand: "unknown",
   browser: "unknown",
-  padding: "px-10 py-9",
+  padding: "px-14 py-9",
   gap: "gap-5",
   cardPadding: "p-6",
   headingSize: "text-[28px]",
