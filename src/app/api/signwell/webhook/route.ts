@@ -195,7 +195,16 @@ export async function POST(req: NextRequest) {
           },
         }).catch(() => {});
 
-        // Notify ALL admins to co-sign
+        // Notify ALL admins to co-sign. Link by the partner's Prisma id
+        // (the segment the `/admin/partners/[id]` route expects) — earlier
+        // versions used a synthesized `p-{code}` shape that 404'd.
+        const partnerRow = await prisma.partner.findUnique({
+          where: { partnerCode: agreement.partnerCode },
+          select: { id: true },
+        });
+        const link = partnerRow
+          ? `/admin/partners/${partnerRow.id}?tab=documents`
+          : `/admin/partners?search=${encodeURIComponent(agreement.partnerCode)}`;
         const admins = await prisma.user.findMany({
           where: { role: { in: ["super_admin", "admin"] } },
           select: { email: true },
@@ -208,7 +217,7 @@ export async function POST(req: NextRequest) {
               type: "document_request",
               title: "Partner Agreement Ready for Co-sign",
               message: `Partner ${agreement.partnerCode} has signed their agreement. Click to co-sign and complete.`,
-              link: `/admin/partners/p-${agreement.partnerCode.toLowerCase()}?tab=documents`,
+              link,
             },
           }).catch(() => {});
         }

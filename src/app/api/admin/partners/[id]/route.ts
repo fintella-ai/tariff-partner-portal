@@ -17,7 +17,13 @@ export async function GET(
   if (!["super_admin", "admin", "accounting", "partner_support"].includes(role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   try {
-    const partner = await prisma.partner.findUnique({ where: { id: params.id } });
+    // Accept either a Prisma cuid id or a partnerCode — notifications and
+    // deep links have historically used both. The code path makes the
+    // route forgiving so old "link by code" notifications still open.
+    const needle = params.id;
+    const partner = await prisma.partner.findFirst({
+      where: { OR: [{ id: needle }, { partnerCode: needle.toUpperCase() }] },
+    });
     if (!partner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
 
     // Parallel queries for related data
