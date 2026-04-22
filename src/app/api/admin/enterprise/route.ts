@@ -163,14 +163,17 @@ export async function POST(req: NextRequest) {
 
     // ─── Create Enterprise Partner ────────────────────────────────────
     if (body.action === "create") {
-      const { partnerCode, totalRate, notes } = body;
-      if (!partnerCode || !totalRate) {
-        return NextResponse.json({ error: "partnerCode and totalRate are required" }, { status: 400 });
+      const { partnerCode, overrideRate, notes } = body;
+      if (!partnerCode || overrideRate == null) {
+        return NextResponse.json({ error: "partnerCode and overrideRate are required" }, { status: 400 });
       }
 
-      const rate = parseFloat(totalRate);
-      if (rate <= 0.25) {
-        return NextResponse.json({ error: "Total rate must be higher than 25% (the standard L1 rate)" }, { status: 400 });
+      // overrideRate is the STANDALONE override % the EP earns on top of
+      // each partner's own waterfall commission. Not a cap, not a diff —
+      // a flat additive rate. E.g. 0.02 = 2%.
+      const rate = parseFloat(overrideRate);
+      if (!(rate > 0) || rate >= 1) {
+        return NextResponse.json({ error: "Override rate must be > 0 and < 100%" }, { status: 400 });
       }
 
       // Verify partner exists and is active
@@ -189,8 +192,10 @@ export async function POST(req: NextRequest) {
       const ep = await prisma.enterprisePartner.create({
         data: {
           partnerCode,
-          totalRate: rate,
-          overrideRate: rate - 0.25,
+          // Legacy `totalRate` column kept in sync as overrideRate + MAX_COMMISSION_RATE
+          // so any stale reader doesn't error. Source of truth is overrideRate.
+          totalRate: rate + 0.25,
+          overrideRate: rate,
           applyToAll: body.applyToAll === true,
           notes: notes || null,
           createdBy: session.user.email || "admin",
@@ -263,17 +268,18 @@ export async function POST(req: NextRequest) {
 
     // ─── Update Enterprise Partner ────────────────────────────────────
     if (body.action === "update") {
-      const { partnerCode, totalRate, status, notes } = body;
+      const { partnerCode, overrideRate, status, notes } = body;
       if (!partnerCode) return NextResponse.json({ error: "partnerCode is required" }, { status: 400 });
 
       const data: any = {};
-      if (totalRate !== undefined) {
-        const rate = parseFloat(totalRate);
-        if (rate <= 0.25) {
-          return NextResponse.json({ error: "Total rate must be higher than 25%" }, { status: 400 });
+      if (overrideRate !== undefined) {
+        const rate = parseFloat(overrideRate);
+        if (!(rate > 0) || rate >= 1) {
+          return NextResponse.json({ error: "Override rate must be > 0 and < 100%" }, { status: 400 });
         }
-        data.totalRate = rate;
-        data.overrideRate = rate - 0.25;
+        // Keep legacy totalRate in sync so any stale reader doesn't error.
+        data.totalRate = rate + 0.25;
+        data.overrideRate = rate;
       }
       if (body.applyToAll !== undefined) data.applyToAll = body.applyToAll;
       if (status !== undefined) data.status = status;

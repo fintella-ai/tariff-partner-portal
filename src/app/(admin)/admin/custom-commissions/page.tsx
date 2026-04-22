@@ -62,7 +62,7 @@ export default function CustomCommissionsPage() {
   const [epLoading, setEpLoading] = useState(true);
   const [showAddEP, setShowAddEP] = useState(false);
   const [newEPCode, setNewEPCode] = useState("");
-  const [newEPRate, setNewEPRate] = useState("30");
+  const [newEPRate, setNewEPRate] = useState("2");
   const [newEPNotes, setNewEPNotes] = useState("");
   const [newEPApplyAll, setNewEPApplyAll] = useState(false);
   const [epSubmitting, setEpSubmitting] = useState(false);
@@ -119,7 +119,7 @@ export default function CustomCommissionsPage() {
             <div>
               <h3 className="font-display text-lg font-bold mb-1">Enterprise Partners</h3>
               <p className="font-body text-[13px] theme-text-muted">
-                Enterprise partners earn a custom override above the standard 25% L1 rate on all L1 partners placed under them.
+                Enterprise partners earn a flat override percentage on top of whatever each partner&rsquo;s own L1/L2/L3 waterfall pays. Works cleanly across partners on any rate — a 2% override totals 22% under a 20% L1, 27% under a 25%, 30% under a 28%.
               </p>
             </div>
             {isSuperAdmin && (
@@ -150,21 +150,22 @@ export default function CustomCommissionsPage() {
                   />
                 </div>
                 <div>
-                  <label className="font-body text-[11px] tracking-[1px] uppercase theme-text-secondary mb-2 block">Total Commission Rate *</label>
+                  <label className="font-body text-[11px] tracking-[1px] uppercase theme-text-secondary mb-2 block">Override Rate *</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
                       className="w-full theme-input rounded-lg px-4 py-3 font-body text-sm outline-none focus:border-brand-gold/40 transition-colors"
-                      placeholder="30"
+                      placeholder="2"
                       value={newEPRate}
                       onChange={(e) => setNewEPRate(e.target.value)}
-                      min="26"
-                      max="100"
+                      min="0.01"
+                      max="99"
+                      step="0.01"
                     />
                     <span className="font-body text-sm theme-text-muted shrink-0">%</span>
                   </div>
                   <div className="font-body text-[10px] theme-text-muted mt-1">
-                    Override: {Math.max(0, parseFloat(newEPRate || "0") - 25)}% above standard 25%
+                    Added on top of each partner&rsquo;s existing rate. e.g. 2% override on an L1 at 25% totals 27%; on an L1 at 28% totals 30%.
                   </div>
                 </div>
                 <div>
@@ -193,19 +194,19 @@ export default function CustomCommissionsPage() {
                 onClick={async () => {
                   if (!newEPCode.trim()) return alert("Partner code is required");
                   const rate = parseFloat(newEPRate);
-                  if (isNaN(rate) || rate <= 25) return alert("Rate must be higher than 25%");
+                  if (isNaN(rate) || rate <= 0 || rate >= 100) return alert("Override rate must be between 0% and 100%");
                   setEpSubmitting(true);
                   try {
                     const res = await fetch("/api/admin/enterprise", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ action: "create", partnerCode: newEPCode.trim(), totalRate: rate / 100, applyToAll: newEPApplyAll, notes: newEPNotes || null }),
+                      body: JSON.stringify({ action: "create", partnerCode: newEPCode.trim(), overrideRate: rate / 100, applyToAll: newEPApplyAll, notes: newEPNotes || null }),
                     });
                     const data = await res.json();
                     if (!res.ok) { alert(data.error || "Failed"); return; }
                     setShowAddEP(false);
                     setNewEPCode("");
-                    setNewEPRate("30");
+                    setNewEPRate("2");
                     setNewEPNotes("");
                     setNewEPApplyAll(false);
                     fetchEnterprises();
@@ -251,9 +252,7 @@ export default function CustomCommissionsPage() {
                         <div className="flex items-center gap-3 text-xs theme-text-muted">
                           <span>{ep.partnerCode}</span>
                           <span>&middot;</span>
-                          <span className="text-brand-gold font-semibold">{Math.round(ep.totalRate * 100)}% total</span>
-                          <span>&middot;</span>
-                          <span className="text-purple-400 font-semibold">{Math.round(ep.overrideRate * 100)}% override</span>
+                          <span className="text-purple-400 font-semibold">+{Math.round(ep.overrideRate * 10000) / 100}% override</span>
                           <span>&middot;</span>
                           <span>{ep.applyToAll ? "All Partners" : `${ep.overrides.filter((o) => o.status === "active").length} L1 partners`}</span>
                           {ep.applyToAll && <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase bg-green-500/10 text-green-400 border border-green-500/20 ml-1">GLOBAL</span>}
@@ -493,7 +492,7 @@ export default function CustomCommissionsPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <PartnerLink partnerId={ep.partnerId} className="font-body text-[15px] font-semibold text-[var(--app-text)]">{ep.partnerName}</PartnerLink>
-                            <span className="font-body text-xs text-purple-400 font-semibold">{Math.round(ep.totalRate * 100)}% ({Math.round(ep.overrideRate * 100)}% override)</span>
+                            <span className="font-body text-xs text-purple-400 font-semibold">+{Math.round(ep.overrideRate * 100)}% override</span>
                           </div>
                           <div className="font-body text-[11px] theme-text-muted mt-0.5">{ep.partnerCode} &middot; {activeDeals.length} deals across {ep.overrides.filter((o) => o.status === "active").length} L1 partners</div>
                         </div>

@@ -1136,13 +1136,9 @@ export default function PartnerDetailPage() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
-                <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Total Rate</div>
-                <div className="font-display text-xl font-bold text-purple-400">{Math.round(enterprisePartner.totalRate * 100)}%</div>
-              </div>
-              <div>
                 <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Override Rate</div>
-                <div className="font-display text-xl font-bold text-purple-400">{Math.round(enterprisePartner.overrideRate * 100)}%</div>
-                <div className="font-body text-[10px] text-[var(--app-text-muted)]">above standard 25%</div>
+                <div className="font-display text-xl font-bold text-purple-400">+{Math.round(enterprisePartner.overrideRate * 100)}%</div>
+                <div className="font-body text-[10px] text-[var(--app-text-muted)]">on top of each partner&rsquo;s waterfall</div>
               </div>
               <div>
                 <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Coverage</div>

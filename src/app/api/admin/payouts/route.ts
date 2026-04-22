@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendCommissionPaidEmail } from "@/lib/sendgrid";
 import { createTransfer } from "@/lib/stripe";
-import { MAX_COMMISSION_RATE } from "@/lib/constants";
 
 /**
  * GET /api/admin/payouts
@@ -125,14 +124,13 @@ export async function GET(req: NextRequest) {
 
         for (const deal of epDeals) {
           const firmFee = deal.firmFeeAmount || deal.estimatedRefundAmount * (deal.firmFeeRate || 0.20);
-          // Per-deal waterfall: EP earns (totalRate - actual L1 rate on the
-          // deal). Preferred source is the l1CommissionRate snapshot stored
-          // at deal creation; for deals that predate the snapshot column we
-          // fall back to MAX_COMMISSION_RATE (0.25) to preserve prior behavior.
-          // Clamp at 0 so a data-entry error (EP.totalRate < L1 rate) can't
-          // generate a negative payout.
-          const l1Rate = deal.l1CommissionRate ?? MAX_COMMISSION_RATE;
-          const epOverrideRate = Math.max(0, ep.totalRate - l1Rate);
+          // EP earns a fixed override rate on top of whatever the L1/L2/L3
+          // waterfall already pays. No dependency on the L1's actual rate —
+          // this is additive, not a "total cap minus L1 rate" subtraction.
+          // Example: EP override 2% on a $78K firm fee → EP earns $1,560
+          // regardless of whether the L1 partner is on a 20%, 25%, or 28%
+          // base rate. Keeps "Apply to All" sensible across mixed L1 rates.
+          const epOverrideRate = ep.overrideRate ?? 0;
           const overrideAmount = firmFee * epOverrideRate;
           if (overrideAmount <= 0) continue;
 
