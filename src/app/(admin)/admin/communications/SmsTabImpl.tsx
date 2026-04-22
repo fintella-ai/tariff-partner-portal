@@ -4,23 +4,26 @@ import { useEffect, useState } from "react";
 import SmsInboxTabImpl from "./SmsInboxTabImpl";
 import SmsComposeTabImpl from "./SmsComposeTabImpl";
 import SmsTemplatesTabImpl from "./SmsTemplatesTabImpl";
+import SmsLogTabImpl from "./SmsLogTabImpl";
 
-type SmsView = "inbox" | "compose" | "templates";
+type SmsView = "overview" | "compose" | "templates" | "log";
 
 const VIEWS: { id: SmsView; label: string }[] = [
-  { id: "inbox", label: "Inbox" },
-  { id: "compose", label: "Compose" },
+  { id: "overview",  label: "Overview" },
+  { id: "compose",   label: "Compose" },
   { id: "templates", label: "Templates" },
+  { id: "log",       label: "SMS Log" },
 ];
 
 /**
  * SMS section of the Communications hub. Mirrors the email section's
  * sub-tab pattern so admins have the same mental model across both
- * channels: Inbox = stats + partner rosters + bulk opt-in, Compose =
- * single or bulk send form, Templates = CRUD over SmsTemplate rows.
+ * channels: Overview = stats + partner rosters + bulk opt-in, Compose =
+ * single or bulk send form, Templates = CRUD over SmsTemplate rows,
+ * SMS Log = paginated list of every outbound send + inbound reply.
  */
 export default function SmsTabImpl() {
-  const [view, setView] = useState<SmsView>("inbox");
+  const [view, setView] = useState<SmsView>("overview");
 
   // Listen for the "Use" button on SmsTemplatesTabImpl — it dispatches a
   // CustomEvent so the parent can switch sub-views without routing.
@@ -49,9 +52,10 @@ export default function SmsTabImpl() {
         ))}
       </div>
 
-      {view === "inbox" && <SmsInboxTabImpl />}
+      {view === "overview" && <SmsInboxTabImpl />}
       {view === "compose" && <SmsComposeTabImpl />}
       {view === "templates" && <SmsTemplatesTabImpl />}
+      {view === "log" && <SmsLogTabImpl />}
     </div>
   );
 }
