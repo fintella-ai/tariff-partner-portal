@@ -467,8 +467,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           still shows them inline in the header's logo section. */}
 
       {/* ══ MAIN CONTENT ══ */}
+      {/* Padding mirrors the admin layout exactly (p-4 sm:px-10 sm:py-6
+          lg:px-24 lg:py-9) so both portals share a single responsive
+          margin contract. Full-bleed children below use
+          `-mx-4 sm:-mx-10 lg:-mx-24` to match. */}
       <div
-        className={`flex-1 overflow-y-auto overflow-x-hidden ${device.padding}`}
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:px-10 sm:py-6 lg:px-24 lg:py-9"
         style={{ paddingTop: device.isTablet ? 72 : undefined }}
       >
         {/* ── STICKY TOP CTA BAR ──
@@ -526,8 +530,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {/* Safe area spacer for iPhone notch/Dynamic Island */}
               <div style={{ paddingTop: "env(safe-area-inset-top, 12px)" }} />
               {/* Logo section — black background, full-bleed dividers */}
-              <div className="-mx-5 border-b border-[var(--app-border)]" />
-              <div className="flex justify-center py-8 -mx-5 px-5 bg-black">
+              <div className="-mx-4 border-b border-[var(--app-border)]" />
+              <div className="flex justify-center py-8 -mx-4 px-4 bg-black">
                 {logoUrl ? (
                   <img src={logoUrl} alt={firmShort} className="max-h-36 object-contain" />
                 ) : (
@@ -536,7 +540,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                 )}
               </div>
-              <div className="-mx-5 border-b border-[var(--app-border)] mb-3" />
+              <div className="-mx-4 border-b border-[var(--app-border)] mb-3" />
               {/* Submit Client + Referral Links + Support + Bell */}
               <div className="flex items-center justify-center gap-2 mb-3">
                   <button
@@ -568,7 +572,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </a>
                   <NotificationBell />
               </div>
-              <div className="-mx-5 border-b border-[var(--app-border)] mb-3" />
+              <div className="-mx-4 border-b border-[var(--app-border)] mb-3" />
             </>
           )}
 
@@ -607,13 +611,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="-mx-4 sm:-mx-10 lg:-mx-24 border-b border-[var(--app-border)]" />
         </div>
 
-        {/* Partner page bodies inherit centered text alignment so titles,
-            descriptions, buttons, and data all center by default — matches
-            the home-screen treatment. Individual pages can still override
-            with explicit text-left where a layout demands it. */}
-        <div className="text-center">
-          {children}
-        </div>
+        {/* Partner page bodies follow the admin layout's default text
+            alignment (left) so both portals feel consistent to shared users.
+            Individual pages that need center alignment can opt in locally. */}
+        {children}
 
         {/* ── FOOTER ──
             Sits below the page body on every partner dashboard route.
