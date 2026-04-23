@@ -50,18 +50,66 @@ export default function InternalChatWidget() {
   // Thread search filter — passed down to TeamChatPanel
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Hydrate from localStorage on mount
+  // Widget default footprint — mirrors the style block below. Kept
+  // as constants so the clamp logic can reason about whether a saved
+  // pos still fits the current viewport.
+  const WIDGET_W = 440;
+  const WIDGET_H = 640;
+
+  // Hydrate from localStorage on mount — but throw away a saved
+  // position that would land the widget offscreen (e.g. saved on a
+  // larger monitor and reloaded on a smaller one).
   useEffect(() => {
     try {
       const savedOpen = window.localStorage.getItem(LS_OPEN);
       if (savedOpen === "true") setOpen(true);
       const savedPos = window.localStorage.getItem(LS_POS);
-      if (savedPos) setPos(JSON.parse(savedPos));
+      if (savedPos) {
+        const parsed = JSON.parse(savedPos) as { x: number; y: number };
+        const maxX = window.innerWidth - Math.min(WIDGET_W, window.innerWidth - 32);
+        const maxY = window.innerHeight - Math.min(WIDGET_H, window.innerHeight - 120);
+        if (
+          typeof parsed?.x === "number" &&
+          typeof parsed?.y === "number" &&
+          parsed.x >= 0 &&
+          parsed.y >= 0 &&
+          parsed.x <= Math.max(0, maxX) &&
+          parsed.y <= Math.max(0, maxY)
+        ) {
+          setPos(parsed);
+        } else {
+          // Stale position — let the default bottom-right kick in.
+          window.localStorage.removeItem(LS_POS);
+        }
+      }
     } catch {
       // ignore — quota / privacy mode
     }
     setHydrated(true);
   }, []);
+
+  // If the viewport shrinks while the widget is open and the current
+  // position would clip the panel off-screen, snap it back to the
+  // default corner.
+  useEffect(() => {
+    if (!hydrated || !pos) return;
+    function checkFit() {
+      const el = panelRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.right > window.innerWidth || rect.bottom > window.innerHeight || rect.left < 0 || rect.top < 0) {
+        setPos(null);
+        try {
+          window.localStorage.removeItem(LS_POS);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    window.addEventListener("resize", checkFit);
+    checkFit();
+    return () => window.removeEventListener("resize", checkFit);
+  }, [hydrated, pos, open]);
 
   // Persist open/closed
   useEffect(() => {
@@ -200,9 +248,11 @@ export default function InternalChatWidget() {
         />
       </div>
 
-      {/* Embedded chat body */}
+      {/* Embedded chat body — compact mode forces single-pane
+          stacked layout so the thread list + messages don't try to
+          sit side-by-side inside the narrow widget. */}
       <div className="flex-1 overflow-hidden">
-        <TeamChatPanel searchQuery={searchQuery} />
+        <TeamChatPanel searchQuery={searchQuery} compact />
       </div>
     </div>
   );
