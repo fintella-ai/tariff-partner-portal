@@ -165,6 +165,35 @@ export async function PUT(
 
     if (body.l3Enabled !== undefined) data.l3Enabled = body.l3Enabled;
 
+    // Tier + commission-rate changes retroactively affect a partner's
+    // downline recruitment rights + commission math, so gate both to
+    // super_admin. These were silently dropped from the allow-list
+    // historically, which meant admins editing a partner row could
+    // flip the dropdown without the DB ever taking the update — Adam
+    // Ghabour (PTNVFJXPV) is the canary here: frontend shows "L2 at
+    // 20%" because creation set it that way and nothing post-creation
+    // could correct it.
+    if (body.tier !== undefined) {
+      if (role !== "super_admin") {
+        return NextResponse.json({ error: "Only super admins can change a partner's tier" }, { status: 403 });
+      }
+      const t = String(body.tier).toLowerCase();
+      if (!["l1", "l2", "l3"].includes(t)) {
+        return NextResponse.json({ error: "tier must be l1, l2, or l3" }, { status: 400 });
+      }
+      data.tier = t;
+    }
+    if (body.commissionRate !== undefined) {
+      if (role !== "super_admin") {
+        return NextResponse.json({ error: "Only super admins can change a partner's commission rate" }, { status: 403 });
+      }
+      const r = parseFloat(String(body.commissionRate));
+      if (!isFinite(r) || r <= 0 || r > 0.5) {
+        return NextResponse.json({ error: "commissionRate must be between 0 (exclusive) and 0.50" }, { status: 400 });
+      }
+      data.commissionRate = r;
+    }
+
     // Generate new partner code (preserves old code in history)
     if (body.resetPartnerCode) {
       // Only super_admin can do this (enforced on frontend, double-check here)
