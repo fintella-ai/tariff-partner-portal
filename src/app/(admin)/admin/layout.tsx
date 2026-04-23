@@ -36,6 +36,10 @@ const BUILT_IN_ADMIN_ICONS: Record<string, string> = {
   reporting: "/icons/reporting-chart.svg",
   home: "/icons/home-house.svg",
   deals: "/icons/deals-briefcase.svg",
+  training: "/icons/training-book.svg",
+  documents: "/icons/documents-folder.svg",
+  settings: "/icons/settings-gear.svg",
+  partnerSupport: "/icons/support-chat-question.svg",
 };
 
 const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {

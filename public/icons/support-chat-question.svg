@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#c4a050" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- speech bubble -->
+  <path d="M4 5 L20 5 A2 2 0 0 1 22 7 L22 16 A2 2 0 0 1 20 18 L13 18 L8.5 21.5 L8.5 18 L4 18 A2 2 0 0 1 2 16 L2 7 A2 2 0 0 1 4 5 Z"/>
+  <!-- question mark inside -->
+  <path d="M9.5 9.5 A2.5 2.5 0 0 1 14.5 9.5 C14.5 11 12 11.5 12 13"/>
+  <circle cx="12" cy="15.3" r="0.5" fill="#c4a050" stroke="none"/>
+</svg>

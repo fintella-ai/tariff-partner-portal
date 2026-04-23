@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#c4a050" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- folder body with angled tab -->
+  <path d="M3 7 A1.5 1.5 0 0 1 4.5 5.5 L9.5 5.5 L11.5 7.5 L19.5 7.5 A1.5 1.5 0 0 1 21 9 L21 18 A1.5 1.5 0 0 1 19.5 19.5 L4.5 19.5 A1.5 1.5 0 0 1 3 18 Z"/>
+  <!-- faint inner fold line for dimension -->
+  <line x1="3" y1="10" x2="21" y2="10"/>
+</svg>

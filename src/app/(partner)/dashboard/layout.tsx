@@ -68,6 +68,9 @@ const BUILT_IN_PARTNER_ICONS: Record<string, string> = {
   deals: "/icons/deals-briefcase.svg",
   commissions: "/icons/commissions-coins.svg",
   downline: "/icons/downline-tree.svg",
+  training: "/icons/training-book.svg",
+  "submit-client": "/icons/submit-clipboard-check.svg",
+  "referral-links": "/icons/referral-links-chain.svg",
 };
 
 // Mobile bottom bar items (subset)
