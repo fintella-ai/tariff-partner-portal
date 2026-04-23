@@ -34,6 +34,8 @@ const ADMIN_NAV_IDS_DEFAULT = [
 // ship hand-drawn SVG nav icons without forcing every admin to upload.
 const BUILT_IN_ADMIN_ICONS: Record<string, string> = {
   reporting: "/icons/reporting-chart.svg",
+  home: "/icons/home-house.svg",
+  deals: "/icons/deals-briefcase.svg",
 };
 
 const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {

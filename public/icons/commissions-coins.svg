@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#c4a050" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- bottom coin -->
+  <ellipse cx="12" cy="18" rx="7" ry="2.3"/>
+  <path d="M5 18 L5 15 A7 2.3 0 0 0 19 15 L19 18"/>
+  <!-- middle coin -->
+  <ellipse cx="12" cy="13" rx="7" ry="2.3"/>
+  <path d="M5 13 L5 10 A7 2.3 0 0 0 19 10 L19 13"/>
+  <!-- top coin with dollar mark -->
+  <ellipse cx="12" cy="8" rx="7" ry="2.3"/>
+  <line x1="12" y1="6" x2="12" y2="10"/>
+  <path d="M13.5 6.8 A1.3 1 0 0 0 12 6.3 A1.3 1 0 0 0 10.5 7 A1.3 1 0 0 0 12 7.7 A1.3 1 0 0 1 13.5 8.4 A1.3 1 0 0 1 12 9.1 A1.3 1 0 0 1 10.5 8.6"/>
+</svg>
