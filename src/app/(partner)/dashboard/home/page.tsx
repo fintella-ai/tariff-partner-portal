@@ -117,6 +117,11 @@ export default function HomePage() {
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [liveWeeklyBannerUrl, setLiveWeeklyBannerUrl] = useState<string>("");
   const [liveWeeklyCall, setLiveWeeklyCall] = useState<LiveWeeklyCall | null>(null);
+  // Count of downline partners waiting on an L1↔downline agreement upload.
+  // Drives the top-of-home callout that deep-links to /dashboard/downline.
+  // Includes L2 direct children + L3 grandchildren in statuses
+  // "pending", "invited", or "under_review".
+  const [pendingAgreementCount, setPendingAgreementCount] = useState<number>(0);
   const [hiddenModules, setHiddenModules] = useState<Set<string>>(new Set());
   const DEFAULT_ORDER = ["video", "liveWeekly", "events", "announcements", "leaderboard", "opportunities"];
   const [moduleOrder, setModuleOrder] = useState<string[]>(DEFAULT_ORDER);
@@ -156,6 +161,17 @@ export default function HomePage() {
           const layout = JSON.parse(d?.settings?.homeModuleLayout || "{}");
           if (layout && typeof layout === "object") setModuleLayout(layout);
         } catch {}
+      })
+      .catch(() => {});
+    // Downline partners pending an L1↔downline agreement upload.
+    // Reuses /api/deals which already returns L2 + L3 downline rows.
+    fetch("/api/deals")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const needsAgreement = (p: any) => ["pending", "invited", "under_review"].includes(p?.status);
+        const l2 = Array.isArray(d?.downlinePartners) ? d.downlinePartners.filter(needsAgreement) : [];
+        const l3 = Array.isArray(d?.l3Partners) ? d.l3Partners.filter(needsAgreement) : [];
+        setPendingAgreementCount(l2.length + l3.length);
       })
       .catch(() => {});
     // Active Live Weekly schedule — fuels the Live Weekly home module.
@@ -514,6 +530,21 @@ export default function HomePage() {
 
   return (
     <div>
+      {/* Downline-agreement callout — visible when the logged-in partner
+          has one or more L2/L3 downline rows waiting on an upload. Links
+          straight to /dashboard/downline where the upload UI lives. */}
+      {pendingAgreementCount > 0 && (
+        <a
+          href="/dashboard/downline"
+          className="mb-6 sm:mb-8 flex items-center justify-center gap-3 rounded-xl border border-yellow-500/25 bg-yellow-500/[0.06] px-4 py-3 font-body text-[13px] text-yellow-400 hover:bg-yellow-500/[0.1] transition-colors"
+        >
+          <span aria-hidden>📝</span>
+          <span>
+            <strong>{pendingAgreementCount}</strong> downline {pendingAgreementCount === 1 ? "agreement needs" : "agreements need"} your upload
+          </span>
+          <span className="text-yellow-400/70">→</span>
+        </a>
+      )}
       {/* Welcome header + date now live in the shared dashboard layout.
           The home page renders only its admin-ordered module body. */}
       {moduleOrder.map((id) => {

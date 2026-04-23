@@ -77,12 +77,13 @@ export default function AdminPartnersPage() {
     (session?.user as any)?.role || ""
   );
   const router = useRouter();
-  // 9 columns: Partner, Level, Code, Phone, Email, Status, W9, Joined, Action
-  // Bumped storageKey so anyone with a persisted 8-col width map doesn't see
-  // the new Level column collapse to 0 before they resize manually.
+  // 10 columns: Partner, Level, Code, Phone, Email, Status, Agreement, W9, Joined, Action.
+  // storageKey bumped to v3 so anyone with a persisted 9-col width map
+  // doesn't see the new Agreement column collapse to 0 before they
+  // resize manually.
   const { columnWidths: partnerCols, getResizeHandler: partnerResize } = useResizableColumns(
-    [180, 70, 120, 140, 180, 90, 80, 110, 70],
-    { storageKey: "partners-v2" }
+    [180, 70, 120, 140, 180, 90, 110, 80, 110, 70],
+    { storageKey: "partners-v3" }
   );
   const partnerGridCols = partnerCols.map((w) => `${w}px`).join(" ");
 
@@ -874,6 +875,7 @@ export default function AdminPartnersPage() {
                 { label: "Phone", col: null },
                 { label: "Email", col: null },
                 { label: "Status", col: "status" as SortCol },
+                { label: "Agreement", col: null },
                 { label: "W9", col: null },
                 { label: "Joined", col: "joined" as SortCol },
                 { label: "", col: null },
@@ -929,6 +931,11 @@ export default function AdminPartnersPage() {
                     </span>
                   </div>
                   <div className="text-center">
+                    <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${docBadge[p.agreementStatus] || docBadge.none}`}>
+                      {p.agreementStatus === "under_review" ? "review" : p.agreementStatus}
+                    </span>
+                  </div>
+                  <div className="text-center">
                     <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${docBadge[p.w9Status] || docBadge.needed}`}>
                       {p.w9Status === "under_review" ? "review" : p.w9Status}
                     </span>
@@ -962,13 +969,21 @@ export default function AdminPartnersPage() {
                   </span>
                 </div>
                 <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-2">{p.email}</div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="font-body text-[11px] text-[var(--app-text-muted)]">Joined {fmtDate(p.signupDate)}</div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-body text-[9px] text-[var(--app-text-muted)] uppercase">W9:</span>
-                    <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${docBadge[p.w9Status] || docBadge.needed}`}>
-                      {p.w9Status === "under_review" ? "review" : p.w9Status}
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-body text-[9px] text-[var(--app-text-muted)] uppercase">Agmt:</span>
+                      <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${docBadge[p.agreementStatus] || docBadge.none}`}>
+                        {p.agreementStatus === "under_review" ? "review" : p.agreementStatus}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-body text-[9px] text-[var(--app-text-muted)] uppercase">W9:</span>
+                      <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${docBadge[p.w9Status] || docBadge.needed}`}>
+                        {p.w9Status === "under_review" ? "review" : p.w9Status}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
