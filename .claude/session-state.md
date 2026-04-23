@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-24 — PR #448 merged: admin workspace Needs-Attention feed now includes open recruitment invites (active + unused L1 invites). New ✉️ Invite source type, Nudge action, surfaced in Onboarding filter. Pending Signups stat card sublabel shows open-invite count alongside awaiting-activation. Earlier today: #442 workspace V1, #444 Home added to admin nav reorder registry, #446 workspace V2 (PartnerContextDrawer + Activity Timeline + per-admin reorder). 2026-04-23 session had 21 PRs (Google Calendar OAuth, Jitsi embed, HubSpot-style workflow editor, reminder triggers, orphan cleanup, etc.).
+🕒 Last updated: 2026-04-24 — PR #450 merged: Level column added to partner Full Reporting → Downline → Your Partners list view. Renders the existing L1/L2/L3 gold/silver/bronze LevelTag between Partner and Code. Earlier today: #442 workspace V1, #444 Home in admin nav reorder registry, #446 workspace V2 (PartnerContextDrawer + Activity Timeline + per-admin reorder), #448 open invites in the workspace Needs-Attention feed. 2026-04-23 session had 21 PRs (Google Calendar OAuth, Jitsi embed, HubSpot-style workflow editor, reminder triggers, orphan cleanup, etc.).
 
 ## 🌿 Git state
-- **main HEAD:** `4348bed` — feat(admin/workspace): surface open invites in Needs Attention (#448)
+- **main HEAD:** `bd0639d` — feat(partner/reporting): add Level column to Downline → Your Partners (#450)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
