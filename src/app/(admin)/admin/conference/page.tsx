@@ -167,10 +167,15 @@ export default function AdminConferencePage() {
   const handleDelete = async (entry: ConferenceEntry) => {
     if (!confirm(`Delete "${entry.title}"?`)) return;
     try {
-      await fetch(`/api/admin/conference/${entry.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/conference/${entry.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        alert(`Delete failed (${res.status}): ${body.error || res.statusText}`);
+        return;
+      }
       fetchEntries();
-    } catch {
-      // silently fail
+    } catch (e) {
+      alert(`Delete failed: ${(e as Error).message || e}`);
     }
   };
 

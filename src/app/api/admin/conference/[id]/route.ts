@@ -73,9 +73,13 @@ export async function DELETE(
       where: { id: params.id },
     });
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err: unknown) {
+    // Surface the real Prisma error so the admin gets actionable feedback
+    // instead of a silent reappearance of the row. Logged to stderr too.
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[conference DELETE]", params.id, message);
     return NextResponse.json(
-      { error: "Failed to delete conference entry" },
+      { error: `Failed to delete conference entry: ${message}` },
       { status: 500 }
     );
   }
