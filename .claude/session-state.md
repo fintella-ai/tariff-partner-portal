@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-23 — PR #412 merged: HubSpot-style rewrite of the `/admin/workflows` editor — live summary card, step-numbered cards (When/What/Advanced), plain-English cadence presets, smart recipient radios on email.send + sms.send, emoji action labels, and natural-language filter operators including new `is known` / `is unknown` (engine op `not_exists`). Same Workflow data model on the wire. Earlier today: PR #404 (layout padding match admin), #406 (Commission History expanded columns), #408 (EP override card + sub-tab), #410 (scheduled agreement + invite reminder triggers).
+🕒 Last updated: 2026-04-23 — PR #414 merged: fixed the "Live Weekly demo rows keep respawning" bug by gating the conference demo seed on `FINTELLA_LIVE_MODE`. Admin needs to delete the 8 `cs-week-*` rows from /admin/conference ONCE more after this deploy; they'll stay gone from then on. Earlier today: PR #404 (layout padding match admin), #406 (Commission History expanded columns), #408 (EP override card + sub-tab), #410 (scheduled agreement + invite reminder triggers), #412 (HubSpot-style workflow editor rewrite).
 
 ## 🌿 Git state
-- **main HEAD:** `eda8db3` — feat(workflows): plain-English editor + smart recipients + known/unknown (#412)
+- **main HEAD:** `0a032c9` — fix(seed): skip Live Weekly demo upserts in LIVE_MODE (#414)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
