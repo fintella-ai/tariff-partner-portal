@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-23 — PR #408 merged: partner Full Reporting → Commissions tab now surfaces Enterprise Partner overrides when (and only when) the signed-in partner has an active `EnterprisePartner` record. New `GET /api/partner/enterprise` endpoint; summary grid expands from 2 → 3 cols with an Enterprise Override card; Commission History gains an Enterprise sub-tab with columns Deal · Date · L1 Partner · Refund · Fee % · Firm Fee · Override % · Enterprise Commission · Status. Non-EP partners see nothing new. Earlier today: PR #404 (layout padding match admin), #406 (Commission History expanded columns), #407 (checkpoint).
+🕒 Last updated: 2026-04-23 — PR #410 merged: two new scheduled automation triggers on `/admin/workflows` — `partner.agreement_reminder` (unsigned agreements) and `partner.invite_reminder` (unused L1 admin invites). Cadence editable per-workflow via `triggerConfig.cadenceDays` (default 7); `/api/cron/reminders` runs daily at 15:00 UTC and uses MIN cadence across enabled workflows on the same trigger. Schema additions: `PartnershipAgreement.lastReminderSentAt`, `RecruitmentInvite.lastReminderSentAt`. Seeded default email + SMS reminder templates (SMS disabled pending A2P). Earlier today: PR #404 (layout padding match admin), #406 (Commission History expanded columns), #408 (EP override card + sub-tab).
 
 ## 🌿 Git state
-- **main HEAD:** `b6f6e63` — feat(partner/reporting): enterprise override card + commission tab (#408)
+- **main HEAD:** `d502f97` — feat(workflows): scheduled reminders for agreements + invites (#410)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
