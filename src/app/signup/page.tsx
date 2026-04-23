@@ -261,7 +261,7 @@ function SignupContent() {
                       className="mt-0.5 w-4 h-4 rounded border-brand-gold/30 bg-transparent text-brand-gold focus:ring-brand-gold/50 cursor-pointer shrink-0"
                     />
                     <span className="font-body text-[12px] theme-text-secondary leading-relaxed">
-                      I consent to receive email communications from &quot;Annexation PR LLC&quot; and &quot;Financial Intelligence Network DBA&quot; (Fintella), including partnership updates, deal notifications, commission statements, and program announcements.
+                      I agree to receive email communications about my account activity, deal status updates, commission statements, and important program announcements. I can unsubscribe at any time via the link in any email or by contacting support.
                     </span>
                   </label>
                   <label className="flex items-start gap-3 cursor-pointer">
