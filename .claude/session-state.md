@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-23 — PR #418 merged: admin partner detail → Downline → List view now shows L3 rows indented under their L2 upline ("via <L2 name>"), and the header count sums L2 + L3. Tree view was already correct; list view was silently dropping `l3Partners` entirely. Earlier today: PR #404 (layout padding), #406 (Commission History columns), #408 (EP override card + sub-tab), #410 (agreement + invite reminders), #412 (HubSpot-style workflow editor), #414 (Live Weekly seed gate), #416 (Jitsi embed + conference reminders + Google Calendar sync scaffolding deferred to v2).
+🕒 Last updated: 2026-04-23 — PR #420 merged: Top Partners by Commission on /admin/reports now counts every deal that contributed to a partner's commission (own deals + override deals via CommissionLedger → dealId lookup), so override-earning partners no longer show `deals=0` next to a non-zero commission. Orphaned ledger rows are quietly skipped. Earlier today: PR #404 (layout padding), #406 (Commission History columns), #408 (EP override card + sub-tab), #410 (agreement + invite reminders), #412 (HubSpot-style workflow editor), #414 (Live Weekly seed gate), #416 (Jitsi embed + conference reminders; Calendar sync deferred), #418 (admin downline list shows L3s).
 
 ## 🌿 Git state
-- **main HEAD:** `cbb0e7d` — fix(admin/partner/downline): show L3 rows in the list view (#418)
+- **main HEAD:** `1adfaa2` — fix(reports): Top Partners deals/pipeline include override deals (#420)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
