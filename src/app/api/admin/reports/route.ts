@@ -95,20 +95,33 @@ export async function GET() {
     }
 
     // ─── TOP PARTNERS (by total commission) ───────────────────────────
-    const partnerCommMap: Record<string, { deals: number; pipeline: number; commission: number }> =
-      {};
+    //
+    // `deals` / `pipeline` count BOTH the partner's own deals (where they
+    // are the submitter) AND the deals they earn override commission on
+    // (via CommissionLedger rows that reference those deals). Without this,
+    // an L1 earning L2/L3 overrides would show `deals=0, commission=$X`,
+    // which reads as a bug even though the commission is legitimate.
+    const dealById = new Map(allDeals.map((d) => [d.id, d]));
+    const partnerCommMap: Record<string, { dealIds: Set<string>; pipeline: number; commission: number }> = {};
+
     for (const deal of allDeals) {
-      if (!partnerCommMap[deal.partnerCode]) {
-        partnerCommMap[deal.partnerCode] = { deals: 0, pipeline: 0, commission: 0 };
-      }
-      partnerCommMap[deal.partnerCode].deals += 1;
-      partnerCommMap[deal.partnerCode].pipeline += deal.estimatedRefundAmount;
+      const m = (partnerCommMap[deal.partnerCode] ??= { dealIds: new Set(), pipeline: 0, commission: 0 });
+      m.dealIds.add(deal.id);
+      m.pipeline += deal.estimatedRefundAmount;
     }
     for (const comm of allCommissions) {
-      if (!partnerCommMap[comm.partnerCode]) {
-        partnerCommMap[comm.partnerCode] = { deals: 0, pipeline: 0, commission: 0 };
+      const m = (partnerCommMap[comm.partnerCode] ??= { dealIds: new Set(), pipeline: 0, commission: 0 });
+      m.commission += comm.amount;
+      if (comm.dealId) {
+        const deal = dealById.get(comm.dealId);
+        // Only count the deal if it still exists (protects against orphaned
+        // ledger rows that outlived a deleted deal) and hasn't already been
+        // counted above.
+        if (deal && !m.dealIds.has(comm.dealId)) {
+          m.dealIds.add(comm.dealId);
+          m.pipeline += deal.estimatedRefundAmount;
+        }
       }
-      partnerCommMap[comm.partnerCode].commission += comm.amount;
     }
 
     const partnerInfoMap: Record<string, { name: string; id: string }> = {};
@@ -123,7 +136,9 @@ export async function GET() {
         name: partnerInfoMap[code]?.name || code,
         id: partnerInfoMap[code]?.id || null,
         code,
-        ...data,
+        deals: data.dealIds.size,
+        pipeline: data.pipeline,
+        commission: data.commission,
       }));
 
     return NextResponse.json({
