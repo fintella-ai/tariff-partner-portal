@@ -515,6 +515,10 @@ model PortalSettings {
   homeModuleLayout       String @default("{}")
   liveChatEnabled        Boolean @default(false) // live support chat on/off
   callRecordingEnabled   Boolean @default(false) // record outbound voice calls (requires Twilio)
+  // Optional banner image shown centered at the top of the partner
+  // Live Weekly Call page. base64 data URL (same storage as logoUrl).
+  // Empty string = no banner, page renders without it.
+  liveWeeklyBannerUrl    String  @default("")
   // Timestamps
   updatedAt DateTime @updatedAt
 }

@@ -77,6 +77,17 @@ export default function ConferencePage() {
   const [videoModal, setVideoModal] = useState<{ isOpen: boolean; url: string; title: string }>({
     isOpen: false, url: "", title: "",
   });
+  // Admin-uploaded banner image (PortalSettings.liveWeeklyBannerUrl).
+  // When set, shown centered at the top of this page in place of the
+  // default text-only header.
+  const [bannerUrl, setBannerUrl] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.settings?.liveWeeklyBannerUrl) setBannerUrl(d.settings.liveWeeklyBannerUrl); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/conference")
@@ -137,6 +148,16 @@ export default function ConferencePage() {
   return (
     <div>
       {communicationsTabs}
+      {bannerUrl && (
+        <div className="flex justify-center mb-6">
+          <img
+            src={bannerUrl}
+            alt="Live Weekly Call"
+            className="max-h-80 w-auto rounded-xl border"
+            style={{ borderColor: "var(--app-border)" }}
+          />
+        </div>
+      )}
       <h2 className={`font-display ${device.isMobile ? "text-lg" : "text-[22px]"} font-bold mb-1.5`}>
         Live Weekly Call!
       </h2>

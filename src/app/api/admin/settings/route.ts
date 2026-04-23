@@ -132,6 +132,7 @@ export async function PUT(req: NextRequest) {
     if (body.homeHiddenModules !== undefined) data.homeHiddenModules = body.homeHiddenModules;
     if (body.homeModuleOrder !== undefined) data.homeModuleOrder = body.homeModuleOrder;
     if (body.homeModuleLayout !== undefined) data.homeModuleLayout = body.homeModuleLayout;
+    if (body.liveWeeklyBannerUrl !== undefined) data.liveWeeklyBannerUrl = body.liveWeeklyBannerUrl;
 
     // Upsert — create if not exists
     const settings = await prisma.portalSettings.upsert({

@@ -28,11 +28,55 @@ type ConferenceEntry = {
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────
 
+/**
+ * Compress + resize an image file to a base64 data URL.
+ * Mirrors the helper on /admin/settings so the banner upload here
+ * produces DB-friendly payloads (under a few hundred KB) even when
+ * the admin drops a raw 4K photo.
+ */
+function compressImage(file: File, maxDim: number, quality: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, w, h);
+        let dataUrl = canvas.toDataURL("image/webp", quality);
+        if (!dataUrl.startsWith("data:image/webp")) {
+          dataUrl = canvas.toDataURL("image/jpeg", quality);
+        }
+        resolve(dataUrl);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function AdminConferencePage() {
   const [entries, setEntries] = useState<ConferenceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<ConferenceEntry | null>(null);
+
+  // Page-level banner image shown centered at the top of the partner
+  // Live Weekly Call page. Stored in PortalSettings.liveWeeklyBannerUrl
+  // as a base64 data URL (same encoding as logoUrl / faviconUrl).
+  const [bannerUrl, setBannerUrl] = useState("");
+  const [bannerSaving, setBannerSaving] = useState(false);
+  const [bannerDragging, setBannerDragging] = useState(false);
 
   // Form fields
   const [formTitle, setFormTitle] = useState("");
@@ -69,6 +113,59 @@ export default function AdminConferencePage() {
   }, []);
 
   useEffect(() => { fetchEntries(); }, [fetchEntries]);
+
+  // Load the current banner URL once on mount. /api/admin/settings
+  // returns the whole PortalSettings row; we only read the one field.
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.settings?.liveWeeklyBannerUrl) setBannerUrl(d.settings.liveWeeklyBannerUrl); })
+      .catch(() => {});
+  }, []);
+
+  // ── Banner upload ──────────────────────────────────────────────────────
+
+  const persistBanner = async (url: string) => {
+    setBannerSaving(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ liveWeeklyBannerUrl: url }),
+      });
+      if (!res.ok) throw new Error();
+      setBannerUrl(url);
+    } catch {
+      alert("Failed to save banner image.");
+    } finally {
+      setBannerSaving(false);
+    }
+  };
+
+  const handleBannerFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      alert("Please choose an image file (PNG, JPG, WebP, or SVG).");
+      return;
+    }
+    try {
+      let dataUrl: string;
+      if (file.type === "image/svg+xml") {
+        dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onerror = reject;
+          r.onload = () => resolve(r.result as string);
+          r.readAsDataURL(file);
+        });
+      } else {
+        // 1600px max keeps banners crisp on a 2x retina display
+        // without blowing up the DB row.
+        dataUrl = await compressImage(file, 1600, 0.85);
+      }
+      await persistBanner(dataUrl);
+    } catch {
+      alert("Failed to process image.");
+    }
+  };
 
   // ── Form helpers ───────────────────────────────────────────────────────
 
@@ -253,6 +350,67 @@ export default function AdminConferencePage() {
           to move it to Past Recordings.{" "}
           <span className="text-[var(--app-text-muted)]">(Auto-recording is a future upgrade — paid Jitsi JaaS can webhook the recording URL straight back here.)</span>
         </div>
+      </div>
+
+      {/* Page banner upload — shows centered at the top of the partner
+          Live Weekly Call page when set. Drop or pick any image; it's
+          auto-compressed client-side before hitting the DB. */}
+      <div
+        className={`card p-4 sm:p-5 mb-6 transition-colors ${bannerDragging ? "ring-2 ring-brand-gold/40 bg-brand-gold/[0.03]" : ""}`}
+        onDragOver={(e) => { e.preventDefault(); setBannerDragging(true); }}
+        onDragLeave={() => setBannerDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setBannerDragging(false);
+          const file = e.dataTransfer.files?.[0];
+          if (file) void handleBannerFile(file);
+        }}
+      >
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <div className="font-body font-semibold text-sm mb-1">Live Weekly Page Banner</div>
+            <p className="font-body text-[12px] text-[var(--app-text-muted)] max-w-md">
+              Drop a photo anywhere on this card or click <strong>Upload</strong> to set a banner image.
+              Shown centered at the top of the partner Live Weekly Call page. PNG, JPG, WebP, or SVG.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="font-body text-[12px] text-brand-gold/80 border border-brand-gold/30 rounded-lg px-3 py-2 hover:bg-brand-gold/10 transition-colors cursor-pointer">
+              {bannerSaving ? "Saving…" : bannerUrl ? "Replace" : "Upload"}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className="hidden"
+                disabled={bannerSaving}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleBannerFile(file);
+                  e.currentTarget.value = "";
+                }}
+              />
+            </label>
+            {bannerUrl && (
+              <button
+                type="button"
+                onClick={() => void persistBanner("")}
+                disabled={bannerSaving}
+                className="font-body text-[12px] text-red-400/70 hover:text-red-400 disabled:opacity-50 transition-colors"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+        {bannerUrl && (
+          <div className="mt-4 flex justify-center">
+            <img
+              src={bannerUrl}
+              alt="Live Weekly banner preview"
+              className="max-h-48 w-auto rounded-lg border"
+              style={{ borderColor: "var(--app-border)" }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Stats */}
