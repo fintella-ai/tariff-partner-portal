@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-23 — PR #427 merged: Jitsi Room Slug is now a visible, editable field in the Live Weekly add/edit form. Create mode: optional — leave blank for auto-generate. Edit mode: pre-filled with current slug + full `meet.jit.si/<slug>` URL preview. Slug-safe input. PUT handler ignores empty string so save-without-touching-slug doesn't clobber. Earlier today: #404 layout padding, #406 Commission History columns, #408 EP override card + sub-tab, #410 agreement + invite reminders, #412 HubSpot-style workflow editor, #414 Live Weekly seed gate, #416 Jitsi embed + conference reminders (Calendar sync deferred v2), #418 admin downline list shows L3s, #420 Top Partners deals counts override deals, #422 delete-error surfacing + jitsiRoom backfill, #424 drop conference demo fallbacks, #425 hide orphaned ledger rows across all reports aggregates.
+🕒 Last updated: 2026-04-23 — PR #429 merged: gold 💡 callout added above the Stats row on /admin/conference reminding admins of the after-call workflow (paste recording URL → fill duration + notes → flip Active off). Pure UI hint. Earlier today: #404 layout padding, #406 Commission History columns, #408 EP override card + sub-tab, #410 agreement + invite reminders, #412 HubSpot-style workflow editor, #414 Live Weekly seed gate, #416 Jitsi embed + conference reminders (Calendar sync deferred v2), #418 admin downline list shows L3s, #420 Top Partners deals counts override deals, #422 delete-error surfacing + jitsiRoom backfill, #424 drop conference demo fallbacks, #425 hide orphaned ledger rows across all reports aggregates, #427 Jitsi slug field in admin form.
 
 ## 🌿 Git state
-- **main HEAD:** `90dd859` — feat(conference): expose Jitsi room slug in admin form (#427)
+- **main HEAD:** `dc3c064` — chore(conference): add after-call reminder tip on admin page (#429)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
