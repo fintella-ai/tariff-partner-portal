@@ -32,6 +32,7 @@ export type AdminRole = "super_admin" | "admin" | "accounting" | "partner_suppor
 //     finance-page IDs remain in each role's list below.
 export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
   super_admin: [
+    "home",
     "partners", "deals",
     "communications", "internalChats", "partnerSupport",
     "training", "conference", "documents",
@@ -39,6 +40,7 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
     "settings", "users", "dev", "features",
   ],
   admin: [
+    "home",
     "partners", "deals",
     "communications", "internalChats", "partnerSupport",
     "training", "conference", "documents",
@@ -46,11 +48,13 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
     "settings",
   ],
   accounting: [
+    "home",
     "deals", "documents",
     "payouts", "revenue", "reports",
     "communications",
   ],
   partner_support: [
+    "home",
     "partners", "deals",
     "communications", "internalChats", "partnerSupport",
     "training", "conference", "documents",
