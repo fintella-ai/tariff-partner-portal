@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-24 — PR #446 merged: admin workspace V2 — right-rail PartnerContextDrawer (slides in from partner name clicks on feed rows), Activity Timeline section (client-side merge of deals + partners + payouts recent events, newest-first), and per-admin section reorder via localStorage (`fintella.admin.workspace.layout.v1`) with an ✎ Edit layout toggle. Quick Links stays pinned at the bottom. Pure front-end additions on top of the V1 from #442. Earlier today: #442 shipped the workspace, #444 added Home to the admin nav reorder registry. 2026-04-23 session had 21 PRs (Google Calendar OAuth, Jitsi embed, HubSpot-style workflow editor, reminder triggers, orphan cleanup, etc.).
+🕒 Last updated: 2026-04-24 — PR #448 merged: admin workspace Needs-Attention feed now includes open recruitment invites (active + unused L1 invites). New ✉️ Invite source type, Nudge action, surfaced in Onboarding filter. Pending Signups stat card sublabel shows open-invite count alongside awaiting-activation. Earlier today: #442 workspace V1, #444 Home added to admin nav reorder registry, #446 workspace V2 (PartnerContextDrawer + Activity Timeline + per-admin reorder). 2026-04-23 session had 21 PRs (Google Calendar OAuth, Jitsi embed, HubSpot-style workflow editor, reminder triggers, orphan cleanup, etc.).
 
 ## 🌿 Git state
-- **main HEAD:** `76b55d9` — feat(admin/workspace): V2 — right-rail drawer + activity timeline + reorder (#446)
+- **main HEAD:** `4348bed` — feat(admin/workspace): surface open invites in Needs Attention (#448)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
