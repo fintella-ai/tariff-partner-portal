@@ -64,6 +64,10 @@ const MAIN_NAV: Array<{
 const BUILT_IN_PARTNER_ICONS: Record<string, string> = {
   reporting: "/icons/reporting-chart.svg",
   overview: "/icons/overview-dashboard.svg",
+  home: "/icons/home-house.svg",
+  deals: "/icons/deals-briefcase.svg",
+  commissions: "/icons/commissions-coins.svg",
+  downline: "/icons/downline-tree.svg",
 };
 
 // Mobile bottom bar items (subset)
