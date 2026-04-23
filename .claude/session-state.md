@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-23 — PR #420 merged: Top Partners by Commission on /admin/reports now counts every deal that contributed to a partner's commission (own deals + override deals via CommissionLedger → dealId lookup), so override-earning partners no longer show `deals=0` next to a non-zero commission. Orphaned ledger rows are quietly skipped. Earlier today: PR #404 (layout padding), #406 (Commission History columns), #408 (EP override card + sub-tab), #410 (agreement + invite reminders), #412 (HubSpot-style workflow editor), #414 (Live Weekly seed gate), #416 (Jitsi embed + conference reminders; Calendar sync deferred), #418 (admin downline list shows L3s).
+🕒 Last updated: 2026-04-23 — PR #422 merged: admin /conference delete was silently swallowing errors (both client + server) so a 500 looked like the row just came back. Client now surfaces the real Prisma error via alert; server logs + returns the underlying message. Same PR adds a `jitsiRoom` backfill to the GET handler — rows that predate #416 auto-get a slug on the next admin page load (no edit/recreate needed). Earlier today: #404 layout padding, #406 Commission History columns, #408 EP override card + sub-tab, #410 agreement + invite reminders, #412 HubSpot-style workflow editor, #414 Live Weekly seed gate, #416 Jitsi embed + conference reminders (Calendar sync deferred v2), #418 admin downline list shows L3s, #420 Top Partners deals counts override deals.
 
 ## 🌿 Git state
-- **main HEAD:** `1adfaa2` — fix(reports): Top Partners deals/pipeline include override deals (#420)
+- **main HEAD:** `4ea68ee` — fix(conference): surface delete errors + backfill jitsiRoom on GET (#422)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
