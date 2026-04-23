@@ -272,7 +272,7 @@ function SignupContent() {
                       className="mt-0.5 w-4 h-4 rounded border-brand-gold/30 bg-transparent text-brand-gold focus:ring-brand-gold/50 cursor-pointer shrink-0"
                     />
                     <span className="font-body text-[12px] theme-text-secondary leading-relaxed">
-                      I consent to receive SMS/text messages from &quot;Annexation PR LLC&quot; and &quot;Financial Intelligence Network DBA&quot; (Fintella) for time-sensitive deal updates, commission alerts, and important program notifications. Msg &amp; data rates may apply.
+                      I agree to receive SMS notifications about my account activity, deal status updates, and commission payment alerts. Message frequency varies. Message and data rates may apply. Reply STOP to cancel at any time.
                     </span>
                   </label>
                 </div>
