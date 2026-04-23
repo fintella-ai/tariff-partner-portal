@@ -127,6 +127,24 @@ export async function POST(req: NextRequest) {
       commissionRate = r;
     }
 
+    // Default status for admin-created partners:
+    // - Explicit body.status always wins (admin chose a specific value).
+    // - No upline (top-level L1) → "active" (admin onboards direct relationships).
+    // - Upline has payoutDownlineEnabled=true → "active" (Fintella handles the
+    //   waterfall payout, so the downline signs Fintella's standard agreement
+    //   via the normal SignWell flow — no external upload needed).
+    // - Otherwise → "pending" so the upline L1 can upload the private
+    //   L1↔downline agreement from /dashboard/downline before the downline
+    //   partner is activated.
+    let defaultStatus = "active";
+    if (body.referredByPartnerCode) {
+      const upline = await prisma.partner.findUnique({
+        where: { partnerCode: body.referredByPartnerCode },
+        select: { payoutDownlineEnabled: true },
+      });
+      if (!upline?.payoutDownlineEnabled) defaultStatus = "pending";
+    }
+
     const partner = await prisma.partner.create({
       data: {
         partnerCode,
@@ -134,7 +152,7 @@ export async function POST(req: NextRequest) {
         firstName: body.firstName,
         lastName: body.lastName,
         phone: normalizePhone(body.phone),
-        status: body.status || "active",
+        status: body.status || defaultStatus,
         referredByPartnerCode: body.referredByPartnerCode || null,
         l3Enabled: body.l3Enabled || false,
         notes: body.notes || null,

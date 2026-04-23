@@ -22,7 +22,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "targetPartnerCode and fileName are required" }, { status: 400 });
     }
 
-    // Verify the target partner exists and is in the uploader's downline
+    // Verify the target partner exists and is somewhere in the uploader's
+    // downline — direct child (L2 under L1) OR grandchild (L3 under L2
+    // under L1). Anything deeper is rejected.
     const targetPartner = await prisma.partner.findUnique({
       where: { partnerCode: targetPartnerCode },
     });
@@ -31,8 +33,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Target partner not found" }, { status: 404 });
     }
 
-    if (targetPartner.referredByPartnerCode !== uploaderCode) {
-      return NextResponse.json({ error: "You can only upload agreements for your direct downline partners" }, { status: 403 });
+    let authorized = targetPartner.referredByPartnerCode === uploaderCode;
+    if (!authorized && targetPartner.referredByPartnerCode) {
+      const parent = await prisma.partner.findUnique({
+        where: { partnerCode: targetPartner.referredByPartnerCode },
+        select: { referredByPartnerCode: true },
+      });
+      if (parent?.referredByPartnerCode === uploaderCode) authorized = true;
+    }
+    if (!authorized) {
+      return NextResponse.json({ error: "You can only upload agreements for partners in your downline" }, { status: 403 });
     }
 
     // Create document record with "under_review" status

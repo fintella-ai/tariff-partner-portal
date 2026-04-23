@@ -4,13 +4,28 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useDevice } from "@/lib/useDevice";
+import Link from "next/link";
 import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
+import LevelTag from "@/components/ui/LevelTag";
 import { SkeletonTableRow, SkeletonCard } from "@/components/ui/Skeleton";
 import PullToRefresh from "@/components/ui/PullToRefresh";
 import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
 import { fmt$, fmtDate } from "@/lib/format";
 import { DEFAULT_L2_RATE, DEFAULT_FIRM_FEE_RATE } from "@/lib/constants";
+
+/**
+ * Status values where the L1 can upload / re-upload a signed L1↔downline
+ * agreement. Kept in one place so the mobile card, desktop table, and
+ * detail page stay in sync.
+ *
+ *   pending      — admin or the L1 has created the partner but no signed
+ *                  agreement exists yet.
+ *   invited      — the invite link has been issued but not yet accepted.
+ *   under_review — a prior upload is waiting on admin approval; the L1
+ *                  can replace it with a corrected version.
+ */
+const AGREEMENT_UPLOAD_STATUSES = new Set(["pending", "invited", "under_review"]);
 
 type PartnerView = "list" | "tree";
 
@@ -80,13 +95,61 @@ export default function DownlinePage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Flattened partner list for list + mobile-card views. L2 rows come
+  // first (sorted by signup), then their L3 children. Tree view keeps
+  // its own nested shape below.
+  const displayPartners: any[] = [
+    ...partners.map((p) => ({ ...p, _tier: "l2" as const })),
+    ...l3Partners.map((p) => ({ ...p, _tier: "l3" as const })),
+  ];
+
   // Build a map from partner code → partner name for display in downline deals
   const partnerNameMap: Record<string, string> = {};
-  for (const p of partners) {
+  for (const p of displayPartners) {
     if (p.partnerCode) {
       partnerNameMap[p.partnerCode] = `${p.firstName} ${p.lastName}`.trim();
     }
   }
+
+  // Inline file-upload control — used on every row whose status is in
+  // AGREEMENT_UPLOAD_STATUSES. Under `under_review` the label flips to
+  // "Re-upload" so the L1 can replace a rejected agreement without
+  // asking an admin to reset the status.
+  const uploadAgreement = async (targetPartnerCode: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const res = await fetch("/api/partner/upload-agreement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetPartnerCode, fileName: file.name, fileData: reader.result }),
+      });
+      if (res.ok) { alert("Agreement uploaded! It will be reviewed by an admin."); loadData(); }
+      else { const err = await res.json().catch(() => ({})); alert(err.error || "Upload failed"); }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const UploadLabel = ({ partnerCode, status, size }: { partnerCode: string; status: string; size: "xs" | "sm" }) => {
+    const text = status === "under_review" ? "Re-upload" : status === "invited" ? "Upload Agreement" : "Upload Signed Agreement";
+    const sizeCls = size === "xs"
+      ? "text-[10px] px-2.5 py-1.5"
+      : "text-[11px] px-3 py-2 w-full text-center block mt-2";
+    return (
+      <label className={`font-body ${sizeCls} text-green-400/70 border border-green-400/20 rounded-lg hover:bg-green-400/10 transition-colors cursor-pointer`}>
+        {text}
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx,.png,.jpg"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (file) await uploadAgreement(partnerCode, file);
+            e.target.value = "";
+          }}
+        />
+      </label>
+    );
+  };
 
   // Resolve partner name: prefer submittingPartnerName, then map lookup, then code
   const resolvePartnerName = (p: any) =>
@@ -223,7 +286,7 @@ export default function DownlinePage() {
         ) : device.isMobile ? (
           /* ── Mobile: Card layout ── */
           <div>
-            {partners.map((p) => {
+            {displayPartners.map((p) => {
               const initials =
                 (p.firstName?.[0] || "") + (p.lastName?.[0] || "");
               return (
@@ -231,7 +294,10 @@ export default function DownlinePage() {
                   key={p.partnerCode}
                   className="px-4 py-4 border-b border-[var(--app-border-subtle)] last:border-b-0"
                 >
-                  <div className="flex items-center gap-3 mb-3">
+                  <Link
+                    href={`/dashboard/downline/${p.partnerCode}`}
+                    className="flex items-center gap-3 mb-3 -m-1 p-1 rounded-lg hover:bg-[var(--app-card-bg)]"
+                  >
                     {/* Avatar */}
                     <div className="w-9 h-9 rounded-full bg-[var(--app-card-bg)] border border-[var(--app-border)] flex items-center justify-center shrink-0">
                       <span className="font-body text-[11px] font-semibold text-[var(--app-text-secondary)] uppercase">
@@ -239,15 +305,18 @@ export default function DownlinePage() {
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">
-                        {p.firstName} {p.lastName}
+                      <div className="flex items-center gap-2">
+                        <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">
+                          {p.firstName} {p.lastName}
+                        </div>
+                        <LevelTag tier={p._tier} size="xs" />
                       </div>
                       <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">
                         {p.email}
                       </div>
                     </div>
                     <StatusBadge status={p.status} />
-                  </div>
+                  </Link>
                   <div className="flex items-center justify-between font-body text-[11px] text-[var(--app-text-muted)]">
                     <span>
                       Code:{" "}
@@ -262,29 +331,13 @@ export default function DownlinePage() {
                       <MessageButton counterpartyCode={p.partnerCode} />
                     </div>
                   )}
-                  {p.status === "pending" && (
-                    <label className="mt-2 w-full font-body text-[11px] text-green-400/70 border border-green-400/20 rounded-lg px-3 py-2 hover:bg-green-400/10 transition-colors cursor-pointer text-center block">
-                      Upload Signed Agreement
-                      <input type="file" accept=".pdf,.doc,.docx,.png,.jpg" className="hidden" onChange={async (e) => {
-                        const file = e.target.files?.[0]; if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = async () => {
-                          const res = await fetch("/api/partner/upload-agreement", {
-                            method: "POST", headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ targetPartnerCode: p.partnerCode, fileName: file.name, fileData: reader.result }),
-                          });
-                          if (res.ok) { alert("Agreement uploaded! It will be reviewed by an admin."); loadData(); }
-                          else { const err = await res.json().catch(() => ({})); alert(err.error || "Upload failed"); }
-                        };
-                        reader.readAsDataURL(file);
-                        e.target.value = "";
-                      }} />
-                    </label>
-                  )}
                   {p.status === "under_review" && (
                     <div className="mt-2 text-center">
                       <span className="inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">Agreement Under Review</span>
                     </div>
+                  )}
+                  {AGREEMENT_UPLOAD_STATUSES.has(p.status) && (
+                    <UploadLabel partnerCode={p.partnerCode} status={p.status} size="sm" />
                   )}
                 </div>
               );
@@ -293,77 +346,66 @@ export default function DownlinePage() {
         ) : (
           /* ── Desktop/Tablet: Table layout (horizontal scroll on narrow viewports) ── */
           <div className="overflow-x-auto">
-            <div className="min-w-[840px]">
+            <div className="min-w-[900px]">
             {/* Header */}
-            <div className="grid grid-cols-[2fr_1.5fr_1fr_0.7fr_0.8fr_0.8fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
-              {["Partner", "Email", "Code", "Status", "Joined", "Agreement"].map((h) => (
+            <div className="grid grid-cols-[2fr_0.5fr_1.4fr_1fr_0.8fr_0.8fr_1fr] gap-4 px-6 py-3 border-b border-[var(--app-border)]">
+              {["Partner", "Level", "Email", "Code", "Status", "Joined", "Agreement"].map((h) => (
                 <div key={h} className={`font-body text-[10px] tracking-[1px] uppercase text-[var(--app-text-muted)] ${h === "Agreement" ? "text-right" : ""}`}>{h}</div>
               ))}
             </div>
-            {/* Rows */}
-            {partners.map((p) => {
+            {/* Rows. Row is a plain div; only the Partner cell wraps in
+                a Link so clicks on the file-upload control in the
+                Agreement cell don't fight with link navigation. */}
+            {displayPartners.map((p) => {
               const initials =
                 (p.firstName?.[0] || "") + (p.lastName?.[0] || "");
               return (
                 <div
                   key={p.partnerCode}
-                  className="grid grid-cols-[2fr_1.5fr_1fr_0.7fr_0.8fr_0.8fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors"
+                  className="grid grid-cols-[2fr_0.5fr_1.4fr_1fr_0.8fr_0.8fr_1fr] gap-4 px-6 py-4 border-b border-[var(--app-border)] last:border-b-0 items-center hover:bg-[var(--app-card-bg)] transition-colors"
                 >
-                  {/* Col 1: Name + avatar */}
-                  <div className="flex items-center gap-3 min-w-0">
+                  {/* Col 1: Name + avatar (clickable → detail page) */}
+                  <Link
+                    href={`/dashboard/downline/${p.partnerCode}`}
+                    className="flex items-center gap-3 min-w-0 hover:text-brand-gold"
+                  >
                     <div className="w-8 h-8 rounded-full bg-[var(--app-card-bg)] border border-[var(--app-border)] flex items-center justify-center shrink-0">
                       <span className="font-body text-[10px] font-semibold text-[var(--app-text-secondary)] uppercase">
                         {initials}
                       </span>
                     </div>
-                    <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">
+                    <div className="font-body text-[13px] font-medium truncate">
                       {p.firstName} {p.lastName}
                     </div>
-                  </div>
-                  {/* Col 2: Email */}
+                  </Link>
+                  {/* Col 2: Level */}
+                  <div><LevelTag tier={p._tier} size="xs" /></div>
+                  {/* Col 3: Email */}
                   <div className="font-body text-[13px] text-[var(--app-text-secondary)] truncate">
                     {p.email}
                   </div>
-                  {/* Col 3: Code */}
+                  {/* Col 4: Code */}
                   <div className="font-mono text-[12px] text-[var(--app-text-muted)]">
                     {p.partnerCode}
                   </div>
-                  {/* Col 4: Status */}
+                  {/* Col 5: Status */}
                   <div>
                     <StatusBadge status={p.status} />
                   </div>
-                  {/* Col 5: Joined */}
+                  {/* Col 6: Joined */}
                   <div className="font-body text-[13px] text-[var(--app-text-muted)]">
                     {fmtDate(p.signupDate)}
                   </div>
-                  {/* Col 6: Agreement */}
+                  {/* Col 7: Agreement */}
                   <div className="text-right flex items-center justify-end gap-2">
-                    {p.status === "pending" ? (
-                      <label className="font-body text-[10px] text-green-400/70 border border-green-400/20 rounded-lg px-2.5 py-1.5 hover:bg-green-400/10 transition-colors cursor-pointer">
-                        Upload Agreement
-                        <input type="file" accept=".pdf,.doc,.docx,.png,.jpg" className="hidden" onChange={async (e) => {
-                          const file = e.target.files?.[0]; if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = async () => {
-                            const res = await fetch("/api/partner/upload-agreement", {
-                              method: "POST", headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ targetPartnerCode: p.partnerCode, fileName: file.name, fileData: reader.result }),
-                            });
-                            if (res.ok) { alert("Agreement uploaded! It will be reviewed by an admin."); loadData(); }
-                            else { const err = await res.json().catch(() => ({})); alert(err.error || "Upload failed"); }
-                          };
-                          reader.readAsDataURL(file);
-                          e.target.value = "";
-                        }} />
-                      </label>
-                    ) : p.status === "under_review" ? (
-                      <span className="inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">Under Review</span>
-                    ) : (
-                      <span className="font-body text-[10px] text-green-400">&#10003; Active</span>
-                    )}
-                    {p.status === "active" && (
-                      <MessageButton counterpartyCode={p.partnerCode} size="xs" />
-                    )}
+                    {AGREEMENT_UPLOAD_STATUSES.has(p.status) ? (
+                      <UploadLabel partnerCode={p.partnerCode} status={p.status} size="xs" />
+                    ) : p.status === "active" ? (
+                      <>
+                        <span className="font-body text-[10px] text-green-400">&#10003; Active</span>
+                        <MessageButton counterpartyCode={p.partnerCode} size="xs" />
+                      </>
+                    ) : null}
                   </div>
                 </div>
               );
