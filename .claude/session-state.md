@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-23 — PR #416 merged: Jitsi in-portal embed for Live Weekly (admin creates a schedule row → auto-generated `jitsiRoom` slug → partners click "Join call here" and get an iframe of the Jitsi room in-portal), plus a new `conference.call_reminder` workflow trigger firing via a new hourly `/api/cron/conference-reminders` cron. Google Calendar sync code is in place (`src/lib/google-calendar.ts`, `/api/admin/conference/[id]/sync-to-calendar`, schema fields) but the admin UI button was pulled — deferred to v2 because John's Workspace has `iam.disableServiceAccountKeyCreation` org policy enforced. Earlier today: PR #404 (layout padding), #406 (Commission History columns), #408 (EP override card + sub-tab), #410 (agreement + invite reminders), #412 (HubSpot-style workflow editor), #414 (Live Weekly seed gate).
+🕒 Last updated: 2026-04-23 — PR #418 merged: admin partner detail → Downline → List view now shows L3 rows indented under their L2 upline ("via <L2 name>"), and the header count sums L2 + L3. Tree view was already correct; list view was silently dropping `l3Partners` entirely. Earlier today: PR #404 (layout padding), #406 (Commission History columns), #408 (EP override card + sub-tab), #410 (agreement + invite reminders), #412 (HubSpot-style workflow editor), #414 (Live Weekly seed gate), #416 (Jitsi embed + conference reminders + Google Calendar sync scaffolding deferred to v2).
 
 ## 🌿 Git state
-- **main HEAD:** `a8e20be` — feat(conference): Jitsi in-portal embed + Google Calendar + reminders (#416)
+- **main HEAD:** `cbb0e7d` — fix(admin/partner/downline): show L3 rows in the list view (#418)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
