@@ -22,15 +22,23 @@ export async function GET() {
 
     const now = new Date();
 
+    // Filter out orphaned ledger rows (dealId points to a deleted Deal)
+    // so every aggregate in this report agrees with the visible deal set.
+    // Without this, stats like Commissions Pending + the Top Partners
+    // ranking accumulated money from deals that no longer exist —
+    // e.g. the $19,500 TestL2 row John kept seeing.
+    const dealById = new Map(allDeals.map((d) => [d.id, d]));
+    const liveCommissions = allCommissions.filter((c) => c.dealId && dealById.has(c.dealId));
+
     // ─── KEY METRICS ──────────────────────────────────────────────────
     const totalPipeline = allDeals.reduce((s, d) => s + d.estimatedRefundAmount, 0);
-    const totalCommissionsPaid = allCommissions
+    const totalCommissionsPaid = liveCommissions
       .filter((c) => c.status === "paid")
       .reduce((s, c) => s + c.amount, 0);
-    const totalCommissionsDue = allCommissions
+    const totalCommissionsDue = liveCommissions
       .filter((c) => c.status === "due")
       .reduce((s, c) => s + c.amount, 0);
-    const totalCommissionsPending = allCommissions
+    const totalCommissionsPending = liveCommissions
       .filter((c) => c.status === "pending")
       .reduce((s, c) => s + c.amount, 0);
 
@@ -82,10 +90,10 @@ export async function GET() {
             new Date(deal.updatedAt) >= d &&
             new Date(deal.updatedAt) < end
         ).length,
-        commPaid: allCommissions
+        commPaid: liveCommissions
           .filter((c) => c.status === "paid" && c.periodMonth === periodKey)
           .reduce((s, c) => s + c.amount, 0),
-        commDue: allCommissions
+        commDue: liveCommissions
           .filter((c) => c.status === "due" && c.periodMonth === periodKey)
           .reduce((s, c) => s + c.amount, 0),
         newPartners: allPartners.filter(
@@ -98,10 +106,8 @@ export async function GET() {
     //
     // `deals` / `pipeline` count BOTH the partner's own deals (where they
     // are the submitter) AND the deals they earn override commission on
-    // (via CommissionLedger rows that reference those deals). Without this,
-    // an L1 earning L2/L3 overrides would show `deals=0, commission=$X`,
-    // which reads as a bug even though the commission is legitimate.
-    const dealById = new Map(allDeals.map((d) => [d.id, d]));
+    // (via CommissionLedger rows that reference those deals). Uses
+    // `liveCommissions` so orphaned rows don't inflate the ranking.
     const partnerCommMap: Record<string, { dealIds: Set<string>; pipeline: number; commission: number }> = {};
 
     for (const deal of allDeals) {
@@ -109,18 +115,13 @@ export async function GET() {
       m.dealIds.add(deal.id);
       m.pipeline += deal.estimatedRefundAmount;
     }
-    for (const comm of allCommissions) {
+    for (const comm of liveCommissions) {
+      const deal = dealById.get(comm.dealId)!; // liveCommissions filter guarantees this
       const m = (partnerCommMap[comm.partnerCode] ??= { dealIds: new Set(), pipeline: 0, commission: 0 });
       m.commission += comm.amount;
-      if (comm.dealId) {
-        const deal = dealById.get(comm.dealId);
-        // Only count the deal if it still exists (protects against orphaned
-        // ledger rows that outlived a deleted deal) and hasn't already been
-        // counted above.
-        if (deal && !m.dealIds.has(comm.dealId)) {
-          m.dealIds.add(comm.dealId);
-          m.pipeline += deal.estimatedRefundAmount;
-        }
+      if (!m.dealIds.has(comm.dealId)) {
+        m.dealIds.add(comm.dealId);
+        m.pipeline += deal.estimatedRefundAmount;
       }
     }
 
