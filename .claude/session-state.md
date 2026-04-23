@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-23 — PR #431 merged: new URL column on /admin/conference between Title and Host. Gold "📹 Join" button opens the Jitsi room in a new tab (or neutral "↗ Open" falls back to legacy joinUrl). Mobile cards get the chip at the front of the actions row. Earlier today: #404 layout padding, #406 Commission History columns, #408 EP override card + sub-tab, #410 agreement + invite reminders, #412 HubSpot-style workflow editor, #414 Live Weekly seed gate, #416 Jitsi embed + conference reminders (Calendar sync deferred v2), #418 admin downline list shows L3s, #420 Top Partners deals counts override deals, #422 delete-error surfacing + jitsiRoom backfill, #424 drop conference demo fallbacks, #425 hide orphaned ledger rows across all reports aggregates, #427 Jitsi slug field in admin form, #429 after-call reminder tip.
+🕒 Last updated: 2026-04-23 — PR #433 merged: Google Calendar OAuth integration went live. Super admin clicks Connect in the new /admin/settings → Integrations tab, grants consent, refresh token stored on PortalSettings. /admin/conference gets its 📅 Sync button back (was deferred in #416). Pivoted from service-account JWT to OAuth refresh-token grant because John's Workspace blocks iam.disableServiceAccountKeyCreation. Needs `GOOGLE_OAUTH_CLIENT_ID` + `GOOGLE_OAUTH_CLIENT_SECRET` on Vercel; walkthrough in PR #433 body. Earlier today: #404 layout padding, #406 Commission History columns, #408 EP override card + sub-tab, #410 agreement + invite reminders, #412 HubSpot-style workflow editor, #414 Live Weekly seed gate, #416 Jitsi embed + conference reminders, #418 admin downline list shows L3s, #420 Top Partners deals counts override deals, #422 delete-error surfacing + jitsiRoom backfill, #424 drop conference demo fallbacks, #425 hide orphaned ledger rows, #427 Jitsi slug field, #429 after-call reminder tip, #431 URL column on admin conference table.
 
 ## 🌿 Git state
-- **main HEAD:** `e767de8` — feat(conference/admin): add URL column before Host in the table (#431)
+- **main HEAD:** `3b613d8` — feat(google-calendar): OAuth integration — admin clicks Connect (#433)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
