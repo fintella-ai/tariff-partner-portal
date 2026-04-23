@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-24 — PR #450 merged: Level column added to partner Full Reporting → Downline → Your Partners list view. Renders the existing L1/L2/L3 gold/silver/bronze LevelTag between Partner and Code. Earlier today: #442 workspace V1, #444 Home in admin nav reorder registry, #446 workspace V2 (PartnerContextDrawer + Activity Timeline + per-admin reorder), #448 open invites in the workspace Needs-Attention feed. 2026-04-23 session had 21 PRs (Google Calendar OAuth, Jitsi embed, HubSpot-style workflow editor, reminder triggers, orphan cleanup, etc.).
+🕒 Last updated: 2026-04-24 — PR #452 merged: Google Calendar embed added to the admin workspace as a fourth reorderable section. Iframe renders the calendar stored on PortalSettings.googleCalendarCalendarId (OAuth connection from #433). Agenda / Week / Month view toggle, connected-email subtitle, empty-state → Settings link when disconnected. Earlier today: #442 workspace V1, #444 Home in admin nav reorder registry, #446 workspace V2 (PartnerContextDrawer + Activity Timeline + per-admin reorder), #448 open invites in the workspace Needs-Attention feed, #450 Level column on partner Full Reporting → Downline → Your Partners. 2026-04-23 session had 21 PRs (Google Calendar OAuth, Jitsi embed, HubSpot-style workflow editor, reminder triggers, orphan cleanup, etc.).
 
 ## 🌿 Git state
-- **main HEAD:** `bd0639d` — feat(partner/reporting): add Level column to Downline → Your Partners (#450)
+- **main HEAD:** `d582f19` — feat(admin/workspace): embed Google Calendar as a reorderable section (#452)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
