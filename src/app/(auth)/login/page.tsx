@@ -48,7 +48,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Invalid email or password.");
       } else {
-        router.push(mode === "partner" ? "/dashboard/home" : "/admin/partners");
+        router.push(mode === "partner" ? "/dashboard/home" : "/admin");
       }
     } catch {
       setError(`Connection error. Please try again or email ${SUPPORT_EMAIL}.`);
