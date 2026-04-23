@@ -40,7 +40,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const tokens = await exchangeCodeForTokens(code);
+    // Use the same origin-based redirect URI the oauth-start handler
+    // used, so Google's token exchange sees a matching redirect_uri.
+    const tokens = await exchangeCodeForTokens(code, req.nextUrl.origin);
     await prisma.portalSettings.upsert({
       where: { id: "global" },
       update: {

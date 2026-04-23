@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { buildAuthorizationUrl } from "@/lib/google-calendar";
 
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * callback at /api/admin/google-calendar/oauth-callback handles the
  * post-consent code exchange.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const role = (session.user as any).role;
@@ -38,5 +38,9 @@ export async function GET() {
   // already in play, so a rogue callback without a valid admin session
   // is rejected there anyway.
   const state = encodeURIComponent(session.user.email || "unknown");
-  return NextResponse.redirect(buildAuthorizationUrl(state));
+  // Derive the redirect URI from the actual request origin so a
+  // polluted NEXT_PUBLIC_PORTAL_URL can't poison the URL we send to
+  // Google. This only works if the incoming request already hits the
+  // canonical domain you registered with Google.
+  return NextResponse.redirect(buildAuthorizationUrl(state, req.nextUrl.origin));
 }

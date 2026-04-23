@@ -34,21 +34,23 @@ const CAL_BASE = "https://www.googleapis.com/calendar/v3";
 type AccessTokenCache = { token: string; expiresAt: number };
 let cached: AccessTokenCache | null = null;
 
-export function oauthRedirectUri(): string {
-  // Trim before stripping the trailing slash — `vercel env add` via `echo`
-  // can land a trailing newline in the stored value, which would
-  // otherwise produce `https://fintella.partners /api/...` and fail
-  // Google's redirect_uri validation.
-  const raw = (process.env.NEXT_PUBLIC_PORTAL_URL || "http://localhost:3000").trim();
+export function oauthRedirectUri(originOverride?: string): string {
+  // Prefer the actual request origin (passed in from the route handler)
+  // over NEXT_PUBLIC_PORTAL_URL so we never risk a polluted env var
+  // value sneaking whitespace / newlines into the URL we hand to
+  // Google. Falls back to the env var, then localhost for dev.
+  const raw =
+    originOverride?.trim() ||
+    (process.env.NEXT_PUBLIC_PORTAL_URL || "http://localhost:3000").trim();
   const base = raw.replace(/\/$/, "");
   return `${base}/api/admin/google-calendar/oauth-callback`;
 }
 
-export function buildAuthorizationUrl(state: string): string {
+export function buildAuthorizationUrl(state: string, originOverride?: string): string {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID || "";
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: oauthRedirectUri(),
+    redirect_uri: oauthRedirectUri(originOverride),
     response_type: "code",
     // `offline` gets us a refresh_token; `consent` forces Google to
     // re-issue one even when the user has already granted the app
@@ -61,7 +63,7 @@ export function buildAuthorizationUrl(state: string): string {
   return `${AUTH_ENDPOINT}?${params.toString()}`;
 }
 
-export async function exchangeCodeForTokens(code: string): Promise<{
+export async function exchangeCodeForTokens(code: string, originOverride?: string): Promise<{
   refreshToken: string;
   accessToken: string;
   expiresIn: number;
@@ -78,7 +80,10 @@ export async function exchangeCodeForTokens(code: string): Promise<{
       code,
       client_id: clientId,
       client_secret: clientSecret,
-      redirect_uri: oauthRedirectUri(),
+      // Google verifies that the redirect_uri in the token exchange
+      // matches the one used in the initial authorization request, so
+      // we need to pass the same origin here that oauth-start used.
+      redirect_uri: oauthRedirectUri(originOverride),
       grant_type: "authorization_code",
     }),
   });
