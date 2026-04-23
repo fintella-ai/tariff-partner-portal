@@ -44,10 +44,28 @@ function TeamChatInner({ searchQuery }: { searchQuery: string }) {
   const [activeThreadId, setActiveThreadId] = useState<string | null>(initialThreadId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [dealMap, setDealMap] = useState<Record<string, string>>({});
+  const [partnerMap, setPartnerMap] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const esRef = useRef<EventSource | null>(null);
+
+  // Load partner list once for `[partner:CODE]` token rendering. Best-
+  // effort: if the endpoint 403s for the role we just skip and let the
+  // chips fall back to showing the raw code.
+  useEffect(() => {
+    fetch("/api/admin/partners")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d?.partners) return;
+        const map: Record<string, string> = {};
+        for (const p of d.partners as any[]) {
+          map[p.partnerCode] = `${p.firstName || ""} ${p.lastName || ""}`.trim() || p.partnerCode;
+        }
+        setPartnerMap(map);
+      })
+      .catch(() => {});
+  }, []);
 
   // Load thread list
   const loadThreads = useCallback(async () => {
@@ -204,12 +222,16 @@ function TeamChatInner({ searchQuery }: { searchQuery: string }) {
                   <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed whitespace-pre-wrap mt-0.5">
                     {msg.deletedAt
                       ? <span className="italic text-[var(--app-text-muted)]">[message deleted]</span>
-                      : renderAdminChatContent(msg.content, { deals: dealMap }).map((seg, i) =>
+                      : renderAdminChatContent(msg.content, { deals: dealMap, partners: partnerMap }).map((seg, i) =>
                           seg.type === "mention" ? (
                             <span key={i} className="bg-brand-gold/15 text-brand-gold rounded px-1">@{seg.name}</span>
                           ) : seg.type === "deal" ? (
                             <a key={i} href={`/admin/deals#${seg.dealId}`} className="bg-purple-500/15 text-purple-400 rounded px-1 hover:underline">
                               {seg.dealName || seg.dealId}
+                            </a>
+                          ) : seg.type === "partner" ? (
+                            <a key={i} href={`/admin/partners?code=${seg.partnerCode}`} className="bg-pink-500/15 text-pink-300 rounded px-1 hover:underline" title={seg.partnerCode}>
+                              &{seg.partnerName || seg.partnerCode}
                             </a>
                           ) : (
                             <span key={i}>{seg.value}</span>

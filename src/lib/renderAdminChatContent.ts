@@ -1,11 +1,17 @@
 export type ChatSegment =
   | { type: "text"; value: string }
   | { type: "mention"; email: string; name: string }
-  | { type: "deal"; dealId: string; dealName: string | null };
+  | { type: "deal"; dealId: string; dealName: string | null }
+  | { type: "partner"; partnerCode: string; partnerName: string | null };
 
-export type RenderCtx = { deals: Record<string, string> };
+export type RenderCtx = {
+  deals: Record<string, string>;
+  // Optional — passed in by the admin internal-chat UI so `[partner:…]`
+  // tokens can render with a real name. Falls back to code if missing.
+  partners?: Record<string, string>;
+};
 
-const COMBINED_RE = /@\[([^\]]+)\]\(([^)]+)\)|\[deal:([a-z0-9]+)\]/gi;
+const COMBINED_RE = /@\[([^\]]+)\]\(([^)]+)\)|\[deal:([a-z0-9]+)\]|\[partner:([A-Za-z0-9_-]+)\]/gi;
 
 export function renderAdminChatContent(content: string, ctx: RenderCtx): ChatSegment[] {
   if (!content) return [{ type: "text", value: "" }];
@@ -24,6 +30,13 @@ export function renderAdminChatContent(content: string, ctx: RenderCtx): ChatSeg
     } else if (m[3] !== undefined) {
       const dealId = m[3];
       segments.push({ type: "deal", dealId, dealName: ctx.deals[dealId] ?? null });
+    } else if (m[4] !== undefined) {
+      const partnerCode = m[4];
+      segments.push({
+        type: "partner",
+        partnerCode,
+        partnerName: ctx.partners?.[partnerCode] ?? null,
+      });
     }
     cursor = m.index + m[0].length;
   }

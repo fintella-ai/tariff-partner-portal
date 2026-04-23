@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAnyAdmin } from "@/lib/permissions";
-import { parseMentions, parseDealRefs, stripInvalidTokens } from "@/lib/parseMentions";
+import { parseMentions, parseDealRefs, parsePartnerRefs, stripInvalidTokens } from "@/lib/parseMentions";
 import { publishAdminChatEvent } from "@/lib/adminChatEvents";
 
 const RATE_LIMIT_MAX = 20;
@@ -48,17 +48,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // Validate tokens
   const mentionedEmails = parseMentions(rawContent);
   const dealRefs = parseDealRefs(rawContent);
-  const [validAdmins, validDeals] = await Promise.all([
+  const partnerRefs = parsePartnerRefs(rawContent);
+  const [validAdmins, validDeals, validPartners] = await Promise.all([
     mentionedEmails.length
       ? prisma.user.findMany({ where: { email: { in: mentionedEmails } }, select: { email: true, name: true } })
       : Promise.resolve([]),
     dealRefs.length
       ? prisma.deal.findMany({ where: { id: { in: dealRefs } }, select: { id: true } })
       : Promise.resolve([]),
+    partnerRefs.length
+      ? prisma.partner.findMany({ where: { partnerCode: { in: partnerRefs } }, select: { partnerCode: true } })
+      : Promise.resolve([]),
   ]);
   const validAdminEmails = validAdmins.map((a) => a.email);
   const validDealIds = validDeals.map((d) => d.id);
-  const cleanContent = stripInvalidTokens(rawContent, validAdminEmails, validDealIds);
+  const validPartnerCodes = validPartners.map((p) => p.partnerCode);
+  const cleanContent = stripInvalidTokens(rawContent, validAdminEmails, validDealIds, validPartnerCodes);
 
   // Write in a single transaction: message, mentions, DealNote mirrors, thread bump
   const msg = await prisma.$transaction(async (tx) => {
