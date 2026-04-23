@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-23 — PR #429 merged: gold 💡 callout added above the Stats row on /admin/conference reminding admins of the after-call workflow (paste recording URL → fill duration + notes → flip Active off). Pure UI hint. Earlier today: #404 layout padding, #406 Commission History columns, #408 EP override card + sub-tab, #410 agreement + invite reminders, #412 HubSpot-style workflow editor, #414 Live Weekly seed gate, #416 Jitsi embed + conference reminders (Calendar sync deferred v2), #418 admin downline list shows L3s, #420 Top Partners deals counts override deals, #422 delete-error surfacing + jitsiRoom backfill, #424 drop conference demo fallbacks, #425 hide orphaned ledger rows across all reports aggregates, #427 Jitsi slug field in admin form.
+🕒 Last updated: 2026-04-23 — PR #431 merged: new URL column on /admin/conference between Title and Host. Gold "📹 Join" button opens the Jitsi room in a new tab (or neutral "↗ Open" falls back to legacy joinUrl). Mobile cards get the chip at the front of the actions row. Earlier today: #404 layout padding, #406 Commission History columns, #408 EP override card + sub-tab, #410 agreement + invite reminders, #412 HubSpot-style workflow editor, #414 Live Weekly seed gate, #416 Jitsi embed + conference reminders (Calendar sync deferred v2), #418 admin downline list shows L3s, #420 Top Partners deals counts override deals, #422 delete-error surfacing + jitsiRoom backfill, #424 drop conference demo fallbacks, #425 hide orphaned ledger rows across all reports aggregates, #427 Jitsi slug field in admin form, #429 after-call reminder tip.
 
 ## 🌿 Git state
-- **main HEAD:** `dc3c064` — chore(conference): add after-call reminder tip on admin page (#429)
+- **main HEAD:** `e767de8` — feat(conference/admin): add URL column before Host in the table (#431)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
