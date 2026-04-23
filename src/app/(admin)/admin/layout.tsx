@@ -40,6 +40,13 @@ const BUILT_IN_ADMIN_ICONS: Record<string, string> = {
   documents: "/icons/documents-folder.svg",
   settings: "/icons/settings-gear.svg",
   partnerSupport: "/icons/support-chat-question.svg",
+  partners: "/icons/partners-people.svg",
+  communications: "/icons/communications-chat.svg",
+  internalChats: "/icons/internal-chats-nested.svg",
+  conference: "/icons/conference-camera.svg",
+  dev: "/icons/dev-tools.svg",
+  features: "/icons/features-lightbulb.svg",
+  users: "/icons/users-shield-key.svg",
 };
 
 const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {

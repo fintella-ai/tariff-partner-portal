@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#c4a050" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- left person (slightly behind) -->
+  <circle cx="8" cy="8" r="3"/>
+  <path d="M2.5 20 C 2.5 15.5 5 13 8 13 C 11 13 13.5 15.5 13.5 20"/>
+  <!-- right person (foreground) -->
+  <circle cx="16" cy="9.5" r="2.6"/>
+  <path d="M10.5 20 C 10.5 16.3 13 14 16 14 C 19 14 21.5 16.3 21.5 20"/>
+</svg>

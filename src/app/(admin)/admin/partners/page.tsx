@@ -327,11 +327,21 @@ export default function AdminPartnersPage() {
   const blocked = partners.filter((p) => p.status === "blocked").length;
   const invitedCount = invites.filter((inv) => inv.status === "active").length;
 
+  // Rows waiting on admin review — either an L1-uploaded agreement or a W9
+  // — float to the top of the list regardless of the selected sort column.
+  // Lets admins see the approval queue without scanning.
+  const needsReview = (p: Partner) => p.agreementStatus === "under_review" || p.w9Status === "under_review";
+
   const filteredPartners = (activeTab === "all" || activeTab === "invited"
     ? partners
     : partners.filter((p) => p.status === activeTab)
   ).filter((p) => levelFilter === "all" ? true : (p.tier || "l1") === levelFilter)
    .slice().sort((a, b) => {
+    // Priority bump: any row needing review jumps to the top.
+    const aReview = needsReview(a) ? 0 : 1;
+    const bReview = needsReview(b) ? 0 : 1;
+    if (aReview !== bReview) return aReview - bReview;
+
     let va: string, vb: string;
     if (sortCol === "name") { va = `${a.firstName} ${a.lastName}`.toLowerCase(); vb = `${b.firstName} ${b.lastName}`.toLowerCase(); }
     else if (sortCol === "code") { va = a.partnerCode; vb = b.partnerCode; }

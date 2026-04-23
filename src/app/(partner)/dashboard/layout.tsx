@@ -71,6 +71,9 @@ const BUILT_IN_PARTNER_ICONS: Record<string, string> = {
   training: "/icons/training-book.svg",
   "submit-client": "/icons/submit-clipboard-check.svg",
   "referral-links": "/icons/referral-links-chain.svg",
+  communications: "/icons/communications-chat.svg",
+  "partner-support": "/icons/support-chat-question.svg",
+  "feature-request": "/icons/features-lightbulb.svg",
 };
 
 // Mobile bottom bar items (subset)

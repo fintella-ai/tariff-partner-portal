@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#c4a050" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- shield outline -->
+  <path d="M12 2.5 L4 5 L4 12 C 4 16.5 7.5 20 12 21.5 C 16.5 20 20 16.5 20 12 L20 5 Z"/>
+  <!-- keyhole inside -->
+  <circle cx="12" cy="11" r="1.8"/>
+  <path d="M12 12.5 L12 15.5"/>
+</svg>
