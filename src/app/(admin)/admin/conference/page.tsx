@@ -222,6 +222,22 @@ export default function AdminConferencePage() {
         </button>
       </div>
 
+      {/* After-call reminder — surfaced here so the manual post-call
+          workflow is discoverable. Auto-recording via paid JaaS +
+          webhook is a future upgrade; until then admins fill the row
+          in by hand after the call ends. */}
+      <div className="mb-4 rounded-lg border border-brand-gold/25 bg-brand-gold/[0.04] px-4 py-3 flex items-start gap-3">
+        <span className="text-base leading-none mt-0.5" aria-hidden>💡</span>
+        <div className="font-body text-[12px] text-[var(--app-text-secondary)] leading-relaxed">
+          <span className="font-semibold text-[var(--app-text)]">After each call ends:</span>{" "}
+          click <strong>Edit</strong> on the entry → paste the recording link into{" "}
+          <strong>Recording URL</strong> (or <strong>Embed URL</strong> for in-portal playback),
+          fill in <strong>Duration</strong> and <strong>Notes</strong>, then flip <strong>Active</strong> off
+          to move it to Past Recordings.{" "}
+          <span className="text-[var(--app-text-muted)]">(Auto-recording is a future upgrade — paid Jitsi JaaS can webhook the recording URL straight back here.)</span>
+        </div>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {stats.map((s) => (
