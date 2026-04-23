@@ -468,6 +468,14 @@ model PortalSettings {
   fintellaSignerName        String  @default("")
   fintellaSignerEmail       String  @default("")
   fintellaSignerPlaceholder String  @default("Fintella")
+  // Google Calendar OAuth — super-admin connects their own Google account
+  // once via /admin/settings → "Connect Google Calendar". Refresh token
+  // is stored long-term; access token is re-minted from it on each API
+  // call (short-lived + cached in memory). Empty string = disconnected.
+  googleCalendarRefreshToken String @default("")
+  googleCalendarConnectedEmail String @default("")
+  googleCalendarCalendarId     String @default("primary") // "primary" or an explicit calendar id
+  googleCalendarConnectedAt    DateTime?
   // Navigation visibility + order (JSON strings)
   hiddenNavItems String @default("[]")
   navOrder       String @default("[]")  // ordered array of partner nav IDs

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { getPermissions } from "@/lib/permissions";
 import { reconcileNavOrder } from "@/lib/reconcileNavOrder";
+import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
 
 /**
  * Compress an image file to a smaller base64 data URL.
@@ -116,7 +117,7 @@ interface ReferralOpp {
   highlighted: boolean;
 }
 
-type TabId = "branding" | "navigation" | "homepage" | "commissions" | "agreements";
+type TabId = "branding" | "navigation" | "homepage" | "commissions" | "agreements" | "integrations";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "branding", label: "Branding" },
@@ -124,6 +125,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "homepage", label: "Home Page" },
   { id: "commissions", label: "Commissions" },
   { id: "agreements", label: "Agreements" },
+  { id: "integrations", label: "Integrations" },
 ];
 
 // ─── DEFAULT HOME CONTENT ───────────────────────────────────────────────────
@@ -1488,6 +1490,12 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+        </div>
+      )}
+
+      {tab === "integrations" && (
+        <div className="space-y-5">
+          <GoogleCalendarCard />
         </div>
       )}
 
