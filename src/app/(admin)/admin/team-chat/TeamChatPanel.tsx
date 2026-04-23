@@ -147,17 +147,29 @@ function TeamChatInner({ searchQuery, compact }: { searchQuery: string; compact:
   const activeThread = useMemo(() => threads.find((t) => t.id === activeThreadId), [threads, activeThreadId]);
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 gap-3">
-        <div>
-          <h2 className="font-display text-[22px] font-bold mb-1">Team Chat</h2>
-          <p className="font-body text-[13px] text-[var(--app-text-muted)]">
-            Internal admin collaboration. Use @name to mention a teammate, #deal to tag a deal.
-          </p>
+    <div className={compact ? "h-full flex flex-col" : ""}>
+      {/* Page-header block is only useful on the full /admin/internal-
+          chats route. Inside the widget (compact) we skip it — the
+          widget's own draggable header already labels the surface. */}
+      {!compact && (
+        <div className="flex items-center justify-between mb-6 gap-3">
+          <div>
+            <h2 className="font-display text-[22px] font-bold mb-1">Team Chat</h2>
+            <p className="font-body text-[13px] text-[var(--app-text-muted)]">
+              Internal admin collaboration. Use @name to mention a teammate, #deal to tag a deal.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="flex gap-4" style={{ height: "calc(100vh - 220px)", minHeight: 400 }}>
+      <div
+        className={compact ? "flex gap-0 flex-1 min-h-0" : "flex gap-4"}
+        style={
+          compact
+            ? undefined
+            : { height: "calc(100vh - 220px)", minHeight: 400 }
+        }
+      >
         {/* Rail — in compact mode (embedded in the chat widget) we
             drop the md: breakpoint and use mobile-style single-pane
             stacking based only on whether a thread is active. */}
