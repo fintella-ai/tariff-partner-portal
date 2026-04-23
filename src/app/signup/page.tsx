@@ -43,8 +43,27 @@ function SignupContent() {
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [phoneError, setPhoneError] = useState("");
 
+  // Preview mode kicks in when the URL has no invite token. This
+  // keeps the public page useful for A2P 10DLC / TCR campaign
+  // verification — reviewers hit fintella.partners/signup, see the
+  // full form + SMS consent language, verify the CTA, and move on.
+  // Real partners always arrive with a token in the query string.
+  const isPreview = !token;
+
   useEffect(() => {
-    if (!token) { setError("No invite token provided. Please use the link your partner shared with you."); setLoading(false); return; }
+    if (isPreview) {
+      // Render a placeholder invite so the form renders in a
+      // read-only demonstration state. The submit button is gated
+      // on !isPreview so no real signup can happen without a token.
+      setInvite({
+        inviterCode: "",
+        inviterName: "Your inviter",
+        targetTier: "l1",
+        commissionRate: 0.25,
+      } as unknown as InviteData);
+      setLoading(false);
+      return;
+    }
     fetch(`/api/signup?token=${token}`)
       .then((r) => r.json())
       .then((data) => {
@@ -53,10 +72,13 @@ function SignupContent() {
       })
       .catch(() => setError("Failed to validate invite link."))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, isPreview]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Preview mode never posts — the button is disabled anyway, this
+    // is belt-and-suspenders in case an automated crawler submits.
+    if (isPreview) return;
     setPhoneError("");
     if (!firstName.trim() || !lastName.trim() || !email.trim()) {
       setError("First name, last name, and email are required.");
@@ -130,6 +152,26 @@ function SignupContent() {
 
         {!loading && invite && !success && (
           <>
+            {/* Preview banner — only shown when no invite token is on
+                the URL. This is what TCR reviewers see when verifying
+                the A2P 10DLC campaign's Call-to-Action. Real partners
+                arriving with ?token=… skip this banner entirely. */}
+            {isPreview && (
+              <div className="card p-5 mb-6" style={{ borderColor: "rgba(196,160,80,0.5)", background: "rgba(196,160,80,0.06)" }}>
+                <div className="font-body text-[11px] font-semibold uppercase tracking-wider text-brand-gold mb-2">
+                  Preview — A2P 10DLC Campaign Review
+                </div>
+                <div className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-2">
+                  This is a demonstration of the Fintella partner signup form. Actual account creation requires a unique invitation link sent by a Fintella admin (invite-only by policy).
+                </div>
+                <div className="font-body text-[12px] text-[var(--app-text-muted)] leading-relaxed">
+                  Partners provide explicit SMS opt-in via the checkbox below during registration. Message frequency varies based on deal activity. Message and data rates may apply. Reply <strong>STOP</strong> to cancel at any time; reply <strong>HELP</strong> for help. See our{" "}
+                  <a href="/privacy" className="text-brand-gold underline">Privacy Policy</a>{" "}and{" "}
+                  <a href="/terms" className="text-brand-gold underline">Terms &amp; Conditions</a>.
+                </div>
+              </div>
+            )}
+
             {/* Invite info card */}
             <div className="card p-5 mb-6">
               <div className="flex items-center justify-between mb-3">
@@ -235,8 +277,16 @@ function SignupContent() {
                   </label>
                 </div>
 
-                <button type="submit" disabled={submitting || !emailOptIn || !smsOptIn} className={`btn-gold w-full min-h-[48px] mt-2 ${(!emailOptIn || !smsOptIn) ? "opacity-50 cursor-not-allowed" : ""}`}>
-                  {submitting ? "Creating Account..." : "Sign Up as Partner"}
+                <button
+                  type="submit"
+                  disabled={submitting || !emailOptIn || !smsOptIn || isPreview}
+                  className={`btn-gold w-full min-h-[48px] mt-2 ${(!emailOptIn || !smsOptIn || isPreview) ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {isPreview
+                    ? "Preview — invitation link required"
+                    : submitting
+                      ? "Creating Account..."
+                      : "Sign Up as Partner"}
                 </button>
               </form>
 
