@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-24 — PR #442 merged: new admin **Workspace** dashboard at `/admin` is the default landing (was `/admin/partners`). HubSpot-sales-workspace-style home consolidating "what needs my attention" across the portal — 6 stat cards (messages, tickets, payouts, agreements, pending signups, feature requests), a unified Needs-Attention feed merging 7 admin endpoints with filter pill bar + quick-action deep-links, and a 6-button Quick Links grid. Client-side fan-out via Promise.allSettled, 60-second polling, role-gated widgets. Sidebar gained a 🏠 Home entry. John ran the orphan ledger cleanup from #440 overnight — ghost rows are gone from the DB. Yesterday (2026-04-23, 21 PRs): #404 layout padding, #406 Commission History columns, #408 EP override card + sub-tab, #410 agreement + invite reminders, #412 HubSpot-style workflow editor, #414 Live Weekly seed gate, #416 Jitsi embed + conference reminders, #418 admin downline list shows L3s, #420 Top Partners deals counts override deals, #422 delete-error surfacing + jitsiRoom backfill, #424 drop conference demo fallbacks, #425 hide orphaned ledger rows in reports, #427 Jitsi slug field, #429 after-call reminder tip, #431 URL column on admin conference table, #433 Google Calendar OAuth integration, #435/#436 OAuth redirect URI hardening, #438 ctaUrl on event + opp modules, #440 orphan cleanup tool.
+🕒 Last updated: 2026-04-24 — PR #444 merged: added 🏠 Home to `ALL_ADMIN_NAV_ITEMS` in the settings page so admins can reorder it from Settings → Navigation → Admin Navigation (was forgotten in #442 when the workspace landing shipped). Saved a durable feedback memory `feedback_nav_add_must_update_settings_registry` so future nav additions don't skip this step. Yesterday: PR #442 shipped the admin Workspace dashboard at `/admin`. The 2026-04-23 session had 21 PRs (Google Calendar OAuth, Jitsi embed, HubSpot-style workflow editor, reminder triggers, orphan cleanup, etc.).
 
 ## 🌿 Git state
-- **main HEAD:** `28eefc6` — feat(admin): workspace dashboard at /admin as the new default landing (#442)
+- **main HEAD:** `af5c5b6` — fix(settings/nav): show Home in admin nav reorder editor (#444)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
