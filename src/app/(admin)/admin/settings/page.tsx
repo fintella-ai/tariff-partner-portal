@@ -75,6 +75,7 @@ const ALL_NAV_ITEMS = [
 // Admin Navigation editor in the settings page.
 // Default order mirrors ADMIN_NAV_IDS_DEFAULT in admin/layout.tsx
 const ALL_ADMIN_NAV_ITEMS = [
+  { id: "home", label: "Home", icon: "🏠" },
   { id: "partners", label: "Partners", icon: "👥" },
   { id: "deals", label: "Deals", icon: "📋" },
   { id: "communications", label: "Communications", icon: "💬" },
