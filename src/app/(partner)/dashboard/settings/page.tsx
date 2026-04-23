@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useDevice } from "@/lib/useDevice";
 import { useRouter } from "next/navigation";
 import CountryCodeSelect, { parseMobilePhone, buildMobilePhone } from "@/components/ui/CountryCodeSelect";
+import PasskeysCard from "@/components/partner/PasskeysCard";
 import { US_STATES } from "@/lib/constants";
 
 interface SettingsData {
@@ -496,6 +497,9 @@ export default function AccountSettingsPage() {
             </p>
           </div>
         </div>
+
+        {/* ── Passkeys (WebAuthn) ── */}
+        <PasskeysCard />
 
         {/* ── Message banner ── */}
         {message && (

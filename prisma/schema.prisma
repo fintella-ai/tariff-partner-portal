@@ -388,6 +388,46 @@ model ImpersonationToken {
   @@index([token])
 }
 
+// ─── PASSKEYS (WebAuthn) ────────────────────────────────────────────────────
+// One row per passkey enrolled by a partner. A single partner can have many
+// passkeys (phone, laptop, hardware key), and a passkey synced across Apple
+// iCloud Keychain or Google Password Manager still shows up as a separate
+// row per device it's registered on — the `credentialId` is the source of
+// truth for uniqueness.
+model Passkey {
+  id               String   @id @default(cuid())
+  partnerCode      String
+  credentialId     String   @unique // base64url-encoded CredentialID from the authenticator
+  publicKey        Bytes    // CBOR-encoded public key for signature verification
+  counter          BigInt   @default(0) // authenticator signature counter, used for anti-clone detection
+  transports       String   @default("") // JSON array of WebAuthn transports ("internal","usb","nfc","ble","hybrid")
+  deviceType       String   @default("") // "singleDevice" | "multiDevice" (from AuthenticatorAttachment)
+  backedUp         Boolean  @default(false) // whether the credential is synced to a cloud backup
+  name             String?  // optional friendly label the partner can set (e.g. "iPhone 15", "YubiKey")
+  createdAt        DateTime @default(now())
+  lastUsedAt       DateTime?
+
+  @@index([partnerCode])
+  @@index([credentialId])
+}
+
+// Short-lived WebAuthn challenges. One row per pending
+// registration / authentication handshake. The options endpoint writes
+// the challenge it generated; the verify endpoint reads + deletes it.
+// TTL is 5 minutes — the purge query runs opportunistically inside
+// verify handlers (no cron required).
+model PasskeyChallenge {
+  id          String   @id @default(cuid())
+  challenge   String   @unique
+  purpose     String   // "register" | "login"
+  partnerCode String?  // set for register (the user enrolling); null for login (we don't know who yet)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([challenge])
+  @@index([expiresAt])
+}
+
 // ─── FREQUENTLY ASKED QUESTIONS ──────────────────────────────────────────────
 model FAQ {
   id          String   @id @default(cuid())

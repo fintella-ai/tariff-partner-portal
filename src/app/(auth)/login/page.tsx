@@ -33,6 +33,7 @@ function LoginPageInner() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
 
   // Pull the brand logo from PortalSettings so the login chrome matches
@@ -82,6 +83,55 @@ function LoginPageInner() {
       setError(`Connection error. Please try again or email ${SUPPORT_EMAIL}.`);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePasskeyLogin() {
+    setError("");
+    setPasskeyLoading(true);
+    try {
+      const { startAuthentication } = await import("@simplewebauthn/browser");
+      const optsRes = await fetch("/api/auth/passkey/login/options", { method: "POST" });
+      if (!optsRes.ok) throw new Error("Failed to start passkey sign-in");
+      const options = await optsRes.json();
+
+      let assertion;
+      try {
+        assertion = await startAuthentication(options);
+      } catch (err: any) {
+        // User cancelled the OS prompt (NotAllowedError) → silent no-op.
+        if (err?.name === "NotAllowedError") { setPasskeyLoading(false); return; }
+        throw err;
+      }
+
+      const verifyRes = await fetch("/api/auth/passkey/login/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: assertion }),
+      });
+      const verifyBody = await verifyRes.json();
+      if (!verifyRes.ok || !verifyBody.handoffToken) {
+        setError(verifyBody.error || "Passkey verification failed.");
+        setPasskeyLoading(false);
+        return;
+      }
+
+      // Trade the handoff token for a real session. impersonate-login is
+      // reused because the mechanics are identical (single-use token →
+      // Partner session); passkey logins show up in the same audit path.
+      const result = await signIn("impersonate-login", {
+        token: verifyBody.handoffToken,
+        redirect: false,
+      });
+      if (result?.error) {
+        setError("Session handoff failed. Please try again.");
+      } else {
+        router.push("/dashboard/home");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Passkey sign-in failed. Please try again.");
+    } finally {
+      setPasskeyLoading(false);
     }
   }
 
@@ -168,6 +218,20 @@ function LoginPageInner() {
                 </svg>
                 <span className="font-semibold">
                   {googleLoading ? "Redirecting to Google…" : "Continue with Google"}
+                </span>
+              </button>
+              <button
+                type="button"
+                disabled={passkeyLoading}
+                onClick={() => void handlePasskeyLogin()}
+                className="w-full mb-5 flex items-center justify-center gap-3 rounded-lg border border-brand-gold/30 bg-brand-gold/[0.05] text-[var(--app-text)] px-4 py-3 font-body text-sm hover:bg-brand-gold/[0.1] transition-colors disabled:opacity-60"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="#c4a050" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="9" cy="9" r="4"/>
+                  <path d="M13 12 L21 12 M17 12 L17 16 M21 12 L21 15"/>
+                </svg>
+                <span className="font-semibold">
+                  {passkeyLoading ? "Waiting for passkey…" : "Sign in with a Passkey"}
                 </span>
               </button>
               <div className="flex items-center gap-3 mb-5">
