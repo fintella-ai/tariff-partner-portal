@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { FIRM_SLOGAN, FIRM_PHONE } from "@/lib/constants";
+import { FIRM_SLOGAN, SUPPORT_EMAIL } from "@/lib/constants";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,7 +51,7 @@ export default function LoginPage() {
         router.push(mode === "partner" ? "/dashboard/home" : "/admin/partners");
       }
     } catch {
-      setError(`Connection error. Please try again or call ${FIRM_PHONE}.`);
+      setError(`Connection error. Please try again or email ${SUPPORT_EMAIL}.`);
     } finally {
       setLoading(false);
     }

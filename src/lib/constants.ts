@@ -2,7 +2,7 @@
 export const FIRM_NAME = "Financial Intelligence Network";
 export const FIRM_SHORT = "Fintella";
 export const FIRM_SLOGAN = "Fighting for what's owed, reclaiming what's fair.";
-export const FIRM_PHONE = "(410) 497-5947";
+export const SUPPORT_EMAIL = "support@fintella.partners";
 
 // ─── SENDGRID VERIFIED SENDERS ───────────────────────────────────────────────
 // Addresses that have a matching Single Sender Verification in SendGrid.

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useDevice } from "@/lib/useDevice";
-import { FIRM_PHONE, TICKET_CATEGORIES } from "@/lib/constants";
+import { SUPPORT_EMAIL, TICKET_CATEGORIES } from "@/lib/constants";
 import PageTabBar from "@/components/ui/PageTabBar";
 
 type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
@@ -220,7 +220,7 @@ export default function SupportPage() {
             Support Center
           </h2>
           <p className="font-body text-[13px] text-[var(--app-text-muted)]">
-            Submit tickets, ask questions, or report issues. Call {FIRM_PHONE} for urgent help.
+            Submit a ticket below, start a live chat, or email <a href={`mailto:${SUPPORT_EMAIL}`} className="text-brand-gold hover:underline">{SUPPORT_EMAIL}</a>.
           </p>
         </div>
         {view === "list" && (

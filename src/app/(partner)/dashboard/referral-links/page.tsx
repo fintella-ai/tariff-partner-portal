@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useDevice } from "@/lib/useDevice";
 import CopyButton from "@/components/ui/CopyButton";
-import { FIRM_SHORT, FIRM_PHONE } from "@/lib/constants";
+import { FIRM_SHORT, SUPPORT_EMAIL } from "@/lib/constants";
 
 interface Invite {
   id: string;
@@ -451,7 +451,7 @@ export default function ReferralLinksPage() {
           <span className="ml-2 text-[var(--app-text-faint)]">&middot; {partnerTier.toUpperCase()} at {Math.round(partnerRate * 100)}%</span>
         </div>
         <div className="font-body text-[12px] text-[var(--app-text-muted)]">
-          {FIRM_SHORT} Support: <span className="text-[var(--app-text-secondary)]">{FIRM_PHONE}</span>
+          {FIRM_SHORT} Support: <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[var(--app-text-secondary)] hover:text-brand-gold">{SUPPORT_EMAIL}</a>
         </div>
       </div>
     </div>

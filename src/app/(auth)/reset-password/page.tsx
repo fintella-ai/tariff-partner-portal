@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FIRM_NAME, FIRM_SLOGAN, FIRM_PHONE } from "@/lib/constants";
+import { FIRM_NAME, FIRM_SLOGAN, SUPPORT_EMAIL } from "@/lib/constants";
 
 type TokenState =
   | { status: "checking" }
@@ -90,7 +90,7 @@ function ResetPasswordInner() {
         setError(data.error || "Could not reset password.");
       }
     } catch {
-      setError(`Connection error. Please try again or call ${FIRM_PHONE}.`);
+      setError(`Connection error. Please try again or email ${SUPPORT_EMAIL}.`);
     } finally {
       setSubmitting(false);
     }
@@ -205,7 +205,7 @@ function ResetPasswordInner() {
         </div>
 
         <div className="font-body text-[11px] theme-text-faint text-center mt-5 leading-relaxed">
-          Need help? Call {FIRM_PHONE}
+          Need help? Email <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-brand-gold">{SUPPORT_EMAIL}</a>
         </div>
       </div>
     </div>

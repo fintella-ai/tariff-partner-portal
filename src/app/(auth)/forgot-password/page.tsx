@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FIRM_NAME, FIRM_SLOGAN, FIRM_PHONE } from "@/lib/constants";
+import { FIRM_NAME, FIRM_SLOGAN, SUPPORT_EMAIL } from "@/lib/constants";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
         setSubmitted(true);
       }
     } catch {
-      setError(`Connection error. Please try again or call ${FIRM_PHONE}.`);
+      setError(`Connection error. Please try again or email ${SUPPORT_EMAIL}.`);
     } finally {
       setLoading(false);
     }
@@ -125,7 +125,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="font-body text-[11px] theme-text-faint text-center mt-5 leading-relaxed">
-          Need help? Call {FIRM_PHONE}
+          Need help? Email <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-brand-gold">{SUPPORT_EMAIL}</a>
         </div>
       </div>
     </div>
