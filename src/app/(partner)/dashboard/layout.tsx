@@ -631,6 +631,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <p className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1.5px] uppercase">
             © Fintella Financial Intelligence Network 2026
           </p>
+          <div className="mt-3 flex items-center justify-center gap-4 font-body text-[11px]">
+            <a href="/privacy" target="_blank" rel="noreferrer" className="text-[var(--app-text-muted)] hover:text-brand-gold transition-colors">
+              Privacy Policy
+            </a>
+            <span className="text-[var(--app-text-faint)]">·</span>
+            <a href="/terms" target="_blank" rel="noreferrer" className="text-[var(--app-text-muted)] hover:text-brand-gold transition-colors">
+              Terms &amp; Conditions
+            </a>
+          </div>
         </footer>
       </div>
 
