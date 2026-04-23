@@ -64,13 +64,52 @@ interface ActionConfig {
 
 // ─── Condition editor helpers ─────────────────────────────────────────────────
 
-const OPS = ["eq", "neq", "gt", "lt", "contains", "exists"] as const;
+const OPS = ["eq", "neq", "gt", "lt", "contains", "exists", "not_exists"] as const;
+
+// Plain-English labels for each operator. Keeps the data model technical
+// (engine reads "eq" / "not_exists") but the admin UI reads naturally.
+const OP_LABELS: Record<(typeof OPS)[number], string> = {
+  eq: "is",
+  neq: "is not",
+  gt: "is greater than",
+  lt: "is less than",
+  contains: "contains",
+  exists: "is known",
+  not_exists: "is unknown",
+};
 
 interface Condition {
   field: string;
   op: typeof OPS[number];
   value: string;
 }
+
+// ─── Smart defaults per trigger ───────────────────────────────────────────────
+// Reminder + partner-lifecycle triggers have an obvious "who to email" and
+// "who to text" — surface those as "The matching X" radio options in the
+// action editor so admins don't have to type {partner.email} by hand. For
+// triggers without an obvious recipient the UI falls back to the plain
+// Someone-else email input.
+
+type TriggerDefaults = {
+  emailToken: string | null;         // {partner.email}, {deal.clientEmail}, {invite.invitedEmail}
+  emailLabel: string;                 // "The matching partner"
+  smsSubject: "deal_partner" | null;  // sms.send uses deal_partner to auto-resolve
+  smsLabel: string;
+};
+
+const TRIGGER_DEFAULTS: Record<string, TriggerDefaults> = {
+  "partner.agreement_reminder": { emailToken: "{partner.email}",        emailLabel: "The partner with the unsigned agreement", smsSubject: "deal_partner", smsLabel: "The partner with the unsigned agreement" },
+  "partner.invite_reminder":    { emailToken: "{invite.invitedEmail}",  emailLabel: "The invited person",                       smsSubject: null,            smsLabel: "" },
+  "partner.created":            { emailToken: "{partner.email}",        emailLabel: "The new partner",                          smsSubject: "deal_partner", smsLabel: "The new partner" },
+  "partner.activated":          { emailToken: "{partner.email}",        emailLabel: "The activated partner",                    smsSubject: "deal_partner", smsLabel: "The activated partner" },
+  "deal.created":               { emailToken: "{deal.clientEmail}",     emailLabel: "The client on the deal",                   smsSubject: "deal_partner", smsLabel: "The submitting partner" },
+  "deal.stage_changed":         { emailToken: "{deal.clientEmail}",     emailLabel: "The client on the deal",                   smsSubject: "deal_partner", smsLabel: "The submitting partner" },
+  "deal.closed_won":            { emailToken: "{deal.clientEmail}",     emailLabel: "The client on the deal",                   smsSubject: "deal_partner", smsLabel: "The submitting partner" },
+  "deal.closed_lost":           { emailToken: "{deal.clientEmail}",     emailLabel: "The client on the deal",                   smsSubject: "deal_partner", smsLabel: "The submitting partner" },
+  "sms.opt_in":                 { emailToken: "{partner.email}",        emailLabel: "The partner who opted in",                 smsSubject: "deal_partner", smsLabel: "The partner who opted in" },
+  "sms.opt_out":                { emailToken: "{partner.email}",        emailLabel: "The partner who opted out",                smsSubject: null,            smsLabel: "" },
+};
 
 // ─── Action editor ─────────────────────────────────────────────────────────────
 
@@ -319,6 +358,15 @@ function WebhookPostEditor({
   );
 }
 
+// Plain-English action type labels + emoji for the card header.
+const ACTION_DISPLAY: Record<ActionType, { icon: string; label: string }> = {
+  "email.send":          { icon: "📧", label: "Send Email" },
+  "sms.send":            { icon: "📱", label: "Send Text (SMS)" },
+  "notification.create": { icon: "🔔", label: "Create Notification" },
+  "deal.note":           { icon: "📝", label: "Add Note to Deal" },
+  "webhook.post":        { icon: "🌐", label: "POST to Webhook URL" },
+};
+
 function ActionEditor({
   actions,
   onChange,
@@ -328,15 +376,37 @@ function ActionEditor({
   onChange: (a: ActionConfig[]) => void;
   trigger: TriggerKey | null;
 }) {
-  function addAction() {
-    onChange([...actions, { type: "webhook.post", config: { url: "" } }]);
+  const defaults = trigger ? TRIGGER_DEFAULTS[trigger] : undefined;
+
+  function addAction(type: ActionType = "email.send") {
+    // Pre-fill smart defaults based on the current trigger so the new card
+    // lands in a "ready to save" state when a recipient can be inferred.
+    const config: Record<string, unknown> = {};
+    if (type === "email.send" && defaults?.emailToken) {
+      config.recipientEmail = defaults.emailToken;
+      config.recipientMode = "matching";
+    }
+    if (type === "sms.send" && defaults?.smsSubject) {
+      config.partnerCode = defaults.smsSubject;
+      config.recipientMode = "matching";
+    }
+    onChange([...actions, { type, config }]);
   }
   function removeAction(i: number) {
     onChange(actions.filter((_, idx) => idx !== i));
   }
   function updateType(i: number, type: ActionType) {
     const next = [...actions];
-    next[i] = { type, config: {} };
+    const config: Record<string, unknown> = {};
+    if (type === "email.send" && defaults?.emailToken) {
+      config.recipientEmail = defaults.emailToken;
+      config.recipientMode = "matching";
+    }
+    if (type === "sms.send" && defaults?.smsSubject) {
+      config.partnerCode = defaults.smsSubject;
+      config.recipientMode = "matching";
+    }
+    next[i] = { type, config };
     onChange(next);
   }
   function updateConfig(i: number, key: string, val: unknown) {
@@ -347,32 +417,35 @@ function ActionEditor({
 
   return (
     <div className="space-y-3">
-      {/* Variable reference — visible across all actions, based on the parent trigger */}
-      <VariableReference trigger={trigger} />
+      {actions.length === 0 && (
+        <div className="rounded-lg px-4 py-6 text-center font-body text-[13px] theme-text-muted" style={{ border: "1px dashed var(--app-border)", background: "var(--app-bg-secondary)" }}>
+          No actions yet. Click the green button below to add one.
+        </div>
+      )}
 
-      {actions.map((a, i) => (
-        <div key={i} className="rounded-lg p-3 space-y-2" style={{ border: "1px solid var(--app-border)", background: "var(--app-bg-secondary)" }}>
+      {actions.map((a, i) => {
+        const display = ACTION_DISPLAY[a.type];
+        return (
+        <div key={i} className="rounded-lg p-4 space-y-3" style={{ border: "1px solid var(--app-border)", background: "var(--app-bg-secondary)" }}>
           <div className="flex items-center gap-2">
+            <span className="text-lg" aria-hidden>{display.icon}</span>
             <select
               value={a.type}
               onChange={(e) => updateType(i, e.target.value as ActionType)}
-              title={ACTION_DESCRIPTIONS[a.type]}
-              className="flex-1 rounded px-2 py-1.5 font-body text-sm theme-input"
+              className="flex-1 rounded px-2 py-1.5 font-body text-sm font-semibold theme-input"
             >
               {ACTION_TYPES.map((t) => (
-                <option key={t} value={t}>{ACTION_LABELS[t]}</option>
+                <option key={t} value={t}>{ACTION_DISPLAY[t].icon} {ACTION_DISPLAY[t].label}</option>
               ))}
             </select>
             <button
               onClick={() => removeAction(i)}
-              className="text-red-500 hover:text-red-400 text-sm px-2 py-1 rounded transition-colors"
+              className="font-body text-[11px] text-red-400 hover:text-red-300 px-2 py-1 rounded transition-colors"
               style={{ border: "1px solid var(--app-border)" }}
+              title="Remove this action"
             >
               Remove
             </button>
-          </div>
-          <div className="font-body text-[11px] theme-text-faint leading-snug">
-            {ACTION_DESCRIPTIONS[a.type]}
           </div>
 
           {a.type === "webhook.post" && (
@@ -388,63 +461,185 @@ function ActionEditor({
 
           {a.type === "notification.create" && (
             <>
-              <input
-                placeholder="Title"
-                value={String(a.config.title ?? "")}
-                onChange={(e) => updateConfig(i, "title", e.target.value)}
-                className="w-full rounded px-2 py-1.5 font-body text-sm theme-input"
-              />
-              <textarea
-                placeholder="Message (supports {deal.dealName} variables)"
-                value={String(a.config.message ?? "")}
-                onChange={(e) => updateConfig(i, "message", e.target.value)}
-                rows={2}
-                className="w-full rounded px-2 py-1.5 font-body text-sm theme-input resize-none"
-              />
-              <select
-                value={String(a.config.recipientType ?? "admin")}
-                onChange={(e) => updateConfig(i, "recipientType", e.target.value)}
-                className="w-full rounded px-2 py-1.5 font-body text-sm theme-input"
-              >
-                <option value="admin">Admin</option>
-                <option value="partner">Partner (from payload)</option>
-              </select>
+              <div>
+                <label className="block font-body text-xs theme-text-muted mb-1">Notification title</label>
+                <input
+                  placeholder="e.g. New deal received"
+                  value={String(a.config.title ?? "")}
+                  onChange={(e) => updateConfig(i, "title", e.target.value)}
+                  className="w-full rounded px-3 py-2 font-body text-sm theme-input"
+                />
+              </div>
+              <div>
+                <label className="block font-body text-xs theme-text-muted mb-1">Message</label>
+                <textarea
+                  placeholder="e.g. {deal.clientName} submitted a new lead"
+                  value={String(a.config.message ?? "")}
+                  onChange={(e) => updateConfig(i, "message", e.target.value)}
+                  rows={2}
+                  className="w-full rounded px-3 py-2 font-body text-sm theme-input resize-none"
+                />
+                <div className="mt-1 font-body text-[11px] theme-text-faint">Use <code className="font-mono">{"{deal.field}"}</code>-style tokens to include payload values.</div>
+              </div>
+              <div>
+                <label className="block font-body text-xs theme-text-muted mb-1">Who should see this notification?</label>
+                <select
+                  value={String(a.config.recipientType ?? "admin")}
+                  onChange={(e) => updateConfig(i, "recipientType", e.target.value)}
+                  className="w-full rounded px-3 py-2 font-body text-sm theme-input"
+                >
+                  <option value="admin">All admins (bell icon)</option>
+                  <option value="partner">The partner tied to this event</option>
+                </select>
+              </div>
             </>
           )}
 
           {a.type === "deal.note" && (
-            <textarea
-              placeholder="Note content (supports {deal.dealName} variables)"
-              value={String(a.config.content ?? "")}
-              onChange={(e) => updateConfig(i, "content", e.target.value)}
-              rows={2}
-              className="w-full rounded px-2 py-1.5 font-body text-sm theme-input resize-none"
-            />
+            <div>
+              <label className="block font-body text-xs theme-text-muted mb-1">Note content</label>
+              <textarea
+                placeholder="e.g. Auto-note: client responded to initial outreach"
+                value={String(a.config.content ?? "")}
+                onChange={(e) => updateConfig(i, "content", e.target.value)}
+                rows={2}
+                className="w-full rounded px-3 py-2 font-body text-sm theme-input resize-none"
+              />
+              <div className="mt-1 font-body text-[11px] theme-text-faint">Supports <code className="font-mono">{"{deal.field}"}</code> tokens.</div>
+            </div>
           )}
 
-          {a.type === "email.send" && (
-            <>
-              <EmailTemplatePicker
-                value={String(a.config.template ?? "")}
-                onChange={(v) => updateConfig(i, "template", v)}
-              />
-              <input
-                placeholder="Recipient email (literal or {deal.clientEmail})"
-                value={String(a.config.recipientEmail ?? "")}
-                onChange={(e) => updateConfig(i, "recipientEmail", e.target.value)}
-                className="w-full rounded px-2 py-1.5 font-body text-sm theme-input"
-              />
-            </>
-          )}
+          {a.type === "email.send" && (() => {
+            const mode = String(a.config.recipientMode ?? (defaults?.emailToken && a.config.recipientEmail === defaults.emailToken ? "matching" : "custom"));
+            const hasDefault = !!defaults?.emailToken;
+            return (
+              <>
+                <div>
+                  <label className="block font-body text-xs theme-text-muted mb-1">Which email template?</label>
+                  <EmailTemplatePicker
+                    value={String(a.config.template ?? "")}
+                    onChange={(v) => updateConfig(i, "template", v)}
+                  />
+                </div>
+                <div>
+                  <label className="block font-body text-xs theme-text-muted mb-2">Who should receive it?</label>
+                  {hasDefault && (
+                    <label className="flex items-start gap-2 mb-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={mode === "matching"}
+                        onChange={() => {
+                          updateConfig(i, "recipientMode", "matching");
+                          updateConfig(i, "recipientEmail", defaults!.emailToken);
+                        }}
+                        className="mt-0.5"
+                      />
+                      <span className="font-body text-sm theme-text-secondary">
+                        {defaults!.emailLabel}
+                      </span>
+                    </label>
+                  )}
+                  <label className="flex items-start gap-2 mb-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={!hasDefault || mode === "custom"}
+                      onChange={() => updateConfig(i, "recipientMode", "custom")}
+                      className="mt-0.5"
+                    />
+                    <span className="font-body text-sm theme-text-secondary">Someone else</span>
+                  </label>
+                  {(!hasDefault || mode === "custom") && (
+                    <input
+                      placeholder="e.g. admin@fintella.partners or {deal.clientEmail}"
+                      value={String(a.config.recipientEmail ?? "")}
+                      onChange={(e) => updateConfig(i, "recipientEmail", e.target.value)}
+                      className="w-full mt-1 rounded px-3 py-2 font-body text-sm theme-input"
+                    />
+                  )}
+                </div>
+              </>
+            );
+          })()}
+
+          {a.type === "sms.send" && (() => {
+            const mode = String(a.config.recipientMode ?? (a.config.partnerCode === "deal_partner" ? "matching" : a.config.partnerCode ? "custom" : "matching"));
+            const hasDefault = !!defaults?.smsSubject;
+            return (
+              <>
+                <div>
+                  <label className="block font-body text-xs theme-text-muted mb-1">Which SMS template?</label>
+                  <input
+                    placeholder="e.g. agreement_reminder"
+                    value={String(a.config.template ?? "")}
+                    onChange={(e) => updateConfig(i, "template", e.target.value)}
+                    className="w-full rounded px-3 py-2 font-body text-sm theme-input font-mono"
+                  />
+                  <div className="mt-1 font-body text-[11px] theme-text-faint">Template <code className="font-mono">key</code> from /admin/communications → SMS Templates. Must be enabled + partner opted-in (TCPA).</div>
+                </div>
+                <div>
+                  <label className="block font-body text-xs theme-text-muted mb-2">Who should receive it?</label>
+                  {hasDefault && (
+                    <label className="flex items-start gap-2 mb-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={mode === "matching"}
+                        onChange={() => {
+                          updateConfig(i, "recipientMode", "matching");
+                          updateConfig(i, "partnerCode", "deal_partner");
+                        }}
+                        className="mt-0.5"
+                      />
+                      <span className="font-body text-sm theme-text-secondary">{defaults!.smsLabel}</span>
+                    </label>
+                  )}
+                  <label className="flex items-start gap-2 mb-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={!hasDefault || mode === "custom"}
+                      onChange={() => updateConfig(i, "recipientMode", "custom")}
+                      className="mt-0.5"
+                    />
+                    <span className="font-body text-sm theme-text-secondary">A specific partner code</span>
+                  </label>
+                  {(!hasDefault || mode === "custom") && (
+                    <input
+                      placeholder="e.g. PTNJD8K3F"
+                      value={String(a.config.partnerCode === "deal_partner" ? "" : a.config.partnerCode ?? "")}
+                      onChange={(e) => updateConfig(i, "partnerCode", e.target.value)}
+                      className="w-full mt-1 rounded px-3 py-2 font-body text-sm theme-input font-mono"
+                    />
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </div>
-      ))}
-      <button
-        onClick={addAction}
-        className="text-sm font-body px-3 py-1.5 rounded transition-colors hover:opacity-80"
-        style={{ border: "1px solid var(--app-border)", color: "var(--brand-gold)" }}
-      >
-        + Add Action
-      </button>
+        );
+      })}
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => addAction("email.send")}
+          className="text-sm font-body px-3 py-2 rounded transition-colors hover:opacity-80 flex items-center gap-1.5"
+          style={{ border: "1px solid var(--brand-gold)", color: "var(--brand-gold)", background: "rgba(196,160,80,0.05)" }}
+        >
+          + Add action
+        </button>
+        <select
+          value=""
+          onChange={(e) => { if (e.target.value) addAction(e.target.value as ActionType); }}
+          className="rounded px-2 py-2 font-body text-xs theme-input"
+          aria-label="Quick add specific action type"
+        >
+          <option value="">Quick add…</option>
+          {ACTION_TYPES.map((t) => (
+            <option key={t} value={t}>{ACTION_DISPLAY[t].icon} {ACTION_DISPLAY[t].label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Advanced: variable reference chips collapsed until needed */}
+      <VariableReference trigger={trigger} />
     </div>
   );
 }
@@ -527,6 +722,38 @@ function WorkflowPanel({
     setSaving(false);
   }
 
+  const [advancedOpen, setAdvancedOpen] = useState(conditions.length > 0);
+  const isScheduled = trigger === "partner.agreement_reminder" || trigger === "partner.invite_reminder";
+
+  // Live "What will this workflow do?" summary — regenerates as the admin
+  // changes fields, so they don't have to mentally assemble what they're
+  // about to save.
+  const summary = (() => {
+    const parts: string[] = [];
+    const whenWord = isScheduled
+      ? `every ${Math.max(1, Number(cadenceDays) || 7)} day${Number(cadenceDays) === 1 ? "" : "s"}`
+      : `when ${TRIGGER_LABELS[trigger].toLowerCase()}`;
+    parts.push(`**When:** ${whenWord}`);
+
+    if (actions.length === 0) {
+      parts.push("**Do:** _no actions yet_");
+    } else {
+      const verbs = actions.map((a) => {
+        if (a.type === "email.send") return `send an email${a.config.template ? ` (${String(a.config.template)})` : ""}`;
+        if (a.type === "sms.send") return `send an SMS${a.config.template ? ` (${String(a.config.template)})` : ""}`;
+        if (a.type === "notification.create") return "create a bell notification";
+        if (a.type === "deal.note") return "append a note to the deal";
+        if (a.type === "webhook.post") return "POST to a webhook URL";
+        return a.type;
+      });
+      parts.push(`**Do:** ${verbs.join(" + ")}`);
+    }
+    if (conditions.length > 0) {
+      parts.push(`**Only if:** ${conditions.length} filter${conditions.length > 1 ? "s" : ""} match`);
+    }
+    return parts.join(" · ");
+  })();
+
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
@@ -536,117 +763,194 @@ function WorkflowPanel({
           <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-brand-gold/10 transition-colors theme-text-muted">✕</button>
         </div>
 
-        <div className="p-5 space-y-4 flex-1">
-          <div>
-            <label className="block font-body text-xs theme-text-muted mb-1">Name *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Notify admin on deal created" className="w-full rounded px-3 py-2 font-body text-sm theme-input" />
+        <div className="p-5 space-y-5 flex-1">
+          {/* ── Live summary card ─────────────────────────────────────── */}
+          <div className="rounded-lg p-3" style={{ border: "1px solid var(--brand-gold)", background: "rgba(196,160,80,0.05)" }}>
+            <div className="font-body text-[10px] uppercase tracking-[1.5px] text-brand-gold/80 mb-1.5">What this workflow does</div>
+            <div
+              className="font-body text-[13px] theme-text-secondary leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: summary.replace(/\*\*(.+?)\*\*/g, '<strong class="text-[var(--app-text)]">$1</strong>'),
+              }}
+            />
           </div>
 
+          {/* ── Basics ────────────────────────────────────────────────── */}
           <div>
-            <label className="block font-body text-xs theme-text-muted mb-1">Description</label>
-            <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional description" className="w-full rounded px-3 py-2 font-body text-sm theme-input" />
+            <label className="block font-body text-xs theme-text-muted mb-1">Give this workflow a name *</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Partner Agreement Reminder" className="w-full rounded px-3 py-2 font-body text-sm theme-input" />
           </div>
 
-          <div>
-            <label className="block font-body text-xs theme-text-muted mb-1">Trigger *</label>
-            <select
-              value={trigger}
-              onChange={(e) => setTrigger(e.target.value as TriggerKey)}
-              title={TRIGGER_DESCRIPTIONS[trigger as TriggerKey]}
-              className="w-full rounded px-3 py-2 font-body text-sm theme-input"
-            >
-              {TRIGGER_KEYS.map((k) => (
-                <option key={k} value={k}>{TRIGGER_LABELS[k]}</option>
-              ))}
-            </select>
-            <div className="mt-1 font-body text-[11px] theme-text-faint leading-snug">
-              {TRIGGER_DESCRIPTIONS[trigger as TriggerKey]}
+          {/* ── STEP 1 — When should this run? ───────────────────────── */}
+          <div className="rounded-lg p-4 space-y-3" style={{ border: "1px solid var(--app-border)" }}>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex w-6 h-6 items-center justify-center rounded-full bg-brand-gold/15 border border-brand-gold/40 font-body text-[11px] font-bold text-brand-gold">1</span>
+              <div className="font-body text-sm font-semibold">When should this run?</div>
             </div>
-          </div>
-
-          {trigger === "deal.stage_changed" && (
             <div>
-              <label className="block font-body text-xs theme-text-muted mb-1">Only when stage is (optional)</label>
-              <input value={stageFilter} onChange={(e) => setStageFilter(e.target.value)} placeholder="e.g. closedwon" className="w-full rounded px-3 py-2 font-body text-sm theme-input" />
-            </div>
-          )}
-
-          {(trigger === "partner.agreement_reminder" || trigger === "partner.invite_reminder") && (
-            <div>
-              <label className="block font-body text-xs theme-text-muted mb-1">Cadence (days between reminders) *</label>
-              <input
-                type="number"
-                min={1}
-                step={1}
-                value={cadenceDays}
-                onChange={(e) => setCadenceDays(e.target.value)}
+              <label className="block font-body text-xs theme-text-muted mb-1">Trigger *</label>
+              <select
+                value={trigger}
+                onChange={(e) => setTrigger(e.target.value as TriggerKey)}
                 className="w-full rounded px-3 py-2 font-body text-sm theme-input"
-              />
+              >
+                {TRIGGER_KEYS.map((k) => (
+                  <option key={k} value={k}>{TRIGGER_LABELS[k]}</option>
+                ))}
+              </select>
               <div className="mt-1 font-body text-[11px] theme-text-faint leading-snug">
-                This workflow's actions run once per matching {trigger === "partner.agreement_reminder" ? "unsigned agreement" : "unused invite"} every N days. Default 7.
+                {TRIGGER_DESCRIPTIONS[trigger as TriggerKey]}
               </div>
             </div>
-          )}
 
-          <div>
-            <label className="block font-body text-xs theme-text-muted mb-2">Conditions (all must match)</label>
-            <div className="space-y-2">
-              {conditions.map((c, i) => (
-                <div key={i} className="flex gap-1 items-center">
-                  <input
-                    placeholder="field (e.g. deal.stage)"
-                    value={c.field}
-                    onChange={(e) => {
-                      const next = [...conditions];
-                      next[i] = { ...next[i], field: e.target.value };
-                      setConditions(next);
-                    }}
-                    className="flex-1 rounded px-2 py-1.5 font-body text-xs theme-input"
-                  />
-                  <select
-                    value={c.op}
-                    onChange={(e) => {
-                      const next = [...conditions];
-                      next[i] = { ...next[i], op: e.target.value as Condition["op"] };
-                      setConditions(next);
-                    }}
-                    className="rounded px-2 py-1.5 font-body text-xs theme-input"
-                  >
-                    {OPS.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                  {c.op !== "exists" && (
-                    <input
-                      placeholder="value"
-                      value={c.value}
+            {trigger === "deal.stage_changed" && (
+              <div>
+                <label className="block font-body text-xs theme-text-muted mb-1">Only when the new stage is</label>
+                <input
+                  value={stageFilter}
+                  onChange={(e) => setStageFilter(e.target.value)}
+                  placeholder="e.g. closedwon  (leave blank to fire for every stage change)"
+                  className="w-full rounded px-3 py-2 font-body text-sm theme-input"
+                />
+              </div>
+            )}
+
+            {isScheduled && (() => {
+              const presetOptions = [1, 3, 7, 14, 30];
+              const currentNum = Number(cadenceDays) || 7;
+              const isPreset = presetOptions.includes(currentNum);
+              return (
+                <div>
+                  <label className="block font-body text-xs theme-text-muted mb-1">How often should the reminder go out? *</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={isPreset ? String(currentNum) : "custom"}
                       onChange={(e) => {
-                        const next = [...conditions];
-                        next[i] = { ...next[i], value: e.target.value };
-                        setConditions(next);
+                        if (e.target.value === "custom") {
+                          setCadenceDays(String(currentNum));
+                        } else {
+                          setCadenceDays(e.target.value);
+                        }
                       }}
-                      className="w-24 rounded px-2 py-1.5 font-body text-xs theme-input"
-                    />
-                  )}
-                  <button onClick={() => setConditions(conditions.filter((_, idx) => idx !== i))} className="text-red-400 text-sm px-1">✕</button>
+                      className="flex-1 rounded px-3 py-2 font-body text-sm theme-input"
+                    >
+                      <option value="1">Every day</option>
+                      <option value="3">Every 3 days</option>
+                      <option value="7">Every week (7 days)</option>
+                      <option value="14">Every 2 weeks (14 days)</option>
+                      <option value="30">Every month (30 days)</option>
+                      <option value="custom">Custom…</option>
+                    </select>
+                    {!isPreset && (
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={cadenceDays}
+                        onChange={(e) => setCadenceDays(e.target.value)}
+                        className="w-24 rounded px-3 py-2 font-body text-sm theme-input"
+                        placeholder="days"
+                      />
+                    )}
+                  </div>
+                  <div className="mt-1 font-body text-[11px] theme-text-faint leading-snug">
+                    Runs once a day (15:00 UTC). Each matching {trigger === "partner.agreement_reminder" ? "unsigned agreement" : "unused invite"} gets one reminder per period.
+                  </div>
                 </div>
-              ))}
-              <button
-                onClick={() => setConditions([...conditions, { field: "", op: "eq", value: "" }])}
-                className="text-xs font-body px-2 py-1 rounded transition-colors hover:opacity-80 theme-text-muted"
-                style={{ border: "1px solid var(--app-border)" }}
-              >
-                + Add Condition
-              </button>
-            </div>
+              );
+            })()}
           </div>
 
-          <div>
-            <label className="block font-body text-xs theme-text-muted mb-2">Actions *</label>
+          {/* ── STEP 2 — What should it do? ──────────────────────────── */}
+          <div className="rounded-lg p-4 space-y-3" style={{ border: "1px solid var(--app-border)" }}>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex w-6 h-6 items-center justify-center rounded-full bg-brand-gold/15 border border-brand-gold/40 font-body text-[11px] font-bold text-brand-gold">2</span>
+              <div className="font-body text-sm font-semibold">What should happen?</div>
+            </div>
             <ActionEditor actions={actions} onChange={setActions} trigger={trigger} />
           </div>
 
+          {/* ── Advanced (collapsed) ──────────────────────────────────── */}
+          <div className="rounded-lg" style={{ border: "1px solid var(--app-border)" }}>
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 font-body text-sm theme-text-secondary hover:text-brand-gold transition-colors"
+            >
+              <span>{advancedOpen ? "▾" : "▸"} Advanced — notes + filters</span>
+              {conditions.length > 0 && (
+                <span className="font-body text-[11px] text-brand-gold">{conditions.length} filter{conditions.length > 1 ? "s" : ""}</span>
+              )}
+            </button>
+            {advancedOpen && (
+              <div className="px-4 pb-4 space-y-4">
+                <div>
+                  <label className="block font-body text-xs theme-text-muted mb-1">Internal note (admins only)</label>
+                  <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Why does this workflow exist?" className="w-full rounded px-3 py-2 font-body text-sm theme-input" />
+                </div>
+
+                <div>
+                  <label className="block font-body text-xs theme-text-muted mb-2">Only continue if ALL of these filters match</label>
+                  <div className="space-y-2">
+                    {conditions.map((c, i) => (
+                      <div key={i} className="flex gap-1 items-center">
+                        <input
+                          placeholder="field (e.g. deal.stage)"
+                          value={c.field}
+                          onChange={(e) => {
+                            const next = [...conditions];
+                            next[i] = { ...next[i], field: e.target.value };
+                            setConditions(next);
+                          }}
+                          className="flex-1 rounded px-2 py-1.5 font-body text-xs theme-input font-mono"
+                          title="Dot-notation path into the trigger payload. Use the variable chips at the bottom of Step 2 to copy exact field names."
+                        />
+                        <select
+                          value={c.op}
+                          onChange={(e) => {
+                            const next = [...conditions];
+                            next[i] = { ...next[i], op: e.target.value as Condition["op"] };
+                            setConditions(next);
+                          }}
+                          className="rounded px-2 py-1.5 font-body text-xs theme-input"
+                        >
+                          {OPS.map((o) => <option key={o} value={o}>{OP_LABELS[o]}</option>)}
+                        </select>
+                        {c.op !== "exists" && c.op !== "not_exists" && (
+                          <input
+                            placeholder="value"
+                            value={c.value}
+                            onChange={(e) => {
+                              const next = [...conditions];
+                              next[i] = { ...next[i], value: e.target.value };
+                              setConditions(next);
+                            }}
+                            className="w-24 rounded px-2 py-1.5 font-body text-xs theme-input"
+                          />
+                        )}
+                        <button onClick={() => setConditions(conditions.filter((_, idx) => idx !== i))} className="text-red-400 text-sm px-1" title="Remove filter">✕</button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => setConditions([...conditions, { field: "", op: "eq", value: "" }])}
+                      className="text-xs font-body px-2 py-1 rounded transition-colors hover:opacity-80 theme-text-muted"
+                      style={{ border: "1px solid var(--app-border)" }}
+                    >
+                      + Add filter
+                    </button>
+                  </div>
+                  <div className="mt-2 font-body text-[11px] theme-text-faint leading-snug">
+                    Filters narrow when the workflow fires. Use <strong>is known</strong> / <strong>is unknown</strong> to check whether a field has a value — e.g. <code className="font-mono">agreement.signedDate</code> <em>is unknown</em> means the agreement has not been signed yet.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Enable ────────────────────────────────────────────────── */}
           <div className="flex items-center gap-2">
             <input type="checkbox" id="wf-enabled" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="w-4 h-4" />
-            <label htmlFor="wf-enabled" className="font-body text-sm theme-text-secondary">Enabled</label>
+            <label htmlFor="wf-enabled" className="font-body text-sm theme-text-secondary">Enable this workflow</label>
           </div>
 
           {err && <p className="font-body text-xs text-red-400">{err}</p>}
