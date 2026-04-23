@@ -82,17 +82,20 @@ export default function AdminPartnersPage() {
   // they don't have.
   const canBulkAct = ((session?.user as any)?.role || "") === "super_admin";
   const router = useRouter();
-  // 11 columns when bulk-select is on: [select] + Partner, Level, Code,
-  // Phone, Email, Status, Agreement, W9, Joined, Action.
-  // 10 columns without: Partner, Level, Code, Phone, Email, Status,
-  // Agreement, W9, Joined, Action.
-  // storageKey bumped to v4 so the new leading checkbox column doesn't
-  // collapse to 0 on admins with a persisted v3 width map.
+  // 10 columns when bulk-select is on: [select] + Partner, Level, Code,
+  // Phone, Email, Status, Agreement, W9, Joined.
+  //  9 columns without:            Partner, Level, Code, Phone, Email,
+  //                                Status, Agreement, W9, Joined.
+  // The dedicated "View →" action column was dropped — each row is
+  // already a clickable target via the row-level onClick, so the extra
+  // column was redundant and was causing spacing / wrap issues on
+  // narrow viewports. storageKey bumped to v5 so the column-width map
+  // reshuffles cleanly for anyone with a persisted older layout.
   const { columnWidths: partnerCols, getResizeHandler: partnerResize } = useResizableColumns(
     canBulkAct
-      ? [36, 180, 70, 120, 140, 180, 90, 110, 80, 110, 70]
-      : [180, 70, 120, 140, 180, 90, 110, 80, 110, 70],
-    { storageKey: canBulkAct ? "partners-v4-bulk" : "partners-v3" }
+      ? [36, 180, 70, 120, 140, 180, 90, 110, 80, 110]
+      : [180, 70, 120, 140, 180, 90, 110, 80, 110],
+    { storageKey: canBulkAct ? "partners-v5-bulk" : "partners-v5" }
   );
   const partnerGridCols = partnerCols.map((w) => `${w}px`).join(" ");
 
@@ -1020,7 +1023,6 @@ export default function AdminPartnersPage() {
                 { label: "Agreement", col: null },
                 { label: "W9", col: null },
                 { label: "Joined", col: "joined" as SortCol },
-                { label: "", col: null },
               ]) : ([
                 { label: "Partner", col: "name" as SortCol },
                 { label: "Level", col: null },
@@ -1031,7 +1033,6 @@ export default function AdminPartnersPage() {
                 { label: "Agreement", col: null },
                 { label: "W9", col: null },
                 { label: "Joined", col: "joined" as SortCol },
-                { label: "", col: null },
               ])).map((h, i) => (
                 h.label === "__select" ? (
                   <div key="__select" className="flex items-center justify-center relative">
@@ -1119,9 +1120,6 @@ export default function AdminPartnersPage() {
                     </span>
                   </div>
                   <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">{fmtDate(p.signupDate)}</div>
-                  <div className="text-center">
-                    <span className="font-body text-[11px] text-brand-gold/60 hover:text-brand-gold transition-colors">View →</span>
-                  </div>
                 </div>
               );
             })}

@@ -171,6 +171,10 @@ export default function PartnerDetailPage() {
   const [bankZip, setBankZip] = useState("");
 
   const [l3Enabled, setL3Enabled] = useState(false);
+  // Editable tier + commission rate, super-admin only. Seeded from the
+  // fetched partner row; sent in the PUT payload when they change.
+  const [tier, setTier] = useState<"l1" | "l2" | "l3">("l1");
+  const [commissionRate, setCommissionRate] = useState<number>(0.25);
 
   const fetchPartner = useCallback(async () => {
     try {
@@ -229,6 +233,8 @@ export default function PartnerDetailPage() {
       setBankState(prof?.bankState || "");
       setBankZip(prof?.bankZip || "");
       setL3Enabled(p.l3Enabled);
+      setTier(((p.tier || "l1").toLowerCase() as "l1" | "l2" | "l3"));
+      setCommissionRate(typeof p.commissionRate === "number" ? p.commissionRate : 0.25);
     } catch {} finally {
       setLoading(false);
     }
@@ -305,6 +311,10 @@ export default function PartnerDetailPage() {
         accountNumber, beneficiaryName,
         bankStreet, bankStreet2, bankCity, bankState, bankZip,
         l3Enabled,
+        // Super-admin-only fields — the API rejects these for other
+        // roles, but sending them unconditionally keeps the client
+        // logic simple. The server is the source of truth.
+        ...(isSuperAdmin ? { tier, commissionRate } : {}),
       };
       const res = await fetch(`/api/admin/partners/${id}`, {
         method: "PUT",
@@ -1103,18 +1113,48 @@ export default function PartnerDetailPage() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-          {/* Tier */}
+          {/* Tier — editable for super admins (Save commits) */}
           <div className="p-4 rounded-lg bg-brand-gold/[0.06] border border-brand-gold/20">
             <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Partner Tier</div>
-            <div className="font-display text-xl font-bold text-brand-gold">{(partner.tier || "l1").toUpperCase()}</div>
+            {isSuperAdmin ? (
+              <select
+                value={tier}
+                onChange={(e) => setTier(e.target.value as "l1" | "l2" | "l3")}
+                className="font-display text-xl font-bold text-brand-gold bg-transparent border border-brand-gold/30 rounded px-2 py-0.5 outline-none focus:border-brand-gold/60"
+              >
+                <option value="l1">L1</option>
+                <option value="l2">L2</option>
+                <option value="l3">L3</option>
+              </select>
+            ) : (
+              <div className="font-display text-xl font-bold text-brand-gold">{(partner.tier || "l1").toUpperCase()}</div>
+            )}
           </div>
 
-          {/* Commission rate */}
+          {/* Commission rate — editable for super admins */}
           <div className="p-4 rounded-lg" style={{ background: "var(--app-card-bg)", border: "1px solid var(--app-border)" }}>
             <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Commission Rate</div>
-            <div className="font-display text-xl font-bold text-brand-gold">
-              {partner.commissionRate ? `${Math.round(partner.commissionRate * 100)}%` : "25%"}
-            </div>
+            {isSuperAdmin ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  step={1}
+                  value={Math.round(commissionRate * 100)}
+                  onChange={(e) => {
+                    const pct = parseInt(e.target.value || "0", 10);
+                    if (isFinite(pct)) setCommissionRate(Math.max(0.01, Math.min(0.5, pct / 100)));
+                  }}
+                  className="font-display text-xl font-bold text-brand-gold bg-transparent border border-brand-gold/30 rounded px-2 py-0.5 outline-none focus:border-brand-gold/60 w-20"
+                />
+                <span className="font-display text-xl font-bold text-brand-gold">%</span>
+              </div>
+            ) : (
+              <div className="font-display text-xl font-bold text-brand-gold">
+                {partner.commissionRate ? `${Math.round(partner.commissionRate * 100)}%` : "25%"}
+              </div>
+            )}
             <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-0.5">of firm fee on direct deals</div>
           </div>
 

@@ -28,8 +28,16 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    // Check global L3 setting
+    // Check global L3 setting. An L2 can recruit L3 if EITHER the
+    // portal-wide flag is on OR this specific partner has their
+    // per-partner Partner.l3Enabled flag flipped (admin-granted
+    // override). Without the per-partner path, older partners who were
+    // manually enabled for L3 recruiting wouldn't see invite links
+    // because the global toggle was still off.
     const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
+    const globalL3 = settings?.l3Enabled || false;
+    const partnerL3 = partner.l3Enabled || false;
+    const effectiveL3 = globalL3 || partnerL3;
 
     return NextResponse.json({
       invites,
@@ -38,7 +46,7 @@ export async function GET() {
         commissionRate: partner.commissionRate,
         allowedDownlineRates: getAllowedDownlineRates(partner.commissionRate),
       },
-      l3Enabled: settings?.l3Enabled || false,
+      l3Enabled: effectiveL3,
       maxRate: MAX_COMMISSION_RATE,
     });
   } catch {
@@ -78,9 +86,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Invalid L2 rate. Allowed: ${allowedRates.map((r) => `${Math.round(r * 100)}%`).join(", ")}` }, { status: 400 });
       }
     } else if (partner.tier === "l2") {
-      // Check if L3 is enabled globally
+      // L2 → L3 gate: global OR per-partner Partner.l3Enabled can
+      // unlock. Mirrors the GET response's effectiveL3 computation so
+      // an admin granting the per-partner override unblocks both
+      // reading invite rows AND creating new ones.
       const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
-      if (!settings?.l3Enabled) {
+      const effectiveL3 = (settings?.l3Enabled || false) || (partner.l3Enabled || false);
+      if (!effectiveL3) {
         return NextResponse.json({ error: "L3 recruitment is not enabled" }, { status: 403 });
       }
       if (allowedRates.length === 0) {
