@@ -107,6 +107,7 @@ interface UpcomingEvent {
   body: string;
   date: string;
   cta: string;
+  ctaUrl?: string;          // target of the cta button on the partner home; empty = button hidden
   highlighted?: boolean;
 }
 
@@ -114,6 +115,7 @@ interface ReferralOpp {
   title: string;
   description: string;
   cta: string;
+  ctaUrl?: string;          // target of the cta button on the partner home; empty = button hidden
   highlighted: boolean;
 }
 
@@ -570,7 +572,7 @@ export default function SettingsPage() {
   };
 
   const addEvent = () => {
-    setUpcomingEvents((prev) => [...prev, { icon: "📅", title: "", body: "", date: "", cta: "Join", highlighted: false }]);
+    setUpcomingEvents((prev) => [...prev, { icon: "📅", title: "", body: "", date: "", cta: "Join", ctaUrl: "", highlighted: false }]);
   };
 
   const removeEvent = (idx: number) => {
@@ -584,7 +586,7 @@ export default function SettingsPage() {
   };
 
   const addReferralOpp = () => {
-    setReferralOpps((prev) => [...prev, { title: "", description: "", cta: "Learn More", highlighted: false }]);
+    setReferralOpps((prev) => [...prev, { title: "", description: "", cta: "Learn More", ctaUrl: "", highlighted: false }]);
   };
 
   const removeReferralOpp = (idx: number) => {
@@ -1209,6 +1211,14 @@ export default function SettingsPage() {
                   <textarea className={`${inputClass} resize-none`} rows={2} value={ev.body} onChange={(e) => updateEvent(idx, "body", e.target.value)} placeholder="Event description" />
                   <input className={inputClass} value={ev.cta} onChange={(e) => updateEvent(idx, "cta", e.target.value)} placeholder="Button text" />
                 </div>
+                <div className="mt-3">
+                  <input
+                    className={inputClass}
+                    value={ev.ctaUrl || ""}
+                    onChange={(e) => updateEvent(idx, "ctaUrl", e.target.value)}
+                    placeholder="Button URL — e.g. https://meet.jit.si/fintella-live-weekly-w14-xyz12  (leave blank to hide the button)"
+                  />
+                </div>
                 <label className="flex items-center gap-2 mt-3 cursor-pointer">
                   <input type="checkbox" checked={!!ev.highlighted} onChange={(e) => updateEvent(idx, "highlighted", e.target.checked)} className="accent-brand-gold" />
                   <span className="font-body text-[12px] text-[var(--app-text-secondary)]">Highlighted (featured card)</span>
@@ -1235,6 +1245,14 @@ export default function SettingsPage() {
                   <button onClick={() => removeReferralOpp(idx)} className="text-red-400/60 hover:text-red-400 text-[18px] shrink-0 mt-1">×</button>
                 </div>
                 <textarea className={`${inputClass} resize-none`} rows={2} value={opp.description} onChange={(e) => updateReferralOpp(idx, "description", e.target.value)} placeholder="Description" />
+                <div className="mt-3">
+                  <input
+                    className={inputClass}
+                    value={opp.ctaUrl || ""}
+                    onChange={(e) => updateReferralOpp(idx, "ctaUrl", e.target.value)}
+                    placeholder="Button URL — where the partner lands when they click (leave blank to hide the button)"
+                  />
+                </div>
                 <label className="flex items-center gap-2 mt-3 cursor-pointer">
                   <input type="checkbox" checked={opp.highlighted} onChange={(e) => updateReferralOpp(idx, "highlighted", e.target.checked)} className="accent-brand-gold" />
                   <span className="font-body text-[12px] text-[var(--app-text-secondary)]">Highlighted (featured card)</span>

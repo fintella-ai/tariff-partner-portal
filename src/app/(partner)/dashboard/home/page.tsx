@@ -59,6 +59,7 @@ interface UpcomingEvent {
   body: string;
   date: string;
   cta: string;
+  ctaUrl?: string;
   highlighted?: boolean;
 }
 
@@ -66,6 +67,7 @@ interface ReferralOpp {
   title: string;
   description: string;
   cta: string;
+  ctaUrl?: string;
   highlighted: boolean;
 }
 
@@ -209,14 +211,19 @@ export default function HomePage() {
               <div className={`font-body text-sm font-semibold mb-1.5 ${e.highlighted ? "text-brand-gold" : "text-[var(--app-text)]"}`}>{e.title}</div>
               <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-3 flex-1">{e.body}</p>
               {e.date && <div className="font-body text-[11px] text-[var(--app-text-faint)] mb-4">{e.date}</div>}
-              {e.cta && (
-                <button className={`w-full font-body text-[11px] tracking-[1px] uppercase rounded-lg px-4 py-2.5 transition-colors ${
-                  e.highlighted
-                    ? "bg-brand-gold text-black font-semibold hover:bg-brand-gold/90"
-                    : "text-brand-gold border border-brand-gold/30 hover:bg-brand-gold/10"
-                }`}>
+              {e.cta && e.ctaUrl && (
+                <a
+                  href={e.ctaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`block w-full text-center font-body text-[11px] tracking-[1px] uppercase rounded-lg px-4 py-2.5 transition-colors ${
+                    e.highlighted
+                      ? "bg-brand-gold text-black font-semibold hover:bg-brand-gold/90"
+                      : "text-brand-gold border border-brand-gold/30 hover:bg-brand-gold/10"
+                  }`}
+                >
                   {e.cta}
-                </button>
+                </a>
               )}
             </div>
           ))}
@@ -282,10 +289,17 @@ export default function HomePage() {
             >
               <div className={`font-body text-sm font-semibold mb-2 ${r.highlighted ? "text-brand-gold" : "text-[var(--app-text)]"}`}>{r.title}</div>
               <p className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed mb-4 flex-1">{r.description}</p>
-              {r.cta && (
-                <button className={`w-full font-body text-[11px] tracking-[1px] uppercase rounded-lg px-4 py-2.5 transition-colors ${
-                  r.highlighted ? "bg-brand-gold text-black font-semibold hover:bg-brand-gold/90" : "text-brand-gold border border-brand-gold/30 hover:bg-brand-gold/10"
-                }`}>{r.cta}</button>
+              {r.cta && r.ctaUrl && (
+                <a
+                  href={r.ctaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`block w-full text-center font-body text-[11px] tracking-[1px] uppercase rounded-lg px-4 py-2.5 transition-colors ${
+                    r.highlighted ? "bg-brand-gold text-black font-semibold hover:bg-brand-gold/90" : "text-brand-gold border border-brand-gold/30 hover:bg-brand-gold/10"
+                  }`}
+                >
+                  {r.cta}
+                </a>
               )}
             </div>
           ))}
