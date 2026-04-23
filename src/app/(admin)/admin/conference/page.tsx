@@ -158,28 +158,11 @@ export default function AdminConferencePage() {
     }
   };
 
-  const handleSyncCalendar = async (entry: ConferenceEntry) => {
-    if (!entry.nextCall) {
-      alert("This entry doesn't have a scheduled date yet — set one before syncing to Google Calendar.");
-      return;
-    }
-    try {
-      const res = await fetch(`/api/admin/conference/${entry.id}/sync-to-calendar`, { method: "POST" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        alert(data.error || "Sync failed");
-        return;
-      }
-      if (data.demo) {
-        alert("Calendar sync ran in demo mode (no Google service account configured). Set GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_SERVICE_ACCOUNT_KEY / GOOGLE_CALENDAR_ID on Vercel to enable real sync.");
-      } else {
-        alert(`Synced to Google Calendar. Event: ${data.entry?.googleCalendarHtmlLink || data.entry?.googleCalendarEventId}`);
-      }
-      fetchEntries();
-    } catch (e) {
-      alert("Sync failed: " + (e as Error).message);
-    }
-  };
+  // Google Calendar sync UI is intentionally deferred to v2. The API
+  // endpoint (/api/admin/conference/[id]/sync-to-calendar) and the
+  // service-account client (src/lib/google-calendar.ts) are already in
+  // place — v2 work is just re-surfacing the button + adding the three
+  // GOOGLE_* env vars on Vercel.
 
   const handleDelete = async (entry: ConferenceEntry) => {
     if (!confirm(`Delete "${entry.title}"?`)) return;
@@ -395,7 +378,7 @@ export default function AdminConferencePage() {
       {/* ═══ TABLE (desktop) ═══ */}
       <div className="card hidden sm:block">
         {/* Table header */}
-        <div className="grid grid-cols-[60px_1fr_140px_100px_80px_70px_70px_80px_200px] gap-2 px-5 py-3 border-b border-[var(--app-border)]">
+        <div className="grid grid-cols-[60px_1fr_140px_100px_80px_70px_70px_80px_120px] gap-2 px-5 py-3 border-b border-[var(--app-border)]">
           {["Wk #", "Title", "Host", "Date", "Duration", "Rec?", "Notes?", "Status", "Actions"].map((h) => (
             <div key={h} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider">{h}</div>
           ))}
@@ -404,7 +387,7 @@ export default function AdminConferencePage() {
         {entries.map((entry) => (
           <div
             key={entry.id}
-            className="grid grid-cols-[60px_1fr_140px_100px_80px_70px_70px_80px_200px] gap-2 px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors items-center"
+            className="grid grid-cols-[60px_1fr_140px_100px_80px_70px_70px_80px_120px] gap-2 px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors items-center"
           >
             <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{entry.weekNumber || "—"}</div>
             <div className="font-body text-[13px] text-[var(--app-text)] truncate">{entry.title}</div>
@@ -430,17 +413,6 @@ export default function AdminConferencePage() {
                 className="font-body text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded px-2 py-1 hover:bg-[var(--app-card-bg)] transition-colors"
               >
                 {entry.isActive ? "Archive" : "Activate"}
-              </button>
-              <button
-                onClick={() => handleSyncCalendar(entry)}
-                className={`font-body text-[10px] border rounded px-2 py-1 transition-colors ${
-                  entry.googleCalendarEventId
-                    ? "text-green-400/80 border-green-400/30 hover:bg-green-400/10"
-                    : "text-blue-400/70 border-blue-400/25 hover:bg-blue-400/10"
-                }`}
-                title={entry.googleCalendarEventId ? `Re-sync to Google Calendar (event ${entry.googleCalendarEventId})` : "Sync to Google Calendar"}
-              >
-                {entry.googleCalendarEventId ? "📅 Synced" : "📅 Sync"}
               </button>
               <button
                 onClick={() => handleDelete(entry)}
@@ -491,16 +463,6 @@ export default function AdminConferencePage() {
                 className="font-body text-[11px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded-lg px-3 py-1.5 hover:bg-[var(--app-card-bg)] transition-colors"
               >
                 {entry.isActive ? "Archive" : "Activate"}
-              </button>
-              <button
-                onClick={() => handleSyncCalendar(entry)}
-                className={`font-body text-[11px] border rounded-lg px-3 py-1.5 transition-colors ${
-                  entry.googleCalendarEventId
-                    ? "text-green-400/80 border-green-400/30 hover:bg-green-400/10"
-                    : "text-blue-400/70 border-blue-400/25 hover:bg-blue-400/10"
-                }`}
-              >
-                {entry.googleCalendarEventId ? "📅 Synced" : "📅 Sync"}
               </button>
               <button
                 onClick={() => handleDelete(entry)}
