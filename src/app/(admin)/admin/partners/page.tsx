@@ -76,20 +76,34 @@ export default function AdminPartnersPage() {
   const canSetPayoutDownline = ["super_admin", "admin", "partner_support"].includes(
     (session?.user as any)?.role || ""
   );
+  // Bulk actions (status change, delete) are super-admin only — they
+  // touch many rows at once and mistakes are expensive. The checkbox
+  // column hides for everyone else so the UI doesn't imply a capability
+  // they don't have.
+  const canBulkAct = ((session?.user as any)?.role || "") === "super_admin";
   const router = useRouter();
-  // 10 columns: Partner, Level, Code, Phone, Email, Status, Agreement, W9, Joined, Action.
-  // storageKey bumped to v3 so anyone with a persisted 9-col width map
-  // doesn't see the new Agreement column collapse to 0 before they
-  // resize manually.
+  // 11 columns when bulk-select is on: [select] + Partner, Level, Code,
+  // Phone, Email, Status, Agreement, W9, Joined, Action.
+  // 10 columns without: Partner, Level, Code, Phone, Email, Status,
+  // Agreement, W9, Joined, Action.
+  // storageKey bumped to v4 so the new leading checkbox column doesn't
+  // collapse to 0 on admins with a persisted v3 width map.
   const { columnWidths: partnerCols, getResizeHandler: partnerResize } = useResizableColumns(
-    [180, 70, 120, 140, 180, 90, 110, 80, 110, 70],
-    { storageKey: "partners-v3" }
+    canBulkAct
+      ? [36, 180, 70, 120, 140, 180, 90, 110, 80, 110, 70]
+      : [180, 70, 120, 140, 180, 90, 110, 80, 110, 70],
+    { storageKey: canBulkAct ? "partners-v4-bulk" : "partners-v3" }
   );
   const partnerGridCols = partnerCols.map((w) => `${w}px`).join(" ");
 
   const [partners, setPartners] = useState<Partner[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
+  // Bulk-selection state — partner row IDs currently checked. Stays
+  // local (not URL-synced) because the selection doesn't survive a
+  // reload anyway (the status/delete verbs are terminal).
+  const [selectedPartnerIds, setSelectedPartnerIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [levelFilter, setLevelFilter] = useState<"all" | "l1" | "l2" | "l3">("all");
@@ -175,6 +189,76 @@ export default function AdminPartnersPage() {
 
   useEffect(() => { fetchPartners(); }, [fetchPartners]);
   useEffect(() => { fetchInvites(); }, [fetchInvites]);
+
+  // Bulk helpers — toggle one row, toggle all visible rows, clear.
+  // `visibleIds` is injected where called so select-all respects the
+  // current tab + level-filter + search-filter view.
+  const togglePartnerSelected = (id: string) => {
+    setSelectedPartnerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const toggleAllVisible = (visibleIds: string[]) => {
+    setSelectedPartnerIds((prev) => {
+      const allSelected = visibleIds.length > 0 && visibleIds.every((id) => prev.has(id));
+      if (allSelected) {
+        const next = new Set(prev);
+        for (const id of visibleIds) next.delete(id);
+        return next;
+      }
+      const next = new Set(prev);
+      for (const id of visibleIds) next.add(id);
+      return next;
+    });
+  };
+  const clearSelection = () => setSelectedPartnerIds(new Set());
+
+  const bulkUpdateStatus = async (status: string) => {
+    if (selectedPartnerIds.size === 0) return;
+    if (!confirm(`Mark ${selectedPartnerIds.size} partner(s) as "${status}"?`)) return;
+    setBulkBusy(true);
+    try {
+      const res = await fetch("/api/admin/partners/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partnerIds: Array.from(selectedPartnerIds), status }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || "Bulk update failed");
+        return;
+      }
+      clearSelection();
+      await fetchPartners();
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (selectedPartnerIds.size === 0) return;
+    if (!confirm(`PERMANENTLY DELETE ${selectedPartnerIds.size} partner(s)? This writes to the real DB and cascades to their deals, commissions, and agreements. Cannot be undone.`)) return;
+    setBulkBusy(true);
+    try {
+      const res = await fetch("/api/admin/partners/bulk", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partnerIds: Array.from(selectedPartnerIds) }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || "Bulk delete failed");
+        return;
+      }
+      clearSelection();
+      await fetchPartners();
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   const resolvedInviteRate = (): number | null => {
     if (inviteRateMode === "custom") {
@@ -875,10 +959,58 @@ export default function AdminPartnersPage() {
         </>
       ) : (
         <>
+          {/* Bulk action bar — renders only for super admins with at
+              least one partner row checked. Floats above the table
+              with sticky-like prominence. Status dropdown + Delete +
+              Clear; Clear resets the selection without committing. */}
+          {canBulkAct && selectedPartnerIds.size > 0 && (
+            <div className="card mb-4 p-3 sm:p-4 flex flex-wrap items-center gap-3 border-brand-gold/30 bg-brand-gold/[0.04]">
+              <span className="font-body text-[12px] text-[var(--app-text-secondary)]">
+                <strong>{selectedPartnerIds.size}</strong> selected
+              </span>
+              <span className="text-[var(--app-text-faint)]">·</span>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)]">Mark as:</label>
+              <select
+                disabled={bulkBusy}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  e.target.value = "";
+                  if (v) void bulkUpdateStatus(v);
+                }}
+                className="theme-input text-[12px] px-2 py-1.5 rounded-lg"
+                defaultValue=""
+              >
+                <option value="" disabled>Choose status…</option>
+                <option value="active">active</option>
+                <option value="pending">pending</option>
+                <option value="invited">invited</option>
+                <option value="blocked">blocked</option>
+                <option value="inactive">inactive</option>
+              </select>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => void bulkDelete()}
+                className="font-body text-[12px] text-red-400/80 border border-red-500/30 rounded-lg px-3 py-1.5 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+              >
+                Delete selected
+              </button>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={clearSelection}
+                className="font-body text-[11px] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition-colors"
+              >
+                Clear selection
+              </button>
+            </div>
+          )}
+
           {/* Partners — Desktop Table */}
           <div className="card hidden sm:block overflow-x-auto">
             <div className="grid gap-3 px-5 py-3 border-b border-[var(--app-border)]" style={{ gridTemplateColumns: partnerGridCols }}>
-              {([
+              {(canBulkAct ? ([
+                { label: "__select", col: null },
                 { label: "Partner", col: "name" as SortCol },
                 { label: "Level", col: null },
                 { label: "Code", col: "code" as SortCol },
@@ -889,7 +1021,30 @@ export default function AdminPartnersPage() {
                 { label: "W9", col: null },
                 { label: "Joined", col: "joined" as SortCol },
                 { label: "", col: null },
-              ] as { label: string; col: SortCol | null }[]).map((h, i) => (
+              ]) : ([
+                { label: "Partner", col: "name" as SortCol },
+                { label: "Level", col: null },
+                { label: "Code", col: "code" as SortCol },
+                { label: "Phone", col: null },
+                { label: "Email", col: null },
+                { label: "Status", col: "status" as SortCol },
+                { label: "Agreement", col: null },
+                { label: "W9", col: null },
+                { label: "Joined", col: "joined" as SortCol },
+                { label: "", col: null },
+              ])).map((h, i) => (
+                h.label === "__select" ? (
+                  <div key="__select" className="flex items-center justify-center relative">
+                    <input
+                      type="checkbox"
+                      checked={filteredPartners.length > 0 && filteredPartners.every((p) => selectedPartnerIds.has(p.id))}
+                      onChange={() => toggleAllVisible(filteredPartners.map((p) => p.id))}
+                      className="w-4 h-4 rounded cursor-pointer accent-[#c4a050]"
+                      title="Select all visible"
+                    />
+                    <span {...partnerResize(i)} />
+                  </div>
+                ) :
                 h.col ? (
                   <button
                     key={h.label}
@@ -912,6 +1067,19 @@ export default function AdminPartnersPage() {
                   style={{ gridTemplateColumns: partnerGridCols }}
                   onClick={() => router.push(`/admin/partners/${p.id}`)}
                 >
+                  {canBulkAct && (
+                    <div
+                      className="flex items-center justify-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPartnerIds.has(p.id)}
+                        onChange={() => togglePartnerSelected(p.id)}
+                        className="w-4 h-4 rounded cursor-pointer accent-[#c4a050]"
+                      />
+                    </div>
+                  )}
                   <div className="font-body text-[13px] text-[var(--app-text)] font-medium truncate text-center">{p.firstName} {p.lastName}</div>
                   <div className="text-center">
                     <LevelTag tier={p.tier} />
@@ -967,7 +1135,20 @@ export default function AdminPartnersPage() {
             {filteredPartners.map((p) => (
               <div key={p.id} className="card p-4 cursor-pointer hover:bg-[var(--app-card-bg)] transition-colors" onClick={() => router.push(`/admin/partners/${p.id}`)}>
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <div>
+                  {canBulkAct && (
+                    <div
+                      className="shrink-0 pt-0.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPartnerIds.has(p.id)}
+                        onChange={() => togglePartnerSelected(p.id)}
+                        className="w-4 h-4 rounded cursor-pointer accent-[#c4a050]"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
                     <div className="font-body text-[13px] font-medium text-[var(--app-text)]">{p.firstName} {p.lastName}</div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <LevelTag tier={p.tier} size="xs" />
