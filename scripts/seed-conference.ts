@@ -3,6 +3,13 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  // Matches the gate in scripts/seed-all.js so ad-hoc dev runs can't
+  // accidentally re-create the demo rows on prod.
+  if (process.env.FINTELLA_LIVE_MODE === "true") {
+    console.log("[seed-conference] FINTELLA_LIVE_MODE=true — skipping demo seed");
+    return;
+  }
+
   // 1 active upcoming call
   const upcoming = await prisma.conferenceSchedule.upsert({
     where: { id: "cs-week-13" },

@@ -192,6 +192,15 @@ async function main() {
   // 1 active upcoming call + 7 past recordings. Mirrors scripts/seed-conference.ts
   // (kept inline here so every Vercel build seeds Live Weekly data — the .ts
   // standalone seed remains for ad-hoc dev runs).
+  //
+  // LIVE_MODE gate — without this, every Vercel redeploy upserts the hardcoded
+  // `cs-week-*` IDs back into the DB, so an admin's delete on production gets
+  // silently reverted on the next push. With FINTELLA_LIVE_MODE=true set on
+  // prod, we skip the re-upsert entirely. Admin still needs to delete demo
+  // rows once manually; from then on they stay deleted.
+  if (LIVE_MODE) {
+    console.log("✓ Conference seed SKIPPED (FINTELLA_LIVE_MODE=true)");
+  } else {
   const conferenceUpcoming = {
     id: "cs-week-13",
     title: "Weekly Partner Training & Q&A",
@@ -230,6 +239,7 @@ async function main() {
     });
   }
   console.log("✓ " + (1 + conferencePast.length) + " conference entries seeded (1 active + " + conferencePast.length + " past)");
+  }
 
   // ── Email Templates (Communications Hub) ───────────────────────────────
   // Seeds 7 templates: 4 wired (welcome, agreement_ready, agreement_signed,
