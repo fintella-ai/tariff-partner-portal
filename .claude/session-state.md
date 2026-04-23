@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-23 — PR #404 merged: partner layout now shares the exact responsive padding contract as admin (`p-4 sm:px-10 sm:py-6 lg:px-24 lg:py-9`), mobile full-bleed dividers moved from `-mx-5` → `-mx-4`, and the layout-wide `text-center` wrapper around `{children}` was removed so partner page bodies default to left-aligned like admin. This effectively absorbs / supersedes the post-#402 eyeball task.
+🕒 Last updated: 2026-04-23 — PR #406 merged: Commission History desktop table rebuilt with 9 columns (Deal · Date · Tier · Refund · Fee % · Firm Fee · Comm % · Commission · Status), header divider lines, no sort arrows, Deal left-aligned and all other headers centered. Downline rows now source `l1CommissionAmount` / `l1CommissionStatus` so the Commission / Comm % / Status columns always reflect what the viewing partner (L1) earns, while the tier badge still signals deal source. Earlier today: PR #404 (partner margins + default alignment match admin) + PR #405 (checkpoint).
 
 ## 🌿 Git state
-- **main HEAD:** `67a8713` — fix(partner/layout): match admin padding + default alignment (#404)
+- **main HEAD:** `3ce383f` — feat(partner/reporting): expand Commission History columns (#406)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
