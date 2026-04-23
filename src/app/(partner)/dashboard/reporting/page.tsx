@@ -33,11 +33,35 @@ export default function PartnerReportingPage() {
   const [commDownlineDeals, setCommDownlineDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Enterprise Partner data — null for non-EP partners (hides the entire
+  // EP summary card + Enterprise sub-tab).
+  const [epData, setEpData] = useState<null | {
+    overrideRate: number;
+    applyToAll: boolean;
+    coveredPartners: Array<{ partnerCode: string; name: string; dealCount: number }>;
+    coveredCount: number | null;
+    totalOverrideEarnings: number;
+    totalDeals: number;
+    deals: Array<{
+      id: string;
+      dealName: string;
+      createdAt: string;
+      l1PartnerCode: string;
+      l1PartnerName: string;
+      stage: string;
+      estimatedRefundAmount: number;
+      firmFeeRate: number | null;
+      firmFeeAmount: number;
+      overrideAmount: number;
+      status: string;
+    }>;
+  }>(null);
+
   const [pageTab, setPageTab] = useState<PageTab>("overview");
   const [dealsSubTab, setDealsSubTab] = useState<"direct" | "downline">("direct");
   const [downlineSubTab, setDownlineSubTab] = useState<"partners" | "deals">("partners");
   const [partnerView, setPartnerView] = useState<"list" | "tree">("list");
-  const [commSubTab, setCommSubTab] = useState<"all" | "direct" | "downline">("all");
+  const [commSubTab, setCommSubTab] = useState<"all" | "direct" | "downline" | "enterprise">("all");
 
   const [expandedDealId, setExpandedDealId] = useState<string | null>(null);
 
@@ -72,9 +96,10 @@ export default function PartnerReportingPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [dealsRes, commRes] = await Promise.all([
+      const [dealsRes, commRes, epRes] = await Promise.all([
         fetch("/api/deals"),
         fetch("/api/commissions"),
+        fetch("/api/partner/enterprise"),
       ]);
       if (dealsRes.ok) {
         const data = await dealsRes.json();
@@ -91,6 +116,10 @@ export default function PartnerReportingPage() {
         if (typeof data.payoutDownlineEnabled === "boolean") setPayoutDownlineEnabled(data.payoutDownlineEnabled);
         if (data.topL1PayoutDownlineEnabled !== undefined) setTopL1PayoutDownlineEnabled(data.topL1PayoutDownlineEnabled);
         if (Array.isArray(data.downlineDeals)) setCommDownlineDeals(data.downlineDeals);
+      }
+      if (epRes.ok) {
+        const data = await epRes.json();
+        setEpData(data.isEnterprise ? data : null);
       }
     } catch {}
     setLoading(false);
@@ -736,27 +765,59 @@ export default function PartnerReportingPage() {
             </div>
           </div>
 
-          {/* Commission summary */}
-          <div className={`grid ${device.isMobile ? "grid-cols-1" : "grid-cols-2"} ${device.gap} mb-6`}>
-            <div className={`${device.cardPadding} border border-brand-gold/20 ${device.borderRadius} bg-brand-gold/[0.03] text-center`}>
-              <div className="font-body text-[10px] tracking-[2px] uppercase text-brand-gold/80 mb-3">Direct (L1) — {(commissionRate * 100).toFixed(0)}% of fee</div>
-              <div className="font-display text-[28px] font-bold text-brand-gold mb-2">{fmt$(totalL1)}</div>
-              <div className="flex justify-center gap-4">
-                <span className="font-body text-sm font-semibold text-green-400">{fmt$(l1Paid)} <span className="font-normal text-green-400/70">Paid</span></span>
-                <span className="font-body text-sm font-semibold text-yellow-400">{fmt$(l1Pending)} <span className="font-normal text-yellow-400/70">Pending</span></span>
-              </div>
-            </div>
-            {downlineDeals.length > 0 && (
-              <div className={`${device.cardPadding} border border-purple-500/20 ${device.borderRadius} bg-purple-500/[0.03] text-center`}>
-                <div className="font-body text-[10px] tracking-[2px] uppercase text-purple-400/80 mb-3">Downline Override (L2)</div>
-                <div className="font-display text-[28px] font-bold text-purple-400 mb-2">{fmt$(totalL2)}</div>
-                <div className="flex justify-center gap-4">
-                  <span className="font-body text-sm font-semibold text-green-400">{fmt$(l2Paid)} <span className="font-normal text-green-400/70">Paid</span></span>
-                  <span className="font-body text-sm font-semibold text-yellow-400">{fmt$(l2Pending)} <span className="font-normal text-yellow-400/70">Pending</span></span>
+          {/* Commission summary. The grid adapts to the number of cards in
+              play: Direct L1 is always shown; Downline appears once the
+              partner has downline deals; Enterprise appears only when the
+              current partner is an active EP. When all three are present
+              we stretch to 3 columns on desktop so nothing squishes. */}
+          {(() => {
+            const cardCount = 1 + (downlineDeals.length > 0 ? 1 : 0) + (epData ? 1 : 0);
+            const gridCols = device.isMobile
+              ? "grid-cols-1"
+              : cardCount >= 3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-2";
+            return (
+              <div className={`grid ${gridCols} ${device.gap} mb-6`}>
+                <div className={`${device.cardPadding} border border-brand-gold/20 ${device.borderRadius} bg-brand-gold/[0.03] text-center`}>
+                  <div className="font-body text-[10px] tracking-[2px] uppercase text-brand-gold/80 mb-3">Direct (L1) — {(commissionRate * 100).toFixed(0)}% of fee</div>
+                  <div className="font-display text-[28px] font-bold text-brand-gold mb-2">{fmt$(totalL1)}</div>
+                  <div className="flex justify-center gap-4">
+                    <span className="font-body text-sm font-semibold text-green-400">{fmt$(l1Paid)} <span className="font-normal text-green-400/70">Paid</span></span>
+                    <span className="font-body text-sm font-semibold text-yellow-400">{fmt$(l1Pending)} <span className="font-normal text-yellow-400/70">Pending</span></span>
+                  </div>
                 </div>
+                {downlineDeals.length > 0 && (
+                  <div className={`${device.cardPadding} border border-purple-500/20 ${device.borderRadius} bg-purple-500/[0.03] text-center`}>
+                    <div className="font-body text-[10px] tracking-[2px] uppercase text-purple-400/80 mb-3">Downline Override (L2)</div>
+                    <div className="font-display text-[28px] font-bold text-purple-400 mb-2">{fmt$(totalL2)}</div>
+                    <div className="flex justify-center gap-4">
+                      <span className="font-body text-sm font-semibold text-green-400">{fmt$(l2Paid)} <span className="font-normal text-green-400/70">Paid</span></span>
+                      <span className="font-body text-sm font-semibold text-yellow-400">{fmt$(l2Pending)} <span className="font-normal text-yellow-400/70">Pending</span></span>
+                    </div>
+                  </div>
+                )}
+                {epData && (
+                  <div className={`${device.cardPadding} border border-purple-500/30 ${device.borderRadius} bg-purple-500/[0.05] text-center`}>
+                    <div className="font-body text-[10px] tracking-[2px] uppercase text-purple-400/90 mb-3">
+                      Enterprise Override — {Math.round(epData.overrideRate * 100)}%
+                    </div>
+                    <div className="font-display text-[28px] font-bold text-purple-400 mb-2">{fmt$(epData.totalOverrideEarnings)}</div>
+                    <div className="font-body text-[12px] text-[var(--app-text-muted)]">
+                      Coverage:{" "}
+                      <span className="text-[var(--app-text-secondary)] font-medium">
+                        {epData.applyToAll
+                          ? "All Partners"
+                          : epData.coveredCount === 1
+                            ? "1 L1 partner"
+                            : `${epData.coveredCount ?? 0} L1 partners`}
+                      </span>
+                      {" · "}
+                      <span className="text-[var(--app-text-secondary)] font-medium">{epData.totalDeals} deal{epData.totalDeals === 1 ? "" : "s"}</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Commission history */}
           <div className="card">
@@ -764,11 +825,97 @@ export default function PartnerReportingPage() {
               <div className="font-body font-semibold text-sm">Commission History</div>
             </div>
             <div className="flex gap-1 px-4 sm:px-6 border-b border-[var(--app-border)]">
-              {([{ id: "all" as const, label: "All" }, { id: "direct" as const, label: "Direct" }, { id: "downline" as const, label: "Downline" }]).map((t) => (
+              {([
+                { id: "all" as const, label: "All" },
+                { id: "direct" as const, label: "Direct" },
+                { id: "downline" as const, label: "Downline" },
+                // Enterprise sub-tab only exists for active EPs. Hidden
+                // entirely for everyone else so the tab strip doesn't leak
+                // that this feature exists.
+                ...(epData ? [{ id: "enterprise" as const, label: "Enterprise" }] : []),
+              ]).map((t) => (
                 <button key={t.id} onClick={() => setCommSubTab(t.id)} className={`font-body text-[13px] px-4 py-2.5 whitespace-nowrap transition-colors border-b-2 -mb-px ${commSubTab === t.id ? "text-brand-gold border-brand-gold" : "text-[var(--app-text-muted)] border-transparent hover:text-[var(--app-text-secondary)]"}`}>{t.label}</button>
               ))}
             </div>
             {(() => {
+              // Enterprise sub-tab renders its own table sourced from the
+              // EP API. The Commission column becomes "Enterprise
+              // Commission" and amounts come from the override rate × firm
+              // fee, not the partner's own waterfall.
+              if (commSubTab === "enterprise" && epData) {
+                if (epData.deals.length === 0) {
+                  return <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">No enterprise override deals yet.</div>;
+                }
+                return device.isMobile ? (
+                  <div>
+                    {epData.deals.map((d) => (
+                      <div key={d.id} className="px-4 py-3.5 border-b border-[var(--app-border)] last:border-b-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="font-body text-[13px] text-[var(--app-text)] truncate flex-1 mr-3 text-left">{d.dealName}</div>
+                          <StatusBadge status={d.status} />
+                        </div>
+                        <div className="font-body text-[11px] text-[var(--app-text-muted)] text-left mb-2">covers {d.l1PartnerName}</div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <span className="font-body text-[10px] font-semibold rounded px-1.5 py-0.5 text-purple-400 bg-purple-500/10 border border-purple-500/20">EP</span>
+                            <span className="font-body text-[11px] text-[var(--app-text-muted)]">{fmtDate(d.createdAt)}</span>
+                          </div>
+                          <div className="font-display text-sm font-semibold text-purple-400">{fmt$(d.overrideAmount)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-[var(--app-border)]">
+                          {(() => {
+                            const H = (props: { label: string; className?: string; isLast?: boolean }) => (
+                              <th className={`${props.className || "px-3 py-3 text-center"} ${props.isLast ? "" : "border-r border-[var(--app-border)]"}`}>
+                                <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
+                              </th>
+                            );
+                            return (<>
+                              <H label="Deal" className="px-4 sm:px-6 py-3 text-left" />
+                              <H label="Date" />
+                              <H label="L1 Partner" />
+                              <H label="Refund" />
+                              <H label="Fee %" />
+                              <H label="Firm Fee" />
+                              <H label="Override %" />
+                              <H label="Enterprise Commission" />
+                              <H label="Status" isLast />
+                            </>);
+                          })()}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {epData.deals.map((d, idx) => {
+                          const feeRate = d.firmFeeRate ? `${Math.round(Number(d.firmFeeRate) * 100)}%` : "—";
+                          const overridePct = `${Math.round(epData.overrideRate * 100)}%`;
+                          return (
+                            <tr key={d.id} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                              <td className="px-4 sm:px-6 py-3.5">
+                                <div className="font-body text-[13px] text-[var(--app-text)] truncate text-left">{d.dealName}</div>
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(d.createdAt)}</td>
+                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-secondary)] truncate">{d.l1PartnerName}</td>
+                              <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(d.estimatedRefundAmount)}</td>
+                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{feeRate}</td>
+                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmt$(d.firmFeeAmount)}</td>
+                              <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{overridePct}</td>
+                              <td className="px-3 py-3.5 text-center font-display text-[14px] font-semibold text-purple-400">{fmt$(d.overrideAmount)}</td>
+                              <td className="px-3 py-3.5 text-center"><StatusBadge status={d.status} /></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              }
+
               const showDirect = commSubTab === "all" || commSubTab === "direct";
               const showDownline = commSubTab === "all" || commSubTab === "downline";
               const hasDirect = showDirect && directDeals.length > 0;
