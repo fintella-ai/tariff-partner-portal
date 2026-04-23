@@ -76,6 +76,8 @@ interface LiveWeeklyCall {
   title: string;
   nextCall: string | null;
   hostName: string | null;
+  jitsiRoom: string | null;
+  joinUrl: string | null;
 }
 
 function formatNextCall(dateStr: string | null): string {
@@ -187,6 +189,8 @@ export default function HomePage() {
             title: String(a.title ?? "Live Weekly Call"),
             nextCall: a.nextCall ?? null,
             hostName: a.hostName ?? null,
+            jitsiRoom: a.jitsiRoom ?? null,
+            joinUrl: a.joinUrl ?? null,
           });
         }
       })
@@ -275,12 +279,26 @@ export default function HomePage() {
                 {liveWeeklyCall.hostName}
               </div>
             )}
-            <a
-              href="/dashboard/conference"
-              className="inline-block btn-gold text-[13px] px-6 py-2.5"
-            >
-              Join the Call
-            </a>
+            {(() => {
+              // Prefer the in-portal Jitsi room when one is configured;
+              // fall back to an external Zoom/Meet joinUrl; otherwise
+              // deep-link to the conference page which has its own
+              // Jitsi embed + external-link fallback.
+              const href = liveWeeklyCall.jitsiRoom
+                ? `https://meet.jit.si/${liveWeeklyCall.jitsiRoom}`
+                : (liveWeeklyCall.joinUrl || "/dashboard/conference");
+              const external = href.startsWith("http");
+              return (
+                <a
+                  href={href}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noreferrer" : undefined}
+                  className="inline-block btn-gold text-[13px] px-6 py-2.5"
+                >
+                  Join the Call
+                </a>
+              );
+            })()}
           </div>
         ) : (
           <div className="text-center">

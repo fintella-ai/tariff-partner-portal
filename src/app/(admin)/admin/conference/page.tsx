@@ -29,6 +29,34 @@ type ConferenceEntry = {
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────
 
 /**
+ * Convert a Date object to the "YYYY-MM-DDTHH:mm" shape <input type="datetime-local">
+ * expects, using the *admin's local* wall-clock components — NOT the raw UTC
+ * fields from toISOString(). Prevents the call from shifting by the admin's
+ * UTC offset on every edit.
+ */
+function toLocalInputValue(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * Convert a "YYYY-MM-DDTHH:mm" datetime-local string (which is in the admin's
+ * LOCAL timezone, with no offset attached) to a proper UTC ISO string. Without
+ * this, sending the raw value lets the server (Vercel = UTC) parse it as UTC,
+ * which off-sets the stored time by the admin's TZ offset (2 PM EDT was being
+ * stored as 2 PM UTC = 10 AM EDT).
+ */
+function fromLocalInputValue(local: string): string | null {
+  if (!local) return null;
+  const d = new Date(local); // interpreted as admin-local by the browser
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+/**
  * Compress + resize an image file to a base64 data URL.
  * Mirrors the helper on /admin/settings so the banner upload here
  * produces DB-friendly payloads (under a few hundred KB) even when
@@ -193,7 +221,7 @@ export default function AdminConferencePage() {
     setFormEmbedUrl(entry.embedUrl || "");
     setFormRecordingUrl(entry.recordingUrl || "");
     setFormSchedule(entry.schedule || "");
-    setFormNextCall(entry.nextCall ? new Date(entry.nextCall).toISOString().slice(0, 16) : "");
+    setFormNextCall(toLocalInputValue(entry.nextCall));
     setFormDuration(entry.duration || "");
     setFormNotes(entry.notes || "");
     setFormIsActive(entry.isActive);
@@ -215,7 +243,7 @@ export default function AdminConferencePage() {
       embedUrl: formEmbedUrl.trim() || null,
       recordingUrl: formRecordingUrl.trim() || null,
       schedule: formSchedule.trim() || null,
-      nextCall: formNextCall || null,
+      nextCall: fromLocalInputValue(formNextCall),
       duration: formDuration.trim() || null,
       notes: formNotes.trim() || null,
       isActive: formIsActive,
