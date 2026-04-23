@@ -121,6 +121,10 @@ model RecruitmentInvite {
   invitedName       String?                 // display name for the invite email (L1 only)
   expiresAt         DateTime?
   payoutDownlineEnabled Boolean  @default(false) // Payout Downline Partners flag — carried forward from admin's choice to the Partner row at signup
+  // Last time the invite-reminder cron fired for this row. Null = never.
+  // Used by /api/cron/reminders to enforce the `cadenceDays` gap between
+  // reminder emails/SMS for the same unused invite.
+  lastReminderSentAt DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -142,6 +146,10 @@ model PartnershipAgreement {
   sentDate              DateTime?
   signedDate            DateTime?
   documentUrl           String?
+  // Last time the agreement-reminder cron fired for this row. Null = never.
+  // Used by /api/cron/reminders to enforce the `cadenceDays` gap between
+  // reminder emails/SMS for the same unsigned agreement.
+  lastReminderSentAt    DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

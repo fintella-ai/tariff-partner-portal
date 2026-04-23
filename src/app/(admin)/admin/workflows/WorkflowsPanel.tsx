@@ -468,6 +468,11 @@ function WorkflowPanel({
   const [stageFilter, setStageFilter] = useState(
     (initial?.triggerConfig as any)?.stage ?? ""
   );
+  // Cadence (in days) — only surfaced for scheduled reminder triggers.
+  // Stored on triggerConfig.cadenceDays. Defaults to 7.
+  const [cadenceDays, setCadenceDays] = useState<string>(
+    String((initial?.triggerConfig as any)?.cadenceDays ?? 7)
+  );
   const [conditions, setConditions] = useState<Condition[]>(
     Array.isArray(initial?.conditions)
       ? (initial.conditions as Condition[])
@@ -493,7 +498,12 @@ function WorkflowPanel({
       name: name.trim(),
       description: description.trim() || null,
       trigger,
-      triggerConfig: trigger === "deal.stage_changed" && stageFilter ? { stage: stageFilter } : null,
+      triggerConfig:
+        trigger === "deal.stage_changed" && stageFilter
+          ? { stage: stageFilter }
+          : trigger === "partner.agreement_reminder" || trigger === "partner.invite_reminder"
+            ? { cadenceDays: Math.max(1, Number(cadenceDays) || 7) }
+            : null,
       conditions: conditions.length ? conditions : null,
       actions,
       enabled,
@@ -558,6 +568,23 @@ function WorkflowPanel({
             <div>
               <label className="block font-body text-xs theme-text-muted mb-1">Only when stage is (optional)</label>
               <input value={stageFilter} onChange={(e) => setStageFilter(e.target.value)} placeholder="e.g. closedwon" className="w-full rounded px-3 py-2 font-body text-sm theme-input" />
+            </div>
+          )}
+
+          {(trigger === "partner.agreement_reminder" || trigger === "partner.invite_reminder") && (
+            <div>
+              <label className="block font-body text-xs theme-text-muted mb-1">Cadence (days between reminders) *</label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={cadenceDays}
+                onChange={(e) => setCadenceDays(e.target.value)}
+                className="w-full rounded px-3 py-2 font-body text-sm theme-input"
+              />
+              <div className="mt-1 font-body text-[11px] theme-text-faint leading-snug">
+                This workflow's actions run once per matching {trigger === "partner.agreement_reminder" ? "unsigned agreement" : "unused invite"} every N days. Default 7.
+              </div>
             </div>
           )}
 

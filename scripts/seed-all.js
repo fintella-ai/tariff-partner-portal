@@ -463,6 +463,73 @@ async function main() {
       ]),
     },
     {
+      key: "agreement_reminder",
+      name: "Partnership Agreement — Reminder",
+      category: "Onboarding",
+      subject: "Reminder: your Fintella partnership agreement is waiting",
+      preheader: "Finish signing your partnership agreement to activate your partner account.",
+      heading: "Your partnership agreement is still waiting",
+      bodyHtml:
+        "<p>Hi {firstName},</p>" +
+        "<p>It's been {daysSinceSent} days since we sent your Fintella partnership agreement and we haven't seen it come back signed yet. " +
+        "The link is still active — it takes about two minutes.</p>" +
+        "<p>Once signed, your partner account activates immediately and you can submit clients + track commissions.</p>",
+      bodyText:
+        "Hi {firstName},\n\n" +
+        "It's been {daysSinceSent} days since we sent your Fintella partnership agreement and we haven't seen it come back signed yet. The link is still active — it takes about two minutes.\n\n" +
+        "Sign here: {agreement.signingUrl}\n\n" +
+        "Once signed, your partner account activates immediately and you can submit clients + track commissions.",
+      ctaLabel: "Review & sign agreement",
+      ctaUrl: "{agreement.signingUrl}",
+      enabled: true,
+      isDraft: false,
+      description:
+        "Default template for the partner.agreement_reminder workflow trigger. Fires from /api/cron/reminders once per `cadenceDays` for each partner whose agreement is sent but not signed. Admin can edit the body from /admin/communications Templates.",
+      variables: JSON.stringify([
+        "partner.firstName",
+        "partner.lastName",
+        "partner.partnerCode",
+        "partner.email",
+        "agreement.signingUrl",
+        "agreement.sentDate",
+        "daysSinceSent",
+        "portalUrl",
+      ]),
+    },
+    {
+      key: "invite_reminder",
+      name: "Recruitment Invite — Reminder",
+      category: "Recruitment",
+      subject: "Reminder: your Fintella partner invite is still open",
+      preheader: "Finish signing up to start earning commissions as a Fintella partner.",
+      heading: "Your Fintella partner invite is still open",
+      bodyHtml:
+        "<p>Hi {invite.invitedName},</p>" +
+        "<p>It's been {daysSinceInvited} days since we sent your invite to join Fintella as a {invite.targetTier} partner and we haven't seen you sign up yet. " +
+        "The link is still good.</p>" +
+        "<p>It takes a few minutes to finish signing up — once you're in you can start referring clients.</p>",
+      bodyText:
+        "Hi {invite.invitedName},\n\n" +
+        "It's been {daysSinceInvited} days since we sent your invite to join Fintella as a {invite.targetTier} partner and we haven't seen you sign up yet. The link is still good:\n\n" +
+        "{invite.signupUrl}\n\n" +
+        "It takes a few minutes to finish signing up — once you're in you can start referring clients.",
+      ctaLabel: "Finish signing up",
+      ctaUrl: "{invite.signupUrl}",
+      enabled: true,
+      isDraft: false,
+      description:
+        "Default template for the partner.invite_reminder workflow trigger. Fires from /api/cron/reminders once per `cadenceDays` for each admin-generated L1 invite that hasn't been used yet. Admin can edit the body from /admin/communications Templates.",
+      variables: JSON.stringify([
+        "invite.invitedName",
+        "invite.invitedEmail",
+        "invite.targetTier",
+        "invite.signupUrl",
+        "invite.token",
+        "daysSinceInvited",
+        "portalUrl",
+      ]),
+    },
+    {
       key: "password_reset",
       name: "Password Reset Link",
       category: "Account Security",
@@ -562,6 +629,26 @@ async function main() {
       isDraft: false,
       description: "L1 inviter notification — fires when a recruit they invited completes signup.",
       variables: JSON.stringify(["firstName", "recruitName", "recruitTier", "ratePct"]),
+    },
+    {
+      key: "agreement_reminder",
+      name: "Agreement Reminder",
+      category: "Onboarding",
+      body: "Fintella: Hi {partner.firstName}, your partnership agreement is still unsigned ({daysSinceSent}d). Finish here: {agreement.signingUrl} — Reply STOP to opt out.",
+      enabled: false,
+      isDraft: false,
+      description: "Default SMS for the partner.agreement_reminder workflow. Fires from /api/cron/reminders per cadenceDays.",
+      variables: JSON.stringify(["partner.firstName", "agreement.signingUrl", "daysSinceSent"]),
+    },
+    {
+      key: "invite_reminder",
+      name: "Invite Reminder",
+      category: "Recruitment",
+      body: "Fintella: Hi {invite.invitedName}, your partner invite is still open. Sign up: {invite.signupUrl} — Reply STOP to opt out.",
+      enabled: false,
+      isDraft: false,
+      description: "Default SMS for the partner.invite_reminder workflow. Fires from /api/cron/reminders per cadenceDays.",
+      variables: JSON.stringify(["invite.invitedName", "invite.signupUrl", "daysSinceInvited"]),
     },
     {
       key: "opt_in_request",
