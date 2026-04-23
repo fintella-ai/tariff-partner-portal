@@ -71,6 +71,21 @@ interface ReferralOpp {
   highlighted: boolean;
 }
 
+interface LiveWeeklyCall {
+  id: string;
+  title: string;
+  nextCall: string | null;
+  hostName: string | null;
+}
+
+function formatNextCall(dateStr: string | null): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const date = d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+  return `${date} · ${time}`;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    HELPERS
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -100,8 +115,10 @@ export default function HomePage() {
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [referralOpps, setReferralOpps] = useState<ReferralOpp[]>([]);
   const [videoUrl, setVideoUrl] = useState<string>("");
+  const [liveWeeklyBannerUrl, setLiveWeeklyBannerUrl] = useState<string>("");
+  const [liveWeeklyCall, setLiveWeeklyCall] = useState<LiveWeeklyCall | null>(null);
   const [hiddenModules, setHiddenModules] = useState<Set<string>>(new Set());
-  const DEFAULT_ORDER = ["video", "events", "announcements", "leaderboard", "opportunities"];
+  const DEFAULT_ORDER = ["video", "liveWeekly", "events", "announcements", "leaderboard", "opportunities"];
   const [moduleOrder, setModuleOrder] = useState<string[]>(DEFAULT_ORDER);
   type ModuleLayout = { columns?: 1 | 2 | 3; alignment?: "left" | "center" };
   const [moduleLayout, setModuleLayout] = useState<Record<string, ModuleLayout>>({});
@@ -126,6 +143,7 @@ export default function HomePage() {
         setUpcomingEvents(parseJsonArray<UpcomingEvent>(d?.settings?.upcomingEvents));
         setReferralOpps(parseJsonArray<ReferralOpp>(d?.settings?.referralOpportunities));
         setVideoUrl(typeof d?.settings?.homeEmbedVideoUrl === "string" ? d.settings.homeEmbedVideoUrl : "");
+        setLiveWeeklyBannerUrl(typeof d?.settings?.liveWeeklyBannerUrl === "string" ? d.settings.liveWeeklyBannerUrl : "");
         const hidden = parseJsonArray<string>(d?.settings?.homeHiddenModules);
         setHiddenModules(new Set(hidden.filter((x) => typeof x === "string")));
         // Module order: keep admin-saved order, append any defaults that
@@ -138,6 +156,23 @@ export default function HomePage() {
           const layout = JSON.parse(d?.settings?.homeModuleLayout || "{}");
           if (layout && typeof layout === "object") setModuleLayout(layout);
         } catch {}
+      })
+      .catch(() => {});
+    // Active Live Weekly schedule — fuels the Live Weekly home module.
+    // Endpoint returns { activeSchedule, pastRecordings }; we only need
+    // the active row's title + nextCall + host.
+    fetch("/api/conference")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const a = d?.activeSchedule;
+        if (a && typeof a === "object") {
+          setLiveWeeklyCall({
+            id: String(a.id),
+            title: String(a.title ?? "Live Weekly Call"),
+            nextCall: a.nextCall ?? null,
+            hostName: a.hostName ?? null,
+          });
+        }
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -187,6 +222,60 @@ export default function HomePage() {
             />
           </div>
         </div>
+      </div>
+    );
+  };
+
+  const renderLiveWeekly = () => {
+    if (!isVisible("liveWeekly")) return null;
+    // Only render when there's something to show — a banner image
+    // OR a scheduled call. Keeps the home page clean when neither
+    // is configured yet.
+    if (!liveWeeklyBannerUrl && !liveWeeklyCall) return null;
+    const { alignment } = getLayout("liveWeekly", { alignment: "center" });
+    const nextCallStr = formatNextCall(liveWeeklyCall?.nextCall ?? null);
+    return (
+      <div className={`mb-6 sm:mb-8 animate-fade-up ${alignment === "center" ? alignWrap("center") : ""}`}>
+        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4 text-center">Live Weekly Call</h2>
+        {liveWeeklyBannerUrl && (
+          <div className="flex justify-center mb-4">
+            <img
+              src={liveWeeklyBannerUrl}
+              alt="Live Weekly Call"
+              className="max-h-64 w-auto rounded-xl border"
+              style={{ borderColor: "var(--app-border)" }}
+            />
+          </div>
+        )}
+        {liveWeeklyCall ? (
+          <div className={`${device.cardPadding} ${device.borderRadius} border border-brand-gold/25 bg-gradient-to-br from-brand-gold/[0.06] to-brand-gold/[0.02] text-center`}>
+            <div className={`font-display ${device.isMobile ? "text-lg" : "text-xl"} font-bold text-[var(--app-text)] mb-1.5`}>
+              {liveWeeklyCall.title}
+            </div>
+            {(nextCallStr || liveWeeklyCall.hostName) && (
+              <div className="font-body text-[13px] text-[var(--app-text-secondary)] mb-4">
+                {nextCallStr}
+                {nextCallStr && liveWeeklyCall.hostName && <span className="mx-2 text-[var(--app-text-faint)]">·</span>}
+                {liveWeeklyCall.hostName}
+              </div>
+            )}
+            <a
+              href="/dashboard/conference"
+              className="inline-block btn-gold text-[13px] px-6 py-2.5"
+            >
+              Join the Call
+            </a>
+          </div>
+        ) : (
+          <div className="text-center">
+            <a
+              href="/dashboard/conference"
+              className="inline-block font-body text-[12px] text-brand-gold/80 border border-brand-gold/30 rounded-lg px-4 py-2 hover:bg-brand-gold/10 transition-colors"
+            >
+              View weekly call details →
+            </a>
+          </div>
+        )}
       </div>
     );
   };
@@ -414,6 +503,7 @@ export default function HomePage() {
   const dispatchModule = (id: string): React.ReactNode => {
     switch (id) {
       case "video": return renderVideo();
+      case "liveWeekly": return renderLiveWeekly();
       case "events": return renderEvents();
       case "announcements": return renderAnnouncements();
       case "leaderboard": return renderLeaderboard();

@@ -237,7 +237,7 @@ export default function SettingsPage() {
   // Module order + per-module layout (columns, alignment).
   // Order matches the sequence sections render in on partner home page.
   // Layout is a per-id map — missing keys fall through to render-layer defaults.
-  const DEFAULT_MODULE_ORDER = ["video", "events", "announcements", "leaderboard", "opportunities"];
+  const DEFAULT_MODULE_ORDER = ["video", "liveWeekly", "events", "announcements", "leaderboard", "opportunities"];
   const [moduleOrder, setModuleOrder] = useState<string[]>(DEFAULT_MODULE_ORDER);
   type ModuleLayout = { columns?: 1 | 2 | 3; alignment?: "left" | "center" };
   const [moduleLayout, setModuleLayout] = useState<Record<string, ModuleLayout>>({});
@@ -1032,6 +1032,7 @@ export default function SettingsPage() {
               {moduleOrder.map((id) => {
                 const META: Record<string, { label: string; hint: string; supportsColumns: boolean }> = {
                   video:         { label: "Welcome Video", hint: "Embedded video under the welcome header", supportsColumns: false },
+                  liveWeekly:    { label: "Live Weekly Call", hint: "Admin banner image + next-call card → /dashboard/conference", supportsColumns: false },
                   events:        { label: "Upcoming Events", hint: "Event cards grid", supportsColumns: true },
                   announcements: { label: "Announcements", hint: "Admin announcements card grid", supportsColumns: true },
                   leaderboard:   { label: "Leaderboard", hint: "Top-performing partners table", supportsColumns: false },
