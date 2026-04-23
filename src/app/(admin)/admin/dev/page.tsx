@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import WorkflowsPanel from "../workflows/WorkflowsPanel";
+import { fmt$ } from "@/lib/format";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type Tab = "links" | "errors" | "email" | "webhook" | "customapi" | "apilog" | "commits" | "automations";
+type Tab = "links" | "errors" | "email" | "webhook" | "customapi" | "apilog" | "commits" | "automations" | "cleanup";
 
 type Commit = {
   sha: string;
@@ -461,6 +462,155 @@ function CommitsTab({ data }: { data: DevData | null }) {
             className="font-body text-[11px] text-brand-gold hover:underline">View all commits on GitHub ↗</a>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Data Cleanup Tab — Orphaned CommissionLedger rows ──
+// Surfaces orphaned ledger rows whose `dealId` no longer resolves to a
+// real Deal and lets the super admin preview + delete them. Fixes the
+// ghost-commission problem that showed up in Top Partners + Commissions
+// Pending. Preview first, explicit confirm before the actual delete.
+interface OrphanPreview {
+  count: number;
+  totalAmount: number;
+  sample: Array<{
+    id: string;
+    dealId: string;
+    partnerCode: string;
+    tier: string;
+    amount: number;
+    status: string;
+    createdAt: string;
+  }>;
+}
+
+function CleanupTab() {
+  const [preview, setPreview] = useState<OrphanPreview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [result, setResult] = useState<{ deleted: number; totalAmount: number } | null>(null);
+
+  const loadPreview = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/dev/orphaned-ledger");
+      if (!res.ok) throw new Error("Preview failed");
+      const data = await res.json();
+      setPreview(data);
+    } catch {
+      setPreview(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPreview();
+  }, [loadPreview]);
+
+  const handleDelete = async () => {
+    if (!preview || preview.count === 0) return;
+    const ok = confirm(
+      `This will permanently DELETE ${preview.count} orphaned CommissionLedger row(s) totaling ${fmt$(preview.totalAmount)} from the production database.\n\nThis writes to the real DB and cannot be undone. Continue?`
+    );
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/admin/dev/orphaned-ledger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(`Delete failed: ${data.error || res.statusText}`);
+        return;
+      }
+      setResult({ deleted: data.deleted, totalAmount: data.totalAmount });
+      await loadPreview();
+    } catch (e) {
+      alert(`Delete failed: ${(e as Error).message || e}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="card overflow-hidden">
+      <div className="px-5 py-4 border-b border-[var(--app-border)]">
+        <div className="font-body font-semibold text-sm">Orphaned Commission Ledger Cleanup</div>
+        <div className="font-body text-[11px] theme-text-muted mt-0.5">
+          CommissionLedger rows whose <code className="font-mono">dealId</code> points to a deleted Deal. Safe to delete — the reports page already hides them, but they still count in payouts + partner-side commission views.
+        </div>
+      </div>
+      <div className="p-5 space-y-4">
+        {result && (
+          <div className="rounded-lg border border-green-500/30 bg-green-500/[0.05] px-3 py-2 font-body text-[12px] text-green-400">
+            Deleted {result.deleted} orphaned row{result.deleted === 1 ? "" : "s"} totaling {fmt$(result.totalAmount)}.
+          </div>
+        )}
+        {loading ? (
+          <div className="font-body text-sm theme-text-muted">Scanning ledger…</div>
+        ) : !preview ? (
+          <div className="font-body text-sm text-red-400">Preview failed. Check the browser console + try again.</div>
+        ) : preview.count === 0 ? (
+          <div className="font-body text-sm theme-text-muted">✓ No orphaned ledger rows found. Nothing to clean up.</div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-1">Orphaned rows</div>
+                <div className="font-display text-2xl font-bold text-brand-gold">{preview.count}</div>
+              </div>
+              <div>
+                <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-1">Ghost total</div>
+                <div className="font-display text-2xl font-bold text-brand-gold">{fmt$(preview.totalAmount)}</div>
+              </div>
+            </div>
+            <div className="rounded-lg border border-[var(--app-border)] overflow-hidden">
+              <div className="grid grid-cols-[90px_1fr_80px_80px_100px_110px] gap-2 px-3 py-2 border-b border-[var(--app-border)] bg-[var(--app-bg-secondary)]">
+                {["Tier", "Deal ID (missing)", "Partner", "Amount", "Status", "Created"].map((h) => (
+                  <div key={h} className="font-body text-[10px] uppercase tracking-wider theme-text-muted">{h}</div>
+                ))}
+              </div>
+              <div className="max-h-[360px] overflow-y-auto">
+                {preview.sample.map((row) => (
+                  <div key={row.id} className="grid grid-cols-[90px_1fr_80px_80px_100px_110px] gap-2 px-3 py-2 border-b border-[var(--app-border)] last:border-b-0 font-body text-[12px]">
+                    <div className="uppercase">{row.tier}</div>
+                    <div className="font-mono truncate" title={row.dealId}>{row.dealId}</div>
+                    <div className="font-mono truncate">{row.partnerCode}</div>
+                    <div>{fmt$(row.amount)}</div>
+                    <div className="uppercase text-[var(--app-text-muted)]">{row.status}</div>
+                    <div className="text-[var(--app-text-muted)]">{new Date(row.createdAt).toLocaleDateString()}</div>
+                  </div>
+                ))}
+              </div>
+              {preview.count > preview.sample.length && (
+                <div className="px-3 py-2 border-t border-[var(--app-border)] bg-[var(--app-bg-secondary)] font-body text-[11px] theme-text-muted">
+                  Showing {preview.sample.length} of {preview.count} rows. The full set will be deleted on confirm.
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="font-body text-[12px] text-red-400/80 border border-red-400/30 rounded-lg px-4 py-2 hover:bg-red-400/10 transition-colors disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : `Delete ${preview.count} orphaned row${preview.count === 1 ? "" : "s"}`}
+              </button>
+              <button
+                onClick={loadPreview}
+                disabled={deleting}
+                className="font-body text-[12px] theme-text-muted border border-[var(--app-border)] rounded-lg px-4 py-2 hover:bg-[var(--app-hover)] transition-colors"
+              >
+                Refresh preview
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -1016,6 +1166,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "apilog",      label: "API Log",         icon: "📋" },
   { id: "automations", label: "Automations",     icon: "⚡" },
   { id: "commits",     label: "Recent Commits",  icon: "📦" },
+  { id: "cleanup",     label: "Data Cleanup",    icon: "🧹" },
 ];
 
 export default function DevPage() {
@@ -1086,6 +1237,7 @@ export default function DevPage() {
       {tab === "apilog"    && <ApiLogSection />}
       {tab === "automations" && <WorkflowsPanel />}
       {tab === "commits"   && <CommitsTab data={data} />}
+      {tab === "cleanup"   && <CleanupTab />}
     </div>
   );
 }
