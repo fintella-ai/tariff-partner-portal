@@ -63,6 +63,7 @@ const MAIN_NAV: Array<{
 // Mirrors BUILT_IN_ADMIN_ICONS in src/app/(admin)/admin/layout.tsx.
 const BUILT_IN_PARTNER_ICONS: Record<string, string> = {
   reporting: "/icons/reporting-chart.svg",
+  overview: "/icons/overview-dashboard.svg",
 };
 
 // Mobile bottom bar items (subset)
@@ -452,7 +453,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           className="fixed bottom-0 left-0 right-0 border-t flex z-[900] backdrop-blur-xl pb-safe"
           style={{ background: "var(--app-bg-secondary)", borderColor: "var(--app-sidebar-border)" }}
         >
-          {MOBILE_BAR.map((item) => (
+          {MOBILE_BAR.map((item) => {
+            const mobileCustomIcon = navIcons[`partner.${item.id}`] || BUILT_IN_PARTNER_ICONS[item.id];
+            return (
             <button
               key={item.id}
               onClick={() => navigate(item.href)}
@@ -462,10 +465,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 isActive(item.href, (item as { activePaths?: string[] }).activePaths) ? "text-brand-gold" : "text-[var(--app-text-muted)]"
               }`}
             >
-              <span className="text-xl leading-none">{item.icon}</span>
+              {mobileCustomIcon ? (
+                <img src={mobileCustomIcon} alt="" className="w-6 h-6 object-contain" />
+              ) : (
+                <span className="text-xl leading-none">{item.icon}</span>
+              )}
               <span className="leading-tight">{item.shortLabel}</span>
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
 
