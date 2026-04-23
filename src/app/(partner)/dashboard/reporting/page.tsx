@@ -774,9 +774,14 @@ export default function PartnerReportingPage() {
               const hasDirect = showDirect && directDeals.length > 0;
               const hasDownline = showDownline && downlineDeals.length > 0;
               if (!hasDirect && !hasDownline) return <div className="p-12 text-center font-body text-sm text-[var(--app-text-muted)]">No commission entries for this filter.</div>;
+              // `_amt` / `_status` always reflect what the viewing partner
+              // (L1) earns on the deal — the full L1 rate on direct rows and
+              // the L1 override (L1 rate − submitter rate) on downline rows.
+              // `_tier` still signals the deal source (L1 direct vs L2
+              // downline) via the colored badge.
               const commDeals = [
                 ...(showDirect ? directDeals.map((d) => ({ ...d, _tier: "l1" as const, _amt: d.l1CommissionAmount, _status: d.l1CommissionStatus })) : []),
-                ...(showDownline ? downlineDeals.map((d) => ({ ...d, _tier: "l2" as const, _amt: d.l2CommissionAmount, _status: d.l2CommissionStatus })) : []),
+                ...(showDownline ? downlineDeals.map((d) => ({ ...d, _tier: "l2" as const, _amt: d.l1CommissionAmount, _status: d.l1CommissionStatus })) : []),
               ];
               const commAccessors: Record<string, (d: any) => unknown> = {
                 dealName: (d) => d.dealName,
@@ -810,37 +815,59 @@ export default function PartnerReportingPage() {
                     <thead>
                       <tr className="border-b border-[var(--app-border)]">
                         {(() => {
-                          const on = (k: string) => cycleSort(k, commSort, commDir, setCommSort, setCommDir);
-                          const H = (props: { label: string; k: string; className?: string }) => (
-                            <th className={props.className || "px-3 py-3 text-center"}>
-                              <SortHeader label={props.label} sortKey={props.k} currentSort={commSort} currentDir={commDir} onSort={on} />
+                          // Plain (non-sortable) header row. Vertical dividers
+                          // live only in the header per design; body rows stay
+                          // clean. Deal column is left-aligned; everything
+                          // else is centered.
+                          const H = (props: { label: string; className?: string; isLast?: boolean }) => (
+                            <th className={`${props.className || "px-3 py-3 text-center"} ${props.isLast ? "" : "border-r border-[var(--app-border)]"}`}>
+                              <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
                             </th>
                           );
                           return (<>
-                            <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
-                            <H label="Date" k="createdAt" />
-                            <H label="Tier" k="tier" />
-                            <H label="Status" k="status" />
-                            <H label="Commission" k="commission" />
+                            <H label="Deal" className="px-4 sm:px-6 py-3 text-left" />
+                            <H label="Date" />
+                            <H label="Tier" />
+                            <H label="Refund" />
+                            <H label="Fee %" />
+                            <H label="Firm Fee" />
+                            <H label="Comm %" />
+                            <H label="Commission" />
+                            <H label="Status" isLast />
                           </>);
                         })()}
                       </tr>
                     </thead>
                     <tbody>
-                      {sortedCommDeals.map((deal, idx) => (
-                        <tr key={deal.id + deal._tier} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
-                          <td className="px-4 sm:px-6 py-3.5">
-                            <div className="font-body text-[13px] text-[var(--app-text)] truncate">{deal.dealName}</div>
-                            {deal._tier === "l2" && <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">via {deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode}</div>}
-                          </td>
-                          <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
-                          <td className="px-3 py-3.5 text-center">
-                            <span className={`font-body text-[10px] font-semibold rounded px-1.5 py-0.5 ${deal._tier === "l1" ? "text-brand-gold bg-brand-gold/10 border border-brand-gold/20" : "text-purple-400 bg-purple-500/10 border border-purple-500/20"}`}>{deal._tier.toUpperCase()}</span>
-                          </td>
-                          <td className="px-3 py-3.5 text-center"><StatusBadge status={deal._status} /></td>
-                          <td className={`px-3 py-3.5 text-center font-display text-[14px] font-semibold ${deal._tier === "l1" ? "text-brand-gold" : "text-purple-400"}`}>{fmt$(deal._amt)}</td>
-                        </tr>
-                      ))}
+                      {sortedCommDeals.map((deal, idx) => {
+                        const feeRate = deal.firmFeeRate ? `${Math.round(Number(deal.firmFeeRate) * 100)}%` : "—";
+                        const firmFeeAmt = Number(deal.firmFeeAmount || 0) || Number(deal.estimatedRefundAmount || 0) * Number(deal.firmFeeRate || 0);
+                        // Commission % reflects the partner + tier on this
+                        // row: for L1 direct rows it's the user's L1 rate; for
+                        // L2 downline rows it's the downline partner's L2 rate
+                        // (both computed from the row amount ÷ firm fee, which
+                        // always lands on the correct waterfall bracket).
+                        const commPctNum = firmFeeAmt > 0 && deal._amt != null ? (Number(deal._amt) / firmFeeAmt) * 100 : null;
+                        const commPct = commPctNum != null ? `${Math.round(commPctNum)}%` : "—";
+                        return (
+                          <tr key={deal.id + deal._tier} className={`border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors ${idx % 2 === 1 ? "bg-[rgba(59,130,246,0.03)]" : ""}`}>
+                            <td className="px-4 sm:px-6 py-3.5">
+                              <div className="font-body text-[13px] text-[var(--app-text)] truncate text-left">{deal.dealName}</div>
+                              {deal._tier === "l2" && <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate text-left">via {deal.submittingPartnerName || partnerNameMap[deal.partnerCode] || deal.partnerCode}</div>}
+                            </td>
+                            <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(deal.createdAt)}</td>
+                            <td className="px-3 py-3.5 text-center">
+                              <span className={`font-body text-[10px] font-semibold rounded px-1.5 py-0.5 ${deal._tier === "l1" ? "text-brand-gold bg-brand-gold/10 border border-brand-gold/20" : "text-purple-400 bg-purple-500/10 border border-purple-500/20"}`}>{deal._tier.toUpperCase()}</span>
+                            </td>
+                            <td className="px-3 py-3.5 text-center font-body text-[13px] text-[var(--app-text)]">{fmt$(deal.estimatedRefundAmount)}</td>
+                            <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{feeRate}</td>
+                            <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{fmt$(firmFeeAmt)}</td>
+                            <td className="px-3 py-3.5 text-center font-body text-[12px] text-[var(--app-text-muted)]">{commPct}</td>
+                            <td className={`px-3 py-3.5 text-center font-display text-[14px] font-semibold ${deal._tier === "l1" ? "text-brand-gold" : "text-purple-400"}`}>{fmt$(deal._amt)}</td>
+                            <td className="px-3 py-3.5 text-center"><StatusBadge status={deal._status} /></td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
