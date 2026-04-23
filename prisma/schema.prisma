@@ -406,7 +406,7 @@ model ConferenceSchedule {
   title        String
   description  String?
   embedUrl     String?   // YouTube/Vimeo embed URL for recording playback
-  joinUrl      String?   // Direct join link (Zoom/Meet)
+  joinUrl      String?   // Direct join link (Zoom/Meet) — legacy; prefer jitsiRoom
   recordingUrl String?   // External fallback URL for recording
   schedule     String?   // "Weekly, Thursdays at 2pm ET"
   nextCall     DateTime?
@@ -415,6 +415,22 @@ model ConferenceSchedule {
   weekNumber   Int?      // For labeling, e.g., 12 for "Week 12"
   notes        String?   // Markdown meeting notes/summary
   isActive     Boolean   @default(true)
+  // ── Jitsi in-portal embed ──
+  // Auto-generated room slug. Partners embed the room in-portal via
+  // iframe at https://meet.jit.si/<jitsiRoom>. Empty = fall back to
+  // legacy joinUrl (Zoom/Meet in new tab).
+  jitsiRoom              String?
+  // ── Google Calendar sync ──
+  // Populated by /api/admin/conference/[id]/sync-to-calendar once the
+  // admin pushes the row to the configured shared Google Calendar.
+  googleCalendarEventId  String?
+  googleCalendarHtmlLink String?
+  // ── Reminder automation dedup ──
+  // Array of Workflow IDs for trigger=conference.call_reminder that
+  // have already fired for this row. Reset automatically when the row
+  // is created (null = never fired). Prevents the hourly cron from
+  // re-firing the same reminder within a single scheduled call.
+  firedReminderWorkflows Json?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }

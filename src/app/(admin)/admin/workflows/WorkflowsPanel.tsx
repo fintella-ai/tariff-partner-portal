@@ -101,6 +101,7 @@ type TriggerDefaults = {
 const TRIGGER_DEFAULTS: Record<string, TriggerDefaults> = {
   "partner.agreement_reminder": { emailToken: "{partner.email}",        emailLabel: "The partner with the unsigned agreement", smsSubject: "deal_partner", smsLabel: "The partner with the unsigned agreement" },
   "partner.invite_reminder":    { emailToken: "{invite.invitedEmail}",  emailLabel: "The invited person",                       smsSubject: null,            smsLabel: "" },
+  "conference.call_reminder":   { emailToken: "{partner.email}",        emailLabel: "Every active partner (one send per partner)", smsSubject: "deal_partner", smsLabel: "Every active partner (one send per partner)" },
   "partner.created":            { emailToken: "{partner.email}",        emailLabel: "The new partner",                          smsSubject: "deal_partner", smsLabel: "The new partner" },
   "partner.activated":          { emailToken: "{partner.email}",        emailLabel: "The activated partner",                    smsSubject: "deal_partner", smsLabel: "The activated partner" },
   "deal.created":               { emailToken: "{deal.clientEmail}",     emailLabel: "The client on the deal",                   smsSubject: "deal_partner", smsLabel: "The submitting partner" },
@@ -668,6 +669,11 @@ function WorkflowPanel({
   const [cadenceDays, setCadenceDays] = useState<string>(
     String((initial?.triggerConfig as any)?.cadenceDays ?? 7)
   );
+  // Lead time (in hours) — only for conference.call_reminder. Stored on
+  // triggerConfig.hoursBeforeCall. Defaults to 24.
+  const [hoursBeforeCall, setHoursBeforeCall] = useState<string>(
+    String((initial?.triggerConfig as any)?.hoursBeforeCall ?? 24)
+  );
   const [conditions, setConditions] = useState<Condition[]>(
     Array.isArray(initial?.conditions)
       ? (initial.conditions as Condition[])
@@ -698,7 +704,9 @@ function WorkflowPanel({
           ? { stage: stageFilter }
           : trigger === "partner.agreement_reminder" || trigger === "partner.invite_reminder"
             ? { cadenceDays: Math.max(1, Number(cadenceDays) || 7) }
-            : null,
+            : trigger === "conference.call_reminder"
+              ? { hoursBeforeCall: Math.max(1, Number(hoursBeforeCall) || 24) }
+              : null,
       conditions: conditions.length ? conditions : null,
       actions,
       enabled,
@@ -724,6 +732,7 @@ function WorkflowPanel({
 
   const [advancedOpen, setAdvancedOpen] = useState(conditions.length > 0);
   const isScheduled = trigger === "partner.agreement_reminder" || trigger === "partner.invite_reminder";
+  const isConferenceReminder = trigger === "conference.call_reminder";
 
   // Live "What will this workflow do?" summary — regenerates as the admin
   // changes fields, so they don't have to mentally assemble what they're
@@ -732,7 +741,9 @@ function WorkflowPanel({
     const parts: string[] = [];
     const whenWord = isScheduled
       ? `every ${Math.max(1, Number(cadenceDays) || 7)} day${Number(cadenceDays) === 1 ? "" : "s"}`
-      : `when ${TRIGGER_LABELS[trigger].toLowerCase()}`;
+      : isConferenceReminder
+        ? `${Math.max(1, Number(hoursBeforeCall) || 24)} hour${Number(hoursBeforeCall) === 1 ? "" : "s"} before each Live Weekly call`
+        : `when ${TRIGGER_LABELS[trigger].toLowerCase()}`;
     parts.push(`**When:** ${whenWord}`);
 
     if (actions.length === 0) {
@@ -855,6 +866,52 @@ function WorkflowPanel({
                   </div>
                   <div className="mt-1 font-body text-[11px] theme-text-faint leading-snug">
                     Runs once a day (15:00 UTC). Each matching {trigger === "partner.agreement_reminder" ? "unsigned agreement" : "unused invite"} gets one reminder per period.
+                  </div>
+                </div>
+              );
+            })()}
+
+            {isConferenceReminder && (() => {
+              const presetOptions = [1, 2, 6, 12, 24, 48];
+              const currentNum = Number(hoursBeforeCall) || 24;
+              const isPreset = presetOptions.includes(currentNum);
+              return (
+                <div>
+                  <label className="block font-body text-xs theme-text-muted mb-1">How far in advance should the reminder go out? *</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={isPreset ? String(currentNum) : "custom"}
+                      onChange={(e) => {
+                        if (e.target.value === "custom") {
+                          setHoursBeforeCall(String(currentNum));
+                        } else {
+                          setHoursBeforeCall(e.target.value);
+                        }
+                      }}
+                      className="flex-1 rounded px-3 py-2 font-body text-sm theme-input"
+                    >
+                      <option value="1">1 hour before the call</option>
+                      <option value="2">2 hours before</option>
+                      <option value="6">6 hours before</option>
+                      <option value="12">12 hours before</option>
+                      <option value="24">1 day before (24 hours)</option>
+                      <option value="48">2 days before (48 hours)</option>
+                      <option value="custom">Custom…</option>
+                    </select>
+                    {!isPreset && (
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={hoursBeforeCall}
+                        onChange={(e) => setHoursBeforeCall(e.target.value)}
+                        className="w-24 rounded px-3 py-2 font-body text-sm theme-input"
+                        placeholder="hours"
+                      />
+                    )}
+                  </div>
+                  <div className="mt-1 font-body text-[11px] theme-text-faint leading-snug">
+                    Runs hourly. Each active Live Weekly call triggers this workflow once per active partner when the lead-time window opens.
                   </div>
                 </div>
               );

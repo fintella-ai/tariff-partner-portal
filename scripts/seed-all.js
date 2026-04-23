@@ -540,6 +540,40 @@ async function main() {
       ]),
     },
     {
+      key: "live_weekly_reminder",
+      name: "Live Weekly — Reminder",
+      category: "Live Weekly",
+      subject: "Reminder: {conference.title} in {hoursBeforeCall}h",
+      preheader: "Join us for this week's Fintella Live Weekly call.",
+      heading: "Your Live Weekly call starts soon",
+      bodyHtml:
+        "<p>Hi {partner.firstName},</p>" +
+        "<p>Just a reminder that <strong>{conference.title}</strong> starts in about " +
+        "{hoursBeforeCall} hour(s) — {conference.nextCallLocal}.</p>" +
+        "<p>You can join right from your Fintella partner portal or from the link below.</p>",
+      bodyText:
+        "Hi {partner.firstName},\n\n" +
+        "Just a reminder that {conference.title} starts in about {hoursBeforeCall} hour(s) — {conference.nextCallLocal}.\n\n" +
+        "Join here: {conference.joinUrl}",
+      ctaLabel: "Join the call",
+      ctaUrl: "{conference.joinUrl}",
+      enabled: true,
+      isDraft: false,
+      description:
+        "Default template for the conference.call_reminder workflow trigger. Fires from /api/cron/conference-reminders for each active Live Weekly call N hours before it starts (configurable per workflow).",
+      variables: JSON.stringify([
+        "partner.firstName",
+        "partner.lastName",
+        "conference.title",
+        "conference.hostName",
+        "conference.nextCall",
+        "conference.nextCallLocal",
+        "conference.joinUrl",
+        "hoursBeforeCall",
+        "portalUrl",
+      ]),
+    },
+    {
       key: "password_reset",
       name: "Password Reset Link",
       category: "Account Security",
@@ -659,6 +693,16 @@ async function main() {
       isDraft: false,
       description: "Default SMS for the partner.invite_reminder workflow. Fires from /api/cron/reminders per cadenceDays.",
       variables: JSON.stringify(["invite.invitedName", "invite.signupUrl", "daysSinceInvited"]),
+    },
+    {
+      key: "live_weekly_reminder",
+      name: "Live Weekly Reminder",
+      category: "Live Weekly",
+      body: "Fintella: {partner.firstName}, {conference.title} starts in ~{hoursBeforeCall}h ({conference.nextCallLocal}). Join: {conference.joinUrl} — Reply STOP to opt out.",
+      enabled: false,
+      isDraft: false,
+      description: "Default SMS for the conference.call_reminder workflow. Fires from /api/cron/conference-reminders at the configured lead time before each active Live Weekly call.",
+      variables: JSON.stringify(["partner.firstName", "conference.title", "conference.nextCallLocal", "conference.joinUrl", "hoursBeforeCall"]),
     },
     {
       key: "opt_in_request",

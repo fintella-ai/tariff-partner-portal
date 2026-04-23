@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { buildJitsiSlug } from "@/lib/jitsi";
 
 /**
  * GET /api/admin/conference
@@ -63,7 +64,14 @@ export async function POST(req: NextRequest) {
         isActive: body.isActive ?? true,
       },
     });
-    return NextResponse.json({ entry }, { status: 201 });
+    // Auto-attach a Jitsi room slug now that we have the row's id. Admin
+    // can override later if they want a specific vanity slug.
+    const jitsiRoom = body.jitsiRoom || buildJitsiSlug({ id: entry.id, weekNumber: entry.weekNumber });
+    const withRoom = await prisma.conferenceSchedule.update({
+      where: { id: entry.id },
+      data: { jitsiRoom },
+    });
+    return NextResponse.json({ entry: withRoom }, { status: 201 });
   } catch {
     return NextResponse.json(
       { error: "Failed to create conference entry" },

@@ -21,6 +21,9 @@ type ConferenceEntry = {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  jitsiRoom?: string | null;
+  googleCalendarEventId?: string | null;
+  googleCalendarHtmlLink?: string | null;
 };
 
 // ─── DEMO FALLBACK ────────────────────────────────────────────────────────
@@ -154,6 +157,12 @@ export default function AdminConferencePage() {
       // silently fail
     }
   };
+
+  // Google Calendar sync UI is intentionally deferred to v2. The API
+  // endpoint (/api/admin/conference/[id]/sync-to-calendar) and the
+  // service-account client (src/lib/google-calendar.ts) are already in
+  // place — v2 work is just re-surfacing the button + adding the three
+  // GOOGLE_* env vars on Vercel.
 
   const handleDelete = async (entry: ConferenceEntry) => {
     if (!confirm(`Delete "${entry.title}"?`)) return;
