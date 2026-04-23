@@ -227,7 +227,9 @@ export const TRIGGER_VARIABLES: Record<TriggerKey, TriggerVariable[]> = {
 
 export interface WorkflowCondition {
   field: string; // dot-notation path into payload, e.g. "deal.stage"
-  op: "eq" | "neq" | "gt" | "lt" | "contains" | "exists";
+  // "exists" / "not_exists" correspond to the admin UI's "is known" /
+  // "is unknown" labels — present + non-empty vs missing/null/empty.
+  op: "eq" | "neq" | "gt" | "lt" | "contains" | "exists" | "not_exists";
   value?: unknown;
 }
 
@@ -250,12 +252,13 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 function evaluateCondition(condition: WorkflowCondition, payload: Record<string, unknown>): boolean {
   const actual = getNestedValue(payload, condition.field);
   switch (condition.op) {
-    case "eq":       return String(actual) === String(condition.value);
-    case "neq":      return String(actual) !== String(condition.value);
-    case "gt":       return Number(actual) > Number(condition.value);
-    case "lt":       return Number(actual) < Number(condition.value);
-    case "contains": return String(actual).toLowerCase().includes(String(condition.value).toLowerCase());
-    case "exists":   return actual !== undefined && actual !== null && actual !== "";
+    case "eq":         return String(actual) === String(condition.value);
+    case "neq":        return String(actual) !== String(condition.value);
+    case "gt":         return Number(actual) > Number(condition.value);
+    case "lt":         return Number(actual) < Number(condition.value);
+    case "contains":   return String(actual).toLowerCase().includes(String(condition.value).toLowerCase());
+    case "exists":     return actual !== undefined && actual !== null && actual !== "";
+    case "not_exists": return actual === undefined || actual === null || actual === "";
     default:         return false;
   }
 }
