@@ -28,15 +28,18 @@ type Message = {
   mentions: Mention[];
 };
 
-export default function TeamChatPanel({ searchQuery }: { searchQuery?: string } = {}) {
+export default function TeamChatPanel({
+  searchQuery,
+  compact,
+}: { searchQuery?: string; compact?: boolean } = {}) {
   return (
     <Suspense fallback={<div className="font-body text-sm text-[var(--app-text-muted)]">Loading…</div>}>
-      <TeamChatInner searchQuery={searchQuery || ""} />
+      <TeamChatInner searchQuery={searchQuery || ""} compact={!!compact} />
     </Suspense>
   );
 }
 
-function TeamChatInner({ searchQuery }: { searchQuery: string }) {
+function TeamChatInner({ searchQuery, compact }: { searchQuery: string; compact: boolean }) {
   const params = useSearchParams();
   const initialThreadId = params?.get("threadId") || null;
 
@@ -155,8 +158,14 @@ function TeamChatInner({ searchQuery }: { searchQuery: string }) {
       </div>
 
       <div className="flex gap-4" style={{ height: "calc(100vh - 220px)", minHeight: 400 }}>
-        {/* Rail */}
-        <div className={`${activeThreadId ? "hidden md:flex" : "flex"} w-full md:w-[280px] shrink-0 card flex-col overflow-hidden`}>
+        {/* Rail — in compact mode (embedded in the chat widget) we
+            drop the md: breakpoint and use mobile-style single-pane
+            stacking based only on whether a thread is active. */}
+        <div className={`${
+          compact
+            ? (activeThreadId ? "hidden" : "flex")
+            : (activeThreadId ? "hidden md:flex" : "flex")
+        } w-full ${compact ? "" : "md:w-[280px]"} shrink-0 card flex-col overflow-hidden`}>
           <div className="flex-1 overflow-y-auto">
             {/* When the widget passes a `searchQuery`, filter threads by
                 name (Global / deal name). Minimal client-side filter —
@@ -200,9 +209,26 @@ function TeamChatInner({ searchQuery }: { searchQuery: string }) {
         </div>
 
         {/* Messages */}
-        <div className={`${activeThreadId ? "flex" : "hidden md:flex"} flex-1 card flex-col overflow-hidden`}>
-          <div className="px-5 py-3 border-b border-[var(--app-border)]">
-            <div className="font-body text-sm font-semibold text-[var(--app-text)]">
+        <div className={`${
+          compact
+            ? (activeThreadId ? "flex" : "hidden")
+            : (activeThreadId ? "flex" : "hidden md:flex")
+        } flex-1 card flex-col overflow-hidden`}>
+          <div className="px-5 py-3 border-b border-[var(--app-border)] flex items-center gap-2">
+            {/* Back-to-threads affordance in compact mode — without it
+                the widget can't return to the thread list on small
+                widths (both panels don't fit side-by-side). */}
+            {compact && activeThreadId && (
+              <button
+                onClick={() => setActiveThreadId(null)}
+                className="w-7 h-7 flex items-center justify-center rounded-md theme-text-muted hover:bg-brand-gold/10 transition-colors -ml-1"
+                aria-label="Back to thread list"
+                title="Back to threads"
+              >
+                ‹
+              </button>
+            )}
+            <div className="font-body text-sm font-semibold text-[var(--app-text)] truncate">
               {activeThread?.type === "global" ? "🌐 Global Room" : activeThread?.dealName || "Thread"}
             </div>
           </div>
