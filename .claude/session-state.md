@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-24 — PR #452 merged: Google Calendar embed added to the admin workspace as a fourth reorderable section. Iframe renders the calendar stored on PortalSettings.googleCalendarCalendarId (OAuth connection from #433). Agenda / Week / Month view toggle, connected-email subtitle, empty-state → Settings link when disconnected. Earlier today: #442 workspace V1, #444 Home in admin nav reorder registry, #446 workspace V2 (PartnerContextDrawer + Activity Timeline + per-admin reorder), #448 open invites in the workspace Needs-Attention feed, #450 Level column on partner Full Reporting → Downline → Your Partners. 2026-04-23 session had 21 PRs (Google Calendar OAuth, Jitsi embed, HubSpot-style workflow editor, reminder triggers, orphan cleanup, etc.).
+🕒 Last updated: 2026-04-24 — PRs #454 + #455 merged: internal admin chat is now a persistent draggable widget. V1 (#454) mounted InternalChatWidget in admin/layout.tsx (floating 💬 bubble → 440×640 panel, localStorage position + open state, search filter passed into TeamChatPanel, embeds the existing TeamChatPanel for SSE/mentions/send). Also shipped a new /api/admin/dev/orphaned-chat endpoint + Data Cleanup section for AdminChatThread rows whose dealId points to a deleted Deal. V2 (#455) added partner tagging via `&partner` trigger — new parsePartnerRefs + renderer segment + pink-chip UI linking to /admin/partners?code=; MentionInput now supports @admin / #deal / &partner side-by-side. Earlier today: #442 workspace V1, #444 Home in admin nav reorder registry, #446 workspace V2 (PartnerContextDrawer + Activity Timeline + per-admin reorder), #448 open invites in the workspace Needs-Attention feed, #450 Level column on partner Full Reporting → Downline → Your Partners, #452 Google Calendar embed on workspace. 2026-04-23 session had 21 PRs (Google Calendar OAuth, Jitsi embed, HubSpot-style workflow editor, reminder triggers, orphan cleanup, etc.).
 
 ## 🌿 Git state
-- **main HEAD:** `d582f19` — feat(admin/workspace): embed Google Calendar as a reorderable section (#452)
+- **main HEAD:** `aa2a2a9` — feat(internal-chat): V2 — partner tagging via &partner (#455)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
