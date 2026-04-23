@@ -21,6 +21,7 @@ const isGroup = (n: NavItem): n is NavGroup => (n as NavGroup).children !== unde
 // Default display order — can be reordered via Settings → Navigation drag-and-drop.
 // IDs here must match ADMIN_NAV_ITEMS map below.
 const ADMIN_NAV_IDS_DEFAULT = [
+  "home",
   "partners", "deals", "reporting",
   "communications", "internalChats", "partnerSupport",
   "training", "conference", "documents",
@@ -28,6 +29,7 @@ const ADMIN_NAV_IDS_DEFAULT = [
 ];
 
 const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
+  home:         { id: "home", href: "/admin", icon: "🏠", label: "Home" },
   partners:     { id: "partners", href: "/admin/partners", icon: "👥", label: "Partners" },
   deals:        { id: "deals", href: "/admin/deals", icon: "📋", label: "Deals" },
   // "reporting" is a synthetic umbrella for Reports / Revenue /
@@ -294,7 +296,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           );
         }
 
-        const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+        // Home lives at "/admin" (exact match only) — otherwise it'd
+        // light up on every admin sub-page because of the startsWith
+        // check. All other items match their href + any nested route.
+        const isActive = item.href === "/admin"
+          ? pathname === "/admin"
+          : pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <button
             key={item.id}

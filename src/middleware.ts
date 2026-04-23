@@ -16,7 +16,9 @@ export default auth((req) => {
     if (session?.user) {
       const role = (session.user as any).role;
       if (["admin", "super_admin", "accounting", "partner_support"].includes(role)) {
-        return NextResponse.redirect(new URL("/admin/partners", req.url));
+        // /admin is the workspace dashboard (previously we landed on
+        // /admin/partners). The sidebar's Home entry points here too.
+        return NextResponse.redirect(new URL("/admin", req.url));
       }
       return NextResponse.redirect(new URL("/dashboard/home", req.url));
     }
