@@ -427,8 +427,8 @@ export default function AdminConferencePage() {
       {/* ═══ TABLE (desktop) ═══ */}
       <div className="card hidden sm:block">
         {/* Table header */}
-        <div className="grid grid-cols-[60px_1fr_140px_100px_80px_70px_70px_80px_120px] gap-2 px-5 py-3 border-b border-[var(--app-border)]">
-          {["Wk #", "Title", "Host", "Date", "Duration", "Rec?", "Notes?", "Status", "Actions"].map((h) => (
+        <div className="grid grid-cols-[60px_1fr_90px_140px_100px_80px_70px_70px_80px_120px] gap-2 px-5 py-3 border-b border-[var(--app-border)]">
+          {["Wk #", "Title", "URL", "Host", "Date", "Duration", "Rec?", "Notes?", "Status", "Actions"].map((h) => (
             <div key={h} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider">{h}</div>
           ))}
         </div>
@@ -436,10 +436,35 @@ export default function AdminConferencePage() {
         {entries.map((entry) => (
           <div
             key={entry.id}
-            className="grid grid-cols-[60px_1fr_140px_100px_80px_70px_70px_80px_120px] gap-2 px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors items-center"
+            className="grid grid-cols-[60px_1fr_90px_140px_100px_80px_70px_70px_80px_120px] gap-2 px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors items-center"
           >
             <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{entry.weekNumber || "—"}</div>
             <div className="font-body text-[13px] text-[var(--app-text)] truncate">{entry.title}</div>
+            <div>
+              {entry.jitsiRoom ? (
+                <a
+                  href={`https://meet.jit.si/${entry.jitsiRoom}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 font-body text-[10px] text-brand-gold border border-brand-gold/30 rounded px-2 py-1 hover:bg-brand-gold/10 transition-colors whitespace-nowrap"
+                  title={`https://meet.jit.si/${entry.jitsiRoom}`}
+                >
+                  📹 Join
+                </a>
+              ) : entry.joinUrl ? (
+                <a
+                  href={entry.joinUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 font-body text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded px-2 py-1 hover:bg-[var(--app-card-bg)] transition-colors whitespace-nowrap"
+                  title={entry.joinUrl}
+                >
+                  ↗ Open
+                </a>
+              ) : (
+                <span className="font-body text-[12px] text-[var(--app-text-muted)]">—</span>
+              )}
+            </div>
             <div className="font-body text-[12px] text-[var(--app-text-secondary)] truncate">{entry.hostName || "—"}</div>
             <div className="font-body text-[12px] text-[var(--app-text-secondary)]">{fmtDate(entry.nextCall)}</div>
             <div className="font-body text-[12px] text-[var(--app-text-secondary)]">{entry.duration || "—"}</div>
@@ -500,7 +525,26 @@ export default function AdminConferencePage() {
               <span>Rec: {entry.embedUrl || entry.recordingUrl ? "✓" : "—"}</span>
               <span>Notes: {entry.notes ? "✓" : "—"}</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              {entry.jitsiRoom ? (
+                <a
+                  href={`https://meet.jit.si/${entry.jitsiRoom}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-body text-[11px] text-brand-gold border border-brand-gold/30 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors"
+                >
+                  📹 Join
+                </a>
+              ) : entry.joinUrl ? (
+                <a
+                  href={entry.joinUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-body text-[11px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded-lg px-3 py-1.5 hover:bg-[var(--app-card-bg)] transition-colors"
+                >
+                  ↗ Open
+                </a>
+              ) : null}
               <button
                 onClick={() => openEditForm(entry)}
                 className="font-body text-[11px] text-brand-gold/60 border border-brand-gold/20 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors"
