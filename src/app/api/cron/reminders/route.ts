@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
   }
 
   const startedAt = new Date();
-  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || "https://fintella.partners";
+  const portalUrl = (process.env.NEXT_PUBLIC_PORTAL_URL || "https://fintella.partners").trim().replace(/\/$/, "");
   const result = {
     startedAt: startedAt.toISOString(),
     agreementReminders: { workflows: 0, cadenceDays: 0, fired: 0, skipped: 0 },

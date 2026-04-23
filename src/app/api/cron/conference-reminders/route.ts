@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
   }
 
   const startedAt = new Date();
-  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || "https://fintella.partners";
+  const portalUrl = (process.env.NEXT_PUBLIC_PORTAL_URL || "https://fintella.partners").trim().replace(/\/$/, "");
   const result = { workflows: 0, conferencesChecked: 0, fired: 0, partners: 0 };
 
   const workflows = await prisma.workflow.findMany({

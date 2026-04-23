@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
  * can surface a friendly message.
  */
 export async function GET(req: NextRequest) {
-  const base = process.env.NEXT_PUBLIC_PORTAL_URL || new URL(req.url).origin;
+  const base = (process.env.NEXT_PUBLIC_PORTAL_URL || new URL(req.url).origin).trim();
   const settingsUrl = `${base.replace(/\/$/, "")}/admin/settings`;
 
   const session = await auth();

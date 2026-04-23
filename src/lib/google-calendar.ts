@@ -35,8 +35,13 @@ type AccessTokenCache = { token: string; expiresAt: number };
 let cached: AccessTokenCache | null = null;
 
 export function oauthRedirectUri(): string {
-  const base = process.env.NEXT_PUBLIC_PORTAL_URL || "http://localhost:3000";
-  return `${base.replace(/\/$/, "")}/api/admin/google-calendar/oauth-callback`;
+  // Trim before stripping the trailing slash — `vercel env add` via `echo`
+  // can land a trailing newline in the stored value, which would
+  // otherwise produce `https://fintella.partners /api/...` and fail
+  // Google's redirect_uri validation.
+  const raw = (process.env.NEXT_PUBLIC_PORTAL_URL || "http://localhost:3000").trim();
+  const base = raw.replace(/\/$/, "");
+  return `${base}/api/admin/google-calendar/oauth-callback`;
 }
 
 export function buildAuthorizationUrl(state: string): string {
