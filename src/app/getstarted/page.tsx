@@ -295,13 +295,13 @@ function GetStartedContent() {
               <label className="flex items-start gap-3 mb-3 cursor-pointer">
                 <input type="checkbox" checked={emailOptIn} onChange={(e) => setEmailOptIn(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-brand-gold/30 bg-transparent text-brand-gold focus:ring-brand-gold/50 cursor-pointer shrink-0" />
                 <span className="font-body text-[12px] theme-text-secondary leading-relaxed">
-                  I consent to receive email communications from &quot;Annexation PR LLC&quot; and &quot;Financial Intelligence Network DBA&quot; (Fintella), including partnership updates, deal notifications, commission statements, and program announcements.
+                  I agree to receive email communications about my account activity, deal status updates, commission statements, and important program announcements. I can unsubscribe at any time via the link in any email or by contacting support.
                 </span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" checked={smsOptIn} onChange={(e) => setSmsOptIn(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-brand-gold/30 bg-transparent text-brand-gold focus:ring-brand-gold/50 cursor-pointer shrink-0" />
                 <span className="font-body text-[12px] theme-text-secondary leading-relaxed">
-                  I consent to receive SMS/text messages from &quot;Annexation PR LLC&quot; and &quot;Financial Intelligence Network DBA&quot; (Fintella) for time-sensitive deal updates, commission alerts, and important program notifications. Msg &amp; data rates may apply.
+                  I agree to receive SMS notifications about my account activity, deal status updates, and commission payment alerts. Message frequency varies. Message and data rates may apply. Reply STOP to cancel at any time.
                 </span>
               </label>
             </div>
