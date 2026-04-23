@@ -8,6 +8,7 @@ import WorkspaceStatCard from "@/components/admin/WorkspaceStatCard";
 import AttentionFeedRow, { type AttentionItem, type AttentionSource } from "@/components/admin/AttentionFeedRow";
 import PartnerContextDrawer from "@/components/admin/PartnerContextDrawer";
 import ActivityTimeline from "@/components/admin/ActivityTimeline";
+import CalendarEmbed from "@/components/admin/CalendarEmbed";
 import { fmt$ } from "@/lib/format";
 
 /**
@@ -55,8 +56,8 @@ const INITIAL_STATS: Stats = {
 
 // Sections that the admin can reorder. `quickLinks` sits at the bottom
 // and isn't reorderable (it's a permanent "what to do next" footer).
-type SectionId = "stats" | "attention" | "activity";
-const DEFAULT_SECTION_ORDER: SectionId[] = ["stats", "attention", "activity"];
+type SectionId = "stats" | "attention" | "activity" | "calendar";
+const DEFAULT_SECTION_ORDER: SectionId[] = ["stats", "attention", "activity", "calendar"];
 const LAYOUT_KEY = "fintella.admin.workspace.layout.v1";
 
 function readLayout(): SectionId[] {
@@ -455,6 +456,23 @@ export default function AdminWorkspacePage() {
           </div>
         )}
         <ActivityTimeline refreshKey={lastRefreshed?.getTime() || 0} />
+      </section>
+    ),
+    calendar: () => (
+      <section
+        key="calendar"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "calendar")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "calendar")}
+        className={`mb-6 ${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move" : ""}`}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">
+            ⋮⋮ Calendar — drag to reorder
+          </div>
+        )}
+        <CalendarEmbed />
       </section>
     ),
   };
