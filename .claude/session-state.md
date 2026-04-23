@@ -1,9 +1,9 @@
 # Session State
 
-🕒 Last updated: 2026-04-23 — PR #410 merged: two new scheduled automation triggers on `/admin/workflows` — `partner.agreement_reminder` (unsigned agreements) and `partner.invite_reminder` (unused L1 admin invites). Cadence editable per-workflow via `triggerConfig.cadenceDays` (default 7); `/api/cron/reminders` runs daily at 15:00 UTC and uses MIN cadence across enabled workflows on the same trigger. Schema additions: `PartnershipAgreement.lastReminderSentAt`, `RecruitmentInvite.lastReminderSentAt`. Seeded default email + SMS reminder templates (SMS disabled pending A2P). Earlier today: PR #404 (layout padding match admin), #406 (Commission History expanded columns), #408 (EP override card + sub-tab).
+🕒 Last updated: 2026-04-23 — PR #412 merged: HubSpot-style rewrite of the `/admin/workflows` editor — live summary card, step-numbered cards (When/What/Advanced), plain-English cadence presets, smart recipient radios on email.send + sms.send, emoji action labels, and natural-language filter operators including new `is known` / `is unknown` (engine op `not_exists`). Same Workflow data model on the wire. Earlier today: PR #404 (layout padding match admin), #406 (Commission History expanded columns), #408 (EP override card + sub-tab), #410 (scheduled agreement + invite reminder triggers).
 
 ## 🌿 Git state
-- **main HEAD:** `d502f97` — feat(workflows): scheduled reminders for agreements + invites (#410)
+- **main HEAD:** `eda8db3` — feat(workflows): plain-English editor + smart recipients + known/unknown (#412)
 - **origin/main:** in sync
 - **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
 - **Working tree:** clean
