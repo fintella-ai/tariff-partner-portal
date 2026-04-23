@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { fmtDate, fmtDateTime } from "@/lib/format";
@@ -954,7 +954,7 @@ export default function PartnerDetailPage() {
       {/* ─── DOWNLINE ─────────────────────────────────────────────── */}
       <div className="card mb-6">
         <div className="px-5 py-4 border-b border-[var(--app-border)] flex items-center justify-between flex-wrap gap-2">
-          <div className="font-body font-semibold text-sm">Downline Partners ({downline.length})</div>
+          <div className="font-body font-semibold text-sm">Downline Partners ({downline.length + l3Partners.length})</div>
           {downline.length > 0 && (
             <div className="flex bg-[var(--app-input-bg)] rounded-lg p-0.5">
               <button
@@ -1017,24 +1017,54 @@ export default function PartnerDetailPage() {
           })()
         ) : (
           <div>
-            {downline.map((d) => (
-              <div
-                key={d.id}
-                className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer flex items-center justify-between gap-3"
-                onClick={() => router.push(`/admin/partners/${d.id}`)}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <LevelTag tier={d.tier} />
-                  <div className="min-w-0">
-                    <div className="font-body text-[13px] text-[var(--app-text)] truncate">{d.firstName} {d.lastName}</div>
-                    <div className="font-mono text-[11px] text-[var(--app-text-muted)] truncate">{d.partnerCode}</div>
+            {downline.map((d) => {
+              // Render each L2 followed by any L3s recruited under that L2.
+              // Previously the list view only showed `downline` (L2s) and
+              // silently dropped `l3Partners`, even though the tree view on
+              // the same page rendered them correctly. L3 rows are indented
+              // so the parent→child relationship still reads.
+              const nested = l3Partners.filter((l3) => l3.referredByPartnerCode === d.partnerCode);
+              return (
+                <React.Fragment key={d.id}>
+                  <div
+                    className="px-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer flex items-center justify-between gap-3"
+                    onClick={() => router.push(`/admin/partners/${d.id}`)}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <LevelTag tier={d.tier} />
+                      <div className="min-w-0">
+                        <div className="font-body text-[13px] text-[var(--app-text)] truncate">{d.firstName} {d.lastName}</div>
+                        <div className="font-mono text-[11px] text-[var(--app-text-muted)] truncate">{d.partnerCode}</div>
+                      </div>
+                    </div>
+                    <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[d.status] || statusBadge.active}`}>
+                      {d.status}
+                    </span>
                   </div>
-                </div>
-                <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[d.status] || statusBadge.active}`}>
-                  {d.status}
-                </span>
-              </div>
-            ))}
+                  {nested.map((l3) => (
+                    <div
+                      key={l3.id}
+                      className="pl-12 pr-5 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors cursor-pointer flex items-center justify-between gap-3"
+                      onClick={(e) => { e.stopPropagation(); router.push(`/admin/partners/${l3.id}`); }}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <LevelTag tier={l3.tier} />
+                        <div className="min-w-0">
+                          <div className="font-body text-[13px] text-[var(--app-text)] truncate">
+                            {l3.firstName} {l3.lastName}
+                            <span className="font-body text-[11px] text-[var(--app-text-muted)] ml-2">via {d.firstName} {d.lastName}</span>
+                          </div>
+                          <div className="font-mono text-[11px] text-[var(--app-text-muted)] truncate">{l3.partnerCode}</div>
+                        </div>
+                      </div>
+                      <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge[l3.status] || statusBadge.active}`}>
+                        {l3.status}
+                      </span>
+                    </div>
+                  ))}
+                </React.Fragment>
+              );
+            })}
           </div>
         )}
       </div>
