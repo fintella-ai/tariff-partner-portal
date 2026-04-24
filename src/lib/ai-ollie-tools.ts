@@ -413,10 +413,10 @@ async function lookupDeal(
   // as `isStale: true` on the tool output so Ollie can proactively offer to
   // open a ticket to nudge the firm.
   const TERMINAL_STAGES = new Set([
-    "closed_won",
     "closedwon",
-    "closed_lost",
+    "disqualified",
     "closedlost",
+    "meeting_missed",
     "client_no_show",
   ]);
   const STALE_DAYS = 14;

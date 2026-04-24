@@ -84,15 +84,21 @@ export const DEFAULT_L3_RATE = 0;
 
 // ─── DEAL STAGES ─────────────────────────────────────────────────────────────
 export const STAGE_LABELS: Record<string, { label: string; color: string }> = {
-  new_lead: { label: "New Lead", color: "#6b7280" },
-  no_consultation: { label: "No Consultation Booked", color: "#ef4444" },
-  consultation_booked: { label: "Consultation Booked", color: "#f59e0b" },
-  client_no_show: { label: "Client No Show", color: "#ef4444" },
-  client_qualified: { label: "Client Qualified", color: "#06b6d4" },
+  lead_submitted: { label: "Lead Submitted", color: "#6b7280" },
+  meeting_booked: { label: "Meeting Booked", color: "#f59e0b" },
+  meeting_missed: { label: "Meeting Missed", color: "#ef4444" },
+  qualified: { label: "Qualified", color: "#06b6d4" },
+  disqualified: { label: "Disqualified", color: "#ef4444" },
   client_engaged: { label: "Client Engaged", color: "#3b82f6" },
   in_process: { label: "In Process", color: "#8b5cf6" },
   closedwon: { label: "Closed Won", color: "#22c55e" },
-  closedlost: { label: "Closed Lost", color: "#ef4444" },
+  // Legacy aliases so existing DB rows still render correctly
+  new_lead: { label: "Lead Submitted", color: "#6b7280" },
+  no_consultation: { label: "Meeting Missed", color: "#ef4444" },
+  consultation_booked: { label: "Meeting Booked", color: "#f59e0b" },
+  client_no_show: { label: "Meeting Missed", color: "#ef4444" },
+  client_qualified: { label: "Qualified", color: "#06b6d4" },
+  closedlost: { label: "Disqualified", color: "#ef4444" },
 };
 
 // ─── COMMISSION STATUSES ─────────────────────────────────────────────────────

@@ -65,32 +65,32 @@ const ALLOWED_EVENTS = new Set([
  * referrals), and only `externalStage` changes.
  */
 const INTERNAL_STAGES = [
-  "new_lead",
-  "no_consultation",
-  "consultation_booked",
-  "client_no_show",
-  "client_qualified",
+  "lead_submitted",
+  "meeting_booked",
+  "meeting_missed",
+  "qualified",
+  "disqualified",
   "client_engaged",
   "in_process",
   "closedwon",
-  "closedlost",
 ] as const;
 
-// Frost Law / HubSpot pipeline stage IDs (numeric). Map each to an internal
-// enum value. If HubSpot renames a stage in-place their ID stays the same, so
-// this map is a stable contract until they rebuild the pipeline.
+// HubSpot pipeline stage IDs (numeric). Map each to an internal stage.
+// If HubSpot renames a stage in-place their ID stays the same, so this
+// map is a stable contract until they rebuild the pipeline.
 const HUBSPOT_STAGE_MAP: Record<string, string> = {
-  "3468521172": "consultation_booked", // Meeting Booked
-  "3467318997": "client_no_show",      // Meeting Missed
-  "3468521174": "client_qualified",    // Qualified
-  "3468521175": "closedlost",          // Disqualified (closedLostReason = "disqualified")
+  "3468521171": "lead_submitted",   // Lead Submitted
+  "3468521172": "meeting_booked",   // Meeting Booked
+  "3467318997": "meeting_missed",   // Meeting Missed
+  "3468521174": "qualified",        // Qualified
+  "3468521175": "disqualified",     // Disqualified
 };
 
 /**
  * Normalize an incoming stage string to look up against internal values.
- * Lowercases, strips spaces/hyphens/underscores. So "Closed Won",
- * "closed_won", "closed-won", "CLOSEDWON" all collapse to "closedwon"
- * which maps to the internal "closedwon" value.
+ * Lowercases, strips spaces/hyphens/underscores. "Closed Won" /
+ * "closed_won" / "CLOSEDWON" all collapse to "closedwon" which maps
+ * to our "client_engaged" (HubSpot's closed-won = client signed).
  */
 function normalizeStage(s: string): string {
   return String(s).toLowerCase().replace(/[\s\-_]/g, "");
@@ -105,30 +105,41 @@ const STAGE_MAP: Record<string, string> = (() => {
   for (const s of INTERNAL_STAGES) {
     m[normalizeStage(s)] = s;
   }
-  // Common synonyms Frost Law or CRM systems might send that don't match
-  // our internal names 1:1. Add more as we see them in real traffic.
-  m["won"] = "closedwon";
-  m["closed"] = "closedwon";
-  m["lost"] = "closedlost";
-  m["nocc"] = "no_consultation";
-  m["noconsult"] = "no_consultation";
-  m["ccbooked"] = "consultation_booked";
-  m["consultbooked"] = "consultation_booked";
-  m["noshow"] = "client_no_show";
+  // HubSpot's "closedwon" = client signed. Maps to our client_engaged,
+  // NOT our internal closedwon (refund received + commissions payable).
+  m["closedwon"] = "client_engaged";
+  m["won"] = "client_engaged";
+  m["closed"] = "client_engaged";
+  m["lost"] = "disqualified";
+  m["closedlost"] = "disqualified";
+  m["newlead"] = "lead_submitted";
+  m["new_lead"] = "lead_submitted";
+  m["consultationbooked"] = "meeting_booked";
+  m["ccbooked"] = "meeting_booked";
+  m["consultbooked"] = "meeting_booked";
+  m["clientnoshow"] = "meeting_missed";
+  m["noshow"] = "meeting_missed";
+  m["clientqualified"] = "qualified";
+  m["noconsultation"] = "meeting_missed";
+  m["nocc"] = "meeting_missed";
+  m["noconsult"] = "meeting_missed";
   m["engaged"] = "client_engaged";
   m["inprogress"] = "in_process";
   return m;
 })();
 
 /**
- * Resolve an external stage string to an internal enum value, or null if
- * no match. Exported via the closure — used only inside PATCH.
+ * Resolve an external stage string to an internal stage. Tries HubSpot
+ * numeric IDs first, then normalizes against the synonym map. If no
+ * match, passes the value through as-is (lowercased, trimmed) so
+ * unknown stages still land on the deal row.
  */
-function resolveInternalStage(external: string): string | null {
-  // HubSpot numeric pipeline stage IDs — direct map wins, no normalization.
-  const asNumericId = String(external).trim();
-  if (HUBSPOT_STAGE_MAP[asNumericId]) return HUBSPOT_STAGE_MAP[asNumericId];
-  return STAGE_MAP[normalizeStage(external)] ?? null;
+function resolveInternalStage(external: string): string {
+  const trimmed = String(external).trim();
+  if (HUBSPOT_STAGE_MAP[trimmed]) return HUBSPOT_STAGE_MAP[trimmed];
+  const normalized = normalizeStage(trimmed);
+  if (STAGE_MAP[normalized]) return STAGE_MAP[normalized];
+  return trimmed.toLowerCase();
 }
 
 // ─── Shared in-memory rate-limit store (per serverless instance) ───────────
@@ -596,13 +607,11 @@ async function postHandler(req: NextRequest): Promise<Response> {
 
     // Resolve the internal stage NOW from the external marker so we can set
     // Deal.stage at creation time for HubSpot-originated rows. Falls back to
-    // "new_lead" when no match (preserves existing behavior for untagged POSTs).
+    // "lead_submitted" when no stage provided.
     const resolvedStage = externalStage ? resolveInternalStage(externalStage) : null;
-    const initialStage = resolvedStage || "new_lead";
+    const initialStage = resolvedStage || "lead_submitted";
     const initialClosedLostReason =
-      resolvedStage === "closedlost" && String(externalStage).trim() === "3468521175"
-        ? "disqualified"
-        : null;
+      resolvedStage === "disqualified" ? "disqualified" : null;
 
     // Consultation scheduling
     const consultBookedDate = get(
@@ -1024,10 +1033,10 @@ async function patchHandler(req: NextRequest): Promise<Response> {
     const consultTime = pickStr("consult_booked_time", "consultBookedTime", "consultation_time", "consultationTime", "consult_time", "meeting_time", "meetingTime");
     if (consultTime) data.consultBookedTime = consultTime;
 
-    // Close date (if stage is closedwon or closedlost). Uses the internal
+    // Close date (if stage is closedwon or disqualified). Uses the internal
     // stage value we just resolved via STAGE_MAP, so "Closed Won" /
     // "closed-won" / "won" all stamp the close date correctly.
-    if (data.stage === "closedwon" || data.stage === "closedlost") {
+    if (data.stage === "closedwon" || data.stage === "disqualified") {
       if (!deal.closeDate) data.closeDate = new Date();
     }
 
@@ -1394,7 +1403,7 @@ async function patchHandler(req: NextRequest): Promise<Response> {
         const newStage = data.stage;
         fireWorkflowTrigger("deal.stage_changed", { deal: updated, previousStage, newStage }).catch(() => {});
         if (newStage === "closedwon") fireWorkflowTrigger("deal.closed_won", { deal: updated }).catch(() => {});
-        if (newStage === "closedlost") fireWorkflowTrigger("deal.closed_lost", { deal: updated }).catch(() => {});
+        if (newStage === "disqualified") fireWorkflowTrigger("deal.closed_lost", { deal: updated }).catch(() => {});
       }).catch(() => {});
     }
 

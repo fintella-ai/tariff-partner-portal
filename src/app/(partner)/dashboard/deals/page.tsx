@@ -254,14 +254,14 @@ export default function DealsPage() {
 
 /* ── Deal stages for tracker ── */
 const PIPELINE_STAGES = [
-  "new_lead", "no_consultation", "consultation_booked", "client_no_show",
-  "client_engaged", "in_process", "closedwon", "closedlost",
+  "lead_submitted", "meeting_booked", "meeting_missed", "qualified",
+  "disqualified", "client_engaged", "in_process", "closedwon",
 ];
 
 /* ── Deal Detail Component (read-only) ── */
 function DealDetail({ deal, onSupport }: { deal: any; onSupport: () => void }) {
   const currentIdx = PIPELINE_STAGES.indexOf(deal.stage);
-  const isClosed = deal.stage === "closedwon" || deal.stage === "closedlost";
+  const isClosed = deal.stage === "closedwon" || deal.stage === "disqualified" || deal.stage === "closedlost";
 
   return (
     <div className="px-4 sm:px-6 py-5 bg-[var(--app-card-bg)] border-b border-[var(--app-border)]">
@@ -275,12 +275,12 @@ function DealDetail({ deal, onSupport }: { deal: any; onSupport: () => void }) {
       <div className="mb-5">
         <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-3">Deal Progress</div>
         <div className="flex items-center gap-1 overflow-x-auto pb-2">
-          {PIPELINE_STAGES.filter((s) => s !== "closedlost" || deal.stage === "closedlost").map((stage, i) => {
+          {PIPELINE_STAGES.filter((s) => s !== "disqualified" || deal.stage === "disqualified" || deal.stage === "closedlost").map((stage, i) => {
             const label = STAGE_LABELS[stage]?.label || stage;
             const isActive = stage === deal.stage;
             const isPast = currentIdx >= 0 && i < currentIdx && !isClosed;
             const isWon = deal.stage === "closedwon" && stage === "closedwon";
-            const isLost = deal.stage === "closedlost" && stage === "closedlost";
+            const isLost = (deal.stage === "disqualified" || deal.stage === "closedlost") && (stage === "disqualified" || stage === "closedlost");
 
             return (
               <div key={stage} className="flex items-center gap-1 shrink-0">

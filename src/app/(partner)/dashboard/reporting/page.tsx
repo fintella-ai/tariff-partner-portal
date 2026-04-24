@@ -235,7 +235,7 @@ export default function PartnerReportingPage() {
   const l2Paid = downlineDeals.filter((d) => d.l2CommissionStatus === "paid").reduce((s, d) => s + Number(d.l2CommissionAmount || 0), 0);
   const l2Pending = totalL2 - l2Paid;
   const closedWon = allDeals.filter((d) => d.stage === "closedwon" || d.stage === "closed_won").length;
-  const closedLost = allDeals.filter((d) => d.stage === "closedlost" || d.stage === "closed_lost").length;
+  const closedLost = allDeals.filter((d) => d.stage === "disqualified" || d.stage === "closedlost" || d.stage === "closed_lost").length;
 
   const inputClass = "font-body text-[12px] bg-[var(--app-input-bg)] border border-[var(--app-input-border)] text-[var(--app-input-text)] rounded-lg px-3 py-2 min-h-[40px]";
 

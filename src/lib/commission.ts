@@ -28,10 +28,10 @@ export function resolveCommissionStatus(
   paymentReceivedAt: Date | null | undefined,
 ): "projected" | "pending_payment" | "due" | "lost" | null {
   if (!stage) return null;
-  if (stage === "closedlost") return "lost";
+  if (stage === "disqualified" || stage === "closedlost") return "lost";
   if (stage === "closedwon") return paymentReceivedAt ? "due" : "pending_payment";
   if (stage === "client_engaged" || stage === "in_process") return "projected";
-  return null; // pre-engagement stages — no commission row
+  return null;
 }
 
 // ─── Feature flag: sliding-window vs legacy waterfall ─────────────────────

@@ -257,7 +257,7 @@ export default function RevenuePage() {
   const filtered = useMemo(() => {
     let base = deals.filter((d) => {
       if (filter === "closedwon") return d.stage === "closedwon";
-      if (filter === "pipeline") return d.stage !== "closedwon" && d.stage !== "closedlost";
+      if (filter === "pipeline") return d.stage !== "closedwon" && d.stage !== "disqualified" && d.stage !== "closedlost";
       return true;
     });
 
@@ -316,7 +316,7 @@ export default function RevenuePage() {
 
   // ── Revenue calculations ──────────────────────────────────────────────
   const closedWonDeals = deals.filter((d) => d.stage === "closedwon");
-  const pipelineDeals = deals.filter((d) => d.stage !== "closedwon" && d.stage !== "closedlost");
+  const pipelineDeals = deals.filter((d) => d.stage !== "closedwon" && d.stage !== "disqualified" && d.stage !== "closedlost");
 
   // Closed Won (realized revenue) — stage-aware refund, all three tiers.
   const totalDealAmountWon = closedWonDeals.reduce((sum, d) => sum + stageAwareRefund(d), 0);
@@ -664,14 +664,14 @@ export default function RevenuePage() {
                 <label className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-1 block">Stage</label>
                 <select value={filterStage} onChange={(e) => setFilterStage(e.target.value)} className="w-full theme-input rounded-lg px-3 py-2 font-body text-[12px] outline-none">
                   <option value="">All Stages</option>
-                  <option value="new_lead">New Lead</option>
-                  <option value="no_consultation">No Consultation Booked</option>
-                  <option value="consultation_booked">Consultation Booked</option>
-                  <option value="client_no_show">Client No Show</option>
+                  <option value="lead_submitted">Lead Submitted</option>
+                  <option value="meeting_booked">Meeting Booked</option>
+                  <option value="meeting_missed">Meeting Missed</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="disqualified">Disqualified</option>
                   <option value="client_engaged">Client Engaged</option>
                   <option value="in_process">In Process</option>
                   <option value="closedwon">Closed Won</option>
-                  <option value="closedlost">Closed Lost</option>
                 </select>
               </div>
               <div>

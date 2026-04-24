@@ -91,18 +91,18 @@ const POST_PRESETS = [
       service_of_interest: "Tariff Refund Support", city: "Baltimore", state: "MD",
       imports_goods: "Yes", import_countries: "China, Vietnam",
       annual_import_value: "$5M - $10M", importer_of_record: "Acme Imports LLC",
-      affiliate_notes: "Referred via weekly networking event. Strong fit.", stage: "new_lead",
+      affiliate_notes: "Referred via weekly networking event. Strong fit.", stage: "lead_submitted",
     },
   },
   {
-    label: "Consultation booked",
-    description: "Lead with scheduled consult",
+    label: "Meeting booked",
+    description: "Lead with scheduled meeting",
     payload: {
       utm_content: "DEMO01", first_name: "Maria", last_name: "Garcia",
       email: "maria@globalmanuf.com", legal_entity_name: "Global Manufacturing Co",
       service_of_interest: "Tariff Refund Support", city: "Los Angeles", state: "CA",
       imports_goods: "Yes", annual_import_value: "$10M - $25M",
-      stage: "consultation_booked", consult_booked_date: "2026-05-15", consult_booked_time: "14:00",
+      stage: "meeting_booked", consult_booked_date: "2026-05-15", consult_booked_time: "14:00",
     },
   },
   {
@@ -118,9 +118,9 @@ const POST_PRESETS = [
 
 const PATCH_PRESETS = [
   {
-    label: "Move to consultation_booked",
-    description: "Update stage + add consult date",
-    payload: { dealId: "REPLACE_WITH_DEAL_ID", stage: "consultation_booked", consult_booked_date: "2026-05-15", consult_booked_time: "14:00" },
+    label: "Move to meeting_booked",
+    description: "Update stage + add meeting date",
+    payload: { dealId: "REPLACE_WITH_DEAL_ID", stage: "meeting_booked", consult_booked_date: "2026-05-15", consult_booked_time: "14:00" },
   },
   {
     label: "Move to client_engaged",
@@ -133,9 +133,9 @@ const PATCH_PRESETS = [
     payload: { dealId: "REPLACE_WITH_DEAL_ID", stage: "closedwon" },
   },
   {
-    label: "Closed lost",
-    description: "Deal dropped with reason",
-    payload: { dealId: "REPLACE_WITH_DEAL_ID", stage: "closedlost", closed_lost_reason: "Client chose a competitor" },
+    label: "Disqualified",
+    description: "Deal disqualified with reason",
+    payload: { dealId: "REPLACE_WITH_DEAL_ID", stage: "disqualified", closed_lost_reason: "Client chose a competitor" },
   },
 ];
 

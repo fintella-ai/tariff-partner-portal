@@ -100,14 +100,14 @@ export default function ActivityTimeline({ refreshKey }: { refreshKey: number })
             href: `/admin/deals?deal=${d.id}`,
             amount: d.firmFeeAmount || null,
           });
-        } else if (d.stage === "closedlost") {
+        } else if (d.stage === "disqualified" || d.stage === "closedlost") {
           merged.push({
             id: `deal_closed_lost:${d.id}`,
             kind: "deal_closed_lost",
             at: d.updatedAt,
             partnerCode: d.partnerCode || null,
             partnerName: d.submittingPartnerName || d.partnerName || null,
-            label: `Closed lost: ${d.dealName}`,
+            label: `Disqualified: ${d.dealName}`,
             href: `/admin/deals?deal=${d.id}`,
           });
         }

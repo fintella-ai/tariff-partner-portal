@@ -13,14 +13,14 @@ import { isStarSuperAdminEmail } from "@/lib/starSuperAdmin";
 
 const STAGES = [
   { value: "all", label: "All Stages" },
-  { value: "new_lead", label: "New Lead" },
-  { value: "no_consultation", label: "No Consultation Booked" },
-  { value: "consultation_booked", label: "Consultation Booked" },
-  { value: "client_no_show", label: "Client No Show" },
+  { value: "lead_submitted", label: "Lead Submitted" },
+  { value: "meeting_booked", label: "Meeting Booked" },
+  { value: "meeting_missed", label: "Meeting Missed" },
+  { value: "qualified", label: "Qualified" },
+  { value: "disqualified", label: "Disqualified" },
   { value: "client_engaged", label: "Client Engaged" },
   { value: "in_process", label: "In Process" },
   { value: "closedwon", label: "Closed Won" },
-  { value: "closedlost", label: "Closed Lost" },
 ];
 
 const COMMISSION_STATUSES = ["pending", "due", "approved", "paid"];

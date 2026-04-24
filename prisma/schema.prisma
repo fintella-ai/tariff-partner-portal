@@ -739,7 +739,7 @@ model Deal {
   // keyed on this value.
   epLevel1              String?
   // Deal tracking
-  stage                 String    @default("new_lead")
+  stage                 String    @default("lead_submitted")
   externalStage         String?   // raw deal stage from external system (Frost Law / HubSpot)
   externalDealId        String?   @unique  // network-assigned ID (HubSpot's hs_object_id, or outbound network's returned ID)
   rawPayload            String?            // last raw inbound payload JSON (failsafe for fields we didn't map to columns)
