@@ -39,7 +39,10 @@ model Partner {
   tier                  String   @default("l1")  // "l1", "l2", "l3"
   commissionRate        Float    @default(0.25)   // rate this partner earns on their direct deals (% of firm fee)
   recruitedViaInvite    String?  // token from RecruitmentInvite that created this partner
-  // L3 recruitment flag — admin-controlled gate that lets this partner generate L3 invite links
+  // DEPRECATED (Option B Phase 6): L3 recruitment gate was removed; every
+  // partner whose rate leaves room below them can recruit. Column retained
+  // for rollback safety + read-only compatibility with any legacy tooling.
+  // Safe to drop in a future migration when no tooling reads it.
   l3Enabled             Boolean  @default(false)
   // Payout Downline Partners flag — controls whether Fintella pays L2/L3 downline directly (true) or the L1 receives full rate (false)
   payoutDownlineEnabled Boolean  @default(false)
@@ -493,6 +496,9 @@ model PortalSettings {
   l1Rate             Float   @default(0.25) // L1 direct deal rate
   l2Rate             Float   @default(0.05) // legacy default
   l3Rate             Float   @default(0)    // legacy default
+  // DEPRECATED (Option B Phase 6): the global L3 gate is gone; Phase 2
+  // onward allows every L2 to recruit L3. Column retained for rollback
+  // safety; safe to drop in a future migration.
   l3Enabled          Boolean @default(false)
   // Agreement templates (SignWell template IDs per rate)
   // Master SignWell template — one template for every standard partner

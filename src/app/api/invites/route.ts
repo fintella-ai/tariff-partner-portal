@@ -28,17 +28,14 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    // Check global L3 setting. An L2 can recruit L3 if EITHER the
-    // portal-wide flag is on OR this specific partner has their
-    // per-partner Partner.l3Enabled flag flipped (admin-granted
-    // override). Without the per-partner path, older partners who were
-    // manually enabled for L3 recruiting wouldn't see invite links
-    // because the global toggle was still off.
-    const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
-    const globalL3 = settings?.l3Enabled || false;
-    const partnerL3 = partner.l3Enabled || false;
-    const effectiveL3 = globalL3 || partnerL3;
-
+    // Option B Phase 6: the L3 gate is gone. Any partner whose rate
+    // leaves room below them (Phase 2 validation) can recruit — no
+    // per-partner `Partner.l3Enabled` or portal-level
+    // `PortalSettings.l3Enabled` toggle consulted. We still emit
+    // `l3Enabled: true` on the GET so any cached partner-side client
+    // that was reading the field sees a permissive value; the field
+    // will be dropped from the response entirely once all clients
+    // stop reading it.
     return NextResponse.json({
       invites,
       partner: {
@@ -46,7 +43,7 @@ export async function GET() {
         commissionRate: partner.commissionRate,
         allowedDownlineRates: getAllowedDownlineRates(partner.commissionRate),
       },
-      l3Enabled: effectiveL3,
+      l3Enabled: true,
       maxRate: MAX_COMMISSION_RATE,
     });
   } catch {

@@ -170,7 +170,8 @@ export default function PartnerDetailPage() {
   const [bankState, setBankState] = useState("");
   const [bankZip, setBankZip] = useState("");
 
-  const [l3Enabled, setL3Enabled] = useState(false);
+  // Note: Partner.l3Enabled is inert post-Option B Phase 6. No client
+  // state needed — the column is no longer read or written by this page.
   // Editable tier + commission rate, super-admin only. Seeded from the
   // fetched partner row; sent in the PUT payload when they change.
   const [tier, setTier] = useState<"l1" | "l2" | "l3">("l1");
@@ -232,7 +233,7 @@ export default function PartnerDetailPage() {
       setBankCity(prof?.bankCity || "");
       setBankState(prof?.bankState || "");
       setBankZip(prof?.bankZip || "");
-      setL3Enabled(p.l3Enabled);
+      // p.l3Enabled no longer hydrated — Phase 6 inert field
       setTier(((p.tier || "l1").toLowerCase() as "l1" | "l2" | "l3"));
       setCommissionRate(typeof p.commissionRate === "number" ? p.commissionRate : 0.25);
     } catch {} finally {
@@ -310,7 +311,9 @@ export default function PartnerDetailPage() {
         payoutMethod, bankName, accountType, routingNumber,
         accountNumber, beneficiaryName,
         bankStreet, bankStreet2, bankCity, bankState, bankZip,
-        l3Enabled,
+        // Option B Phase 6: l3Enabled is inert — deliberately NOT sent in
+        // the save body so existing column values aren't overwritten
+        // on every save. Column stays in the DB for rollback safety.
         // Super-admin-only fields — the API rejects these for other
         // roles, but sending them unconditionally keeps the client
         // logic simple. The server is the source of truth.
@@ -1112,7 +1115,7 @@ export default function PartnerDetailPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           {/* Tier — editable for super admins (Save commits) */}
           <div className="p-4 rounded-lg bg-brand-gold/[0.06] border border-brand-gold/20">
             <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Partner Tier</div>
@@ -1158,24 +1161,12 @@ export default function PartnerDetailPage() {
             <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-0.5">of firm fee on direct deals</div>
           </div>
 
-          {/* L3 toggle */}
-          <div className="p-4 rounded-lg" style={{ background: "var(--app-card-bg)", border: "1px solid var(--app-border)" }}>
-            <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">L3 Recruitment</div>
-            <div className="flex items-center gap-3 mt-1">
-              <button
-                onClick={() => setL3Enabled(!l3Enabled)}
-                className={`relative inline-flex h-8 w-14 items-center rounded-full shrink-0 transition-colors ${l3Enabled ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
-              >
-                <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${l3Enabled ? "translate-x-7" : "translate-x-1.5"}`} />
-              </button>
-              <span className={`font-body text-[13px] font-medium ${l3Enabled ? "text-green-400" : "text-[var(--app-text-muted)]"}`}>
-                {l3Enabled ? "Enabled" : "Disabled"}
-              </span>
-            </div>
-            <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-2">
-              {l3Enabled ? "This partner can recruit L3 sub-partners" : "Enable to allow this partner to recruit L3 sub-partners"}
-            </div>
-          </div>
+          {/* L3 toggle removed in Option B Phase 6 — the per-partner flag
+              is no longer consulted anywhere. Every partner whose rate
+              leaves room below them can recruit to depth 1 and their
+              downline can keep recruiting as the chain grows. The
+              Partner.l3Enabled column stays in the DB for rollback
+              safety but is inert. */}
         </div>
 
         <div className="p-3 rounded-lg bg-brand-gold/[0.04] border border-brand-gold/10">
