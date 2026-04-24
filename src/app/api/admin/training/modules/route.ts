@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { bumpKnowledgeVersion } from "@/lib/ai-knowledge-version";
 
 /**
  * GET /api/admin/training/modules
@@ -82,6 +83,11 @@ export async function POST(req: NextRequest) {
         published,
       },
     });
+
+    // Invalidate Tara's cached system prompt so the next AI request rebuilds it.
+    await bumpKnowledgeVersion().catch((e) =>
+      console.error("[ai-knowledge] bumpKnowledgeVersion failed", e)
+    );
 
     return NextResponse.json({ module }, { status: 201 });
   } catch {

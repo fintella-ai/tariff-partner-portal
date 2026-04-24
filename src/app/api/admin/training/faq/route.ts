@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { bumpKnowledgeVersion } from "@/lib/ai-knowledge-version";
 
 /**
  * GET /api/admin/training/faq
@@ -79,6 +80,10 @@ export async function POST(req: NextRequest) {
         published,
       },
     });
+
+    await bumpKnowledgeVersion().catch((e) =>
+      console.error("[ai-knowledge] bumpKnowledgeVersion failed", e)
+    );
 
     return NextResponse.json({ faq }, { status: 201 });
   } catch {

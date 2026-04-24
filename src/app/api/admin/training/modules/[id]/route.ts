@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { bumpKnowledgeVersion } from "@/lib/ai-knowledge-version";
 
 /**
  * PUT /api/admin/training/modules/[id]
@@ -50,6 +51,10 @@ export async function PUT(
       data: updateData,
     });
 
+    await bumpKnowledgeVersion().catch((e) =>
+      console.error("[ai-knowledge] bumpKnowledgeVersion failed", e)
+    );
+
     return NextResponse.json({ module });
   } catch {
     return NextResponse.json(
@@ -84,6 +89,10 @@ export async function DELETE(
     await prisma.trainingModule.delete({
       where: { id },
     });
+
+    await bumpKnowledgeVersion().catch((e) =>
+      console.error("[ai-knowledge] bumpKnowledgeVersion failed", e)
+    );
 
     return NextResponse.json({ success: true });
   } catch {
