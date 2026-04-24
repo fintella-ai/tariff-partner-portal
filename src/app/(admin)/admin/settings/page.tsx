@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import { getPermissions } from "@/lib/permissions";
 import { reconcileNavOrder } from "@/lib/reconcileNavOrder";
 import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
+import PortalThemePicker from "@/components/admin/PortalThemePicker";
+import type { ThemeCustomizations } from "@/lib/portalThemes";
 
 /**
  * Compress an image file to a smaller base64 data URL.
@@ -120,10 +122,11 @@ interface ReferralOpp {
   highlighted: boolean;
 }
 
-type TabId = "branding" | "navigation" | "homepage" | "commissions" | "agreements" | "integrations";
+type TabId = "branding" | "themes" | "navigation" | "homepage" | "commissions" | "agreements" | "integrations";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "branding", label: "Branding" },
+  { id: "themes", label: "Themes" },
   { id: "navigation", label: "Navigation" },
   { id: "homepage", label: "Home Page" },
   { id: "commissions", label: "Commissions" },
@@ -172,6 +175,11 @@ export default function SettingsPage() {
   const [supportEmail, setSupportEmail] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [faviconUrl, setFaviconUrl] = useState("");
+
+  // Active portal theme — "default" preserves current portal appearance
+  // exactly. Any other value applies a preset from src/lib/portalThemes.ts.
+  const [activeThemeId, setActiveThemeId] = useState("default");
+  const [themeCustomizations, setThemeCustomizationsDraft] = useState<ThemeCustomizations>({});
 
   // Commissions
   const [l1Rate, setL1Rate] = useState("25");
@@ -286,6 +294,13 @@ export default function SettingsPage() {
       setSupportEmail(settings.supportEmail || "");
       setLogoUrl(settings.logoUrl || "");
       setFaviconUrl(settings.faviconUrl || "");
+      setActiveThemeId(settings.activeThemeId || "default");
+      try {
+        const parsed = JSON.parse(settings.themeCustomizations || "{}") as ThemeCustomizations;
+        setThemeCustomizationsDraft(parsed);
+      } catch {
+        setThemeCustomizationsDraft({});
+      }
 
       setL1Rate(String(Math.round(settings.l1Rate * 100)));
       setL2Rate(String(Math.round(settings.l2Rate * 100)));
@@ -459,6 +474,8 @@ export default function SettingsPage() {
         homeHiddenModules: JSON.stringify(Array.from(hiddenModules)),
         homeModuleOrder: JSON.stringify(moduleOrder),
         homeModuleLayout: JSON.stringify(moduleLayout),
+        activeThemeId,
+        themeCustomizations: JSON.stringify(themeCustomizations),
       };
 
       console.log("[settings] Saving — liveChatEnabled:", body.liveChatEnabled, "callRecordingEnabled:", body.callRecordingEnabled);
@@ -785,6 +802,16 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ═══ THEMES TAB ═══ */}
+      {tab === "themes" && (
+        <PortalThemePicker
+          selectedThemeId={activeThemeId}
+          onSelect={setActiveThemeId}
+          customizations={themeCustomizations}
+          onCustomizationsChange={setThemeCustomizationsDraft}
+        />
       )}
 
       {/* ═══ NAVIGATION TAB ═══ */}

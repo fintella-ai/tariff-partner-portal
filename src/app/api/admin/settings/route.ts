@@ -134,6 +134,8 @@ export async function PUT(req: NextRequest) {
     if (body.homeModuleOrder !== undefined) data.homeModuleOrder = body.homeModuleOrder;
     if (body.homeModuleLayout !== undefined) data.homeModuleLayout = body.homeModuleLayout;
     if (body.liveWeeklyBannerUrl !== undefined) data.liveWeeklyBannerUrl = body.liveWeeklyBannerUrl;
+    if (body.activeThemeId !== undefined) data.activeThemeId = body.activeThemeId;
+    if (body.themeCustomizations !== undefined) data.themeCustomizations = body.themeCustomizations;
 
     // Upsert — create if not exists
     const settings = await prisma.portalSettings.upsert({

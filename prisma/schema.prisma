@@ -575,6 +575,17 @@ model PortalSettings {
   // Live Weekly Call page. base64 data URL (same storage as logoUrl).
   // Empty string = no banner, page renders without it.
   liveWeeklyBannerUrl    String  @default("")
+  // Active portal theme id — matches one of the presets in
+  // src/lib/portalThemes.ts. "default" (which is the value at schema
+  // bootstrap) is a no-op override that preserves the exact globals.css
+  // baseline, so rollback from any other theme is guaranteed-safe.
+  activeThemeId          String  @default("default")
+  // Per-admin theme customizations layered on top of the base preset.
+  // JSON shape: { accentColor?: string, fontFamily?: string,
+  // buttonStyle?: "rounded"|"pill"|"square" }. Empty object = no extra
+  // overrides. Applied last in the cascade so they win over both
+  // globals.css and the preset's own overrides.
+  themeCustomizations    String  @default("{}")
   // Timestamps
   updatedAt DateTime @updatedAt
 }
