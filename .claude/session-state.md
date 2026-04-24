@@ -1,78 +1,84 @@
 # Session State
 
-🕒 Last updated: 2026-04-24 — **PartnerOS AI Phase 1 + 2a + 2b + 2c MVP + Sentry tune SHIPPED to main.** Phase 1 (PRs #530/#531/#532), Phase 2a (PR #533), Phase 2b (PR #534). Phase 2c MVP on branch `claude/partneros-phase-2c-whisper` — audio-only Whisper transcription on upload (non-fatal, demo-gated via OPENAI_API_KEY). Phase 2c.1 deferred: video transcription (needs ffmpeg), async queue for >25MB files, weekly-call recording ingest. Phase 2d (polish — glossary tooltips across portal, per-item opt-out) + Phase 3 (Ollie + escalation ladder + admin inboxes + bug triage) queued. Earlier session ships: #521-#529 Getting-Started end-to-end + admin Automations + SendGrid engagement stats; #389-#402 partner home overhaul; 2026-04-23 had 21 PRs (Google Calendar OAuth, Jitsi embed, workflow editor, reminder triggers, orphan cleanup).
+🕒 Last updated: 2026-04-24 late evening — **Getting Started content buildout + AI video generation + admin icon fixes SHIPPED.** 8 PRs this session (#576–#581). Full partner playbook (20+ pages) absorbed into 11 training modules. Ultraplan delivered AI video generation from PDFs. Admin sidebar icons unified. Notifications added to partner nav editor.
 
 ## 🌿 Git state
-- **main HEAD:** `bc0bd5f` — feat(sendgrid): event webhook + per-template engagement stats (#529)
+- **main HEAD:** `ea1d788` — fix(settings): add Notifications to partner nav editor registry (#581)
 - **origin/main:** in sync
-- **Active branch:** `claude/partneros-phase-1-persona-split` (9 commits ahead of main; local only, not pushed)
-- **Sibling branch:** `claude/partneros-ai-roadmap-design` (spec + plan docs only; 2 commits ahead of main; local only, not pushed)
-- **Working tree:** clean
-- **Open non-dependabot PRs on origin:** 0 (#357 still DRAFT — flagged, don't merge)
+- **Working tree:** clean, on main
+- **No active feature branches**
 
-## ✅ This session — PartnerOS AI brainstorm → spec → plan → Phase 1 impl
+## ✅ What shipped this session (8 PRs: #576–#581)
 
-**Brainstorm → spec (branch `claude/partneros-ai-roadmap-design`):**
-- Locked cast: **Finn** (male generalist) · **Stella** (female generalist) · **Tara** (product SME, phase 2) · **Ollie** (support + escalation + bug triage, phase 3).
-- Locked multi-inbox routing: `support@` / `legal@` / `admin@` / `accounting@` each with their own Google Calendar OAuth + category-based email routing. `support@` is the universal outbound From for AI-initiated email.
-- Locked escalation ladder: live text chat (auto-transfer if admin online) → live phone transfer (ask first, Twilio) → 15-min scheduled call on the inbox's calendar → ticket. Plus IT emergency call chain: confirmed portal bug → Twilio outbound call from Fintella number TO super admin's personal cell.
-- 981-line design spec + 1586-line Phase 1 plan committed on the design branch.
+### Getting Started Content Buildout (#576)
+- Enhanced all 9 Getting Started checklist step descriptions with detailed, instructional content
+- Built new `GettingStartedGuide` component — 9 expandable accordion cards with instructions, tips, locations
+- Added "Need help?" resource cards (Training Library, Weekly Recordings, Contact Support)
+- Improved expectations markdown with "How you earn" section
+- **Seeded 11 real training modules** from actual partner playbook PDFs:
+  1. Welcome to Your Partner Portal (5 min)
+  2. Understanding IEEPA Tariff Recovery (15 min) — tariff waves, $300K threshold, Tier 1/Tier 2, CAPE
+  3. How to Submit a Client Referral (6 min) — two critical process notes
+  4. How Commissions Work (8 min)
+  5. Building Your Downline Network (10 min)
+  6. Navigating Your Reporting Dashboard (7 min)
+  7. Qualifying Prospects — Discovery Questions (12 min) — Tier 1 + Tier 2 flows
+  8. Starting the Conversation (12 min) — 6 pain points, 3 openers, 7 objection handlers
+  9. What Happens After You Refer (10 min) — 12-step service, compliance review
+  10. Key Terms Every Partner Should Know (8 min) — 16 terms including CAPE
+  11. Using Urgency in Client Conversations (6 min) — 3 layers with exact language
+- Full playbook content inventory saved to memory for redaction review
 
-**Phase 1 impl (branch `claude/partneros-phase-1-persona-split`, 9 commits):**
-- `f59011e` schema — Partner/User.preferredGeneralist + AiMessage.speakerPersona/handoffMetadata/attachments.
-- `db5f48b` avatars — Finn gold (#c4a050) + Stella rose (#d8a5a5) abstract geometric SVGs under public/ai-avatars/.
-- `ff001ab` persona registry — src/lib/ai-personas.ts typed records + voice wrapper builder.
-- `1ab6d62` ai.ts threading — generateResponse accepts personaId; cached KNOWLEDGE_BASE stays cache-hittable across personas, only the ~200-token voice wrapper is uncached per turn; /api/ai/chat loads preferredGeneralist, persists speakerPersona; conversation GET includes speakerPersona in select.
-- `e76cf13` components — PersonaAvatar + PersonaPickerModal in src/components/ai/.
-- `9069704` AI assistant page — first-visit picker, persistent banner with Switch link, MessageBubble renders speaker avatar.
-- `6441686` partner settings API — accepts preferredGeneralist with strict finn|stella allowlist.
-- `c3e3c50` settings page — AI Assistant picker card in Communication Preferences tab.
+### Training Markdown Renderer (#577)
+- `TrainingMarkdown` component: `##`/`###` headings, `**bold**`, lists, blockquotes, tables
 
-## 🎯 Queued next
+### AI Video Generation (Ultraplan — #578, #579)
+- `SlidePlayer` component + `ai-video.ts` library + admin Generate Video buttons + `videoScript` schema field
 
-1. **John reviews spec + Phase 1 impl** — then push both branches to origin + open PRs.
-2. **Phase 2 — Product Specialist (Tara) + knowledge ingestion** — next superpowers:writing-plans run once Phase 1 merges. Includes Whisper transcription pipeline for videos / audio / weekly call recordings. ~10 PRs.
-3. **Phase 3 — Support Specialist (Ollie) + escalation ladder + admin-inbox routing + bug triage** — largest phase (~14 PRs).
-4. **Still flagged from earlier sessions:**
-   - MinIO VPS bootstrap → unblocks PR #357 note attachments.
-   - SendGrid Event Webhook wiring in SendGrid dashboard (ops, John).
-   - Optional: enable onboarding_nudge workflow via /admin/automations.
+### Admin Fixes (#580, #581)
+- Gold SVG icons for Applications + Getting Started replacing emoji
+- Notifications added to partner nav editor registry
 
-## 🧠 Context that matters for resuming
+## 🔄 Open PRs
 
-- Phase 1 is **entirely additive** — three nullable schema columns, two new component files, small edits to ai.ts / chat route / settings route / settings page / ai-assistant page. No behavior change for existing partners until they either (a) pick a persona on first AI visit, or (b) switch in Settings → Communication Preferences.
-- DATABASE_URL was not in shell during impl — Vercel build will apply `prisma db push --accept-data-loss` automatically on first deploy. All three new columns are nullable; no data loss.
-- CLAUDE.md line "97/97 static pages" is **stale** — project now builds **177 static pages**. Otherwise CLAUDE.md remains accurate.
-- ESLint config not present locally — `npm run lint` prompts for interactive setup. CI does not enforce lint; `next build` is the authoritative pre-commit check.
-- The persona voice wrapper block is intentionally **not cached** to preserve the shared KNOWLEDGE_BASE cache hit across both personas. Cost impact is trivial (~200 tokens/turn at uncached rate).
-- First-visit modal is **not closable** until the partner picks — `allowClose` prop on `PersonaPickerModal` gates the close button.
-- Mock mode (no `ANTHROPIC_API_KEY`) is persona-aware: the `[Mock Response from Finn/Stella …]` prefix confirms the persona threaded through the API → lib correctly even without a live API key.
+| PR | Title | Status | Action |
+|---|---|---|---|
+| #520 | Strip partner firm names | OPEN | Safe to merge |
+| #562 | Dependabot group (2 patches) | OPEN | Safe to merge |
+| #291 | @sentry/nextjs minor | OPEN | Safe to merge |
+| #287 | postcss patch | OPEN | Safe to merge |
+| #357 | Multi-file attachments | DRAFT | Awaits MinIO — DO NOT merge |
+| #322 | Session checkpoint | OPEN | Stale — can close |
+| #290 | @anthropic-ai/sdk breaking | OPEN | Needs review |
+| #289 | typescript 5→6 MAJOR | OPEN | Needs dedicated session |
+| #288 | next-auth beta bump | OPEN | Needs review |
 
-## 📂 Relevant files for the next task (by priority)
+## 🎯 What's next
 
-### If pushing + opening PRs for Phase 1 design + impl
-- Branch: `claude/partneros-ai-roadmap-design` — docs only (spec + plan)
-- Branch: `claude/partneros-phase-1-persona-split` — code
-- Recommended order: push design branch first (PR body cites spec/plan), then push impl branch (PR body references design PR)
+1. **HeyGen integration** — install skills + CLI for AI avatar video. Needs: API key, avatar identity, script, destination
+2. **Landing page visual builder** (🎯 PRIORITY) — brainstorm first, admin drag-and-drop builder
+3. **Merge safe PRs** — #520, #287, #291, #562
+4. **MinIO VPS** → unblocks PR #357
+5. **Desktop hamburger PR** — held branch
 
-### If starting Phase 2 (Tara + knowledge ingestion)
-- Spec §4 in `docs/superpowers/specs/2026-04-24-partneros-ai-roadmap-design.md`
-- `src/lib/ai-personas.ts` — extend `PERSONAS` to add `tara` + update TypeScript unions
-- `src/lib/ai.ts` — route to Tara's system prompt builder
-- `src/app/api/ai/chat/route.ts` — routing logic + `hand_off` tool-call handling
-- New files: `src/lib/ai-knowledge.ts`, `src/lib/ai-compliance.ts`, `src/lib/transcription.ts`
-- Schema: `TrainingModule.videoTranscript`, `TrainingResource.extractedText/audioTranscript`, `ConferenceSchedule.transcript`, new `TrainingGlossary`, `AiKnowledgeVersion`, `AiTranscriptionJob`
-- Env: `OPENAI_API_KEY` (Whisper, demo-gated)
+## 🧠 Context for resuming
 
-### If starting Phase 3 (Ollie + escalation ladder + inbox routing)
-- Spec §5, §6, §7 in the design doc
-- Schema: User escalation fields, new `AdminInbox` model, new `AiEscalation` model
-- Each rung (live chat, live phone, scheduled call, ticket) is its own sub-task
+- Playbook content genericized — no partner firm names. Inventory in `reference_partner_playbook_content.md` memory
+- Backup point: commit `35cb88c` (pre-ultraplan). Ultraplan diff: `git diff 35cb88c..893b0f5`
+- `npx prisma generate` needed after fresh clone (ultraplan added `videoScript` field)
+- Chrome extension installed on all 13 browser profiles
+- CAPE Portal Phase 1 launched April 20, 2026 — training content may need updates as Phase 2 emerges
 
-## Previous sessions preserved below (condensed)
+## 📂 Key files touched
 
-### 2026-04-22 earlier (13 PRs): Commission system overhaul
-PRs #370–#378. Payout Downline Partners, EP override flat-rate rewrite, full commission round-trip with Undo, per-deal commission rates in admin revenue, stage-aware refund resolver, deal-delete cascade, workflow payload + webhook body template expansion. See `project_fintella_session_apr16_18` memory for details.
-
-## 📌 Dependabot status (5 open, do NOT auto-merge per CLAUDE.md)
-#287 postcss patch · #288 next-auth beta · #289 typescript 6.0 MAJOR · #290 @anthropic-ai/sdk 0.x breaking · #291 @sentry/nextjs minor
+- `src/lib/getting-started.ts` — step descriptions + expectations
+- `src/components/partner/GettingStartedGuide.tsx` — NEW expandable guide
+- `src/app/(partner)/dashboard/getting-started/page.tsx` — rebuilt page
+- `src/app/(partner)/dashboard/training/page.tsx` — markdown renderer + SlidePlayer
+- `src/components/ui/SlidePlayer.tsx` — NEW animated slides (ultraplan)
+- `src/lib/ai-video.ts` — NEW video script generation (ultraplan)
+- `scripts/seed-all.js` — 11 training modules
+- `src/app/(admin)/admin/layout.tsx` — icon map entries
+- `public/icons/applications-inbox.svg` + `getting-started-checklist.svg` — NEW gold icons
+- `src/app/(admin)/admin/settings/page.tsx` — notifications nav item
+- `prisma/schema.prisma` — `videoScript` field (ultraplan)

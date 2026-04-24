@@ -51,6 +51,8 @@ const BUILT_IN_ADMIN_ICONS: Record<string, string> = {
   dev: "/icons/dev-tools.svg",
   features: "/icons/features-lightbulb.svg",
   users: "/icons/users-shield-key.svg",
+  applications: "/icons/applications-inbox.svg",
+  gettingStartedEditor: "/icons/getting-started-checklist.svg",
 };
 
 const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {

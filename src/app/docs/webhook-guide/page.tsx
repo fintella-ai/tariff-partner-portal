@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "Fintella Webhook Integration Guide",
-  description: "Referral webhook integration guide for Frost Law",
+  description: "Referral webhook integration guide for Fintella partner providers",
 };
 
 /**

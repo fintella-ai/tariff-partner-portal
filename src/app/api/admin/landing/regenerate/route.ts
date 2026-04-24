@@ -231,7 +231,7 @@ async function aiAssembly(input: {
 - Slogan: ${input.settings?.firmSlogan || "Fighting for what's owed, reclaiming what's fair."}
 - Active partners: ${input.partnerCount}+
 - Primary product: IEEPA tariff refund recovery for U.S. importers
-- Primary law-firm partners: Frost Law (flagship), Furdock & Foglia Law LLP (co-counsel, refund recovery + collections), ERC Tax Law (partner network)
+- Recovery network: vetted partner providers (trade attorneys, licensed customs brokers, CPAs, project managers)
 - Cross-product opportunities: Tariff refunds, ERC credits, R&D credits, SALT, Litigation recovery
 
 ### Verified market facts (use these — do not invent numbers)
@@ -241,7 +241,7 @@ async function aiAssembly(input: {
 - Strict 180-day protest deadline from the date of liquidation — a hard legal cutoff that creates real urgency
 - Trump administration is publicly pressuring companies to file claims (CNBC, April 21 2026) — this is a tailwind
 - Contingency-fee industry standard: clients pay nothing until their refund arrives
-- Downstream-business theory (Frost Law original angle): breach-of-contract + unjust-enrichment claims available to businesses who didn't import directly but paid the tariff pass-through — this dramatically widens the addressable client pool beyond direct importers
+- Downstream-business theory: breach-of-contract + unjust-enrichment claims available to businesses who didn't import directly but paid the tariff pass-through — this dramatically widens the addressable client pool beyond direct importers
 
 ### Commission structure
 - Total partner commission capped at 25% of firm fee (L1 max)
@@ -306,7 +306,7 @@ ${JSON.stringify(
       },
       lawFirmStrip: {
         prefix: "In partnership with",
-        firms: [{ name: "Frost Law" }, { name: "Furdock & Foglia Law LLP" }, { name: "ERC Tax Law" }],
+        firms: [{ name: "Partner Provider 1" }, { name: "Partner Provider 2" }],
       },
       opportunity: { eyebrow: "string", title: "string", body: "string", stats: [{ headline: "string", sub: "string" }] },
       crossProduct: { eyebrow: "string", title: "string", body: "string", products: [{ icon: "emoji", title: "string", body: "string" }] },

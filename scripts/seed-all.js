@@ -982,6 +982,48 @@ async function main() {
   }
   console.log("✓ Training modules seeded: " + TRAINING_MODULES.length + " modules");
 
+  // ── Training Resources → Module Assignment Fix ─────────────────────
+  // Resources uploaded via admin UI defaulted to a single module. This
+  // maps each resource to its correct module by matching on title
+  // keywords. Only updates moduleId + category; never overwrites
+  // admin-edited titles or descriptions. Runs idempotently on every
+  // build — safe if resources don't exist yet.
+  const RESOURCE_MODULE_MAP = [
+    { titleMatch: "Urgency Sales Guide",             moduleId: "mod-urgency",              category: "sales" },
+    { titleMatch: "Biggest Tariff Refund",            moduleId: "mod-tariff-recovery",      category: "product" },
+    { titleMatch: "Referral Partner Quick Reference",  moduleId: "mod-welcome-portal",       category: "onboarding" },
+    { titleMatch: "Qualifying Question",              moduleId: "mod-qualified-importers",   category: "sales" },
+    { titleMatch: "Opportunity Overview",             moduleId: "mod-tariff-recovery",      category: "product" },
+    { titleMatch: "Best Fit Industries",              moduleId: "mod-qualified-importers",   category: "sales" },
+    { titleMatch: "Targeting the Right Audience",     moduleId: "mod-qualified-importers",   category: "sales" },
+    { titleMatch: "Qualifying the Opportunity",       moduleId: "mod-qualified-importers",   category: "sales" },
+    { titleMatch: "Starting the Conversation",        moduleId: "mod-starting-conversation", category: "sales" },
+    { titleMatch: "Value Add in the Client",          moduleId: "mod-after-referral",        category: "product" },
+    { titleMatch: "Client Process",                   moduleId: "mod-after-referral",        category: "product" },
+    { titleMatch: "Key Terms You Should Know",        moduleId: "mod-key-terms",             category: "product" },
+  ];
+  var resourceFixCount = 0;
+  for (const mapping of RESOURCE_MODULE_MAP) {
+    try {
+      var matched = await prisma.trainingResource.findMany({
+        where: { title: { contains: mapping.titleMatch } },
+        select: { id: true, title: true },
+      });
+      for (var mr of matched) {
+        await prisma.trainingResource.update({
+          where: { id: mr.id },
+          data: { moduleId: mapping.moduleId, category: mapping.category },
+        });
+        resourceFixCount++;
+      }
+    } catch (e) {
+      // Module might not exist yet; skip silently
+    }
+  }
+  if (resourceFixCount > 0) {
+    console.log("✓ Training resources re-mapped to correct modules: " + resourceFixCount + " updated");
+  }
+
   // ── Portal Settings ───────────────────────────────────────────────────
   await prisma.portalSettings.upsert({
     where: { id: "global" },

@@ -534,9 +534,9 @@ export default function TrainingPage() {
                       {isExpanded && (m.content || moduleResources.length > 0) && (
                         <div className="mt-4 pt-4 border-t border-[var(--app-border)] space-y-4">
                           {m.content && (
-                            <p className="font-body text-[13px] text-[var(--app-text-muted)] leading-relaxed whitespace-pre-line">
-                              {m.content}
-                            </p>
+                            <div className="prose-training">
+                              <TrainingMarkdown source={m.content} />
+                            </div>
                           )}
                           {moduleResources.length > 0 && (
                             <div>
@@ -860,4 +860,114 @@ export default function TrainingPage() {
       )}
     </div>
   );
+}
+
+function TrainingMarkdown({ source }: { source: string }) {
+  const blocks = source.split(/\n{2,}/);
+  return (
+    <>
+      {blocks.map((block, i) => {
+        const trimmed = block.trim();
+        if (trimmed.startsWith("## ")) {
+          return (
+            <h2 key={i} className="font-display text-[15px] sm:text-base font-semibold text-[var(--app-text)] mt-5 mb-2">
+              {renderInline(trimmed.slice(3))}
+            </h2>
+          );
+        }
+        if (trimmed.startsWith("### ")) {
+          return (
+            <h3 key={i} className="font-display text-[13px] sm:text-[14px] font-semibold text-brand-gold mt-4 mb-1.5 uppercase tracking-[0.5px]">
+              {renderInline(trimmed.slice(4))}
+            </h3>
+          );
+        }
+        if (trimmed.startsWith("| ")) {
+          const rows = trimmed.split("\n").filter((r) => r.trim() && !r.trim().match(/^\|[-| ]+\|$/));
+          if (rows.length === 0) return null;
+          const parseRow = (row: string) => row.split("|").filter(Boolean).map((c) => c.trim());
+          const header = parseRow(rows[0]);
+          const body = rows.slice(1).map(parseRow);
+          return (
+            <div key={i} className="overflow-x-auto my-3 rounded-lg border border-[var(--app-border)]">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-[var(--app-input-bg)]">
+                    {header.map((h, j) => (
+                      <th key={j} className="font-body text-[11px] uppercase tracking-wider text-[var(--app-text-muted)] px-3 py-2 border-b border-[var(--app-border)]">
+                        {renderInline(h)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {body.map((row, ri) => (
+                    <tr key={ri} className="border-b border-[var(--app-border)] last:border-0">
+                      {row.map((cell, ci) => (
+                        <td key={ci} className="font-body text-[12px] sm:text-[13px] text-[var(--app-text-secondary)] px-3 py-2">
+                          {renderInline(cell)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          const items = trimmed.split(/\n(?=[*-] )/).map((line) => line.replace(/^[*-] /, ""));
+          return (
+            <ul key={i} className="list-disc pl-5 space-y-1 my-2">
+              {items.map((item, j) => (
+                <li key={j} className="font-body text-[12px] sm:text-[13px] text-[var(--app-text-secondary)] leading-relaxed">
+                  {renderInline(item)}
+                </li>
+              ))}
+            </ul>
+          );
+        }
+        if (/^\d+\.\s/.test(trimmed)) {
+          const items = trimmed.split(/\n(?=\d+\.\s)/).map((line) => line.replace(/^\d+\.\s/, ""));
+          return (
+            <ol key={i} className="list-decimal pl-5 space-y-1 my-2">
+              {items.map((item, j) => (
+                <li key={j} className="font-body text-[12px] sm:text-[13px] text-[var(--app-text-secondary)] leading-relaxed">
+                  {renderInline(item)}
+                </li>
+              ))}
+            </ol>
+          );
+        }
+        if (trimmed.startsWith("> ")) {
+          return (
+            <blockquote key={i} className="border-l-2 border-brand-gold/40 pl-4 my-3 italic">
+              <p className="font-body text-[12px] sm:text-[13px] text-[var(--app-text-secondary)] leading-relaxed">
+                {renderInline(trimmed.replace(/^>\s*/gm, ""))}
+              </p>
+            </blockquote>
+          );
+        }
+        return (
+          <p key={i} className="font-body text-[12px] sm:text-[13px] text-[var(--app-text-secondary)] leading-relaxed my-2">
+            {renderInline(trimmed)}
+          </p>
+        );
+      })}
+    </>
+  );
+}
+
+function renderInline(src: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  const re = /\*\*([^*]+)\*\*/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(src)) !== null) {
+    if (match.index > lastIndex) parts.push(src.slice(lastIndex, match.index));
+    parts.push(<strong key={match.index} className="font-semibold text-[var(--app-text)]">{match[1]}</strong>);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < src.length) parts.push(src.slice(lastIndex));
+  return parts;
 }
