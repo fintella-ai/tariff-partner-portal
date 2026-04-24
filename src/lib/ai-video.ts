@@ -66,7 +66,7 @@ export async function generateVideoScript(
 
   const prompt = `You are creating a training video script for the Fintella partner portal.
 
-Fintella is a partner referral network that helps U.S. importers recover overpaid tariffs (IEEPA, Section 301) through legal action. Fintella's co-counsel is Furdock & Foglia Law LLP — they handle the legal filing, compliance review, and recovery process. Partners earn commissions (10-25% of the firm fee) on deals they refer. The commission model is a waterfall: L1 partners earn on direct referrals, L2/L3 partners earn on their own deals while the upline keeps overrides.
+Fintella is a partner referral network that helps U.S. importers recover overpaid tariffs (IEEPA, Section 301) through legal action. Fintella's co-counsel is Frost Law AZ, LLC — they handle the legal filing, compliance review, and recovery process. Partners earn commissions (10-25% of the firm fee) on deals they refer. The commission model is a waterfall: L1 partners earn on direct referrals, L2/L3 partners earn on their own deals while the upline keeps overrides.
 
 ## Training Module
 - **Title**: ${opts.moduleTitle}
@@ -207,7 +207,7 @@ function buildDemoScript(title: string): VideoScript {
         bullets: [
           '"We already have a customs broker" — brokers file, not recover',
           '"This sounds too good to be true" — it\'s a legal process, not a scheme',
-          '"We don\'t have time" — Furdock & Foglia Law LLP handles everything',
+          '"We don\'t have time" — Frost Law AZ, LLC handles everything',
         ],
         narration:
           "You'll hear objections. The most common is that they already have a customs broker. Remind them that brokers handle filing, not recovery — these are different processes.",
@@ -219,10 +219,10 @@ function buildDemoScript(title: string): VideoScript {
         bullets: [
           "Use the Submit Client form in your portal",
           "Or share your unique referral link",
-          "Client receives a guided intake from Furdock & Foglia Law LLP",
+          "Client receives a guided intake from Frost Law AZ, LLC",
         ],
         narration:
-          "When your prospect is ready, submit them through the portal or share your referral link. Furdock & Foglia takes it from there — scheduling consultations, collecting documents, and filing the claim.",
+          "When your prospect is ready, submit them through the portal or share your referral link. Frost Law AZ, LLC takes it from there — scheduling consultations, collecting documents, and filing the claim.",
         durationSec: 20,
         visualHint: "📋",
       },
