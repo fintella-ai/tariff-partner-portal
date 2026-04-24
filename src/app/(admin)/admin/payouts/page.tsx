@@ -22,7 +22,7 @@ type Payout = {
   firmFeeRate: number | null;
   firmFeeAmount: number | null;
   dealStage: string | null;
-  status: "pending" | "due" | "paid";
+  status: "pending" | "pending_payment" | "projected" | "due" | "paid" | "lost";
   periodMonth: string;
   payoutDate: string | null;
   batchId: string | null;
@@ -38,8 +38,17 @@ type PayoutStats = {
   partnersToPay: number;
 };
 
-const tabs = ["Due", "Pending", "Paid"] as const;
+const tabs = ["Due", "Pending Payment", "Projected", "Paid", "Lost"] as const;
 type Tab = (typeof tabs)[number];
+
+// Map the human tab label to the status value the API filters on.
+const tabToStatus: Record<Tab, string> = {
+  "Due": "due",
+  "Pending Payment": "pending_payment",
+  "Projected": "projected",
+  "Paid": "paid",
+  "Lost": "lost",
+};
 
 const tierBadge: Record<string, string> = {
   L1: "bg-brand-gold/20 text-brand-gold",
@@ -50,14 +59,20 @@ const tierBadge: Record<string, string> = {
 
 const statusBadge: Record<string, string> = {
   due: "bg-blue-500/20 text-blue-400",
-  pending: "bg-yellow-500/20 text-yellow-400",
+  pending_payment: "bg-yellow-500/20 text-yellow-400",
+  pending: "bg-yellow-500/20 text-yellow-400", // legacy alias
+  projected: "bg-purple-500/20 text-purple-400",
   paid: "bg-green-500/20 text-green-400",
+  lost: "bg-red-500/20 text-red-400",
 };
 
 const statusLabel: Record<string, string> = {
   due: "Due",
-  pending: "Pending",
+  pending_payment: "Pending Payment",
+  pending: "Pending Payment", // legacy alias
+  projected: "Projected",
   paid: "Paid",
+  lost: "Lost",
 };
 
 function fmtMonth(d: string) {
@@ -119,10 +134,13 @@ export default function PayoutManagementPage() {
   useEffect(() => { fetchPayouts(); }, [fetchPayouts]);
 
   const filtered = payouts.filter((p) => {
-    if (tab === "Due") return p.status === "due";
-    if (tab === "Pending") return p.status === "pending";
-    if (tab === "Paid") return p.status === "paid";
-    return true;
+    const target = tabToStatus[tab];
+    if (target === "pending_payment") {
+      // Legacy "pending" rows still in the DB render under this tab
+      // until a backfill migrates them to "pending_payment".
+      return p.status === "pending_payment" || p.status === "pending";
+    }
+    return p.status === target;
   });
 
   async function handleApprove(id: string) {
@@ -222,7 +240,11 @@ export default function PayoutManagementPage() {
                 : "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-secondary)]"
             }`}
           >
-            {t} ({payouts.filter((p) => p.status === t.toLowerCase()).length})
+            {t} ({payouts.filter((p) => {
+              const target = tabToStatus[t];
+              if (target === "pending_payment") return p.status === "pending_payment" || p.status === "pending";
+              return p.status === target;
+            }).length})
           </button>
         ))}
       </div>
