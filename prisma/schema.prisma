@@ -687,8 +687,12 @@ model Deal {
   // Service & business details
   serviceOfInterest     String?   // "Tariff Refund Support", "ERC Support", "Kwong Penalty Abatement"
   legalEntityName       String?   // Legal Entity / Business Name
+  companyEin            String?   // Company EIN / Tax ID (free-form; typically 9 digits ##-#######)
+  businessStreetAddress String?   // Business street address — primary line (Address)
+  businessStreetAddress2 String?  // Business street address — secondary line (suite / unit)
   businessCity          String?
-  businessState         String?
+  businessState         String?   // full state name (e.g. "California", not "CA")
+  businessZip           String?   // zip / postal code
   importsGoods          String?   // "Yes", "No"
   importCountries       String?   // countries they import from
   annualImportValue     String?   // dropdown value (e.g. "$1M - $5M")

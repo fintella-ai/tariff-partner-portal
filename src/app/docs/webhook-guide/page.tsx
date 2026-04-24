@@ -125,8 +125,17 @@ const FIELDS = [
   {
     category: "Business",
     colorVar: "--doc-blue",
-    fields: ["legal_entity_name", "service_of_interest", "city", "state"],
-    desc: "Business/company details and location.",
+    fields: [
+      "legal_entity_name",
+      "company_ein",
+      "service_of_interest",
+      "address",
+      "street_address_2",
+      "city",
+      "state",
+      "zip",
+    ],
+    desc: "Business/company details and location. `state` accepts either the 2-letter abbreviation (\"CA\") or the full name (\"California\") — we normalize to the full name on save. Unknown values pass through unchanged; the webhook never rejects a submission over a state/country/address quirk.",
   },
   {
     category: "Tariff",
@@ -373,9 +382,13 @@ Retry-After: 17
 {jsonLine("phone", "(555) 123-4567")}
 {jsonLine("business_title", "CFO")}
 {jsonLine("legal_entity_name", "Acme Imports LLC")}
+{jsonLine("company_ein", "87-1234567")}
 {jsonLine("service_of_interest", "Tariff Refund Support")}
+{jsonLine("address", "1201 S Main Street")}
+{jsonLine("street_address_2", "Suite 400")}
 {jsonLine("city", "Phoenix")}
-{jsonLine("state", "AZ")}
+{jsonLine("state", "Arizona")}
+{jsonLine("zip", "85004")}
 {jsonLine("imports_goods", "Yes")}
 {jsonLine("import_countries", "China, Vietnam")}
 {jsonLine("annual_import_value", "$1M - $5M")}
@@ -501,11 +514,15 @@ Retry-After: 17
                   colorVar: "--doc-blue",
                   fields: [
                     "legal_entity_name",
+                    "company_ein",
                     "service_of_interest",
+                    "address",
+                    "street_address_2",
                     "city",
                     "state",
+                    "zip",
                   ],
-                  desc: "Update the business entity name, service of interest, or location.",
+                  desc: "Update the business entity name, EIN, service of interest, street address lines, or location. `state` accepts \"CA\" or \"California\" — we normalize to the full name. Unknown values are stored as-is rather than rejected.",
                 },
                 {
                   category: "Tariff Fields",
@@ -649,9 +666,13 @@ Retry-After: 17
     "email": "jane@acmeimports.com",
     "phone": "(555) 123-4567",
     "legal_entity_name": "Acme Imports LLC",
+    "company_ein": "87-1234567",
     "service_of_interest": "Tariff Refund Support",
+    "address": "1201 S Main Street",
+    "street_address_2": "Suite 400",
     "city": "Phoenix",
-    "state": "AZ",
+    "state": "Arizona",
+    "zip": "85004",
     "imports_goods": "Yes",
     "import_countries": "China, Vietnam",
     "annual_import_value": "$1M - $5M"

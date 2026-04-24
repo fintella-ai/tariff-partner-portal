@@ -5,6 +5,7 @@ import { computeDealCommissions, getL1CommissionRateSnapshot, roundCents, resolv
 import { resolveDealFinancials } from "@/lib/dealCalc";
 import { sendDealStatusUpdateEmail } from "@/lib/sendgrid";
 import { appendDealPayload } from "@/lib/appendDealPayload";
+import { normalizeStateName } from "@/lib/stateNames";
 
 /**
  * ═════════════════════════════════════════════════════════════════════════════
@@ -475,7 +476,35 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "Message"
     );
 
+    // Company identifier
+    const companyEin = get(
+      "company_ein",
+      "companyEin",
+      "ein",
+      "EIN",
+      "Company EIN",
+      "tax_id",
+      "taxId"
+    );
+
     // Location
+    const businessStreetAddress = get(
+      "address",
+      "street_address",
+      "streetAddress",
+      "business_address",
+      "businessAddress",
+      "Address"
+    );
+    const businessStreetAddress2 = get(
+      "street_address_2",
+      "streetAddress2",
+      "address_2",
+      "address2",
+      "Address 2",
+      "suite",
+      "unit"
+    );
     const businessCity = get(
       "city",
       "City",
@@ -488,6 +517,15 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "business_state",
       "businessState",
       "region"
+    );
+    const businessZip = get(
+      "zip",
+      "Zip",
+      "zip_code",
+      "zipCode",
+      "postal_code",
+      "postalCode",
+      "postcode"
     );
 
     // Tariff-specific fields
@@ -614,8 +652,12 @@ async function postHandler(req: NextRequest): Promise<Response> {
           clientTitle: clientTitle || null,
           serviceOfInterest: serviceOfInterest || null,
           legalEntityName: legalEntityName || null,
+          companyEin: companyEin || null,
+          businessStreetAddress: businessStreetAddress || null,
+          businessStreetAddress2: businessStreetAddress2 || null,
           businessCity: businessCity || null,
-          businessState: businessState || null,
+          businessState: normalizeStateName(businessState) || null,
+          businessZip: businessZip || null,
           importsGoods: importsGoods || null,
           importCountries: importCountries || null,
           annualImportValue: annualImportValue || null,
@@ -899,10 +941,24 @@ async function patchHandler(req: NextRequest): Promise<Response> {
       "business_name", "businessName"
     );
     if (legalEntityName) data.legalEntityName = legalEntityName;
+    const companyEin = pickStr("company_ein", "companyEin", "ein", "EIN", "tax_id", "taxId");
+    if (companyEin) data.companyEin = companyEin;
+    const businessStreetAddress = pickStr(
+      "address", "street_address", "streetAddress",
+      "business_address", "businessAddress"
+    );
+    if (businessStreetAddress) data.businessStreetAddress = businessStreetAddress;
+    const businessStreetAddress2 = pickStr(
+      "street_address_2", "streetAddress2",
+      "address_2", "address2", "suite", "unit"
+    );
+    if (businessStreetAddress2) data.businessStreetAddress2 = businessStreetAddress2;
     const businessCity = pickStr("city", "City", "business_city", "businessCity");
     if (businessCity) data.businessCity = businessCity;
     const businessState = pickStr("state", "State", "business_state", "businessState", "region");
-    if (businessState) data.businessState = businessState;
+    if (businessState) data.businessState = normalizeStateName(businessState);
+    const businessZip = pickStr("zip", "Zip", "zip_code", "zipCode", "postal_code", "postalCode", "postcode");
+    if (businessZip) data.businessZip = businessZip;
 
     // Tariff-specific
     const importsGoods = pickStr("imports_goods", "importsGoods", "imports", "do_you_import");
