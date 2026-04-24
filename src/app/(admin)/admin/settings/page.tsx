@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { getPermissions } from "@/lib/permissions";
 import { reconcileNavOrder } from "@/lib/reconcileNavOrder";
 import GoogleCalendarCard from "@/components/admin/GoogleCalendarCard";
+import AdminInboxesCard from "@/components/admin/AdminInboxesCard";
 import PortalThemePicker from "@/components/admin/PortalThemePicker";
 import type { ThemeCustomizations } from "@/lib/portalThemes";
 
@@ -1556,6 +1557,7 @@ export default function SettingsPage() {
       {tab === "integrations" && (
         <div className="space-y-5">
           <GoogleCalendarCard />
+          <AdminInboxesCard />
         </div>
       )}
 
