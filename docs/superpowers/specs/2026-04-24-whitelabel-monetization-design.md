@@ -12,7 +12,10 @@
 **Name (working):** Fintella OS
 **Tagline:** *Your custom partner network. Instant access to ours.*
 
-**Value proposition (one paragraph):** Fintella OS is a tenant-branded partner-program platform — tracking, commissions, downline, payouts, portal-level branding — **plus plugged-in access to a vetted revenue pathway network** John has assembled over years (tax strategy, accounting, insurance, utility reduction, lending, credit repair, 1099 tax management, partner agreement management). A tenant doesn't just get software; they get a turnkey business-in-a-box where their partners start earning from day one — not just on the tenant's own deals, but on every client referred into any of the pathway services. This is what no competitor can match.
+**Who Fintella is (important positioning — do not muddy):**
+Fintella is a **software / fintech platform** that runs a **B2B network-marketing partner community** and provides **tools, support, and resources** to its business-owner partners. Fintella is NOT a law firm, NOT a tax-credit recovery firm, NOT a single-vertical services provider. Fintella is the PLATFORM that connects business networks to vetted service providers (law firms, tax strategists, accountants, etc.) and enables partners to earn commissions on every referred engagement. This positioning is legally material — it's why Fintella's network-marketing commission structure works in all 50 states (Fintella isn't a regulated professional paying commissions to non-professionals; Fintella is a fintech platform paying its partners).
+
+**Value proposition (one paragraph):** Fintella OS lets any business operator stand up their own version of Fintella — a tenant-branded software platform for running a B2B referral-partner network — **plus plugged-in access to Fintella's curated revenue pathway network**. A tenant doesn't just get software; they get a turnkey business-in-a-box where their partners earn from day one in TWO ways: (1) **referral commissions** on every client they send into any pathway service (tax strategy, accounting, insurance, utility reduction, lending, credit repair, 1099 filing, agreement management, and more); AND (2) **personal access for themselves and their own business** — every partner in the network gets vetted-service access to personal tax prep, credit repair, accounting, insurance, utility audits, entity formation, estate planning, and more. The pathway network is both a revenue engine (partners earn referring clients in) AND a membership perk (partners use the services for themselves). No competitor offers both the platform AND the revenue + benefits network.
 
 **ICP (Ideal Customer Profile):** Client-sourcing referral networks in regulated services.
 
@@ -364,6 +367,7 @@ A key insight from the 2026-04-24 brainstorm: Fintella OS's V1 architecture (ten
 | **Utility-cost-reduction pathway** | Commercial utility auditing + switching — energy brokers, telecom consultants, waste-management consultants. Refer in, recover savings, earn a % of year-one savings | 2 weeks (reuses referral engine + commission waterfall as is) |
 | **Lending + capital pathway** | Working capital, SBA loans, equipment financing, invoice factoring, MCA — referral network into vetted lenders; tenant + partner earn origination referral fees | 2–3 weeks (reuses referral engine) |
 | **Credit repair pathway** | Tenant's partners refer end-clients (business owners, employees, customers) into vetted credit-repair services; tenant + partner earn referral fees on enrollment + successful cleanup milestones | 2 weeks (reuses referral engine) |
+| **Partner personal-services marketplace** | A separate tab inside the partner portal where partners access pathway services FOR THEMSELVES (not as referrals out): personal tax prep, personal credit repair, personal accounting, personal + business insurance, utility audits for their own home/business, entity formation + restructuring, estate planning, retirement planning. Every partner in the network gets preferred pricing from pathway providers. This is a MEMBERSHIP PERK (retention lever), not a revenue line — but it raises retention and LTV meaningfully. | 2–3 weeks (new PersonalServiceCatalog model + partner-facing marketplace UI; reuses pathway-provider relationships already established for the referral flow) |
 
 ### Upsell pricing — per-module profit-center add-ons
 
@@ -388,6 +392,7 @@ These extensions are sold as add-ons on top of the base tier. Tenants compose th
 | Utility-cost-reduction pathway | Free to tenant; rev-share | Pathway rev-share |
 | Lending pathway | Free to tenant; rev-share | Pathway rev-share |
 | Credit repair pathway | Free to tenant; rev-share | Pathway rev-share |
+| Partner personal-services marketplace | +$97/mo (access + curation fee) | Flat (retention perk) |
 
 **Illustrative ACV at saturation:**
 A Scale tier tenant adopting 4 flat add-ons + activating 2 pathway rev-shares = $2,997 base + ~$1,200 add-ons + pathway upside = $4,200+/mo direct ACV before pathway rev-share upside. 25 customers at that mix = $105k MRR + pathway commissions.
