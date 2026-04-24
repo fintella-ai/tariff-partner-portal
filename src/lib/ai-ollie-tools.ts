@@ -177,26 +177,48 @@ async function lookupDeal(
     },
   });
 
+  // "Stale" = not in a terminal stage AND no updates in 14+ days. Surfaces
+  // as `isStale: true` on the tool output so Ollie can proactively offer to
+  // open a ticket to nudge the firm.
+  const TERMINAL_STAGES = new Set([
+    "closed_won",
+    "closedwon",
+    "closed_lost",
+    "closedlost",
+    "client_no_show",
+  ]);
+  const STALE_DAYS = 14;
+  const now = Date.now();
+
   return {
-    matches: deals.map((d) => ({
-      dealId: d.id.substring(0, 8),
-      dealName: d.dealName,
-      legalEntity: d.legalEntityName,
-      stage: d.stage,
-      stageLabel: STAGE_LABELS[d.stage]?.label || d.stage,
-      estimatedRefund: d.estimatedRefundAmount || 0,
-      actualRefund: d.actualRefundAmount ?? null,
-      firmFee: d.firmFeeAmount || 0,
-      commissionStatus: {
-        l1: d.l1CommissionStatus,
-        l2: d.l2CommissionStatus,
-        l3: d.l3CommissionStatus,
-      },
-      paymentReceivedAt: d.paymentReceivedAt?.toISOString() ?? null,
-      closeDate: d.closeDate?.toISOString() ?? null,
-      createdAt: d.createdAt.toISOString(),
-      lastActivityAt: d.updatedAt.toISOString(),
-    })),
+    matches: deals.map((d) => {
+      const daysSinceLastActivity = Math.floor(
+        (now - d.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const isStale =
+        !TERMINAL_STAGES.has(d.stage) && daysSinceLastActivity >= STALE_DAYS;
+      return {
+        dealId: d.id.substring(0, 8),
+        dealName: d.dealName,
+        legalEntity: d.legalEntityName,
+        stage: d.stage,
+        stageLabel: STAGE_LABELS[d.stage]?.label || d.stage,
+        estimatedRefund: d.estimatedRefundAmount || 0,
+        actualRefund: d.actualRefundAmount ?? null,
+        firmFee: d.firmFeeAmount || 0,
+        commissionStatus: {
+          l1: d.l1CommissionStatus,
+          l2: d.l2CommissionStatus,
+          l3: d.l3CommissionStatus,
+        },
+        paymentReceivedAt: d.paymentReceivedAt?.toISOString() ?? null,
+        closeDate: d.closeDate?.toISOString() ?? null,
+        createdAt: d.createdAt.toISOString(),
+        lastActivityAt: d.updatedAt.toISOString(),
+        daysSinceLastActivity,
+        isStale,
+      };
+    }),
     count: deals.length,
     note:
       deals.length === 5

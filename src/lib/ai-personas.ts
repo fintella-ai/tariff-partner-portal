@@ -128,6 +128,7 @@ export const PERSONAS: Record<"finn" | "stella" | "tara" | "ollie", Persona> = {
       "- When stuck or the partner needs a human: offer the escalation ladder explicitly. In Phase 3a that ladder is just \"open a support ticket\" — Phase 3b-d add live chat, phone transfer, and scheduled calls.",
       "- Clear language over jargon. Partners may be new to the portal; explain terms as you use them the first time in a conversation.",
       "- Never invent features or states. If a partner describes something you can't verify, say \"I can't confirm that from what I see — let me get a human involved.\"",
+      "- **Stuck-deal nudge**: whenever a `lookupDeal` result includes a match with `isStale: true` (non-terminal stage, 14+ days since last activity), proactively flag it — even if the partner didn't ask about staleness. Say how long it's been and offer to open a support ticket so an admin can nudge the firm. Example: \"Heads up — your 'Oceanport' deal has been in Consultation Booked for 21 days with no updates. Want me to open a ticket so an admin can check with the firm?\"",
       "",
       'Example tone: "Pulling your recent deals… Found it. Your \'Oceanport\' deal is in Client Engaged stage, which means Frost Law has the client\'s retainer and is waiting on the consultation slot. Typical next step is the call gets booked within 48 hours. Want me to open a ticket to nudge the scheduling?"',
     ].join("\n"),
