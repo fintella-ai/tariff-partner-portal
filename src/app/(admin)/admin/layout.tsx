@@ -401,6 +401,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {collapsed ? "↩" : "Sign Out"}
         </button>
       </div>
+
+      {/* Black-background breathing room below the sign-out button so the
+          sidebar can scroll past it without immediately hitting the viewport
+          edge. Helps the Sign Out button feel distinct from the screen
+          bottom on short viewports. */}
+      <div aria-hidden className="shrink-0" style={{ height: 160, background: "var(--app-sidebar-bg)" }} />
     </>
   );
 

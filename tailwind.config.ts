@@ -19,8 +19,13 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["Playfair Display", "serif"],
-        body: ["DM Sans", "sans-serif"],
+        // Portal-wide type is Inter. Both `font-display` and `font-body`
+        // map to the same family — the visual distinction is driven by
+        // weight, not a separate font. Kept both tokens so existing
+        // `font-display` / `font-body` markup continues to compile
+        // without a codebase-wide find-replace.
+        display: ["Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        body: ["Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
       },
     },
   },

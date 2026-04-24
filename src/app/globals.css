@@ -1,8 +1,13 @@
 /* Google Fonts — @import must come before @tailwind directives because
    `@tailwind base` expands into thousands of rules during PostCSS processing,
    and per CSS spec `@import` must precede all non-@charset/@layer rules.
-   Turbopack enforces this strictly; webpack did not. */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+   Turbopack enforces this strictly; webpack did not.
+
+   Portal-wide type is Inter (2026-04-24 refactor). `font-display` and
+   `font-body` Tailwind classes still exist for continuity, but both map
+   to the same Inter family — the distinction is now weight-driven
+   (display = semibold/bold, body = regular/medium). */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -18,7 +23,10 @@
 
 /* ── Theme Variables ─────────────────────────────────────────────────── */
 :root {
-  /* Light mode (default) — high contrast */
+  /* Light mode (default) — high contrast.
+     `--app-text-muted` darkened from #4b5563 → #374151 (2026-04-24) so
+     small subheadings / table column labels read more distinctly against
+     light backgrounds. */
   --app-bg: #e4e6ed;
   --app-bg-secondary: #f8f9fb;
   /* Page header strip — sits above the full-bleed divider. One shade
@@ -26,7 +34,7 @@
   --app-header-bg: #cfd3dd;
   --app-text: #0f172a;
   --app-text-secondary: #1f2937;
-  --app-text-muted: #4b5563;
+  --app-text-muted: #374151;
   --app-text-faint: #6b7280;
   --app-border: #c0c4cc;
   --app-border-subtle: #d4d8e0;
@@ -55,63 +63,72 @@
 /* Dark theme — [data-theme="dark"] is set by ThemeProvider (JS, before first paint).
    The media query block is a fallback for SSR / JS-off scenarios so there's no flash. */
 [data-theme="dark"] {
-  --app-bg: #0c1221;
-  --app-bg-secondary: #111828;
+  /* Panels (page background) — pushed slightly darker so cards/forms
+     pop with more contrast against the body. */
+  --app-bg: #080d1c;
+  --app-bg-secondary: #0d1425;
   /* Page header strip — one shade darker than --app-bg for the
      welcome band above the full-bleed divider. */
-  --app-header-bg: #070c18;
-  --app-text: rgba(255, 255, 255, 0.95);
-  --app-text-secondary: rgba(255, 255, 255, 0.75);
-  --app-text-muted: rgba(255, 255, 255, 0.55);
-  --app-text-faint: rgba(255, 255, 255, 0.35);
-  --app-border: rgba(255, 255, 255, 0.16);
-  --app-border-subtle: rgba(255, 255, 255, 0.08);
-  --app-card-bg: rgba(255, 255, 255, 0.04);
-  --app-card-border: rgba(255, 255, 255, 0.14);
-  --app-popover-bg: #1a2234;
-  --app-input-bg: rgba(255, 255, 255, 0.07);
-  --app-input-border: rgba(255, 255, 255, 0.22);
+  --app-header-bg: #050811;
+  --app-text: rgba(255, 255, 255, 0.96);
+  --app-text-secondary: rgba(255, 255, 255, 0.82);
+  /* Muted text — bumped from 0.55 → 0.72 so small labels and hints
+     read cleanly against the darker page background. */
+  --app-text-muted: rgba(255, 255, 255, 0.72);
+  --app-text-faint: rgba(255, 255, 255, 0.48);
+  --app-border: rgba(255, 255, 255, 0.22);
+  --app-border-subtle: rgba(255, 255, 255, 0.12);
+  /* Module / card surfaces — significantly more opaque than before
+     (was 0.04 alpha) so tables, forms, popups stand apart from the
+     panel background and read as solid. */
+  --app-card-bg: rgba(255, 255, 255, 0.10);
+  --app-card-border: rgba(255, 255, 255, 0.22);
+  --app-popover-bg: #1d263b;
+  --app-input-bg: rgba(255, 255, 255, 0.14);
+  --app-input-border: rgba(255, 255, 255, 0.30);
   --app-input-text: #ffffff;
-  --app-input-placeholder: rgba(255, 255, 255, 0.4);
+  --app-input-placeholder: rgba(255, 255, 255, 0.48);
   --app-sidebar-bg: #000000;
-  --app-sidebar-border: rgba(196, 160, 80, 0.22);
-  --app-hover: rgba(255, 255, 255, 0.06);
-  --app-overlay: rgba(0, 0, 0, 0.7);
+  --app-sidebar-border: rgba(196, 160, 80, 0.24);
+  --app-hover: rgba(255, 255, 255, 0.10);
+  --app-overlay: rgba(0, 0, 0, 0.78);
   --app-gold: #d4ad55;
   --app-gold-text: #d4ad55;
-  --app-code-bg: rgba(255, 255, 255, 0.1);
-  --app-scrollbar: rgba(196, 160, 80, 0.3);
+  --app-code-bg: rgba(255, 255, 255, 0.14);
+  --app-scrollbar: rgba(196, 160, 80, 0.4);
   --brand-gold: #c4a050;
-  --brand-gold-muted: rgba(196, 160, 80, 0.15);
+  --brand-gold-muted: rgba(196, 160, 80, 0.18);
   color-scheme: dark;
 }
 
-/* Fallback for SSR / JS-off (no data-theme set yet) */
+/* Fallback for SSR / JS-off (no data-theme set yet) — kept in sync
+   with [data-theme="dark"] above. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --app-bg: #0c1221;
-    --app-bg-secondary: #111828;
-    --app-text: rgba(255, 255, 255, 0.95);
-    --app-text-secondary: rgba(255, 255, 255, 0.75);
-    --app-text-muted: rgba(255, 255, 255, 0.55);
-    --app-text-faint: rgba(255, 255, 255, 0.35);
-    --app-border: rgba(255, 255, 255, 0.16);
-    --app-border-subtle: rgba(255, 255, 255, 0.08);
-    --app-card-bg: rgba(255, 255, 255, 0.04);
-    --app-card-border: rgba(255, 255, 255, 0.14);
-    --app-popover-bg: #1a2234;
-    --app-input-bg: rgba(255, 255, 255, 0.07);
-    --app-input-border: rgba(255, 255, 255, 0.22);
+    --app-bg: #080d1c;
+    --app-bg-secondary: #0d1425;
+    --app-header-bg: #050811;
+    --app-text: rgba(255, 255, 255, 0.96);
+    --app-text-secondary: rgba(255, 255, 255, 0.82);
+    --app-text-muted: rgba(255, 255, 255, 0.72);
+    --app-text-faint: rgba(255, 255, 255, 0.48);
+    --app-border: rgba(255, 255, 255, 0.22);
+    --app-border-subtle: rgba(255, 255, 255, 0.12);
+    --app-card-bg: rgba(255, 255, 255, 0.10);
+    --app-card-border: rgba(255, 255, 255, 0.22);
+    --app-popover-bg: #1d263b;
+    --app-input-bg: rgba(255, 255, 255, 0.14);
+    --app-input-border: rgba(255, 255, 255, 0.30);
     --app-input-text: #ffffff;
-    --app-input-placeholder: rgba(255, 255, 255, 0.4);
+    --app-input-placeholder: rgba(255, 255, 255, 0.48);
     --app-sidebar-bg: #000000;
-    --app-sidebar-border: rgba(196, 160, 80, 0.22);
-    --app-hover: rgba(255, 255, 255, 0.06);
-    --app-overlay: rgba(0, 0, 0, 0.7);
+    --app-sidebar-border: rgba(196, 160, 80, 0.24);
+    --app-hover: rgba(255, 255, 255, 0.10);
+    --app-overlay: rgba(0, 0, 0, 0.78);
     --app-gold: #d4ad55;
     --app-gold-text: #d4ad55;
-    --app-code-bg: rgba(255, 255, 255, 0.1);
-    --app-scrollbar: rgba(196, 160, 80, 0.3);
+    --app-code-bg: rgba(255, 255, 255, 0.14);
+    --app-scrollbar: rgba(196, 160, 80, 0.4);
     color-scheme: dark;
   }
 }
@@ -124,7 +141,22 @@
   body {
     background: var(--app-bg);
     color: var(--app-text);
-    font-family: "DM Sans", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-weight: 400;
+    font-feature-settings: "cv11", "ss01";   /* Inter character variants — flatter 1, single-story g */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  /* Focus ring — visible only for keyboard navigation, skipped for mouse
+     clicks. Uniform across buttons / links / inputs so keyboard users get
+     a consistent affordance. */
+  :focus-visible {
+    outline: 2px solid var(--brand-gold, #c4a050);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 }
 
@@ -205,6 +237,46 @@
   .top-safe { top: var(--safe-top); }
   .bottom-safe { bottom: var(--safe-bottom); }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Subheading upgrade (2026-04-24 theme refactor)
+   Small uppercase labels across the portal use the Tailwind arbitrary
+   classes `text-[10px]` / `text-[11px]` combined with `uppercase`. The
+   rule below targets that exact combo and bumps size + weight so tiny
+   labels (column headers, form sublabels, section tags) read cleanly
+   without requiring an edit to every call site. Uses escaped brackets
+   because Tailwind compiles class names like `text-[11px]` literally.
+   ──────────────────────────────────────────────────────────────────── */
+.text-\[10px\].uppercase,
+.text-\[11px\].uppercase {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+/* Mid-size subheadings — nudged heavier for visual hierarchy. */
+h2, h3, h4 { font-weight: 600; }
+.font-body.text-\[15px\],
+.font-body.text-\[14px\],
+.font-body.text-\[13px\] {
+  font-weight: 500;
+}
+.font-body.text-\[15px\].font-semibold,
+.font-body.text-\[14px\].font-semibold,
+.font-body.text-\[13px\].font-semibold {
+  font-weight: 700;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Table header alignment (2026-04-24)
+   Center every column header by default; first column stays left-aligned
+   because it's almost always a name/identifier that the eye should read
+   from the left edge. Scoped to portal pages so we don't accidentally
+   touch the /docs/* public pages. Tables that explicitly set `text-left`
+   or `text-right` on a <th> still win via later selector specificity.
+   ──────────────────────────────────────────────────────────────────── */
+table thead th { text-align: center; }
+table thead th:first-child { text-align: left; }
 
 /* ── Prevent PWA pull-to-refresh bounce on iOS (standalone mode only) ── */
 @media (display-mode: standalone) {

@@ -84,20 +84,23 @@ export default function AdminPartnersPage() {
   // they don't have.
   const canBulkAct = ((session?.user as any)?.role || "") === "super_admin";
   const router = useRouter();
+  // Bulk-action checkboxes are hidden until the super admin opts in via
+  // the "Show Bulk Actions" toggle above the table. Defined early so the
+  // column-width hook below can key off it.
+  const [showBulk, setShowBulk] = useState(false);
+  const bulkOn = canBulkAct && showBulk;
   // 10 columns when bulk-select is on: [select] + Partner, Level, Code,
   // Phone, Email, Status, Agreement, W9, Joined.
   //  9 columns without:            Partner, Level, Code, Phone, Email,
   //                                Status, Agreement, W9, Joined.
-  // The dedicated "View →" action column was dropped — each row is
-  // already a clickable target via the row-level onClick, so the extra
-  // column was redundant and was causing spacing / wrap issues on
-  // narrow viewports. storageKey bumped to v5 so the column-width map
-  // reshuffles cleanly for anyone with a persisted older layout.
+  // Storage key flips with `bulkOn` so the width map for 10-col vs 9-col
+  // modes stays distinct and the layout never lands on a mismatched
+  // array length after toggling.
   const { columnWidths: partnerCols, getResizeHandler: partnerResize } = useResizableColumns(
-    canBulkAct
+    bulkOn
       ? [36, 180, 70, 120, 140, 180, 90, 110, 80, 110]
       : [180, 70, 120, 140, 180, 90, 110, 80, 110],
-    { storageKey: canBulkAct ? "partners-v5-bulk" : "partners-v5" }
+    { storageKey: bulkOn ? "partners-v5-bulk" : "partners-v5" }
   );
   const partnerGridCols = partnerCols.map((w) => `${w}px`).join(" ");
 
@@ -113,9 +116,11 @@ export default function AdminPartnersPage() {
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [levelFilter, setLevelFilter] = useState<"all" | "l1" | "l2" | "l3" | "l4plus">("all");
   // View toggle: classic list/table vs. an org-chart tree forest rooted
-  // at each L1. Tree ignores the current level filter + level chips —
-  // only the tab (active/pending/etc.) and search shape the dataset.
+  // at a single partner the admin picks from `treeRootCode`. Tree view
+  // renders nothing until a specific root is chosen — "All partners"
+  // intentionally shows no forest (would be noise across dozens of L1s).
   const [viewMode, setViewMode] = useState<"list" | "tree">("list");
+  const [treeRootCode, setTreeRootCode] = useState<string>("");
   const [showForm, setShowForm] = useState(false);
 
   // Add partner form
@@ -1068,6 +1073,27 @@ export default function AdminPartnersPage() {
               least one partner row checked. Floats above the table
               with sticky-like prominence. Status dropdown + Delete +
               Clear; Clear resets the selection without committing. */}
+
+          {/* Show/Hide Bulk Actions toggle — super-admin-only. Checkboxes
+              on both the desktop table and mobile cards stay hidden
+              until this is flipped on. Clears any pending selection when
+              hiding so we never keep "5 selected" state invisible. */}
+          {canBulkAct && viewMode === "list" && (
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !showBulk;
+                  setShowBulk(next);
+                  if (!next) setSelectedPartnerIds(new Set());
+                }}
+                className="font-body text-[12px] text-brand-gold/80 hover:text-brand-gold border border-brand-gold/25 hover:bg-brand-gold/10 rounded-lg px-3 py-1.5 transition-colors"
+              >
+                {showBulk ? "Hide Bulk Actions" : "Show Bulk Actions"}
+              </button>
+            </div>
+          )}
+
           {canBulkAct && selectedPartnerIds.size > 0 && (
             <div className="card mb-4 p-3 sm:p-4 flex flex-wrap items-center gap-3 border-brand-gold/30 bg-brand-gold/[0.04]">
               <span className="font-body text-[12px] text-[var(--app-text-secondary)]">
@@ -1111,20 +1137,13 @@ export default function AdminPartnersPage() {
             </div>
           )}
 
-          {/* Tree view — org-chart forest rooted at each L1. Extends the
-              existing DownlineTree component from the partner side for
-              arbitrary depth; Option B has no hard cap on chain depth.
-              Ignores the level filter since the whole point is to see
-              the full structure. Uses filteredPartners AFTER tab / search
-              filters so admins can narrow to e.g. "pending partners"
-              and still see them anchored in their chain. */}
+          {/* Tree view — org-chart rooted at a single partner the admin
+              picks via the dropdown below. "All partners" intentionally
+              renders no tree because a forest of every L1 is just noise
+              once you have more than a handful. Pick a specific root
+              (any partner, not just L1) and the tree walks their downline
+              at arbitrary depth. Option B has no hard cap on chain depth. */}
           {viewMode === "tree" && (() => {
-            const poolByCode: Record<string, Partner> = {};
-            for (const p of partners) poolByCode[p.partnerCode] = p;
-            const visibleCodes = new Set(filteredPartners.map((p) => p.partnerCode));
-
-            // Build the tree shape by walking down from each L1 root.
-            // L2/L3/L4+ partners render under their respective L1 parent.
             const toNode = (p: Partner): TreePartner => {
               const children = partners
                 .filter((c) => c.referredByPartnerCode === p.partnerCode)
@@ -1141,29 +1160,55 @@ export default function AdminPartnersPage() {
               };
             };
 
-            const roots = partners
-              .filter((p) => (p.tier || "l1") === "l1" && !p.referredByPartnerCode)
-              .sort((a, b) => (a.lastName || "").localeCompare(b.lastName || ""))
-              .map(toNode);
-
-            if (roots.length === 0) {
-              return (
-                <div className="card p-12 text-center font-body text-[13px] text-[var(--app-text-muted)]">
-                  No L1 partners to show in the tree.
-                </div>
-              );
-            }
+            // Alphabetical partner list feeding the dropdown — all partners,
+            // not just L1, so admins can drill into mid-chain trees too.
+            const dropdownPartners = [...partners].sort((a, b) => {
+              const an = `${a.lastName || ""} ${a.firstName || ""}`.trim();
+              const bn = `${b.lastName || ""} ${b.firstName || ""}`.trim();
+              return an.localeCompare(bn);
+            });
+            const selectedRootPartner = treeRootCode
+              ? partners.find((p) => p.partnerCode === treeRootCode)
+              : null;
 
             return (
-              <div className="space-y-8">
-                <div className="font-body text-[11px] text-[var(--app-text-muted)]">
-                  {roots.length} L1 chain{roots.length === 1 ? "" : "s"} · {visibleCodes.size} matching partner{visibleCodes.size === 1 ? "" : "s"} highlighted by current filters
+              <div className="space-y-4">
+                <div className="card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <label className="font-body text-[12px] text-[var(--app-text-secondary)] font-semibold shrink-0">
+                    Tree root partner:
+                  </label>
+                  <select
+                    value={treeRootCode}
+                    onChange={(e) => setTreeRootCode(e.target.value)}
+                    className="theme-input text-[13px] px-3 py-2 rounded-lg flex-1 min-w-0"
+                  >
+                    <option value="">— All partners (tree hidden) —</option>
+                    {dropdownPartners.map((p) => (
+                      <option key={p.id} value={p.partnerCode}>
+                        {(p.lastName || "").trim()}{p.lastName ? ", " : ""}{p.firstName} ({p.partnerCode}) · {(p.tier || "l1").toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                  {treeRootCode && (
+                    <button
+                      type="button"
+                      onClick={() => setTreeRootCode("")}
+                      className="font-body text-[11px] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] border border-[var(--app-border)] rounded-lg px-3 py-1.5 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
                 </div>
-                {roots.map((root) => (
-                  <div key={root.id} className="card p-4 sm:p-5 overflow-x-auto">
-                    <DownlineTree root={root} />
+
+                {selectedRootPartner ? (
+                  <div className="card p-4 sm:p-5 overflow-x-auto">
+                    <DownlineTree root={toNode(selectedRootPartner)} />
                   </div>
-                ))}
+                ) : (
+                  <div className="card p-12 text-center font-body text-[13px] text-[var(--app-text-muted)]">
+                    Pick a partner above to see their downline tree.
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -1172,7 +1217,7 @@ export default function AdminPartnersPage() {
           {viewMode === "list" && (<>
           <div className="card hidden sm:block overflow-x-auto">
             <div className="grid gap-3 px-5 py-3 border-b border-[var(--app-border)]" style={{ gridTemplateColumns: partnerGridCols }}>
-              {(canBulkAct ? ([
+              {(bulkOn ? ([
                 { label: "__select", col: null },
                 { label: "Partner", col: "name" as SortCol },
                 { label: "Level", col: null },
@@ -1228,7 +1273,7 @@ export default function AdminPartnersPage() {
                   style={{ gridTemplateColumns: partnerGridCols }}
                   onClick={() => router.push(`/admin/partners/${p.id}`)}
                 >
-                  {canBulkAct && (
+                  {bulkOn && (
                     <div
                       className="flex items-center justify-center"
                       onClick={(e) => e.stopPropagation()}
@@ -1293,7 +1338,7 @@ export default function AdminPartnersPage() {
             {filteredPartners.map((p) => (
               <div key={p.id} className="card p-4 cursor-pointer hover:bg-[var(--app-card-bg)] transition-colors" onClick={() => router.push(`/admin/partners/${p.id}`)}>
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  {canBulkAct && (
+                  {bulkOn && (
                     <div
                       className="shrink-0 pt-0.5"
                       onClick={(e) => e.stopPropagation()}

@@ -385,6 +385,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {isCollapsed ? "Exit" : "Sign Out"}
         </button>
       </div>
+      {/* Breathing room below the sign-out button so the nav column can
+          scroll past it into solid sidebar background, matching the admin
+          panel. Improves visual separation on short viewports. */}
+      <div aria-hidden className="shrink-0" style={{ height: 160, background: "var(--app-sidebar-bg)" }} />
     </div>
     );
   }
@@ -654,7 +658,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             Sits below the page body on every partner dashboard route.
             Shows the configured favicon (falls back to firm initial
             when no favicon is uploaded) above the copyright line. */}
-        <footer className="mt-24 sm:mt-32 pt-8 pb-6 border-t border-[var(--app-border)] text-center">
+        <footer className="mt-24 sm:mt-32 pt-8 pb-0 border-t border-[var(--app-border)] text-center">
           {faviconUrl ? (
             <img src={faviconUrl} alt={firmShort} className="mx-auto h-8 w-8 object-contain mb-2 opacity-80" />
           ) : (
