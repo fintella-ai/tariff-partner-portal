@@ -543,6 +543,75 @@ async function createSupportTicket(
     });
   }
 
+  // Fan out internal bell notifications to the admins who handle this
+  // inbox. Phase 3c.3b — internal-only (Ollie-created tickets flow through
+  // the same in-portal Notification / /admin/support path admins already
+  // use for human-created tickets, no external email).
+  //
+  // Preference order:
+  //   1. AdminInbox.assignedAdminIds if the inbox has explicit assignees
+  //   2. Otherwise fall back to every super_admin / admin / partner_support
+  //      user (accounting excluded — they don't work the support queue)
+  const partnerProfile = await prisma.partner.findUnique({
+    where: { partnerCode },
+    select: { firstName: true, lastName: true },
+  });
+  const partnerName =
+    partnerProfile
+      ? `${partnerProfile.firstName ?? ""} ${partnerProfile.lastName ?? ""}`.trim() || partnerCode
+      : partnerCode;
+
+  let recipientAdminEmails: string[] = [];
+  const assignedIds = routedInbox
+    ? await prisma.adminInbox
+        .findUnique({
+          where: { id: routedInbox.id },
+          select: { assignedAdminIds: true },
+        })
+        .then((r) => r?.assignedAdminIds ?? [])
+    : [];
+  if (assignedIds.length > 0) {
+    const assigned = await prisma.user.findMany({
+      where: { id: { in: assignedIds } },
+      select: { email: true },
+    });
+    recipientAdminEmails = assigned.map((u) => u.email);
+  }
+  if (recipientAdminEmails.length === 0) {
+    const fallback = await prisma.user.findMany({
+      where: { role: { in: ["super_admin", "admin", "partner_support"] } },
+      select: { email: true },
+    });
+    recipientAdminEmails = fallback.map((u) => u.email);
+  }
+
+  const inboxLabel = routedInbox
+    ? `${routedInbox.displayName} inbox`
+    : "Support inbox";
+  const notifTitle =
+    priority === "urgent" || priority === "high"
+      ? `New ${priority} ticket from Ollie`
+      : "New ticket from Ollie";
+  const notifMessage = `${partnerName} → ${inboxLabel} · ${ticket.subject}`;
+  const notifLink = `/admin/support?ticketId=${ticket.id}`;
+
+  await Promise.all(
+    recipientAdminEmails.map((email) =>
+      prisma.notification
+        .create({
+          data: {
+            recipientType: "admin",
+            recipientId: email,
+            type: "ai_ticket_routed",
+            title: notifTitle,
+            message: notifMessage,
+            link: notifLink,
+          },
+        })
+        .catch(() => {})
+    )
+  );
+
   return ok({
     ticketId: ticket.id.substring(0, 8),
     subject: ticket.subject,
@@ -553,7 +622,11 @@ async function createSupportTicket(
       ? { role: routedInbox.role, displayName: routedInbox.displayName }
       : { role: "support", displayName: "Partner Support" },
     partnerLink: `/dashboard/support`,
+    adminsNotified: recipientAdminEmails.length,
+    routedViaAssignedAdmins: assignedIds.length > 0,
     note:
-      "Ticket created and routed. A ticket email to the target inbox will fire in a follow-up PR (Phase 3c.3). Partner can view and reply from the Support page.",
+      assignedIds.length > 0
+        ? `Ticket created, routed to ${inboxLabel}, and ${recipientAdminEmails.length} assigned admin${recipientAdminEmails.length === 1 ? "" : "s"} notified. Partner can view and reply from the Support page.`
+        : `Ticket created and routed to ${inboxLabel}. Inbox has no admins assigned yet — notified all ${recipientAdminEmails.length} support-eligible admins as fallback. Partner can view and reply from the Support page.`,
   });
 }
