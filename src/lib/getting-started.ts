@@ -89,18 +89,22 @@ export interface GettingStartedResult {
   expectationsMarkdown: string;
 }
 
-export const DEFAULT_EXPECTATIONS_MARKDOWN = `## What it means to be a Fintella partner
+export const DEFAULT_EXPECTATIONS_MARKDOWN = `## Your path to earning with Fintella
 
-As a Fintella referral partner, we ask a few things of you so we can earn together:
+Welcome to the Fintella Financial Intelligence Network. Here's what success looks like as a referral partner:
 
-- **Aim for at least one qualified referral a month.** Steady activity beats sporadic bursts — consistent partners close more deals.
-- **Join our Live Weekly calls.** Once a week is ideal. This is where you hear about new offers, ask questions, and learn what's working for other partners.
-- **Respond to your clients within 24 hours.** They chose you because they trust you. Keep the trust by being responsive.
-- **Represent Fintella honestly.** Don't overpromise outcomes; let our vetted partner providers close the loop with the legal and procedural detail.
-- **Keep your profile and payout info current.** We pay you fast when we have accurate information on file.
-- **Stay in touch.** Respond to our emails and SMS so commissions, approvals, and new opportunities never get stuck.
+- **Submit at least one qualified referral a month.** Consistency wins — partners who submit regularly close more deals and earn higher commissions over time.
+- **Attend the Live Weekly call.** This is your direct line to product updates, winning strategies from top-performing partners, and live Q&A with leadership. Aim for at least one per month.
+- **Respond to clients within 24 hours.** Your clients trust you. Fast follow-up keeps deals moving and protects your reputation.
+- **Be honest about what Fintella does.** We connect businesses with vetted recovery providers — never overpromise outcomes. Let the experts handle the legal and procedural details.
+- **Keep your profile and payout info up to date.** Accurate information means faster payouts and correct tax documents at year-end.
+- **Stay reachable.** Check your portal notifications, respond to emails and texts, and keep your contact info current so commissions, approvals, and new opportunities never stall.
 
-You bring the relationships. We bring the platform, the partner firms, the workflow, and the payout. Let's build.`;
+## How you earn
+
+Your commission is a percentage of the professional fee collected on each successful recovery. When you refer a client and their claim is approved, you earn your agreed-upon rate — automatically tracked and calculated in your portal. If you recruit downline partners, you also earn override commissions on every deal they close.
+
+You bring the relationships. We bring the platform, the recovery network, the workflow, and the payout. Let's build together.`;
 
 export function parseOnboardingState(raw: string | null | undefined): OnboardingState {
   if (!raw) return {};
@@ -212,7 +216,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     {
       id: "sign_agreement",
       title: "Sign your Partnership Agreement",
-      description: "Your partnership goes live the moment both signatures are on the document.",
+      description: "Review and e-sign your partnership agreement to activate your account. Once both you and Fintella sign, your portal unlocks and you can start submitting referrals immediately.",
       ctaLabel: agreementSigned ? "Signed" : "Sign now",
       ctaUrl: agreementCtaUrl,
       icon: "📝",
@@ -221,8 +225,8 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     },
     {
       id: "complete_profile",
-      title: "Complete your profile",
-      description: "Add your address so we can generate accurate tax forms and ship any rewards.",
+      title: "Complete your partner profile",
+      description: "Go to Settings and fill in your full mailing address. This is required for accurate tax documents (1099) and ensures any rewards or materials reach you. Takes about one minute.",
       ctaLabel: profileComplete ? "Complete" : "Finish profile",
       ctaUrl: "/dashboard/settings?tab=address",
       icon: "👤",
@@ -231,8 +235,8 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     },
     {
       id: "add_payout",
-      title: "Add your payout info",
-      description: "Bank, ACH, check, or PayPal. We can't pay you until this is set.",
+      title: "Set up your payout method",
+      description: "Choose how you want to get paid — bank transfer (ACH), wire, check, or PayPal. You won't receive commission payments until this is set up. Go to Settings → Payout Information to add your details.",
       ctaLabel: payoutComplete ? "Complete" : "Add payout info",
       ctaUrl: "/dashboard/settings?tab=payout",
       icon: "💸",
@@ -242,7 +246,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     {
       id: "watch_video",
       title: "Watch the welcome video",
-      description: "A two-minute tour of the portal and how referrals flow through Fintella.",
+      description: "A quick walkthrough of the portal — how to navigate your dashboard, where to submit referrals, how to track your deals, and how commissions work. Watch it on your home page.",
       ctaLabel: videoWatched ? "Watched" : "Watch now",
       ctaUrl: "/dashboard/home",
       icon: "🎬",
@@ -252,7 +256,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     {
       id: "join_call",
       title: "Join a Live Weekly call",
-      description: "This is where you actually learn the product. Join one this week.",
+      description: "Every week, Fintella hosts a live training call where you'll hear product updates, learn proven referral strategies from top partners, and get your questions answered in real time. Check the schedule and join your first one.",
       ctaLabel: callJoined ? "Joined" : "Join this week",
       ctaUrl: "/dashboard/conference",
       icon: "📹",
@@ -262,7 +266,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     {
       id: "complete_training",
       title: "Complete a training module",
-      description: "Pick any module in Partner Training to build your referral playbook.",
+      description: "Head to Partner Training and complete at least one module. Start with \"Understanding Tariff Recovery\" or \"How to Submit a Lead\" — they'll give you the knowledge you need to confidently talk to potential clients.",
       ctaLabel: trainingDone ? "Complete" : "Start training",
       ctaUrl: "/dashboard/training",
       icon: "📖",
@@ -272,7 +276,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     {
       id: "share_link",
       title: "Share your referral link",
-      description: "Your unique link tracks every client you send our way.",
+      description: "Go to Referral Links and copy your unique tracking URL. When you share this link with a potential client, their submission is automatically attributed to you so you get credit for the referral.",
       ctaLabel: linkShared ? "Shared" : "Copy your link",
       ctaUrl: "/dashboard/referral-links",
       icon: "🔗",
@@ -281,8 +285,8 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     },
     {
       id: "submit_client",
-      title: "Submit your first client",
-      description: "Use the Submit Client form whenever you're ready to send a warm lead over.",
+      title: "Submit your first client referral",
+      description: "Ready to send a referral? Go to Submit Client, fill out the client's business information and estimated import value, and submit. You'll be able to track the deal's progress and your commission from the Reporting tab.",
       ctaLabel: hasDeal ? "Submitted" : "Submit a client",
       ctaUrl: "/dashboard/submit-client",
       icon: "✉️",
@@ -291,8 +295,8 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     },
     {
       id: "invite_downline",
-      title: "Invite your first downline partner",
-      description: "Earn override commissions on every deal your recruits close.",
+      title: "Recruit your first downline partner",
+      description: "Build your team and earn more. Go to Referral Links, create an invite for a downline partner at a rate below yours, and share the signup link. You'll earn an override commission on every deal they close — automatically.",
       ctaLabel: hasDownline ? "Invited" : "Invite a partner",
       ctaUrl: "/dashboard/referral-links",
       icon: "👥",
