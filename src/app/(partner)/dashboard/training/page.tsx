@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDevice } from "@/lib/useDevice";
 import VideoModal from "@/components/ui/VideoModal";
+import SlidePlayer from "@/components/ui/SlidePlayer";
 import Accordion from "@/components/ui/Accordion";
 import type { AccordionItem } from "@/components/ui/Accordion";
 import GlossaryText from "@/components/ui/GlossaryText";
@@ -18,6 +19,7 @@ interface Module {
   category: string;
   duration: string | null;
   videoUrl: string | null;
+  videoScript: string | null;
   content: string | null;
   completed: boolean;
   completedAt: string | null;
@@ -69,14 +71,14 @@ const FAQ_CATEGORIES = ["All", "General", "Commissions", "Leads", "Technical"];
 /* -------------------------------------------------------------------------- */
 
 const DEMO_MODULES: Module[] = [
-  { id: "m1", title: "Welcome to Fintella — Getting Started", description: "Overview of the partner program, how commissions work, and your first steps.", category: "Onboarding", duration: "12 min", videoUrl: null, content: "This introductory module walks you through the Fintella partner program from end to end. You will learn how the commission tiers work (L1, L2, L3), what resources are available in the partner portal, and the exact steps to submit your first lead. By the end, you will have a clear roadmap for getting your first client signed up.", completed: true, completedAt: "2025-12-01T10:00:00Z" },
-  { id: "m2", title: "Understanding IEEPA Tariff Recovery", description: "Deep dive into the IEEPA tariff recovery process and how clients qualify for refunds.", category: "Product Knowledge", duration: "18 min", videoUrl: null, content: "Learn the legal and procedural basis for IEEPA tariff recovery claims. We cover which tariff codes qualify, the documentation importers need to provide, and the typical timeline from filing to refund. This module includes real-world examples of successful recoveries.", completed: true, completedAt: "2025-12-02T14:30:00Z" },
-  { id: "m3", title: "How to Submit a Lead", description: "Step-by-step walkthrough of the lead submission process and what happens after.", category: "Onboarding", duration: "8 min", videoUrl: null, content: "Follow along as we walk through the lead submission form field by field. You will see exactly what information is required, what is optional, and how to set expectations with your client about next steps. We also cover the lead status lifecycle so you always know where things stand.", completed: false, completedAt: null },
-  { id: "m4", title: "Identifying Qualified Importers", description: "Learn how to spot importers who may qualify for tariff refunds in your network.", category: "Sales", duration: "15 min", videoUrl: null, content: "Not every importer qualifies for tariff recovery. This module teaches you the key qualification criteria: minimum import volume, applicable tariff codes, documentation readiness, and common disqualifiers. Includes a quick-assessment framework you can use during initial conversations.", completed: false, completedAt: null },
-  { id: "m5", title: "Building Your Downline Network", description: "Strategies for recruiting CPAs, trade advisors, and attorneys as referral partners.", category: "Sales", duration: "20 min", videoUrl: null, content: "Expand your earning potential by building a referral network. Learn how to identify and approach CPAs, customs brokers, trade compliance consultants, and attorneys who serve importers. Includes outreach templates, pitch frameworks, and tips for maintaining long-term referral relationships.", completed: false, completedAt: null },
-  { id: "m6", title: "Using the Partner Portal", description: "Full walkthrough of all portal features — deals, commissions, documents, and more.", category: "Tools", duration: "10 min", videoUrl: null, content: "A comprehensive tour of every section of the partner portal. You will learn how to track your deals, view commission statements, upload documents, access training resources, and manage your profile settings. Designed to help you get the most out of the platform from day one.", completed: false, completedAt: null },
-  { id: "m7", title: "Section 301 Duties — What You Need to Know", description: "Understanding Section 301 tariffs on Chinese imports and recovery opportunities.", category: "Product Knowledge", duration: "22 min", videoUrl: null, content: "Section 301 tariffs affect a broad range of Chinese imports. This module covers the four tranches of Section 301 duties, which HTS codes are impacted, the exclusion process, and how importers can recover overpaid duties. Includes a quick-reference table for the most common product categories.", completed: false, completedAt: null },
-  { id: "m8", title: "Commission Structure Explained", description: "L1, L2, and L3 commissions — when you get paid and how to maximize earnings.", category: "Onboarding", duration: "10 min", videoUrl: null, content: "Understand exactly how you earn. This module breaks down the three commission levels: L1 (direct referral), L2 (downline referral), and L3 (second-level downline). You will learn the percentage rates, payment triggers, payout schedules, and strategies for maximizing your total earnings.", completed: false, completedAt: null },
+  { id: "m1", title: "Welcome to Fintella — Getting Started", description: "Overview of the partner program, how commissions work, and your first steps.", category: "Onboarding", duration: "12 min", videoUrl: null, videoScript: null, content: "This introductory module walks you through the Fintella partner program from end to end. You will learn how the commission tiers work (L1, L2, L3), what resources are available in the partner portal, and the exact steps to submit your first lead. By the end, you will have a clear roadmap for getting your first client signed up.", completed: true, completedAt: "2025-12-01T10:00:00Z" },
+  { id: "m2", title: "Understanding IEEPA Tariff Recovery", description: "Deep dive into the IEEPA tariff recovery process and how clients qualify for refunds.", category: "Product Knowledge", duration: "18 min", videoUrl: null, videoScript: null, content: "Learn the legal and procedural basis for IEEPA tariff recovery claims. We cover which tariff codes qualify, the documentation importers need to provide, and the typical timeline from filing to refund. This module includes real-world examples of successful recoveries.", completed: true, completedAt: "2025-12-02T14:30:00Z" },
+  { id: "m3", title: "How to Submit a Lead", description: "Step-by-step walkthrough of the lead submission process and what happens after.", category: "Onboarding", duration: "8 min", videoUrl: null, videoScript: null, content: "Follow along as we walk through the lead submission form field by field. You will see exactly what information is required, what is optional, and how to set expectations with your client about next steps. We also cover the lead status lifecycle so you always know where things stand.", completed: false, completedAt: null },
+  { id: "m4", title: "Identifying Qualified Importers", description: "Learn how to spot importers who may qualify for tariff refunds in your network.", category: "Sales", duration: "15 min", videoUrl: null, videoScript: null, content: "Not every importer qualifies for tariff recovery. This module teaches you the key qualification criteria: minimum import volume, applicable tariff codes, documentation readiness, and common disqualifiers. Includes a quick-assessment framework you can use during initial conversations.", completed: false, completedAt: null },
+  { id: "m5", title: "Building Your Downline Network", description: "Strategies for recruiting CPAs, trade advisors, and attorneys as referral partners.", category: "Sales", duration: "20 min", videoUrl: null, videoScript: null, content: "Expand your earning potential by building a referral network. Learn how to identify and approach CPAs, customs brokers, trade compliance consultants, and attorneys who serve importers. Includes outreach templates, pitch frameworks, and tips for maintaining long-term referral relationships.", completed: false, completedAt: null },
+  { id: "m6", title: "Using the Partner Portal", description: "Full walkthrough of all portal features — deals, commissions, documents, and more.", category: "Tools", duration: "10 min", videoUrl: null, videoScript: null, content: "A comprehensive tour of every section of the partner portal. You will learn how to track your deals, view commission statements, upload documents, access training resources, and manage your profile settings. Designed to help you get the most out of the platform from day one.", completed: false, completedAt: null },
+  { id: "m7", title: "Section 301 Duties — What You Need to Know", description: "Understanding Section 301 tariffs on Chinese imports and recovery opportunities.", category: "Product Knowledge", duration: "22 min", videoUrl: null, videoScript: null, content: "Section 301 tariffs affect a broad range of Chinese imports. This module covers the four tranches of Section 301 duties, which HTS codes are impacted, the exclusion process, and how importers can recover overpaid duties. Includes a quick-reference table for the most common product categories.", completed: false, completedAt: null },
+  { id: "m8", title: "Commission Structure Explained", description: "L1, L2, and L3 commissions — when you get paid and how to maximize earnings.", category: "Onboarding", duration: "10 min", videoUrl: null, videoScript: null, content: "Understand exactly how you earn. This module breaks down the three commission levels: L1 (direct referral), L2 (downline referral), and L3 (second-level downline). You will learn the percentage rates, payment triggers, payout schedules, and strategies for maximizing your total earnings.", completed: false, completedAt: null },
 ];
 
 const DEMO_RESOURCES: Resource[] = [
@@ -157,6 +159,13 @@ export default function TrainingPage() {
   const [videoModal, setVideoModal] = useState<{ isOpen: boolean; url: string; title: string }>({
     isOpen: false,
     url: "",
+    title: "",
+  });
+
+  /* ---- Slide player modal state ---- */
+  const [slideModal, setSlideModal] = useState<{ isOpen: boolean; script: any; title: string }>({
+    isOpen: false,
+    script: null,
     title: "",
   });
 
@@ -481,6 +490,19 @@ export default function TrainingPage() {
                             <span className="text-[16px]">{"\u25B6"}</span>
                             Watch Video
                           </button>
+                        ) : m.videoScript ? (
+                          <button
+                            onClick={() => {
+                              try {
+                                const parsed = typeof m.videoScript === "string" ? JSON.parse(m.videoScript) : m.videoScript;
+                                setSlideModal({ isOpen: true, script: parsed, title: m.title });
+                              } catch { /* invalid script */ }
+                            }}
+                            className="font-body text-[14px] font-semibold text-brand-gold bg-brand-gold/10 border border-brand-gold/30 rounded-lg px-4 py-2 hover:bg-brand-gold/20 hover:border-brand-gold/50 transition-colors inline-flex items-center gap-2"
+                          >
+                            <span className="text-[16px]">{"\u25B6"}</span>
+                            Watch AI Video
+                          </button>
                         ) : (
                           <span className="font-body text-[13px] text-[var(--app-text-faint)] italic">
                             {"\u25B6"} Video coming soon
@@ -742,6 +764,41 @@ export default function TrainingPage() {
         videoUrl={videoModal.url}
         title={videoModal.title}
       />
+
+      {/* SlidePlayer Modal — AI-generated video presentations */}
+      {slideModal.isOpen && slideModal.script && (
+        <div
+          className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-sm flex items-center justify-center"
+          onClick={() => setSlideModal({ isOpen: false, script: null, title: "" })}
+          role="dialog"
+          aria-modal="true"
+          aria-label={slideModal.title}
+        >
+          <div
+            className="relative w-full max-w-4xl mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 bg-[var(--app-bg-secondary)] border border-[var(--app-border)] rounded-t-2xl">
+              <span className="font-body text-sm font-semibold text-[var(--app-text)] truncate">
+                {slideModal.title}
+              </span>
+              <button
+                onClick={() => setSlideModal({ isOpen: false, script: null, title: "" })}
+                className="text-[var(--app-text-secondary)] hover:text-[var(--app-text)] transition-colors p-1"
+                aria-label="Close"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18" />
+                  <path d="M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="bg-[var(--app-bg-secondary)] border-x border-b border-[var(--app-border)] rounded-b-2xl overflow-hidden">
+              <SlidePlayer script={slideModal.script} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ------------------------------------------------------------------ */}
       {/*  Inline Document Viewer — opens when a Resource card's "View" is   */}

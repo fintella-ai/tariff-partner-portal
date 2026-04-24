@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useResizableColumns } from "@/components/ui/ResizableTable";
 import GlossaryAdmin from "@/components/admin/GlossaryAdmin";
+import SlidePlayer from "@/components/ui/SlidePlayer";
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 
@@ -15,6 +16,7 @@ type TrainingModule = {
   category: string;
   content: string | null;
   videoUrl: string | null;
+  videoScript: string | null;
   duration: string | null;
   sortOrder: number;
   published: boolean;
@@ -68,14 +70,14 @@ type ProgressStats = {
 // ─── DEMO FALLBACK DATA ────────────────────────────────────────────────────
 
 const DEMO_MODULES: TrainingModule[] = [
-  { id: "dm-1", title: "Welcome to Fintella", description: "Introduction to Fintella (Financial Intelligence Network) and how the partner program works.", category: "onboarding", content: null, videoUrl: "https://example.com/videos/welcome", duration: "12 min", sortOrder: 1, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dm-2", title: "Understanding Tariff Relief", description: "Deep dive into tariff relief programs, eligibility criteria, and the legal framework.", category: "product", content: null, videoUrl: "https://example.com/videos/tariff-relief", duration: "18 min", sortOrder: 2, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dm-3", title: "Partner Portal Walkthrough", description: "How to navigate the partner portal, submit leads, track deals, and monitor commissions.", category: "tools", content: null, videoUrl: "https://example.com/videos/portal-walkthrough", duration: "15 min", sortOrder: 3, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dm-4", title: "Lead Qualification Process", description: "Learn how to identify and qualify potential clients for tariff relief services.", category: "sales", content: null, videoUrl: "https://example.com/videos/lead-qualification", duration: "20 min", sortOrder: 4, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dm-5", title: "Commission Structure & Tiers", description: "Detailed breakdown of commission tiers, payout schedules, and how to maximize earnings.", category: "sales", content: null, videoUrl: "https://example.com/videos/commissions", duration: "10 min", sortOrder: 5, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dm-6", title: "Client Onboarding Best Practices", description: "Step-by-step guide to helping your referred clients through the onboarding process.", category: "onboarding", content: null, videoUrl: "https://example.com/videos/client-onboarding", duration: "14 min", sortOrder: 6, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dm-7", title: "Using the CRM Tools", description: "How to leverage CRM integrations and deal tracking to manage your pipeline effectively.", category: "tools", content: null, videoUrl: null, duration: "16 min", sortOrder: 7, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
-  { id: "dm-8", title: "Advanced Sales Strategies", description: "Advanced techniques for closing deals and upselling tariff relief services.", category: "sales", content: null, videoUrl: null, duration: "22 min", sortOrder: 8, published: false, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dm-1", title: "Welcome to Fintella", description: "Introduction to Fintella (Financial Intelligence Network) and how the partner program works.", category: "onboarding", content: null, videoUrl: "https://example.com/videos/welcome", videoScript: null, duration: "12 min", sortOrder: 1, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dm-2", title: "Understanding Tariff Relief", description: "Deep dive into tariff relief programs, eligibility criteria, and the legal framework.", category: "product", content: null, videoUrl: "https://example.com/videos/tariff-relief", videoScript: null, duration: "18 min", sortOrder: 2, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dm-3", title: "Partner Portal Walkthrough", description: "How to navigate the partner portal, submit leads, track deals, and monitor commissions.", category: "tools", content: null, videoUrl: "https://example.com/videos/portal-walkthrough", videoScript: null, duration: "15 min", sortOrder: 3, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dm-4", title: "Lead Qualification Process", description: "Learn how to identify and qualify potential clients for tariff relief services.", category: "sales", content: null, videoUrl: "https://example.com/videos/lead-qualification", videoScript: null, duration: "20 min", sortOrder: 4, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dm-5", title: "Commission Structure & Tiers", description: "Detailed breakdown of commission tiers, payout schedules, and how to maximize earnings.", category: "sales", content: null, videoUrl: "https://example.com/videos/commissions", videoScript: null, duration: "10 min", sortOrder: 5, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dm-6", title: "Client Onboarding Best Practices", description: "Step-by-step guide to helping your referred clients through the onboarding process.", category: "onboarding", content: null, videoUrl: "https://example.com/videos/client-onboarding", videoScript: null, duration: "14 min", sortOrder: 6, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dm-7", title: "Using the CRM Tools", description: "How to leverage CRM integrations and deal tracking to manage your pipeline effectively.", category: "tools", content: null, videoUrl: null, videoScript: null, duration: "16 min", sortOrder: 7, published: true, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
+  { id: "dm-8", title: "Advanced Sales Strategies", description: "Advanced techniques for closing deals and upselling tariff relief services.", category: "sales", content: null, videoUrl: null, videoScript: null, duration: "22 min", sortOrder: 8, published: false, createdAt: "2026-03-01", updatedAt: "2026-03-01" },
 ];
 
 const DEMO_RESOURCES: TrainingResource[] = [
@@ -197,6 +199,10 @@ export default function AdminTrainingPage() {
   // "disappear".
   const [saveError, setSaveError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // AI Video generation state
+  const [generatingVideoId, setGeneratingVideoId] = useState<string | null>(null);
+  const [previewScript, setPreviewScript] = useState<{ script: any; title: string } | null>(null);
 
   // Max file size before we refuse to embed — base64 bloats ~33% and
   // Vercel serverless caps request bodies around 4.5MB. Anything bigger
@@ -600,6 +606,28 @@ export default function AdminTrainingPage() {
     }
   };
 
+  /** Generate AI video script for a module from PDF resources */
+  const handleGenerateVideo = async (mod: TrainingModule) => {
+    setGeneratingVideoId(mod.id);
+    try {
+      const res = await fetch(`/api/admin/training/modules/${mod.id}/generate-video`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Generation failed" }));
+        alert(data.error || "Failed to generate video");
+        return;
+      }
+      await fetchModules();
+    } catch {
+      alert("Failed to generate AI video. Please try again.");
+    } finally {
+      setGeneratingVideoId(null);
+    }
+  };
+
   // ─── COMPUTED STATS ───────────────────────────────────────────────────────
 
   const moduleStats = {
@@ -949,7 +977,7 @@ export default function AdminTrainingPage() {
                       {mod.sortOrder}
                     </td>
                     <td className="px-4 sm:px-6 py-3">
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 flex-wrap">
                         <button
                           onClick={() => openEditForm(mod)}
                           className="text-xs text-brand-gold/60 hover:text-brand-gold transition"
@@ -968,6 +996,30 @@ export default function AdminTrainingPage() {
                         >
                           Delete
                         </button>
+                        <button
+                          onClick={() => handleGenerateVideo(mod)}
+                          disabled={generatingVideoId === mod.id}
+                          className="text-xs text-blue-400/70 hover:text-blue-400 transition disabled:opacity-50"
+                        >
+                          {generatingVideoId === mod.id
+                            ? "Generating..."
+                            : mod.videoScript
+                            ? "Regenerate Video"
+                            : "AI Video"}
+                        </button>
+                        {mod.videoScript && (
+                          <button
+                            onClick={() => {
+                              try {
+                                const parsed = typeof mod.videoScript === "string" ? JSON.parse(mod.videoScript) : mod.videoScript;
+                                setPreviewScript({ script: parsed, title: mod.title });
+                              } catch { /* invalid */ }
+                            }}
+                            className="text-xs text-purple-400/70 hover:text-purple-400 transition"
+                          >
+                            Preview
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1024,7 +1076,7 @@ export default function AdminTrainingPage() {
                     {mod.published ? "Published" : "Draft"}
                   </span>
                 </div>
-                <div className="flex items-center justify-end gap-3">
+                <div className="flex items-center justify-end gap-3 flex-wrap">
                   <button
                     onClick={() => openEditForm(mod)}
                     className="text-xs text-brand-gold/60 hover:text-brand-gold transition"
@@ -1043,6 +1095,30 @@ export default function AdminTrainingPage() {
                   >
                     Delete
                   </button>
+                  <button
+                    onClick={() => handleGenerateVideo(mod)}
+                    disabled={generatingVideoId === mod.id}
+                    className="text-xs text-blue-400/70 hover:text-blue-400 transition disabled:opacity-50"
+                  >
+                    {generatingVideoId === mod.id
+                      ? "Generating..."
+                      : mod.videoScript
+                      ? "Regenerate Video"
+                      : "AI Video"}
+                  </button>
+                  {mod.videoScript && (
+                    <button
+                      onClick={() => {
+                        try {
+                          const parsed = typeof mod.videoScript === "string" ? JSON.parse(mod.videoScript) : mod.videoScript;
+                          setPreviewScript({ script: parsed, title: mod.title });
+                        } catch { /* invalid */ }
+                      }}
+                      className="text-xs text-purple-400/70 hover:text-purple-400 transition"
+                    >
+                      Preview
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -1841,6 +1917,41 @@ export default function AdminTrainingPage() {
 
       {/* ═══ GLOSSARY VIEW (Phase 2b) ═══ */}
       {view === "glossary" && <GlossaryAdmin />}
+
+      {/* ═══ AI VIDEO PREVIEW MODAL ═══ */}
+      {previewScript && (
+        <div
+          className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-sm flex items-center justify-center"
+          onClick={() => setPreviewScript(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Preview: ${previewScript.title}`}
+        >
+          <div
+            className="relative w-full max-w-4xl mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 bg-[var(--app-bg-secondary)] border border-[var(--app-border)] rounded-t-2xl">
+              <span className="font-body text-sm font-semibold text-[var(--app-text)] truncate">
+                {previewScript.title} — AI Video Preview
+              </span>
+              <button
+                onClick={() => setPreviewScript(null)}
+                className="text-[var(--app-text-secondary)] hover:text-[var(--app-text)] transition-colors p-1"
+                aria-label="Close preview"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18" />
+                  <path d="M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="bg-[var(--app-bg-secondary)] border-x border-b border-[var(--app-border)] rounded-b-2xl overflow-hidden">
+              <SlidePlayer script={previewScript.script} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

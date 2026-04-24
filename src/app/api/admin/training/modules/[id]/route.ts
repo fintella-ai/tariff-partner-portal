@@ -35,6 +35,7 @@ export async function PUT(
       "category",
       "content",
       "videoUrl",
+      "videoScript",
       "duration",
       "sortOrder",
       "published",

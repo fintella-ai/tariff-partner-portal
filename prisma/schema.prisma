@@ -281,6 +281,7 @@ model TrainingModule {
   category    String   // "onboarding", "sales", "product", "tools"
   content     String?  // rich text / markdown
   videoUrl    String?
+  videoScript String?  // JSON: AI-generated slide presentation script from PDF content
   duration    String?  // e.g., "12 min", "18 min"
   sortOrder   Int      @default(0)
   published   Boolean  @default(true)
