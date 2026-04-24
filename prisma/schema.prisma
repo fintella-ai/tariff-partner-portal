@@ -859,6 +859,17 @@ model AiMessage {
   @@index([conversationId])
 }
 
+// Singleton row whose value is embedded in Tara's cached system prompt
+// (as an HTML comment). Bumping the value invalidates Anthropic's exact-
+// match prompt cache, forcing a fresh cache block write on next request.
+// See src/lib/ai-knowledge-version.ts for the bump helper; called from
+// every training/FAQ mutation route.
+model AiKnowledgeVersion {
+  id          String    @id @default("singleton")
+  version     BigInt    @default(0)
+  updatedAt   DateTime  @updatedAt
+}
+
 // Per-user rate limit + budget tracking (resets daily)
 model AiUsageDay {
   id           String   @id @default(cuid())
