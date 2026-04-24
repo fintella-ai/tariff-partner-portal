@@ -1,5 +1,7 @@
 # Fintella OS — Managed Single-Tenant White-Label Platform
 
+> ⚠️ **TEMPORARY HOLDING LOCATION** — This design document describes **Fintella OS**, a completely separate product that will live in its own repo at `github.com/fintella-ai/fintella-os` (not yet created). The spec is currently committed here in the production Fintella repo (PR #519, branch `docs/whitelabel-fintella-os-design`) only because the Fintella OS repo doesn't exist yet. **Step 1 of Fintella OS implementation is to create the new repo, move this spec there, and close PR #519 unmerged.** No Fintella OS code will ever touch the production Fintella partner portal repo. See `feedback_fintella_os_isolation.md` memory for the HARD-NEVER isolation rule.
+
 **Date:** 2026-04-24
 **Status:** Brainstorm design complete — awaiting John's review before writing-plans
 **Product name (working):** Fintella OS
@@ -368,6 +370,7 @@ A key insight from the 2026-04-24 brainstorm: Fintella OS's V1 architecture (ten
 | **Lending + capital pathway** | Working capital, SBA loans, equipment financing, invoice factoring, MCA — referral network into vetted lenders; tenant + partner earn origination referral fees | 2–3 weeks (reuses referral engine) |
 | **Credit repair pathway** | Tenant's partners refer end-clients (business owners, employees, customers) into vetted credit-repair services; tenant + partner earn referral fees on enrollment + successful cleanup milestones | 2 weeks (reuses referral engine) |
 | **Partner personal-services marketplace** | A separate tab inside the partner portal where partners access pathway services FOR THEMSELVES (not as referrals out): personal tax prep, personal credit repair, personal accounting, personal + business insurance, utility audits for their own home/business, entity formation + restructuring, estate planning, retirement planning. Every partner in the network gets preferred pricing from pathway providers. This is a MEMBERSHIP PERK (retention lever), not a revenue line — but it raises retention and LTV meaningfully. | 2–3 weeks (new PersonalServiceCatalog model + partner-facing marketplace UI; reuses pathway-provider relationships already established for the referral flow) |
+| **🔁 Customer → partner conversion loop (the flywheel)** | The end-client who was REFERRED into a pathway service becomes a Customer record in the tenant's portal (tracks what services they're using, invoice history, etc.). A CTA inside the customer dashboard: *"Earn commissions referring others to the same services you use. Become a partner — free."* One click → Customer row upgrades to a Partner row, they start with a $0 onboarding fee, and the SAME pathway services they're already consuming flip to **discounted partner-tier pricing**. Now they have a financial reason to stay + a referral revenue stream to earn from. Every customer is a potential new partner; every new partner is still a customer consuming services. Compounding flywheel. | 3 weeks (new Customer model alongside Partner; customer→partner upgrade endpoint; pathway-provider discount-tier logic; shared auth so one login works for both roles) |
 
 ### Upsell pricing — per-module profit-center add-ons
 
@@ -393,6 +396,7 @@ These extensions are sold as add-ons on top of the base tier. Tenants compose th
 | Lending pathway | Free to tenant; rev-share | Pathway rev-share |
 | Credit repair pathway | Free to tenant; rev-share | Pathway rev-share |
 | Partner personal-services marketplace | +$97/mo (access + curation fee) | Flat (retention perk) |
+| Customer → partner conversion loop | Included in Growth tier and above (core flywheel — not a gated add-on) | Drives LTV, not direct line item |
 
 **Illustrative ACV at saturation:**
 A Scale tier tenant adopting 4 flat add-ons + activating 2 pathway rev-shares = $2,997 base + ~$1,200 add-ons + pathway upside = $4,200+/mo direct ACV before pathway rev-share upside. 25 customers at that mix = $105k MRR + pathway commissions.
