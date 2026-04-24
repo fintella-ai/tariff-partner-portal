@@ -218,7 +218,7 @@ export default async function WebhookGuidePage() {
                 { href: "#security", label: "Security" },
                 { href: "#deal-creation", label: "Deal Creation (POST)" },
                 { href: "#store-deal-id", label: "Store Deal ID" },
-                { href: "#update-deal", label: "Updating a Deal (PATCH)" },
+                { href: "#update-deal", label: "Updating a Deal (POST or PATCH)" },
                 { href: "#closing-deal", label: "Closing a Deal" },
                 { href: "#curl-examples", label: "cURL Examples" },
                 { href: "#error-handling", label: "Error Handling" },
@@ -256,7 +256,7 @@ export default async function WebhookGuidePage() {
             <div style={{ marginTop: 20, background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden" }}>
               {[
                 ["Webhook URL", "https://fintella.partners/api/webhook/referral"],
-                ["Methods", "POST (create) · PATCH (update) · GET (health)"],
+                ["Methods", "POST (create, or update when dealId is present) · PATCH (update) · GET (health)"],
                 ["Content-Type", "application/json"],
                 ["Authentication", "X-Fintella-Api-Key: [provided separately]"],
                 ["Rate Limit", "60 requests / 60 seconds per API key"],
@@ -445,14 +445,14 @@ Retry-After: 17
 
           </div>
 
-          {/* ═══ UPDATING A DEAL (PATCH) ═══ */}
+          {/* ═══ UPDATING A DEAL (POST or PATCH) ═══ */}
           <div id="update-deal" style={{ scrollMarginTop: 20 }}>
-          <Section title="Updating a Deal (PATCH)">
+          <Section title="Updating a Deal (POST or PATCH)">
             <div style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
               {[
-                ["Endpoint", "PATCH /api/webhook/referral"],
-                ["Method", "PATCH"],
-                ["Required Field", "dealId (from the original POST response)"],
+                ["Endpoint", "POST /api/webhook/referral  (or PATCH — same payload)"],
+                ["Method", "POST with a `dealId` field in the body, OR PATCH"],
+                ["Required Field", "hs_object_id (HubSpot deal ID) — or dealId / externalDealId"],
                 ["Security Header", "x-webhook-secret: [same as POST]"],
               ].map(([label, value], i) => (
                 <div key={label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", padding: "14px 20px", borderTop: i > 0 ? "1px solid var(--doc-border-subtle)" : "none", gap: 8 }}>
@@ -463,7 +463,7 @@ Retry-After: 17
             </div>
 
             <p style={{ fontSize: 14, color: "var(--doc-text-muted)", marginBottom: 20 }}>
-              Send any combination of these fields to update the deal. Only include the fields that changed — all are optional except <Code>dealId</Code>.
+              Send any combination of these fields to update the deal. Only include the fields that changed — all are optional except the deal identifier. <strong style={{ color: "var(--doc-gold)" }}>Use <Code>hs_object_id</Code></strong> (your HubSpot deal ID) to identify the deal — or <Code>dealId</Code> / <Code>externalDealId</Code> if you have them. <strong style={{ color: "var(--doc-text-secondary)" }}>POST-only integrators</strong> simply include the identifier in a POST body and it will be routed through the same update path — the payload shape is identical to the examples below.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
