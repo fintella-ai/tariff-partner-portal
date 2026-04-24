@@ -688,6 +688,17 @@ model PortalSettings {
   // page's default layout." Mutate only through
   // src/lib/page-section-overrides.ts.
   pageSectionOverrides Json?
+  // Level 3 Edit Layout — Phase D star-admin-authored custom sections.
+  // Mapped by pageId; each value is an ordered array of custom-section
+  // descriptors:
+  //   { [pageId]: [{ id, type, order, data }, ...] }
+  // - `type` is a key in the client-side section-type registry.
+  // - `data` is the per-type editor payload (free-form JSON because the
+  //   registry owns the schema).
+  // - `order` uses the same integer scheme as pageSectionOverrides so
+  //   custom sections interleave cleanly with built-ins. Mutate only
+  //   through src/lib/page-custom-sections.ts.
+  pageCustomSections Json?
   // Timestamps
   updatedAt DateTime @updatedAt
 }

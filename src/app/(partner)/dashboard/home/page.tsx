@@ -9,6 +9,7 @@ import { markGettingStartedVideoWatched } from "@/lib/markGettingStarted";
 import GlossaryText from "@/components/ui/GlossaryText";
 import EditableText from "@/components/ui/EditableText";
 import EditableSection from "@/components/ui/EditableSection";
+import CustomSections from "@/components/ui/CustomSections";
 import { useEditLayout } from "@/components/admin/EditLayoutContext";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -650,6 +651,9 @@ export default function HomePage() {
         const node = dispatchModule(id);
         return node ? <Fragment key={id}>{node}</Fragment> : null;
       })}
+      {/* Level 3 Phase D — star-admin-authored custom sections. Appear
+          below the built-in modules; invisible until an admin adds one. */}
+      <CustomSections pageId="home" />
     </div>
   );
 }

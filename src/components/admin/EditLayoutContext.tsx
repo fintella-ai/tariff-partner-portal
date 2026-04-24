@@ -29,6 +29,14 @@ type OverrideMap = Record<string, string>;
 export type SectionOverride = { hidden?: boolean; order?: number };
 type SectionOverrideMap = Record<string, SectionOverride>;
 
+export type CustomSection = {
+  id: string;
+  type: string;
+  order: number;
+  data: Record<string, unknown>;
+};
+type CustomSectionsByPage = Record<string, CustomSection[]>;
+
 type EditLayoutContextValue = {
   canEdit: boolean;
   editMode: boolean;
@@ -39,6 +47,20 @@ type EditLayoutContextValue = {
   sections: SectionOverrideMap;
   getSection: (id: string) => SectionOverride | null;
   saveSection: (id: string, patch: SectionOverride) => Promise<void>;
+  customSections: CustomSectionsByPage;
+  getCustomSections: (pageId: string) => CustomSection[];
+  addCustomSection: (
+    pageId: string,
+    type: string,
+    data?: Record<string, unknown>,
+    order?: number
+  ) => Promise<void>;
+  updateCustomSection: (
+    pageId: string,
+    id: string,
+    patch: { data?: Record<string, unknown>; order?: number }
+  ) => Promise<void>;
+  removeCustomSection: (pageId: string, id: string) => Promise<void>;
 };
 
 const EditLayoutContext = createContext<EditLayoutContextValue | null>(null);
@@ -50,6 +72,26 @@ export function EditLayoutProvider({ children }: { children: ReactNode }) {
   const [editMode, setEditMode] = useState(false);
   const [overrides, setOverrides] = useState<OverrideMap>({});
   const [sections, setSections] = useState<SectionOverrideMap>({});
+  const [customSections, setCustomSections] = useState<CustomSectionsByPage>({});
+
+  // Custom sections hydrate for EVERYONE (not just the star admin) so
+  // their authored content renders for every partner/admin. Text + section
+  // overrides gate on canEdit because they're only consulted by the
+  // primitives which themselves need the write helpers.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/page-custom-sections", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.pages && typeof data.pages === "object") {
+          setCustomSections(data.pages as CustomSectionsByPage);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!canEdit) {
@@ -142,6 +184,50 @@ export function EditLayoutProvider({ children }: { children: ReactNode }) {
     [canEdit]
   );
 
+  const getCustomSections = useCallback(
+    (pageId: string) => customSections[pageId] ?? [],
+    [customSections]
+  );
+
+  const postCustomSection = useCallback(
+    async (body: Record<string, unknown>) => {
+      if (!canEdit) return;
+      const res = await fetch("/api/admin/page-custom-sections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) return;
+      const data = await res.json().catch(() => null);
+      if (data?.pages && typeof data.pages === "object") {
+        setCustomSections(data.pages as CustomSectionsByPage);
+      }
+    },
+    [canEdit]
+  );
+
+  const addCustomSectionFn = useCallback(
+    (pageId: string, type: string, data?: Record<string, unknown>, order?: number) =>
+      postCustomSection({ action: "add", pageId, type, data, order }),
+    [postCustomSection]
+  );
+
+  const updateCustomSectionFn = useCallback(
+    (
+      pageId: string,
+      id: string,
+      patch: { data?: Record<string, unknown>; order?: number }
+    ) =>
+      postCustomSection({ action: "update", pageId, id, ...patch }),
+    [postCustomSection]
+  );
+
+  const removeCustomSectionFn = useCallback(
+    (pageId: string, id: string) =>
+      postCustomSection({ action: "remove", pageId, id }),
+    [postCustomSection]
+  );
+
   const value = useMemo<EditLayoutContextValue>(
     () => ({
       canEdit,
@@ -153,6 +239,11 @@ export function EditLayoutProvider({ children }: { children: ReactNode }) {
       sections,
       getSection,
       saveSection,
+      customSections,
+      getCustomSections,
+      addCustomSection: addCustomSectionFn,
+      updateCustomSection: updateCustomSectionFn,
+      removeCustomSection: removeCustomSectionFn,
     }),
     [
       canEdit,
@@ -164,6 +255,11 @@ export function EditLayoutProvider({ children }: { children: ReactNode }) {
       sections,
       getSection,
       saveSection,
+      customSections,
+      getCustomSections,
+      addCustomSectionFn,
+      updateCustomSectionFn,
+      removeCustomSectionFn,
     ]
   );
 
@@ -177,8 +273,8 @@ export function EditLayoutProvider({ children }: { children: ReactNode }) {
 export function useEditLayout(): EditLayoutContextValue {
   const ctx = useContext(EditLayoutContext);
   if (ctx) return ctx;
-  // Safe default so <EditableText> / <EditableSection> can render outside
-  // a provider (e.g. on pages not yet wrapped). Never throws.
+  // Safe default so <EditableText> / <EditableSection> / <CustomSections>
+  // can render outside a provider. Never throws.
   return {
     canEdit: false,
     editMode: false,
@@ -189,5 +285,10 @@ export function useEditLayout(): EditLayoutContextValue {
     sections: {},
     getSection: () => null,
     saveSection: async () => {},
+    customSections: {},
+    getCustomSections: () => [],
+    addCustomSection: async () => {},
+    updateCustomSection: async () => {},
+    removeCustomSection: async () => {},
   };
 }
