@@ -80,6 +80,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "home", label: "Home", icon: "🏠" },
   { id: "partners", label: "Partners", icon: "👥" },
   { id: "applications", label: "Applications", icon: "📝" },
+  { id: "landingEditor", label: "Landing Editor", icon: "🪄" },
   { id: "deals", label: "Deals", icon: "📋" },
   { id: "communications", label: "Communications", icon: "💬" },
   { id: "internalChats", label: "Internal Chats", icon: "💬" },
