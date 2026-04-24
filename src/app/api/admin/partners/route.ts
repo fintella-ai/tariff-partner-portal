@@ -136,9 +136,9 @@ export async function POST(req: NextRequest) {
     let commissionRate: number | undefined = undefined;
     if (body.commissionRate != null) {
       const r = parseFloat(body.commissionRate);
-      if (!isFinite(r) || r <= 0 || r > 0.5) {
+      if (!isFinite(r) || r <= 0 || r > 0.3) {
         return NextResponse.json(
-          { error: "Commission rate must be between 1% and 50%." },
+          { error: "Commission rate must be between 1% and 30%." },
           { status: 400 }
         );
       }

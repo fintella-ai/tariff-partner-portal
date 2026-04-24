@@ -188,8 +188,8 @@ export async function PUT(
         return NextResponse.json({ error: "Only super admins can change a partner's commission rate" }, { status: 403 });
       }
       const r = parseFloat(String(body.commissionRate));
-      if (!isFinite(r) || r <= 0 || r > 0.5) {
-        return NextResponse.json({ error: "commissionRate must be between 0 (exclusive) and 0.50" }, { status: 400 });
+      if (!isFinite(r) || r <= 0 || r > 0.3) {
+        return NextResponse.json({ error: "commissionRate must be between 0 (exclusive) and 0.30" }, { status: 400 });
       }
       data.commissionRate = r;
     }

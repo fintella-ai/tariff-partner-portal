@@ -72,38 +72,33 @@ export async function POST(req: NextRequest) {
     const partner = await prisma.partner.findUnique({ where: { partnerCode } });
     if (!partner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
 
-    // Determine target tier and validate rate
-    // Rate must be in [0.05 … partner.commissionRate - 0.05] in 5% steps
-    let targetTier: string;
-    const allowedRates = getAllowedDownlineRates(partner.commissionRate);
+    // Rate validation (Option B Phase 2):
+    //   - Free-form number, no multiple-of-5 requirement
+    //   - Must be strictly less than the inviter's own rate
+    //   - Must be a positive finite number (> 0)
+    // The old step-of-5% ladder is gone. Partners can now offer any rate
+    // below their own — e.g. L1 @ 25% can invite at 12.5% or 7.75%.
+    if (!isFinite(rate) || rate <= 0) {
+      return NextResponse.json({ error: "Rate must be a positive number" }, { status: 400 });
+    }
+    if (rate >= partner.commissionRate) {
+      return NextResponse.json(
+        { error: `Rate must be less than your own rate (${Math.round(partner.commissionRate * 100)}%)` },
+        { status: 400 },
+      );
+    }
 
+    // Depth gate: L1 → L2, L2 → L3. L3 cannot recruit yet because the
+    // legacy commission math + reporting labels only handle 3 tiers.
+    // This opens up in a later phase once the schema + commission path
+    // fully support depth >3 (Phase 5 of Option B).
+    let targetTier: string;
     if (partner.tier === "l1") {
       targetTier = "l2";
-      if (allowedRates.length === 0) {
-        return NextResponse.json({ error: "Your commission rate is too low to recruit partners" }, { status: 403 });
-      }
-      if (!allowedRates.some((r) => Math.abs(r - rate) < 0.001)) {
-        return NextResponse.json({ error: `Invalid L2 rate. Allowed: ${allowedRates.map((r) => `${Math.round(r * 100)}%`).join(", ")}` }, { status: 400 });
-      }
     } else if (partner.tier === "l2") {
-      // L2 → L3 gate: global OR per-partner Partner.l3Enabled can
-      // unlock. Mirrors the GET response's effectiveL3 computation so
-      // an admin granting the per-partner override unblocks both
-      // reading invite rows AND creating new ones.
-      const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
-      const effectiveL3 = (settings?.l3Enabled || false) || (partner.l3Enabled || false);
-      if (!effectiveL3) {
-        return NextResponse.json({ error: "L3 recruitment is not enabled" }, { status: 403 });
-      }
-      if (allowedRates.length === 0) {
-        return NextResponse.json({ error: "Your commission rate is too low to recruit L3 partners (minimum 10% required)" }, { status: 403 });
-      }
       targetTier = "l3";
-      if (!allowedRates.some((r) => Math.abs(r - rate) < 0.001)) {
-        return NextResponse.json({ error: `Invalid L3 rate. Allowed: ${allowedRates.map((r) => `${Math.round(r * 100)}%`).join(", ")}` }, { status: 400 });
-      }
     } else {
-      return NextResponse.json({ error: "L3 partners cannot recruit" }, { status: 403 });
+      return NextResponse.json({ error: "L3 partners cannot recruit yet — deeper chains open in a later release" }, { status: 403 });
     }
 
     const token = generateToken();
