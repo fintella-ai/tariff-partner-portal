@@ -153,7 +153,7 @@ const FIELDS = [
     category: "Consultation",
     colorVar: "--doc-yellow",
     fields: ["consult_booked_date", "consult_booked_time"],
-    desc: "Consultation scheduling. Date (YYYY-MM-DD) and time (HH:MM). Can be updated via PATCH if rescheduled.",
+    desc: "Consultation scheduling. Date (YYYY-MM-DD) and time (HH:MM). Can be updated via a POST (with hs_object_id) if rescheduled.",
   },
   {
     category: "Notes",
@@ -166,6 +166,12 @@ const FIELDS = [
     colorVar: "--doc-blue",
     fields: ["idempotencyKey", "idempotency_key"],
     desc: "Optional. Any unique string (e.g. your internal form submission ID). If you POST the same key twice, the second call returns 200 with the original dealId and no duplicate is created. Strongly recommended on every POST to make retries safe.",
+  },
+  {
+    category: "Enterprise Partner",
+    colorVar: "--doc-gold",
+    fields: ["ep", "EP"],
+    desc: "Enterprise Partner L1 code. Pass via the URL (?ep=EA-ACME-042) or in the body. Legacy utm_medium still accepted.",
   },
   {
     category: "Event Type",
@@ -217,7 +223,7 @@ export default async function WebhookGuidePage() {
                 { href: "#overview", label: "Overview" },
                 { href: "#security", label: "Security" },
                 { href: "#deal-creation", label: "Deal Creation (POST)" },
-                { href: "#store-deal-id", label: "Store Deal ID" },
+                { href: "#store-deal-id", label: "Updating Deals (hs_object_id)" },
                 { href: "#update-deal", label: "Updating a Deal (POST or PATCH)" },
                 { href: "#closing-deal", label: "Closing a Deal" },
                 { href: "#curl-examples", label: "cURL Examples" },
@@ -417,13 +423,13 @@ Retry-After: 17
 
           {/* ═══ STORE DEAL ID ═══ */}
           <div id="store-deal-id" style={{ scrollMarginTop: 20 }}>
-          <Section title="Important: Store the Deal ID">
+          <Section title="Updating Deals: Use Your HubSpot Deal ID">
             <InfoBox>
-              When you create a deal via <Code>POST</Code>, the response includes a <Code>dealId</Code>. <strong style={{ color: "var(--doc-gold)" }}>You must store this ID</strong> in your HubSpot deal record. It is required to send future updates (stage changes, amounts, etc.) to our system.
+              For future updates (stage changes, amounts, etc.), include <Code>hs_object_id</Code> — your HubSpot deal ID — in the POST body. You do <strong style={{ color: "var(--doc-gold)" }}>not</strong> need to store our internal <Code>dealId</Code>; your existing HubSpot ID is enough.
             </InfoBox>
 
             <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 8 }}>1. Create the deal:</div>
+              <div style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 8 }}>1. Create the deal (initial POST):</div>
               <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", fontSize: 13, lineHeight: 1.7, color: "var(--doc-pre-text)", overflowX: "auto", margin: 0 }}>
 {`POST https://fintella.partners/api/webhook/referral
 → 201 Created
@@ -438,8 +444,7 @@ Retry-After: 17
             </div>
 
             <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 8 }}>2. Store <Code>dealId</Code> in your HubSpot deal as a custom property (e.g. <Code>fintella_deal_id</Code>)</div>
-              <div style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 8 }}>3. Use this ID for all future updates to the deal:</div>
+              <div style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 8 }}>2. For all future updates, POST with your HubSpot <Code>hs_object_id</Code>:</div>
             </div>
           </Section>
 
@@ -469,16 +474,16 @@ Retry-After: 17
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
               {[
                 {
-                  category: "Required",
+                  category: "Required — deal identifier (one of)",
                   colorVar: "--doc-red",
-                  fields: ["dealId"],
-                  desc: "The unique deal ID returned in the original POST 201 response. Must be stored in your system.",
+                  fields: ["hs_object_id", "dealId", "externalDealId"],
+                  desc: "Use hs_object_id (your HubSpot deal ID) to identify the deal. Our internal dealId or externalDealId also work if you stored them from the original POST response.",
                 },
                 {
                   category: "Conditionally Required",
                   colorVar: "--doc-red",
                   fields: ["firm_fee_rate"],
-                  desc: "When transitioning a deal into client_engaged (contract signed), firm_fee_rate must be present — either in the PATCH body or already on the deal from a prior update. estimated_refund_amount is required later at in_process and closedwon stages. firm_fee_amount is NOT required; it is derived from refund × rate.",
+                  desc: "When transitioning a deal into client_engaged (contract signed), firm_fee_rate must be present — either in the POST body or already on the deal from a prior update. estimated_refund_amount is required later at in_process and closedwon stages. firm_fee_amount is NOT required; it is derived from refund × rate.",
                 },
                 {
                   category: "Deal Stage",
@@ -572,7 +577,7 @@ Retry-After: 17
                     "createdAt",
                     "updatedAt",
                   ],
-                  desc: "These fields are NOT updatable via PATCH. Payment-received and close date are stamped automatically; the partner code and deal ID are immutable after creation.",
+                  desc: "These fields are NOT updatable via POST/PATCH. Payment-received and close date are stamped automatically; the partner code and deal ID are immutable after creation.",
                 },
               ].map((row) => (
                 <div key={row.category} style={{ background: "var(--doc-card-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", borderLeftWidth: 3, borderLeftColor: `var(${row.colorVar})` }}>
@@ -585,15 +590,15 @@ Retry-After: 17
               ))}
             </div>
 
-            {/* Example PATCH request */}
+            {/* Example POST update request */}
             <div style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
               <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--doc-border-subtle)", display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--doc-orange)", opacity: 0.6 }} />
-                <span style={{ fontSize: 11, color: "var(--doc-text-muted)", fontFamily: "monospace" }}>PATCH /api/webhook/referral</span>
+                <span style={{ fontSize: 11, color: "var(--doc-text-muted)", fontFamily: "monospace" }}>POST /api/webhook/referral (update — hs_object_id present)</span>
               </div>
               <pre style={{ padding: "16px 20px", fontSize: 13, lineHeight: 1.7, overflowX: "auto", color: "var(--doc-pre-text)", margin: 0 }}>
 {`{
-  `}<span style={{ color: "var(--doc-pre-key)" }}>&quot;dealId&quot;</span>{`:                 `}<span style={{ color: "var(--doc-pre-val)" }}>&quot;clx8f9abc123def456&quot;</span>{`,
+  `}<span style={{ color: "var(--doc-pre-key)" }}>&quot;hs_object_id&quot;</span>{`:            `}<span style={{ color: "var(--doc-pre-val)" }}>&quot;462693304018&quot;</span>{`,
   `}<span style={{ color: "var(--doc-pre-key)" }}>&quot;dealstage&quot;</span>{`:               `}<span style={{ color: "var(--doc-pre-val)" }}>&quot;Contract Sent&quot;</span>{`,
   `}<span style={{ color: "var(--doc-pre-key)" }}>&quot;estimated_refund_amount&quot;</span>{`: `}<span style={{ color: "var(--doc-pre-val)" }}>250000</span>{`,
   `}<span style={{ color: "var(--doc-pre-key)" }}>&quot;firm_fee_rate&quot;</span>{`:           `}<span style={{ color: "var(--doc-pre-val)" }}>20</span>{`,
@@ -602,10 +607,10 @@ Retry-After: 17
               </pre>
             </div>
 
-            {/* PATCH Responses */}
+            {/* Update Responses */}
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <ResponseBlock color="var(--doc-green)" label="200 Updated" body={`{\n  "updated": true,\n  "dealId": "clx8f9abc123def456",\n  "dealName": "Acme Imports LLC",\n  "fieldsUpdated": ["externalStage", "estimatedRefundAmount", "firmFeeRate", "firmFeeAmount"]\n}`} />
-              <ResponseBlock color="var(--doc-yellow)" label="400 Missing dealId" body={`{\n  "error": "dealId is required"\n}`} />
+              <ResponseBlock color="var(--doc-yellow)" label="400 Missing identifier" body={`{\n  "error": "dealId or hs_object_id is required"\n}`} />
               <ResponseBlock color="var(--doc-red)" label="404 Deal Not Found" body={`{\n  "error": "Deal not found"\n}`} />
             </div>
           </Section>
@@ -613,14 +618,14 @@ Retry-After: 17
           {/* ── CLOSED LOST EXAMPLE ── */}
           <div id="closing-deal" style={{ scrollMarginTop: 20 }}>
           <Section title="Closing a Deal">
-            <p style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 16 }}>When a deal reaches its final stage, send a PATCH with the stage. The close date is recorded automatically.</p>
+            <p style={{ fontSize: 14, color: "var(--doc-text-secondary)", marginBottom: 16 }}>When a deal reaches its final stage, POST with the stage and your HubSpot deal ID. The close date is recorded automatically.</p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-green)", marginBottom: 8 }}>Closed Won:</div>
                 <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", fontSize: 13, lineHeight: 1.7, color: "var(--doc-pre-text)", overflowX: "auto", margin: 0 }}>
 {`{
-  "dealId": "clx8f9abc123def456",
+  "hs_object_id": "462693304018",
   "dealstage": "Closed Won",
   "estimated_refund_amount": 300000,
   "actual_refund_amount": 287500,
@@ -634,7 +639,7 @@ Retry-After: 17
                 <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-red)", marginBottom: 8 }}>Closed Lost (with optional reason):</div>
                 <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "16px 20px", fontSize: 13, lineHeight: 1.7, color: "var(--doc-pre-text)", overflowX: "auto", margin: 0 }}>
 {`{
-  "dealId": "clx8f9abc123def456",
+  "hs_object_id": "462693304018",
   "dealstage": "Closed Lost",
   "closed_lost_reason": "Client decided not to pursue recovery"
 }`}
@@ -682,13 +687,13 @@ Retry-After: 17
 # { "received": true, "dealId": "clx8f9abc123", "dealName": "Acme Imports LLC", "partnerCode": "PTNABC123" }`}
             </pre>
 
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-orange)", marginBottom: 8 }}>2. Stage update (PATCH)</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-orange)", marginBottom: 8 }}>2. Stage update (POST with hs_object_id)</div>
             <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "14px 20px", fontSize: 12, lineHeight: 1.6, color: "var(--doc-pre-text)", overflowX: "auto", margin: "0 0 20px" }}>
-{`curl -X PATCH https://fintella.partners/api/webhook/referral \\
+{`curl -X POST https://fintella.partners/api/webhook/referral \\
   -H "Content-Type: application/json" \\
   -H "X-Fintella-Api-Key: $FINTELLA_KEY" \\
   -d '{
-    "dealId": "clx8f9abc123",
+    "hs_object_id": "462693304018",
     "dealstage": "Contract Sent",
     "estimated_refund_amount": 250000,
     "firm_fee_rate": 20
@@ -699,13 +704,13 @@ Retry-After: 17
 #   "fieldsUpdated": ["externalStage", "estimatedRefundAmount", "firmFeeRate"] }`}
             </pre>
 
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-green)", marginBottom: 8 }}>3. Closed won (PATCH)</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--doc-green)", marginBottom: 8 }}>3. Closed won (POST with hs_object_id)</div>
             <pre style={{ background: "var(--doc-pre-bg)", border: "1px solid var(--doc-border)", borderRadius: 12, padding: "14px 20px", fontSize: 12, lineHeight: 1.6, color: "var(--doc-pre-text)", overflowX: "auto", margin: "0 0 0" }}>
-{`curl -X PATCH https://fintella.partners/api/webhook/referral \\
+{`curl -X POST https://fintella.partners/api/webhook/referral \\
   -H "Content-Type: application/json" \\
   -H "X-Fintella-Api-Key: $FINTELLA_KEY" \\
   -d '{
-    "dealId": "clx8f9abc123",
+    "hs_object_id": "462693304018",
     "dealstage": "Closed Won",
     "estimated_refund_amount": 300000,
     "actual_refund_amount": 287500,
