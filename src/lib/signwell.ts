@@ -169,6 +169,7 @@ export function buildPartnerTemplateFields(
 export function resolveAgreementTemplateId(
   rate: number | null | undefined,
   settings: {
+    agreementTemplateMaster?: string | null;
     agreementTemplate25?: string | null;
     agreementTemplate20?: string | null;
     agreementTemplate15?: string | null;
@@ -177,7 +178,18 @@ export function resolveAgreementTemplateId(
 ): { templateId: string; templateRate: number } {
   if (!settings) return { templateId: "", templateRate: rate || 0 };
   const r = rate ?? 0;
-  // Snap to the closest configured rate bucket.
+
+  // Option B Phase 3: prefer the single master template when it's
+  // configured. The recruit's actual rate is surfaced in the agreement
+  // body via the `partner_commission_rate` / `partner_commission_text`
+  // template fields (see buildPartnerTemplateFields), so we don't need
+  // to snap to a bucket — pass `r` through as-is.
+  if (settings.agreementTemplateMaster) {
+    return { templateId: settings.agreementTemplateMaster, templateRate: r };
+  }
+
+  // Legacy fallback (to be dropped in Phase 6): snap to the closest
+  // configured rate bucket when the master field is still empty.
   if (r >= 0.25) return { templateId: settings.agreementTemplate25 || "", templateRate: 0.25 };
   if (r >= 0.20) return { templateId: settings.agreementTemplate20 || "", templateRate: 0.20 };
   if (r >= 0.15) return { templateId: settings.agreementTemplate15 || "", templateRate: 0.15 };

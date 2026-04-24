@@ -495,6 +495,16 @@ model PortalSettings {
   l3Rate             Float   @default(0)    // legacy default
   l3Enabled          Boolean @default(false)
   // Agreement templates (SignWell template IDs per rate)
+  // Master SignWell template — one template for every standard partner
+  // agreement. The recruit's actual commission rate is interpolated into
+  // the template body via a placeholder at send time, so per-rate-bucket
+  // templates are no longer needed. Introduced in Option B Phase 3;
+  // resolveAgreementTemplateId prefers this field when set, falling
+  // back to the legacy per-rate fields below when it's empty so admins
+  // can migrate at their own pace. Legacy fields drop in Phase 6.
+  agreementTemplateMaster String @default("")
+  // Legacy per-rate templates (deprecated). Still read as a fallback
+  // when agreementTemplateMaster is empty.
   agreementTemplate25 String @default("") // 25% agreement template
   agreementTemplate20 String @default("") // 20% agreement template
   agreementTemplate15 String @default("") // 15% agreement template

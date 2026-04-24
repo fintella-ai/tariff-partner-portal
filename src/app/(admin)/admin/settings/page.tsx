@@ -180,6 +180,7 @@ export default function SettingsPage() {
   const [l3Enabled, setL3Enabled] = useState(false);
 
   // Agreement templates (SignWell template IDs)
+  const [agreementTemplateMaster, setAgreementTemplateMaster] = useState("");
   const [agreementTemplate25, setAgreementTemplate25] = useState("");
   const [agreementTemplate20, setAgreementTemplate20] = useState("");
   const [agreementTemplate15, setAgreementTemplate15] = useState("");
@@ -290,6 +291,7 @@ export default function SettingsPage() {
       setL2Rate(String(Math.round(settings.l2Rate * 100)));
       setL3Rate(String(Math.round(settings.l3Rate * 100)));
       setL3Enabled(settings.l3Enabled);
+      setAgreementTemplateMaster(settings.agreementTemplateMaster || "");
       setAgreementTemplate25(settings.agreementTemplate25 || "");
       setFintellaSignerName(settings.fintellaSignerName || "");
       setFintellaSignerEmail(settings.fintellaSignerEmail || "");
@@ -436,7 +438,7 @@ export default function SettingsPage() {
     try {
       const body = {
         firmName, firmShort, firmSlogan, firmPhone, supportEmail, logoUrl, faviconUrl,
-        agreementTemplate25, agreementTemplate20, agreementTemplate15, agreementTemplate10, agreementTemplateEnterprise,
+        agreementTemplateMaster, agreementTemplate25, agreementTemplate20, agreementTemplate15, agreementTemplate10, agreementTemplateEnterprise,
         fintellaSignerName, fintellaSignerEmail, fintellaSignerPlaceholder,
         l1Rate: parseFloat(l1Rate) / 100,
         l2Rate: parseFloat(l2Rate) / 100,
@@ -1362,29 +1364,36 @@ export default function SettingsPage() {
         <div className="card p-5 sm:p-6">
           <div className="font-body font-semibold text-sm mb-1">Partnership Agreement Templates</div>
           <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-5">
-            Enter the SignWell template ID for each commission tier. When a new partner signs up at a specific rate,
-            the corresponding template will be used to generate their partnership agreement.
+            One master template covers every standard partner agreement — the recruit&apos;s actual commission rate is interpolated into the template body at send time via the <code>partner_commission_rate</code> / <code>partner_commission_text</code> placeholders. The legacy per-rate templates below are read only as a fallback when Master is empty, and will be removed in a future release.
           </p>
+          <div className="grid grid-cols-1 gap-4 mb-6">
+            <div>
+              <label className={labelClass}>Master Agreement Template (all standard partners)</label>
+              <input className={inputClass} value={agreementTemplateMaster} onChange={(e) => setAgreementTemplateMaster(e.target.value)} placeholder="SignWell template ID — e.g. document_template_xxxxx" />
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Active template for every L1/L2/L3 partner agreement. Commission rate fills into the template body at send time.</p>
+            </div>
+          </div>
+          <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-3 mt-1">Legacy per-rate templates (deprecated — fallback only)</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>25% Template (L1 Partners)</label>
               <input className={inputClass} value={agreementTemplate25} onChange={(e) => setAgreementTemplate25(e.target.value)} placeholder="SignWell template ID" />
-              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Direct L1 partners — 25% of firm fee</p>
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Used only if Master is empty</p>
             </div>
             <div>
               <label className={labelClass}>20% Template (L2 Partners)</label>
               <input className={inputClass} value={agreementTemplate20} onChange={(e) => setAgreementTemplate20(e.target.value)} placeholder="SignWell template ID" />
-              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">L2 partners at 20% — L1 earns 5% override</p>
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Used only if Master is empty</p>
             </div>
             <div>
               <label className={labelClass}>15% Template (L2/L3 Partners)</label>
               <input className={inputClass} value={agreementTemplate15} onChange={(e) => setAgreementTemplate15(e.target.value)} placeholder="SignWell template ID" />
-              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Partners at 15% — upline earns 10% override</p>
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Used only if Master is empty</p>
             </div>
             <div>
               <label className={labelClass}>10% Template (L2/L3 Partners)</label>
               <input className={inputClass} value={agreementTemplate10} onChange={(e) => setAgreementTemplate10(e.target.value)} placeholder="SignWell template ID" />
-              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Partners at 10% — upline earns 15% override</p>
+              <p className="font-body text-[10px] text-[var(--app-text-faint)] mt-1">Used only if Master is empty</p>
             </div>
             <div className="sm:col-span-2">
               <label className={labelClass}>Enterprise Partner Agreement Template</label>
