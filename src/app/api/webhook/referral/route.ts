@@ -804,17 +804,30 @@ async function patchHandler(req: NextRequest): Promise<Response> {
       }
     }
 
-    const { dealId } = body;
+    // Accept our internal dealId OR HubSpot's hs_object_id (stored as
+    // externalDealId). Partners typically only have the HubSpot ID.
+    const rawDealId =
+      typeof body.dealId === "string" && body.dealId.trim()
+        ? body.dealId.trim()
+        : null;
+    const rawExternalId =
+      typeof body.hs_object_id === "string" && body.hs_object_id.trim()
+        ? body.hs_object_id.trim()
+        : typeof body.externalDealId === "string" && body.externalDealId.trim()
+        ? body.externalDealId.trim()
+        : null;
 
-    if (!dealId || typeof dealId !== "string" || !dealId.trim()) {
+    if (!rawDealId && !rawExternalId) {
       return NextResponse.json(
-        { error: "dealId is required" },
+        { error: "dealId or hs_object_id is required" },
         { status: 400 }
       );
     }
 
-    // Find the deal
-    const deal = await prisma.deal.findUnique({ where: { id: dealId } });
+    // Find the deal — try internal ID first, then externalDealId
+    const deal = rawDealId
+      ? await prisma.deal.findUnique({ where: { id: rawDealId } })
+      : await prisma.deal.findUnique({ where: { externalDealId: rawExternalId! } });
     if (!deal) {
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
     }
@@ -1162,7 +1175,7 @@ async function patchHandler(req: NextRequest): Promise<Response> {
         ledgerSkipReason = "no_firm_fee_on_deal_or_in_payload";
       } else {
         const existingForDeal = await prisma.commissionLedger.findFirst({
-          where: { dealId },
+          where: { dealId: deal.id },
         });
         if (existingForDeal) {
           ledgerSkipReason = "ledger_already_exists";
@@ -1186,7 +1199,7 @@ async function patchHandler(req: NextRequest): Promise<Response> {
 
     // Single transaction: deal update + optional ledger creates + optional audit note
     const updated = await prisma.$transaction(async (tx) => {
-      const d = await tx.deal.update({ where: { id: dealId }, data });
+      const d = await tx.deal.update({ where: { id: deal.id }, data });
 
       if (entriesToCreate.length > 0) {
         for (const entry of entriesToCreate) {
@@ -1278,12 +1291,12 @@ async function patchHandler(req: NextRequest): Promise<Response> {
         // Flip every existing row for the deal to "lost". If no rows
         // exist (deal never reached client_engaged), nothing to do.
         await prisma.commissionLedger.updateMany({
-          where: { dealId, status: { notIn: ["paid"] } },
+          where: { dealId: deal.id, status: { notIn: ["paid"] } },
           data: { status: "lost" },
         });
         // Mirror onto the Deal.l{1,2,3}CommissionStatus snapshot fields.
         await prisma.deal.update({
-          where: { id: dealId },
+          where: { id: deal.id },
           data: {
             l1CommissionStatus: "lost",
             l2CommissionStatus: "lost",
@@ -1298,16 +1311,16 @@ async function patchHandler(req: NextRequest): Promise<Response> {
         // the closed-won path uses, so partners see their expected
         // earnings starting at engagement.
         const existingRows = await prisma.commissionLedger.findMany({
-          where: { dealId },
+          where: { dealId: deal.id },
           select: { id: true, status: true },
         });
         if (existingRows.length > 0) {
           await prisma.commissionLedger.updateMany({
-            where: { dealId, status: { notIn: ["paid", "lost"] } },
+            where: { dealId: deal.id, status: { notIn: ["paid", "lost"] } },
             data: { status: "projected" },
           });
           await prisma.deal.update({
-            where: { id: dealId },
+            where: { id: deal.id },
             data: {
               l1CommissionStatus: "projected",
               l2CommissionStatus: "projected",
@@ -1352,14 +1365,14 @@ async function patchHandler(req: NextRequest): Promise<Response> {
               await prisma.commissionLedger.upsert({
                 where: {
                   dealId_partnerCode_tier: {
-                    dealId,
+                    dealId: deal.id,
                     partnerCode: entry.partnerCode,
                     tier: entry.tier,
                   },
                 },
                 create: {
                   partnerCode: entry.partnerCode,
-                  dealId,
+                  dealId: deal.id,
                   dealName: deal.dealName,
                   tier: entry.tier,
                   amount: entry.amount,
@@ -1659,11 +1672,12 @@ export async function POST(req: NextRequest) {
     let looksLikeUpdate = false;
     try {
       const peek = await innerReq.clone().json();
-      looksLikeUpdate =
-        peek &&
-        typeof peek === "object" &&
-        typeof peek.dealId === "string" &&
-        peek.dealId.trim().length > 0;
+      if (peek && typeof peek === "object") {
+        const hasDealId = typeof peek.dealId === "string" && peek.dealId.trim().length > 0;
+        const hasHsId = typeof peek.hs_object_id === "string" && peek.hs_object_id.trim().length > 0;
+        const hasExtId = typeof peek.externalDealId === "string" && peek.externalDealId.trim().length > 0;
+        looksLikeUpdate = hasDealId || hasHsId || hasExtId;
+      }
     } catch {
       looksLikeUpdate = false;
     }

@@ -452,7 +452,7 @@ Retry-After: 17
               {[
                 ["Endpoint", "POST /api/webhook/referral  (or PATCH — same payload)"],
                 ["Method", "POST with a `dealId` field in the body, OR PATCH"],
-                ["Required Field", "dealId (from the original POST response)"],
+                ["Required Field", "hs_object_id (HubSpot deal ID) — or dealId / externalDealId"],
                 ["Security Header", "x-webhook-secret: [same as POST]"],
               ].map(([label, value], i) => (
                 <div key={label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", padding: "14px 20px", borderTop: i > 0 ? "1px solid var(--doc-border-subtle)" : "none", gap: 8 }}>
@@ -463,7 +463,7 @@ Retry-After: 17
             </div>
 
             <p style={{ fontSize: 14, color: "var(--doc-text-muted)", marginBottom: 20 }}>
-              Send any combination of these fields to update the deal. Only include the fields that changed — all are optional except <Code>dealId</Code>. <strong style={{ color: "var(--doc-text-secondary)" }}>Integrators that can only send POST</strong> may include <Code>dealId</Code> in a POST body and it will be routed through the same update path — the payload shape is identical to the PATCH example below.
+              Send any combination of these fields to update the deal. Only include the fields that changed — all are optional except the deal identifier. <strong style={{ color: "var(--doc-gold)" }}>Use <Code>hs_object_id</Code></strong> (your HubSpot deal ID) to identify the deal — or <Code>dealId</Code> / <Code>externalDealId</Code> if you have them. <strong style={{ color: "var(--doc-text-secondary)" }}>POST-only integrators</strong> simply include the identifier in a POST body and it will be routed through the same update path — the payload shape is identical to the examples below.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
