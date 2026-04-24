@@ -23,6 +23,16 @@ interface SlidePlayerProps {
   onComplete?: () => void;
 }
 
+// Per-slide gradient backgrounds — cycles through warm, uplifting palettes
+const SLIDE_GRADIENTS = [
+  "from-[#0f1c3f] via-[#1a2d5e] to-[#0d2137]",
+  "from-[#1a1a2e] via-[#16213e] to-[#0f3460]",
+  "from-[#1b1b3a] via-[#2d2d5e] to-[#13132b]",
+  "from-[#0d2137] via-[#1a3a5c] to-[#0f1c3f]",
+  "from-[#1a2a3a] via-[#2a3a5a] to-[#0f1a2f]",
+  "from-[#162032] via-[#1e3050] to-[#0e1828]",
+];
+
 // ─── COMPONENT ──────────────────────────────────────────────────────────────
 
 export default function SlidePlayer({ script, onComplete }: SlidePlayerProps) {
@@ -38,10 +48,7 @@ export default function SlidePlayer({ script, onComplete }: SlidePlayerProps) {
 
   const scene = script.scenes[currentSlide];
   const totalScenes = script.scenes.length;
-
-  const elapsedBeforeCurrentSlide = script.scenes
-    .slice(0, currentSlide)
-    .reduce((sum, s) => sum + s.durationSec, 0);
+  const gradient = SLIDE_GRADIENTS[currentSlide % SLIDE_GRADIENTS.length];
 
   const totalDuration = script.scenes.reduce(
     (sum, s) => sum + s.durationSec,
@@ -233,7 +240,6 @@ export default function SlidePlayer({ script, onComplete }: SlidePlayerProps) {
     [totalDuration, totalScenes, script.scenes, isPlaying, pause, goToSlide, startSlideTimer]
   );
 
-  // Keyboard controls
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === " " || e.key === "Spacebar") {
@@ -249,7 +255,6 @@ export default function SlidePlayer({ script, onComplete }: SlidePlayerProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [togglePlay, prevSlide, nextSlide]);
 
-  // Toggle TTS mid-playback
   const handleTtsToggle = useCallback(() => {
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -267,105 +272,144 @@ export default function SlidePlayer({ script, onComplete }: SlidePlayerProps) {
 
   return (
     <div className="relative w-full select-none" style={{ aspectRatio: "16/9" }}>
-      {/* Slide content */}
-      <div className="absolute inset-0 rounded-lg overflow-hidden bg-gradient-to-br from-[#0a1628] to-[#1a2a4a] flex flex-col">
-        {/* Slide area */}
-        <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 md:px-16 py-8 relative">
-          {/* Visual hint */}
-          {scene && (
-            <div className="absolute top-4 right-6 text-4xl sm:text-5xl opacity-30">
-              {scene.visualHint}
-            </div>
-          )}
+      <div className={`absolute inset-0 rounded-lg overflow-hidden bg-gradient-to-br ${gradient} flex flex-col transition-colors duration-700`}>
+        {/* Decorative glow orbs */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-brand-gold/[0.04] rounded-full blur-3xl pointer-events-none slide-glow" />
+        <div className="absolute bottom-0 left-0 w-56 h-56 bg-blue-500/[0.04] rounded-full blur-3xl pointer-events-none" />
 
-          {/* Slide number */}
-          <div className="absolute top-4 left-6 font-body text-[11px] text-white/30 tracking-wider">
-            {currentSlide + 1} / {totalScenes}
+        {/* Slide area */}
+        <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 md:px-16 py-6 relative z-10">
+          {/* Top bar: slide counter + visual hint */}
+          <div className="absolute top-4 left-6 right-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-brand-gold/60 animate-pulse" />
+              <span className="font-body text-[11px] text-white/40 tracking-widest uppercase">
+                {currentSlide + 1} of {totalScenes}
+              </span>
+            </div>
+            {scene && (
+              <div className="text-4xl sm:text-5xl slide-emoji">
+                {scene.visualHint}
+              </div>
+            )}
           </div>
 
           {scene && (
-            <div
-              key={currentSlide}
-              className="animate-fadeIn"
-            >
-              <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-brand-gold mb-6 leading-tight">
-                {scene.heading}
-              </h2>
-              <ul className="space-y-3 mb-6">
+            <div key={currentSlide} className="slide-content">
+              {/* Heading with accent line */}
+              <div className="mb-6">
+                <div className="w-10 h-1 bg-gradient-to-r from-brand-gold to-brand-gold/30 rounded-full mb-4" />
+                <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight">
+                  {scene.heading}
+                </h2>
+              </div>
+
+              {/* Bullet points with staggered animation */}
+              <ul className="space-y-3.5 mb-5">
                 {scene.bullets.map((b, i) => (
                   <li
                     key={i}
-                    className="font-body text-sm sm:text-base text-white/90 flex items-start gap-3"
+                    className="font-body text-sm sm:text-base text-white/85 flex items-start gap-3 slide-bullet"
+                    style={{ animationDelay: `${0.15 + i * 0.1}s` }}
                   >
-                    <span className="text-brand-gold/60 mt-1 shrink-0">●</span>
-                    <span>{b}</span>
+                    <span className="mt-1.5 shrink-0 w-2 h-2 rounded-full bg-gradient-to-br from-brand-gold to-brand-gold/50" />
+                    <span className="leading-relaxed">{b}</span>
                   </li>
                 ))}
               </ul>
-              {ttsEnabled && (
-                <p className="font-body text-xs sm:text-sm text-white/40 italic mt-4 border-t border-white/10 pt-3">
-                  {scene.narration}
-                </p>
+
+              {/* Narration subtitle (always visible during playback, subtle) */}
+              {hasStarted && !isFinished && (
+                <div className="slide-narration">
+                  <p className="font-body text-xs sm:text-sm text-white/35 italic leading-relaxed">
+                    {scene.narration}
+                  </p>
+                </div>
               )}
             </div>
           )}
 
           {/* Start overlay */}
           {!hasStarted && !isFinished && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 rounded-lg z-20">
+              <div className="font-display text-lg sm:text-xl text-white/70 mb-6 text-center px-8">
+                {script.title}
+              </div>
               <button
                 onClick={play}
-                className="w-20 h-20 rounded-full bg-brand-gold/20 border-2 border-brand-gold/60 flex items-center justify-center hover:bg-brand-gold/30 transition-colors"
+                className="group w-20 h-20 rounded-full bg-brand-gold/15 border-2 border-brand-gold/50 flex items-center justify-center hover:bg-brand-gold/25 hover:border-brand-gold/70 hover:scale-105 transition-all duration-300 play-pulse"
                 aria-label="Play presentation"
               >
                 <svg
-                  width="32"
-                  height="32"
+                  width="30"
+                  height="30"
                   viewBox="0 0 24 24"
                   fill="currentColor"
-                  className="text-brand-gold ml-1"
+                  className="text-brand-gold ml-1 group-hover:scale-110 transition-transform"
                 >
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </button>
+              <div className="font-body text-[11px] text-white/30 mt-4 tracking-wider uppercase">
+                {formatTime(totalDuration)} min
+              </div>
             </div>
           )}
 
           {/* Finished overlay */}
           {isFinished && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-lg gap-4">
-              <div className="font-display text-xl sm:text-2xl font-bold text-brand-gold">
-                Training Complete
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 rounded-lg gap-5 z-20">
+              <div className="text-4xl mb-1">&#127881;</div>
+              <div className="font-display text-xl sm:text-2xl font-bold text-white text-center">
+                You&apos;re all set!
               </div>
+              <p className="font-body text-sm text-white/50 text-center max-w-sm">
+                You just learned the key points. Ready to put this into action?
+              </p>
               <button
                 onClick={play}
-                className="font-body text-sm text-white bg-brand-gold/20 border border-brand-gold/40 rounded-lg px-6 py-2.5 hover:bg-brand-gold/30 transition-colors"
+                className="font-body text-sm font-semibold text-brand-gold bg-brand-gold/15 border border-brand-gold/40 rounded-full px-8 py-2.5 hover:bg-brand-gold/25 hover:border-brand-gold/60 transition-all duration-300"
               >
-                Replay
+                Watch Again
               </button>
             </div>
           )}
         </div>
 
         {/* Controls bar */}
-        <div className="px-4 sm:px-6 pb-3 pt-1">
-          {/* Progress bar */}
-          <div
-            className="w-full h-1.5 bg-white/10 rounded-full cursor-pointer mb-2 group"
-            onClick={handleProgressClick}
-          >
-            <div
-              className="h-full bg-brand-gold rounded-full transition-all duration-300 relative"
-              style={{ width: `${progressPct}%` }}
-            >
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-brand-gold rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
+        <div className="px-4 sm:px-6 pb-3 pt-1 relative z-10">
+          {/* Segmented progress bar — one segment per slide */}
+          <div className="flex gap-1 mb-2.5 cursor-pointer" onClick={handleProgressClick}>
+            {script.scenes.map((s, i) => {
+              const segPct =
+                i < currentSlide
+                  ? 100
+                  : i === currentSlide
+                  ? Math.min(
+                      100,
+                      ((elapsed -
+                        script.scenes.slice(0, i).reduce((a, x) => a + x.durationSec, 0)) /
+                        s.durationSec) *
+                        100
+                    )
+                  : 0;
+              return (
+                <div
+                  key={i}
+                  className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden"
+                >
+                  <div
+                    className="h-full bg-brand-gold rounded-full transition-all duration-500"
+                    style={{ width: `${Math.max(0, segPct)}%` }}
+                  />
+                </div>
+              );
+            })}
           </div>
 
           {/* Control buttons */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {/* Play/Pause */}
               <button
                 onClick={togglePlay}
                 className="text-white/70 hover:text-white transition-colors p-1"
@@ -382,11 +426,10 @@ export default function SlidePlayer({ script, onComplete }: SlidePlayerProps) {
                 )}
               </button>
 
-              {/* Previous */}
               <button
                 onClick={prevSlide}
                 disabled={currentSlide === 0}
-                className="text-white/50 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed p-1"
+                className="text-white/50 hover:text-white transition-colors disabled:opacity-20 disabled:cursor-not-allowed p-1"
                 aria-label="Previous slide"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -394,11 +437,10 @@ export default function SlidePlayer({ script, onComplete }: SlidePlayerProps) {
                 </svg>
               </button>
 
-              {/* Next */}
               <button
                 onClick={nextSlide}
                 disabled={currentSlide >= totalScenes - 1}
-                className="text-white/50 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed p-1"
+                className="text-white/50 hover:text-white transition-colors disabled:opacity-20 disabled:cursor-not-allowed p-1"
                 aria-label="Next slide"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -406,20 +448,18 @@ export default function SlidePlayer({ script, onComplete }: SlidePlayerProps) {
                 </svg>
               </button>
 
-              {/* Time display */}
-              <span className="font-body text-[11px] text-white/40 tabular-nums ml-1">
+              <span className="font-body text-[11px] text-white/35 tabular-nums ml-1">
                 {formatTime(elapsed)} / {formatTime(totalDuration)}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* TTS toggle */}
               <button
                 onClick={handleTtsToggle}
                 className={`p-1 transition-colors ${
                   ttsEnabled
                     ? "text-brand-gold"
-                    : "text-white/40 hover:text-white/70"
+                    : "text-white/35 hover:text-white/60"
                 }`}
                 aria-label={ttsEnabled ? "Disable narration" : "Enable narration"}
                 title={ttsEnabled ? "Narration on" : "Narration off"}
@@ -444,20 +484,49 @@ export default function SlidePlayer({ script, onComplete }: SlidePlayerProps) {
         </div>
       </div>
 
-      {/* Fade-in animation */}
       <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
+        @keyframes bulletIn {
+          from { opacity: 0; transform: translateX(-12px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes narrationIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes emojiFloat {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-4px) scale(1.05); }
+        }
+        @keyframes glowPulse {
+          0%, 100% { opacity: 0.04; transform: scale(1); }
+          50% { opacity: 0.08; transform: scale(1.1); }
+        }
+        @keyframes playPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.3); }
+          50% { box-shadow: 0 0 0 12px rgba(212, 175, 55, 0); }
+        }
+        .slide-content {
+          animation: slideIn 0.4s ease-out;
+        }
+        .slide-bullet {
+          opacity: 0;
+          animation: bulletIn 0.35s ease-out forwards;
+        }
+        .slide-narration {
+          animation: narrationIn 0.6s ease-out 0.4s both;
+        }
+        .slide-emoji {
+          animation: emojiFloat 3s ease-in-out infinite;
+        }
+        .slide-glow {
+          animation: glowPulse 4s ease-in-out infinite;
+        }
+        .play-pulse {
+          animation: playPulse 2s ease-in-out infinite;
         }
       `}</style>
     </div>

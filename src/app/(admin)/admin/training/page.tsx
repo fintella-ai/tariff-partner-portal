@@ -203,6 +203,8 @@ export default function AdminTrainingPage() {
   // AI Video generation state
   const [generatingVideoId, setGeneratingVideoId] = useState<string | null>(null);
   const [previewScript, setPreviewScript] = useState<{ script: any; title: string } | null>(null);
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
 
   // Max file size before we refuse to embed — base64 bloats ~33% and
   // Vercel serverless caps request bodies around 4.5MB. Anything bigger
@@ -628,6 +630,35 @@ export default function AdminTrainingPage() {
     }
   };
 
+  /** Generate AI videos for all published modules that don't have one yet */
+  const handleGenerateAll = async () => {
+    const targets = modules.filter((m) => m.published && !m.videoScript);
+    if (targets.length === 0) {
+      alert("All modules already have AI videos generated.");
+      return;
+    }
+    if (!confirm(`Generate AI videos for ${targets.length} modules? This may take a minute.`)) return;
+    setBulkGenerating(true);
+    setBulkProgress({ current: 0, total: targets.length });
+    for (let i = 0; i < targets.length; i++) {
+      setBulkProgress({ current: i + 1, total: targets.length });
+      setGeneratingVideoId(targets[i].id);
+      try {
+        await fetch(`/api/admin/training/modules/${targets[i].id}/generate-video`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+      } catch {
+        // Continue with remaining modules
+      }
+    }
+    setGeneratingVideoId(null);
+    setBulkGenerating(false);
+    setBulkProgress({ current: 0, total: 0 });
+    await fetchModules();
+  };
+
   // ─── COMPUTED STATS ───────────────────────────────────────────────────────
 
   const moduleStats = {
@@ -710,9 +741,18 @@ export default function AdminTrainingPage() {
             ))}
           </div>
 
-          {/* Add Button */}
+          {/* Action Buttons */}
           {!showForm && (
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-end gap-3 mb-4">
+              <button
+                onClick={handleGenerateAll}
+                disabled={bulkGenerating}
+                className="font-body text-sm px-4 py-2 rounded-lg border border-blue-400/30 text-blue-400 hover:bg-blue-400/10 transition-colors disabled:opacity-50"
+              >
+                {bulkGenerating
+                  ? `Generating ${bulkProgress.current}/${bulkProgress.total}...`
+                  : "Generate All Videos"}
+              </button>
               <button
                 onClick={openAddForm}
                 className="btn-gold font-body text-sm px-4 py-2 rounded-lg"

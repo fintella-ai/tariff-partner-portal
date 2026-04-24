@@ -81,15 +81,21 @@ Generate a structured video script with exactly ${sceneCount} scenes targeting $
 
 The video will be rendered as an auto-advancing slide presentation with optional text-to-speech narration.
 
+## Tone
+- **Uplifting and optimistic** — this is an exciting opportunity, make partners feel energized
+- **Simple and clear** — break complex topics into easy, digestible steps. Make everything feel doable
+- **Informative and to the point** — no fluff, every sentence earns its place
+- **Encouraging** — use language like "Here's the simple version", "All you need to do is", "The best part is"
+
 ## Rules
 - Write for partners who are professionals (CPAs, attorneys, trade advisors) but may be new to tariff recovery
-- Be specific and actionable — not generic motivation
+- Make every topic feel approachable — if something sounds complex, simplify it with an analogy or "think of it this way"
 - Include concrete qualifying criteria, objection handling, or process steps where relevant to the topic
-- Narration text should be conversational and natural (it will be read aloud by TTS)
+- Narration text should be conversational, warm, and natural (it will be read aloud by TTS)
 - Each narration should be 20-40 words (roughly 15-20 seconds when spoken)
-- Bullet points should be concise (8-15 words each), 2-4 per slide
-- Visual hints should be single emojis that match the slide content
-- The first scene is always an intro/overview, the last is always a summary/call-to-action
+- Bullet points should be concise (8-15 words each), 2-4 per slide — use active, positive language
+- Visual hints should be single emojis that match the slide content and feel upbeat
+- The first scene is always a welcoming intro that builds excitement, the last is always an encouraging call-to-action
 
 Respond with ONLY valid JSON matching this exact schema (no markdown, no explanation):
 {
