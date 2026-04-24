@@ -2,17 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// The four wired system templates that drive real partner emails. These can
-// be EDITED via PUT (changing subject, body, from/reply-to, etc.) but cannot
-// be DELETED — deleting one would silently cause the corresponding code path
-// to fall back to the hardcoded version in src/lib/sendgrid.ts, which is
-// confusing and easy to miss. Drafts and admin-created custom templates can
-// be deleted freely.
+// Wired system templates — every key here has a code path in src/lib/sendgrid.ts
+// or src/lib/workflow-engine.ts that expects the row to exist. These can be
+// EDITED via PUT (changing subject, body, from/reply-to, etc.) but cannot be
+// DELETED — deleting would silently cause that code path to fall back to
+// hardcoded content (for helpers that have a fallback) or fail outright (for
+// workflow-engine actions that resolve the template by key at execution time).
+// Drafts and admin-created custom templates can be deleted freely.
 const WIRED_TEMPLATE_KEYS = new Set([
+  // sendgrid.ts helpers — all consult loadTemplate and fall back to hardcoded
   "welcome",
   "agreement_ready",
   "agreement_signed",
   "signup_notification",
+  "deal_status_update",
+  "commission_payment_notification",
+  "monthly_newsletter",
+  "password_reset",
+  "l1_invite",
+  "partner_added_to_channel",
+  // workflow-engine `email.send` actions fired from scheduled cron reminders
+  // (no hardcoded fallback — deleting the row breaks the reminder flow)
+  "agreement_reminder",
+  "invite_reminder",
 ]);
 
 /**

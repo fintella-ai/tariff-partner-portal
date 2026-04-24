@@ -851,6 +851,9 @@ export async function sendCommissionPaidEmail(opts: {
 /**
  * Admin-initiated invite email for prospective L1 partners.
  * Sent the moment an admin creates an invite via /api/admin/invites.
+ *
+ * Looks up the `l1_invite` template from EmailTemplate first; falls
+ * back to hardcoded content if the row is missing/disabled.
  */
 export async function sendL1InviteEmail(opts: {
   toEmail: string;
@@ -858,6 +861,39 @@ export async function sendL1InviteEmail(opts: {
   signupUrl: string;
 }): Promise<SendEmailResult> {
   const name = opts.toName || "there";
+  const vars: Record<string, string> = {
+    firstName: name,
+    signupUrl: opts.signupUrl,
+    portalUrl: PORTAL_URL,
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+  };
+
+  const tpl = await loadTemplate("l1_invite");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || "Accept Invitation",
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : opts.signupUrl,
+    });
+    return sendEmail({
+      to: opts.toEmail,
+      toName: opts.toName || undefined,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "l1_invite",
+      partnerCode: null,
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+      replyTo: tpl.replyTo || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
   const heading = `You've been invited to join ${FIRM_SHORT}`;
   const bodyHtml = `
     <p>Hi ${escapeHtml(name)},</p>
@@ -908,6 +944,41 @@ export async function sendChannelInviteEmail(opts: {
   partnerCode: string;
 }): Promise<SendEmailResult> {
   const name = opts.toName || "there";
+  const vars: Record<string, string> = {
+    firstName: name,
+    channelName: opts.channelName,
+    channelUrl: opts.channelUrl,
+    partnerCode: opts.partnerCode,
+    portalUrl: PORTAL_URL,
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+  };
+
+  const tpl = await loadTemplate("partner_added_to_channel");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || "Open Channel",
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : opts.channelUrl,
+    });
+    return sendEmail({
+      to: opts.toEmail,
+      toName: opts.toName || undefined,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "partner_added_to_channel",
+      partnerCode: opts.partnerCode,
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+      replyTo: tpl.replyTo || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
   const heading = `You've been added to the "${opts.channelName}" channel`;
   const bodyHtml = `
     <p>Hi ${escapeHtml(name)},</p>
