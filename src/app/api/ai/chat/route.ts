@@ -124,10 +124,13 @@ export async function POST(req: NextRequest) {
           : personaId;
 
     // Call Anthropic (or mock) as the initial persona. Pass userId+userType
-    // so Ollie's DB tools can scope their lookups to the signed-in partner.
+    // so Ollie's DB tools can scope lookups + conversationId so write tools
+    // (create_support_ticket) can link the AiEscalation audit row back to
+    // the conversation.
     const result = await generateResponse(userContext, history, initialPersona, {
       userId,
       userType,
+      conversationId: conversation.id,
     });
 
     // If the generalist called hand_off, re-invoke with the target specialist.
@@ -168,7 +171,7 @@ export async function POST(req: NextRequest) {
         userContext,
         specialistHistory,
         finalPersonaId,
-        { userId, userType }
+        { userId, userType, conversationId: conversation.id }
       );
     }
 

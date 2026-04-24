@@ -365,6 +365,9 @@ interface GenerateOpts {
   userId?: string;
   /** Caller type — Ollie's tools are partner-scoped only for Phase 3b. */
   userType?: "partner" | "admin";
+  /** AiConversation.id — write tools (create_support_ticket) link the
+   *  AiEscalation audit row back to the source conversation. */
+  conversationId?: string;
 }
 
 export async function generateResponse(
@@ -488,6 +491,7 @@ In the meantime, you can:
           const exec = await executeOllieTool(tu.name, tu.input, {
             userId: opts?.userId ?? "",
             userType: opts?.userType ?? "admin",
+            conversationId: opts?.conversationId,
           });
           toolCallTrace.push({
             name: tu.name,

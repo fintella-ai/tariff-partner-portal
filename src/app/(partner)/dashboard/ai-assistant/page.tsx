@@ -598,6 +598,7 @@ const TOOL_LABELS: Record<string, string> = {
   lookupCommissions: "Commission lookup",
   lookupAgreement: "Agreement lookup",
   lookupDownline: "Downline lookup",
+  create_support_ticket: "Ticket created",
 };
 
 function ToolCallChip({ call }: { call: ToolCallRecord }) {
@@ -688,6 +689,14 @@ function describeToolCall(call: ToolCallRecord): string {
       return depth === 2 && grand !== undefined
         ? `direct ${direct} · grand ${grand}`
         : `direct ${direct}`;
+    }
+    case "create_support_ticket": {
+      const routed = (output.routedTo ?? {}) as Record<string, unknown>;
+      const role =
+        typeof routed.role === "string" ? routed.role : "support";
+      const priority =
+        typeof output.priority === "string" ? ` · ${output.priority}` : "";
+      return `routed to ${role}${priority}`;
     }
     default:
       return "";

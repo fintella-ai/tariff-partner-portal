@@ -1,13 +1,13 @@
 /**
- * PartnerOS AI — Ollie's DB lookup tools (Phase 3b).
+ * PartnerOS AI — Ollie's tool surface (Phase 3b + 3c.2).
  *
- * Four read-only, partner-scoped tools Ollie can call mid-conversation to
- * fetch live data. Every execute function re-scopes every query to the
- * signed-in partner's partnerCode — the LLM cannot spoof a target code. Admin
- * callers (no partnerCode on session) get a friendly "tool not available for
- * admins yet" result rather than a crash.
+ * Partner-scoped tools Ollie can call mid-conversation. Every execute
+ * function re-scopes every query to the signed-in partner's partnerCode —
+ * the LLM cannot spoof a target code. Admin callers (no partnerCode on
+ * session) get a friendly "tool not available for admins yet" result rather
+ * than a crash.
  *
- * Spec: docs/superpowers/specs/2026-04-24-partneros-ai-roadmap-design.md §3.4, §9.3 row 3.7.
+ * Spec: docs/superpowers/specs/2026-04-24-partneros-ai-roadmap-design.md §3.4, §7, §9.3 rows 3.7 + 3.8.
  */
 import type Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
@@ -17,7 +17,26 @@ export type OllieToolName =
   | "lookupDeal"
   | "lookupCommissions"
   | "lookupAgreement"
-  | "lookupDownline";
+  | "lookupDownline"
+  | "create_support_ticket";
+
+// Categories Ollie may assign to a ticket. These feed AdminInbox.categories
+// to route email + notifications. Keep this list in sync with the seed in
+// scripts/seed-all.js + the spec §7.2 table.
+const TICKET_CATEGORIES = [
+  "deal_tracking",
+  "portal_question",
+  "tech_error",
+  "other",
+  "agreement_question",
+  "legal_question",
+  "enterprise_inquiry",
+  "ceo_escalation",
+  "commission_question",
+  "payment_question",
+] as const;
+
+const TICKET_PRIORITIES = ["low", "normal", "high", "urgent"] as const;
 
 export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
   {
@@ -79,6 +98,44 @@ export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
       required: [],
     },
   },
+  {
+    name: "create_support_ticket",
+    description:
+      "Create a support ticket on behalf of the partner when a question can't be resolved in-chat or requires human action. ALWAYS confirm with the partner first before calling — state the subject, category, and priority you'd file, and only fire after they agree. Category determines which admin inbox gets notified (support / legal / admin / accounting). Use this as the fallback when lookups don't resolve the question, when the partner explicitly asks to open a ticket, or when you detect a stuck deal (isStale on lookupDeal) and they accept your offer to open one.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        subject: {
+          type: "string" as const,
+          description:
+            "Short headline for the ticket (under 80 chars). Example: \"Oceanport deal stuck in Consultation Booked for 21 days\".",
+        },
+        category: {
+          type: "string" as const,
+          enum: [...TICKET_CATEGORIES] as unknown as string[],
+          description:
+            "Routing category. deal_tracking = deal stage questions; portal_question = how-to; tech_error = portal bug; commission_question / payment_question = accounting inbox; agreement_question / legal_question = legal inbox; enterprise_inquiry / ceo_escalation = admin inbox; other = general support.",
+        },
+        priority: {
+          type: "string" as const,
+          enum: [...TICKET_PRIORITIES] as unknown as string[],
+          description:
+            "Infer from tone + time sensitivity. urgent = partner says something is blocking them right now; high = time-sensitive (consultation tomorrow, payout pending); normal = standard question; low = curiosity / nice-to-have.",
+        },
+        reason: {
+          type: "string" as const,
+          description:
+            "2-4 sentence summary of what happened + what the partner needs. Written as admin-facing context, not partner-facing reply copy. Include relevant deal names / IDs / commission amounts when known.",
+        },
+        relatedDealId: {
+          type: "string" as const,
+          description:
+            "Optional — the 8-char deal ID from a prior lookupDeal result if the ticket is about a specific deal.",
+        },
+      },
+      required: ["subject", "category", "priority", "reason"],
+    },
+  },
 ];
 
 export interface ToolCallResult {
@@ -98,6 +155,10 @@ function err(message: string): { output: unknown; isError: true } {
 interface ExecuteCtx {
   userId: string;
   userType: "partner" | "admin";
+  /** Required for tools that write (e.g. create_support_ticket) so the
+   *  AiEscalation audit row can link back to the conversation. Lookup
+   *  tools tolerate absence. */
+  conversationId?: string;
 }
 
 /**
@@ -127,6 +188,8 @@ export async function executeOllieTool(
         return ok(await lookupAgreement(partnerCode));
       case "lookupDownline":
         return ok(await lookupDownline(partnerCode, args));
+      case "create_support_ticket":
+        return await createSupportTicket(partnerCode, args, ctx);
       default:
         return err(`Unknown tool: ${name}`);
     }
@@ -392,4 +455,105 @@ async function lookupDownline(
         ? "Showing 50 most recent direct recruits."
         : undefined,
   };
+}
+
+// ─── WRITE TOOLS ──────────────────────────────────────────────────────────
+// Tools that mutate state. Each one records an `AiEscalation` row alongside
+// the primary write so we have a clean audit trail of what Ollie actually
+// did on behalf of the partner.
+
+async function createSupportTicket(
+  partnerCode: string,
+  args: Record<string, unknown>,
+  ctx: ExecuteCtx
+) {
+  const subject = String(args.subject ?? "").trim().slice(0, 200);
+  const category = String(args.category ?? "other");
+  const priorityRaw = String(args.priority ?? "normal");
+  const priority = (TICKET_PRIORITIES as readonly string[]).includes(priorityRaw)
+    ? priorityRaw
+    : "normal";
+  const reason = String(args.reason ?? "").trim();
+  const relatedDealId =
+    typeof args.relatedDealId === "string" && args.relatedDealId.trim().length > 0
+      ? args.relatedDealId.trim()
+      : null;
+
+  if (!subject) return err("Ticket subject is required.");
+  if (!reason) return err("Ticket reason is required.");
+  if (!(TICKET_CATEGORIES as readonly string[]).includes(category)) {
+    return err(`Unknown category: ${category}`);
+  }
+
+  // Route to the correct inbox. Fall back to `support` if the category isn't
+  // mapped — never drop a ticket on the floor.
+  const routedInbox =
+    (await prisma.adminInbox.findFirst({
+      where: { categories: { has: category } },
+      select: { id: true, role: true, emailAddress: true, displayName: true },
+    })) ??
+    (await prisma.adminInbox.findUnique({
+      where: { role: "support" },
+      select: { id: true, role: true, emailAddress: true, displayName: true },
+    }));
+
+  // Compose a body that preserves the Ollie-authored context so admins can
+  // action without re-reading the whole conversation.
+  const body = relatedDealId
+    ? `${reason}\n\n(Related deal: ${relatedDealId})`
+    : reason;
+
+  const ticket = await prisma.supportTicket.create({
+    data: {
+      partnerCode,
+      subject,
+      category,
+      priority,
+      messages: {
+        create: {
+          authorType: "partner",
+          authorId: partnerCode,
+          content: body,
+        },
+      },
+    },
+    select: { id: true, subject: true, category: true, priority: true, createdAt: true },
+  });
+
+  // Audit trail. Link to conversation when we have an id; otherwise record
+  // just the ticketId + routing decision so support still gets the context.
+  if (ctx.conversationId) {
+    await prisma.aiEscalation.create({
+      data: {
+        conversationId: ctx.conversationId,
+        rung: "support_ticket",
+        status: "succeeded",
+        targetInboxId: routedInbox?.id ?? null,
+        partnerCode,
+        category,
+        priority,
+        reason: subject,
+        payload: {
+          ticketId: ticket.id,
+          relatedDealId,
+          routedToInbox: routedInbox?.role ?? null,
+          inboxEmail: routedInbox?.emailAddress ?? null,
+        },
+      },
+    });
+  }
+
+  return ok({
+    ticketId: ticket.id.substring(0, 8),
+    subject: ticket.subject,
+    category: ticket.category,
+    priority: ticket.priority,
+    createdAt: ticket.createdAt.toISOString(),
+    routedTo: routedInbox
+      ? { role: routedInbox.role, displayName: routedInbox.displayName }
+      : { role: "support", displayName: "Partner Support" },
+    partnerLink: `/dashboard/support`,
+    note:
+      "Ticket created and routed. A ticket email to the target inbox will fire in a follow-up PR (Phase 3c.3). Partner can view and reply from the Support page.",
+  });
 }
