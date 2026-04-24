@@ -607,6 +607,43 @@ async function main() {
         "portalUrl",
       ]),
     },
+    {
+      key: "partner_added_to_channel",
+      name: "Partner Added to Channel",
+      category: "Communications",
+      subject: "You've been added to the \"{channelName}\" channel",
+      preheader: "You've been added to the \"{channelName}\" announcement channel on {firmShort}.",
+      heading: "You've been added to the \"{channelName}\" channel",
+      bodyHtml:
+        "<p>Hi {firstName},</p>" +
+        "<p>An admin just added you to the <strong>{channelName}</strong> announcement channel on {firmShort}.</p>" +
+        "<p>Announcements posted there will now show up in your Announcements tab. You can reply to start a private thread with the admin team on any post.</p>" +
+        "<p style=\"font-size:12px;color:#888;\">Where to go: open the portal → sidebar → <strong>Communications → Announcements</strong>, or tap the button below.</p>",
+      bodyText:
+        "Hi {firstName},\n\n" +
+        "An admin just added you to the \"{channelName}\" announcement channel on {firmShort}.\n\n" +
+        "Announcements posted there will now show up in your Announcements tab. You can reply to start a private thread with the admin team on any post.\n\n" +
+        "Open the channel: {channelUrl}\n\n" +
+        "Where to go: portal sidebar → Communications → Announcements.",
+      ctaLabel: "Open Channel",
+      ctaUrl: "{channelUrl}",
+      enabled: true,
+      isDraft: false,
+      description:
+        "Fires from /api/admin/channels/[id]/members POST whenever an admin newly adds a partner to an AnnouncementChannel. Also powers the partner.added_to_channel workflow trigger. Falls back to hardcoded copy in sendgrid.ts if the row is missing/disabled so the send never silently breaks.",
+      variables: JSON.stringify([
+        "firstName",
+        "lastName",
+        "partnerCode",
+        "channelId",
+        "channelName",
+        "channelUrl",
+        "addedByEmail",
+        "firmShort",
+        "firmName",
+        "portalUrl",
+      ]),
+    },
   ];
 
   for (const t of emailTemplates) {

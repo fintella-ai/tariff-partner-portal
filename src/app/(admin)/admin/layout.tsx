@@ -225,14 +225,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const sidebarContent = (
     <>
-      {/* ── Logo + subheading ─────────────────────────────────────── */}
-      <div className="flex flex-col items-center text-center mb-5 px-1">
+      {/* ── Logo + subheading ───────────────────────────────────────
+           Logo wrapper uses `-mx-4 -mt-4` to negate the sidebar's own
+           p-4 padding so the brand image stretches edge-to-edge at the
+           top of the nav column. `max-h-72` gives the extra vertical
+           room requested. */}
+      <div className={`flex flex-col items-center text-center mb-5 ${collapsed ? "px-1" : "-mx-4 -mt-4"}`}>
         {collapsed ? (
           logoUrl
             ? <img src={logoUrl} alt={FIRM_SHORT} className="h-10 w-10 mx-auto object-contain" />
             : <div className="font-display text-lg font-bold text-brand-gold leading-none">{FIRM_SHORT.charAt(0)}</div>
         ) : logoUrl ? (
-          <img src={logoUrl} alt={FIRM_SHORT} className="max-h-56 w-full object-contain mb-2" />
+          <img src={logoUrl} alt={FIRM_SHORT} className="w-full max-h-72 object-cover mb-2" />
         ) : (
           <div className="font-display text-xl font-bold text-brand-gold tracking-[1px] mb-1">{FIRM_SHORT}</div>
         )}

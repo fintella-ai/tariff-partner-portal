@@ -283,15 +283,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   function renderSidebar(isCollapsed: boolean) {
     return (
     <div className="flex flex-col h-full">
-      {/* Brand */}
-      <div className={`${isCollapsed ? "px-1" : "px-2"} mb-6 text-center`}>
+      {/* Brand — expanded mode uses `-mx-4 -mt-4` to negate the
+           sidebar's p-4 padding so the logo stretches edge-to-edge at
+           the top of the column. `max-h-72` + object-cover for taller
+           fill. Collapsed mode keeps its compact centered icon. */}
+      <div className={`${isCollapsed ? "px-1 mb-6" : "-mx-4 -mt-4 mb-6"} text-center`}>
         {isCollapsed ? (
           <div className="font-display text-xs font-bold text-brand-gold">
             {logoUrl ? <img src={logoUrl} alt={firmShort} className="max-h-10 mx-auto object-contain" /> : firmShort.charAt(0)}
           </div>
         ) : logoUrl ? (
-          <div className="mb-2">
-            <img src={logoUrl} alt={firmShort} className="max-h-56 w-full object-contain" />
+          <div>
+            <img src={logoUrl} alt={firmShort} className="w-full max-h-72 object-cover" />
           </div>
         ) : (
           <div className="font-display text-sm font-bold text-brand-gold tracking-[1px]">

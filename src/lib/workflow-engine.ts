@@ -367,6 +367,30 @@ async function executeAction(
         }
         if (!recipientId) break; // skip if no recipient can be resolved
 
+        // Optional clickable link for the notification. Interpolated the
+        // same way as title/message so admins can template it against the
+        // trigger payload (e.g. /dashboard/deals?deal={deal.id}). Falls
+        // back to a sensible default derived from the payload shape so
+        // existing workflows that never set a link stay clickable.
+        const rawLink = String(config.link || "").trim();
+        const link = rawLink
+          ? interpolate(rawLink, payload)
+          : (() => {
+              const deal = payload.deal as Record<string, unknown> | undefined;
+              if (deal?.id) {
+                return recipientType === "partner"
+                  ? `/dashboard/deals?deal=${deal.id}`
+                  : `/admin/deals#${deal.id}`;
+              }
+              const channelId = payload.channelId as string | undefined;
+              if (channelId) {
+                return recipientType === "partner"
+                  ? `/dashboard/announcements?channel=${channelId}`
+                  : `/admin/channels/${channelId}`;
+              }
+              return recipientType === "partner" ? "/dashboard/home" : "/admin";
+            })();
+
         await prisma.notification.create({
           data: {
             recipientType,
@@ -374,6 +398,7 @@ async function executeAction(
             type: "workflow",
             title: interpolate(title, payload),
             message: interpolate(message, payload),
+            link,
           },
         });
         break;
