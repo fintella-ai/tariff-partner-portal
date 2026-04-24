@@ -167,6 +167,12 @@ export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
           description:
             "Partner's best guess at when the issue started — \"just now\", \"this morning\", \"since yesterday\". Empty string if unknown.",
         },
+        screenshotUrls: {
+          type: "array" as const,
+          items: { type: "string" as const },
+          description:
+            "Optional. Public URLs of screenshots the partner uploaded via the chat's paperclip button. Each URL came from /api/ai/upload. Include them here so the ticket body surfaces them for admin triage and the AiEscalation payload records them for audit.",
+        },
       },
       required: ["symptom"],
     },
@@ -1324,6 +1330,11 @@ async function investigateBug(
   const device = String(args.device ?? "").trim();
   const errorText = String(args.errorText ?? "").trim();
   const whenStarted = String(args.whenStarted ?? "").trim();
+  const screenshotUrls = Array.isArray(args.screenshotUrls)
+    ? (args.screenshotUrls as unknown[])
+        .filter((u): u is string => typeof u === "string" && u.startsWith("http"))
+        .slice(0, 6) // cap so a runaway upload spree can't explode ticket bodies
+    : [];
 
   if (!symptom) return err("Symptom is required.");
 
@@ -1365,12 +1376,22 @@ async function investigateBug(
   else if (hitUserError) classification = "user_error";
 
   // Compose the ticket body.
+  const screenshotLines =
+    screenshotUrls.length > 0
+      ? [
+          "",
+          `SCREENSHOTS (${screenshotUrls.length}):`,
+          ...screenshotUrls.map((u, i) => `  ${i + 1}. ${u}`),
+        ]
+      : [];
+
   const bodyLines = [
     `SYMPTOM: ${symptom}`,
     whenStarted ? `WHEN: ${whenStarted}` : "",
     browser ? `BROWSER: ${browser}` : "",
     device ? `DEVICE: ${device}` : "",
     errorText ? `ERROR TEXT:\n${errorText}` : "",
+    ...screenshotLines,
     "",
     "AUTO-DIAGNOSTICS:",
     `  partnerStatus: ${diagnostics.partnerStatus}`,
@@ -1420,6 +1441,8 @@ async function investigateBug(
     classification,
     priority,
     diagnostics,
+    screenshotsAttached: screenshotUrls.length,
+    screenshotUrls,
     ticket: (ticketResult as any).output ?? null,
     emergency: emergencyResult
       ? {
@@ -1432,9 +1455,9 @@ async function investigateBug(
       : null,
     note:
       classification === "confirmed_bug"
-        ? `Confirmed bug — urgent ticket created AND IT emergency chain fired. ${emergencyResult?.contactCount ?? 0} contact(s) paged.`
+        ? `Confirmed bug — urgent ticket created AND IT emergency chain fired. ${emergencyResult?.contactCount ?? 0} contact(s) paged.${screenshotUrls.length > 0 ? ` ${screenshotUrls.length} screenshot(s) attached.` : ""}`
         : classification === "user_error"
-          ? "Classified as user_error — high-priority ticket created, admins can coach the partner; no emergency paged."
-          : "Ambiguous — high-priority ticket created for admin investigation; no emergency paged.",
+          ? `Classified as user_error — high-priority ticket created, admins can coach the partner; no emergency paged.${screenshotUrls.length > 0 ? ` ${screenshotUrls.length} screenshot(s) attached.` : ""}`
+          : `Ambiguous — high-priority ticket created for admin investigation; no emergency paged.${screenshotUrls.length > 0 ? ` ${screenshotUrls.length} screenshot(s) attached.` : ""}`,
   });
 }

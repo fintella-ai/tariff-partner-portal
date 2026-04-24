@@ -60,6 +60,14 @@ export default function AiAssistantPage() {
   const [preferredGeneralist, setPreferredGeneralist] = useState<string | null | undefined>(undefined);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pinnedSpecialist, setPinnedSpecialist] = useState<"tara" | "ollie" | null>(null);
+  // Pending screenshot uploads — staged before send so Ollie's
+  // investigate_bug tool can reference the URLs. Each item is a blob URL
+  // returned by /api/ai/upload.
+  const [pendingAttachments, setPendingAttachments] = useState<
+    { url: string; name: string }[]
+  >([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ─── LOAD CONVERSATIONS + CONFIG ─────────────────────────────────────
@@ -148,6 +156,38 @@ export default function AiAssistantPage() {
     setSidebarOpen(false);
   }
 
+  // ─── UPLOAD ATTACHMENT ───────────────────────────────────────────────
+  async function handleAttachmentSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Reset the input so selecting the same file twice still fires change.
+    if (e.target) e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/ai/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Upload failed");
+        return;
+      }
+      setPendingAttachments((prev) => [
+        ...prev,
+        { url: data.url, name: file.name },
+      ]);
+    } catch {
+      setError("Upload failed — network error");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removeAttachment(url: string) {
+    setPendingAttachments((prev) => prev.filter((a) => a.url !== url));
+  }
+
   // ─── SEND MESSAGE ────────────────────────────────────────────────────
   async function sendMessage(text: string) {
     const trimmed = text.trim();
@@ -155,7 +195,17 @@ export default function AiAssistantPage() {
     setSending(true);
     setError("");
 
-    // Optimistic user message
+    // If the partner staged screenshots, append a visible hint to the
+    // message so Ollie sees the URLs in her history + can pass them to
+    // investigate_bug's screenshotUrls arg.
+    const attachmentsNote =
+      pendingAttachments.length > 0
+        ? `\n\n[Partner attached ${pendingAttachments.length} screenshot${pendingAttachments.length === 1 ? "" : "s"}]:\n${pendingAttachments.map((a) => `- ${a.url}`).join("\n")}`
+        : "";
+    const messageToSend = `${trimmed}${attachmentsNote}`;
+
+    // Optimistic user message — shows the trimmed text only, attachment
+    // context is hidden from the rendered bubble.
     const optimistic: Message = {
       id: `temp-${Date.now()}`,
       role: "user",
@@ -164,6 +214,8 @@ export default function AiAssistantPage() {
     };
     setMessages((prev) => [...prev, optimistic]);
     setInput("");
+    const attachmentsSnapshot = pendingAttachments;
+    setPendingAttachments([]);
 
     try {
       const res = await fetch("/api/ai/chat", {
@@ -171,7 +223,7 @@ export default function AiAssistantPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           conversationId: activeId,
-          message: trimmed,
+          message: messageToSend,
           pinnedSpecialist: pinnedSpecialist ?? undefined,
         }),
       });
@@ -179,8 +231,10 @@ export default function AiAssistantPage() {
 
       if (!res.ok) {
         setError(data.error || "Failed to send message.");
-        // Remove optimistic
+        // Remove optimistic + restore staged attachments so the partner
+        // can re-send without re-uploading.
         setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+        setPendingAttachments(attachmentsSnapshot);
         return;
       }
 
@@ -197,6 +251,7 @@ export default function AiAssistantPage() {
     } catch {
       setError("Network error. Please try again.");
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+      setPendingAttachments(attachmentsSnapshot);
     } finally {
       setSending(false);
     }
@@ -450,7 +505,49 @@ export default function AiAssistantPage() {
 
           {/* Input */}
           <div className="border-t border-[var(--app-border)] p-3">
+            {/* Staged screenshot thumbnails — appear above the textarea when
+                the partner has uploaded but not yet sent. Click × to remove. */}
+            {pendingAttachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {pendingAttachments.map((a) => (
+                  <div
+                    key={a.url}
+                    className="relative group border border-[var(--app-border)] rounded-md overflow-hidden bg-[var(--app-input-bg)]"
+                  >
+                    <img
+                      src={a.url}
+                      alt={a.name}
+                      className="h-14 w-14 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(a.url)}
+                      className="absolute top-0.5 right-0.5 bg-black/70 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] leading-none hover:bg-red-500"
+                      title="Remove"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="flex gap-2 items-end">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={handleAttachmentSelect}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || sending}
+                title="Attach a screenshot"
+                className="shrink-0 bg-[var(--app-input-bg)] border border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-brand-gold rounded-xl px-3 py-3 font-body text-[14px] min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+              >
+                {uploading ? "…" : "📎"}
+              </button>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -476,7 +573,7 @@ export default function AiAssistantPage() {
               </button>
             </div>
             <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-1.5 text-right">
-              Enter to send · Shift+Enter for newline
+              Enter to send · Shift+Enter for newline · 📎 to attach a screenshot
             </div>
           </div>
         </div>
