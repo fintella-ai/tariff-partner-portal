@@ -599,6 +599,8 @@ const TOOL_LABELS: Record<string, string> = {
   lookupAgreement: "Agreement lookup",
   lookupDownline: "Downline lookup",
   create_support_ticket: "Ticket created",
+  start_live_chat: "Live chat started",
+  initiate_live_transfer: "Live call initiated",
 };
 
 function ToolCallChip({ call }: { call: ToolCallRecord }) {
@@ -697,6 +699,25 @@ function describeToolCall(call: ToolCallRecord): string {
       const priority =
         typeof output.priority === "string" ? ` · ${output.priority}` : "";
       return `routed to ${role}${priority}`;
+    }
+    case "start_live_chat": {
+      const n =
+        typeof output.onlineAdminsNotified === "number"
+          ? output.onlineAdminsNotified
+          : 0;
+      const subj =
+        typeof output.subject === "string" ? output.subject.slice(0, 40) : "";
+      return `${n} admin${n === 1 ? "" : "s"} · ${subj}`;
+    }
+    case "initiate_live_transfer": {
+      const n =
+        typeof output.onlineAdminsNotified === "number"
+          ? output.onlineAdminsNotified
+          : 0;
+      const routed = (output.routedTo ?? {}) as Record<string, unknown>;
+      const role =
+        typeof routed.role === "string" ? routed.role : "support";
+      return `${n} admin${n === 1 ? "" : "s"} · ${role}`;
     }
     default:
       return "";

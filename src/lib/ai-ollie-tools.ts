@@ -12,13 +12,16 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import { STAGE_LABELS } from "@/lib/constants";
+import { getOnlineAdminsForInbox } from "@/lib/admin-online";
 
 export type OllieToolName =
   | "lookupDeal"
   | "lookupCommissions"
   | "lookupAgreement"
   | "lookupDownline"
-  | "create_support_ticket";
+  | "create_support_ticket"
+  | "start_live_chat"
+  | "initiate_live_transfer";
 
 // Categories Ollie may assign to a ticket. These feed AdminInbox.categories
 // to route email + notifications. Keep this list in sync with the seed in
@@ -96,6 +99,59 @@ export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
         },
       },
       required: [],
+    },
+  },
+  {
+    name: "start_live_chat",
+    description:
+      "Hand the conversation off to a live human via in-portal chat. Fires when the partner wants to talk to a person NOW and an admin assigned to the relevant inbox is online + has availableForLiveChat=true. Creates a ChatSession + seeds it with the partner's question + notifies the admins. DO NOT call if you haven't just verified an admin is available — call lookupAdminAvailability first (coming soon) or let the tool fail gracefully and fall back to create_support_ticket.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        category: {
+          type: "string" as const,
+          enum: [...TICKET_CATEGORIES] as unknown as string[],
+          description:
+            "Which admin inbox should pick this up (same enum as create_support_ticket).",
+        },
+        reason: {
+          type: "string" as const,
+          description:
+            "One-line summary of what the partner wants to talk about. Becomes the ChatSession subject.",
+        },
+        partnerMessage: {
+          type: "string" as const,
+          description:
+            "Optional opening message to seed the chat — usually the partner's most recent turn in the Ollie conversation so the admin can pick up where Ollie left off.",
+        },
+      },
+      required: ["category", "reason"],
+    },
+  },
+  {
+    name: "initiate_live_transfer",
+    description:
+      "Initiate a live phone transfer — Twilio will bridge a call between the partner and an on-call admin. ALWAYS confirm the partner's phone number in conversation before calling this tool. NEVER dial silently. The tool records the intent + notifies eligible admins; the actual Twilio bridge fires in a follow-up PR. If no admins with availableForLiveCall=true are online right now, the tool will return an error — fall back to offering a scheduled call or a support ticket.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        category: {
+          type: "string" as const,
+          enum: [...TICKET_CATEGORIES] as unknown as string[],
+          description: "Which admin inbox should receive the call.",
+        },
+        partnerPhone: {
+          type: "string" as const,
+          description:
+            "Partner's phone number as they just confirmed to you. E.164 preferred, but the tool will normalize.",
+        },
+        reason: {
+          type: "string" as const,
+          description:
+            "One-line summary of what the partner wants to discuss on the call.",
+        },
+      },
+      required: ["category", "partnerPhone", "reason"],
     },
   },
   {
@@ -190,6 +246,10 @@ export async function executeOllieTool(
         return ok(await lookupDownline(partnerCode, args));
       case "create_support_ticket":
         return await createSupportTicket(partnerCode, args, ctx);
+      case "start_live_chat":
+        return await startLiveChat(partnerCode, args, ctx);
+      case "initiate_live_transfer":
+        return await initiateLiveTransfer(partnerCode, args, ctx);
       default:
         return err(`Unknown tool: ${name}`);
     }
@@ -628,5 +688,236 @@ async function createSupportTicket(
       assignedIds.length > 0
         ? `Ticket created, routed to ${inboxLabel}, and ${recipientAdminEmails.length} assigned admin${recipientAdminEmails.length === 1 ? "" : "s"} notified. Partner can view and reply from the Support page.`
         : `Ticket created and routed to ${inboxLabel}. Inbox has no admins assigned yet — notified all ${recipientAdminEmails.length} support-eligible admins as fallback. Partner can view and reply from the Support page.`,
+  });
+}
+
+// ─── LIVE ESCALATION TOOLS (Phase 3c.4c) ──────────────────────────────────
+
+async function startLiveChat(
+  partnerCode: string,
+  args: Record<string, unknown>,
+  ctx: ExecuteCtx
+) {
+  const category = String(args.category ?? "other");
+  const reason = String(args.reason ?? "").trim();
+  const partnerMessage = typeof args.partnerMessage === "string" ? args.partnerMessage.trim() : "";
+  if (!reason) return err("Reason is required for live chat.");
+  if (!(TICKET_CATEGORIES as readonly string[]).includes(category)) {
+    return err(`Unknown category: ${category}`);
+  }
+
+  const routedInbox =
+    (await prisma.adminInbox.findFirst({
+      where: { categories: { has: category } },
+      select: { id: true, role: true, displayName: true, assignedAdminIds: true },
+    })) ??
+    (await prisma.adminInbox.findUnique({
+      where: { role: "support" },
+      select: { id: true, role: true, displayName: true, assignedAdminIds: true },
+    }));
+
+  // Find online admins assigned to this inbox who are available for live chat.
+  const candidateIds = routedInbox?.assignedAdminIds ?? [];
+  const onlineAssigned = candidateIds.length
+    ? (await getOnlineAdminsForInbox(candidateIds)).filter((a) => a.availableForLiveChat)
+    : [];
+
+  // Fallback: no assignee online — check any support-eligible admin online with the flag.
+  let onlineAdmins = onlineAssigned;
+  let usedFallback = false;
+  if (onlineAdmins.length === 0) {
+    const fallback = await prisma.user.findMany({
+      where: {
+        role: { in: ["super_admin", "admin", "partner_support"] },
+        availableForLiveChat: true,
+        lastHeartbeatAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
+      },
+      select: { id: true, email: true, name: true },
+    });
+    onlineAdmins = fallback as any;
+    usedFallback = fallback.length > 0;
+  }
+
+  if (onlineAdmins.length === 0) {
+    return err(
+      "No admins are available for live chat right now. Offer the partner a scheduled call or open a support ticket instead."
+    );
+  }
+
+  // Create ChatSession + seed with partner's opening message.
+  const session = await prisma.chatSession.create({
+    data: {
+      partnerCode,
+      subject: reason.slice(0, 120),
+      messages: partnerMessage
+        ? {
+            create: {
+              senderType: "partner",
+              senderId: partnerCode,
+              content: partnerMessage,
+            },
+          }
+        : undefined,
+    },
+    select: { id: true, subject: true, createdAt: true },
+  });
+
+  // Audit + notify.
+  if (ctx.conversationId) {
+    await prisma.aiEscalation.create({
+      data: {
+        conversationId: ctx.conversationId,
+        rung: "live_chat",
+        status: "initiated",
+        targetInboxId: routedInbox?.id ?? null,
+        partnerCode,
+        category,
+        priority: "normal",
+        reason,
+        payload: {
+          sessionId: session.id,
+          routedToInbox: routedInbox?.role ?? null,
+          onlineAdminCount: onlineAdmins.length,
+          fallbackUsed: usedFallback,
+        },
+      },
+    });
+  }
+
+  await Promise.all(
+    onlineAdmins.map((a) =>
+      prisma.notification
+        .create({
+          data: {
+            recipientType: "admin",
+            recipientId: a.email,
+            type: "ai_live_chat_transfer",
+            title: "Ollie transferred a live chat",
+            message: `${partnerCode} → ${routedInbox?.displayName ?? "Support"} · ${session.subject ?? reason}`,
+            link: `/admin/support?chatSessionId=${session.id}`,
+          },
+        })
+        .catch(() => {})
+    )
+  );
+
+  return ok({
+    sessionId: session.id.substring(0, 8),
+    subject: session.subject,
+    createdAt: session.createdAt.toISOString(),
+    onlineAdminsNotified: onlineAdmins.length,
+    fallbackUsed: usedFallback,
+    partnerLink: "/dashboard/support",
+    note: `Live chat session created and ${onlineAdmins.length} admin(s) notified. Partner should click through to the Support page; admin will join momentarily.`,
+  });
+}
+
+async function initiateLiveTransfer(
+  partnerCode: string,
+  args: Record<string, unknown>,
+  ctx: ExecuteCtx
+) {
+  const category = String(args.category ?? "other");
+  const reason = String(args.reason ?? "").trim();
+  const rawPhone = String(args.partnerPhone ?? "").trim();
+
+  if (!reason) return err("Reason is required.");
+  if (!rawPhone) return err("Partner phone is required — confirm it with the partner before calling this tool.");
+  const clean = rawPhone.replace(/[^\d+]/g, "");
+  if (!/^\+?\d{7,15}$/.test(clean)) {
+    return err("Partner phone format invalid — needs 7-15 digits, optionally leading +.");
+  }
+  const phone = clean.startsWith("+") ? clean : `+${clean}`;
+  if (!(TICKET_CATEGORIES as readonly string[]).includes(category)) {
+    return err(`Unknown category: ${category}`);
+  }
+
+  const routedInbox =
+    (await prisma.adminInbox.findFirst({
+      where: { categories: { has: category } },
+      select: { id: true, role: true, displayName: true, assignedAdminIds: true },
+    })) ??
+    (await prisma.adminInbox.findUnique({
+      where: { role: "support" },
+      select: { id: true, role: true, displayName: true, assignedAdminIds: true },
+    }));
+
+  const candidateIds = routedInbox?.assignedAdminIds ?? [];
+  const onlineAssigned = candidateIds.length
+    ? (await getOnlineAdminsForInbox(candidateIds)).filter((a) => a.availableForLiveCall)
+    : [];
+
+  let onlineAdmins = onlineAssigned;
+  let usedFallback = false;
+  if (onlineAdmins.length === 0) {
+    const fallback = await prisma.user.findMany({
+      where: {
+        role: { in: ["super_admin", "admin", "partner_support"] },
+        availableForLiveCall: true,
+        lastHeartbeatAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
+      },
+      select: { id: true, email: true, name: true },
+    });
+    onlineAdmins = fallback as any;
+    usedFallback = fallback.length > 0;
+  }
+
+  if (onlineAdmins.length === 0) {
+    return err(
+      "No admins are available for live phone transfer right now. Offer the partner a scheduled call (15-min slot) or a support ticket."
+    );
+  }
+
+  // Record the intent. Actual Twilio bridging fires in a follow-up PR —
+  // this PR establishes the audit trail + admin notifications so the on-call
+  // admin sees the inbound call intent and can choose to pick up.
+  const escalation = ctx.conversationId
+    ? await prisma.aiEscalation.create({
+        data: {
+          conversationId: ctx.conversationId,
+          rung: "live_call",
+          status: "initiated",
+          targetInboxId: routedInbox?.id ?? null,
+          partnerCode,
+          category,
+          priority: "high", // live phone transfers are always time-sensitive
+          reason,
+          payload: {
+            partnerPhone: phone,
+            routedToInbox: routedInbox?.role ?? null,
+            onlineAdminCount: onlineAdmins.length,
+            fallbackUsed: usedFallback,
+            twilioBridgeStatus: "not_wired_yet",
+          },
+        },
+        select: { id: true, createdAt: true },
+      })
+    : null;
+
+  await Promise.all(
+    onlineAdmins.map((a) =>
+      prisma.notification
+        .create({
+          data: {
+            recipientType: "admin",
+            recipientId: a.email,
+            type: "ai_live_call_transfer",
+            title: "📞 Ollie initiated a live call transfer",
+            message: `${partnerCode} at ${phone} → ${routedInbox?.displayName ?? "Support"} · ${reason.slice(0, 100)}`,
+            link: `/admin/support?callEscalationId=${escalation?.id ?? ""}`,
+          },
+        })
+        .catch(() => {})
+    )
+  );
+
+  return ok({
+    escalationId: escalation?.id.substring(0, 8) ?? null,
+    partnerPhone: phone,
+    routedTo: routedInbox ? { role: routedInbox.role, displayName: routedInbox.displayName } : null,
+    onlineAdminsNotified: onlineAdmins.length,
+    fallbackUsed: usedFallback,
+    note:
+      "Live transfer intent recorded. Admins with availableForLiveCall=true + fresh heartbeat were notified. Twilio outbound bridge wiring ships in a follow-up PR — for now the admin sees the notification and can call the partner back on the confirmed number.",
   });
 }
