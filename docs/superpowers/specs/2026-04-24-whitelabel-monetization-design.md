@@ -60,52 +60,73 @@ At V1 signup, Growth + Scale tiers sign an addendum: "V2 recurring-revenue engin
 
 ---
 
-## 3. Architecture — managed single-tenant
+## 3. Architecture — managed single-tenant in a SEPARATE CODEBASE
 
-### Core decision: NO multi-tenant database
+### Core decision: Fintella OS lives in its own repo, cloned from production Fintella at the start, then diverges independently
+
+**Completely isolated from production Fintella.** Fintella OS is a NEW GitHub repo (`github.com/fintella-ai/fintella-os` or similar) cloned from the current portal codebase as a starting point, then evolved independently. Once the clone is made:
+
+- Production Fintella (`github.com/fintella-ai/tariff-partner-portal`) stays unchanged — its branch protection, CI, deploys, env vars, database, and Vercel project are entirely separate.
+- Fintella OS develops its own feature set without affecting production Fintella.
+- No shared code, no cross-repo PRs, no "upstream patch dispatcher" back into production Fintella.
+- Dependency upgrades, breaking changes, schema evolution — all independent.
+
+### Repo structure: monorepo with two apps
+
+Fintella OS is a monorepo containing:
+
+```
+fintella-os/
+├─ apps/
+│  ├─ meta-portal/         # Fintella OS meta-portal — customer CRM + Stripe + provisioning. Only YOU log in.
+│  └─ tenant-portal/       # White-label template — deployed per customer, branded to their firm.
+├─ packages/
+│  ├─ shared-types/        # TypeScript types shared between meta + tenant
+│  ├─ commission-engine/   # Shared commission rules engine
+│  └─ connector-framework/ # Shared generic connector builder
+├─ prisma/
+│  ├─ meta-schema.prisma   # Meta-portal DB schema (customers, subscriptions)
+│  └─ tenant-schema.prisma # Tenant DB schema (cloned from production Fintella, stripped)
+└─ scripts/
+   └─ provision-tenant.ts  # Per-customer Vercel + Neon + DNS automation
+```
+
+Monorepo tool: Turborepo (simplest for Next.js monorepo, fast builds, clean dependency graph).
+
+### NO multi-tenant database
 
 Each customer gets their own Vercel project + their own Neon database. Data isolation is infrastructure-level, not code-level. This is the key simplification that lets us ship in 4–6 weeks instead of 3+ months.
-
-### The two systems
-
-**System 1: Fintella Partner Portal (existing)** — the per-customer deployment template. What we call the "portal codebase" today. Each customer gets a forked/updated deployment of this.
-
-**System 2: Fintella OS Meta-Portal (new)** — a separate codebase at `fintella.os` (or similar). Only YOU log in. Runs:
-- Customer CRM (company, domain, tier, subscription status, deployment URL, Neon DB id)
-- Stripe Billing integration (subscription + deposits)
-- Provisioning automation (Vercel API + Neon API + Cloudflare/DNS API)
-- Upstream patch dispatcher (pushes portal codebase updates to all customer deployments)
-- Customer onboarding wizard
-- Monitoring dashboard (deployment health, uptime, error counts per customer)
 
 ### Per-customer deployment flow
 
 ```
 Fintella OS admin clicks "Provision: Acme ERC Recovery"
-  → Vercel API: create new project `fintella-acme` with shared repo + env
-  → Neon API: create new branch of base Prisma schema, new DB
-  → Cloudflare API: create `acme.fintella.os` subdomain
-  → Portal env populated: DATABASE_URL, NEXTAUTH_URL, brand defaults
-  → First deploy triggers seed-all.js with genericized starter data
+  → Vercel API: create new project `fintella-os-acme` from apps/tenant-portal
+  → Neon API: create new DB from the tenant-schema.prisma baseline
+  → Cloudflare API: create `acme.fintella.os` subdomain (or customer's custom domain via CNAME)
+  → Tenant env populated: DATABASE_URL, NEXTAUTH_URL, brand defaults
+  → First deploy triggers seed-generic.ts (stripped of Fintella-specific content)
   → Stripe subscription activated on signup
   → Super-admin credentials emailed to customer contact
   → Target: < 10 minutes end-to-end
 ```
 
-### Upstream patch dispatcher
+### Per-customer upgrade flow (replaces "upstream patch dispatcher")
 
-When the portal codebase ships a new feature or fix:
+When `apps/tenant-portal` in the Fintella OS repo ships a new feature or fix:
 - GitHub Action fires on `main` merge
-- Dispatcher reads Fintella OS meta-portal's customer list
-- For each active customer, triggers a Vercel redeploy from latest `main` on their project
-- Prisma migrations run automatically via each deployment's build step (already how the portal works today)
+- Dispatcher reads the meta-portal's customer list
+- For each active customer, triggers a Vercel redeploy of their tenant project from latest `main` in the Fintella OS repo
+- Prisma migrations run automatically via each deployment's build step
+
+**Note:** this is DIFFERENT from how production Fintella updates. Production Fintella has its own main branch in its own repo, its own deploys, its own lifecycle. Fintella OS customers never see production Fintella code; production Fintella never sees Fintella OS code.
 
 **Rollback:** per-customer "pin to commit" override in the meta-portal if a customer needs to hold back a bad release.
 
 ### Shared secrets vs per-customer secrets
 
-- **Shared (env var in the portal repo):** `ANTHROPIC_API_KEY`, `SIGNWELL_API_KEY` (Fintella's SignWell account used for all customers? Or each customer brings their own? **OPEN QUESTION — see section 10.3.**)
-- **Per-customer (set during provisioning):** `DATABASE_URL`, `NEXTAUTH_URL`, `GOOGLE_OAUTH_CLIENT_ID/SECRET`, `SENDGRID_API_KEY`, `TWILIO_*`, `STRIPE_*` — customers bring their own for outbound comms + billing
+- **Fintella OS platform secrets (env var in the meta-portal):** `STRIPE_SECRET_KEY` (Fintella OS's billing account), `VERCEL_API_TOKEN`, `NEON_API_KEY`, `CLOUDFLARE_API_TOKEN`, `ANTHROPIC_API_KEY` (Fintella's shared Claude account for the 🪄 Regenerate feature — optional per-customer override)
+- **Per-customer secrets (set during provisioning):** `DATABASE_URL`, `NEXTAUTH_URL`, `GOOGLE_OAUTH_CLIENT_ID/SECRET`, `SENDGRID_API_KEY`, `TWILIO_*`, `SIGNWELL_API_KEY`, `STRIPE_*` (customer's own Stripe for their partner payouts) — customers bring their own for outbound comms + agreement signing + partner payouts
 
 ---
 
@@ -173,9 +194,23 @@ When the portal codebase ships a new feature or fix:
 
 ### 4.3 Rebrand considerations
 
-The existing Fintella production instance at `fintella.partners` stays unchanged — it's the real business, real partners, real Frost Law relationship. **Only the template-that-clones-into-customer-deployments** is stripped of Fintella-proprietary content.
+The existing Fintella production instance at `fintella.partners` (in the production `tariff-partner-portal` repo) stays unchanged — it's the real business, real partners, real Frost Law relationship. **Fintella OS is a cloned codebase** at the point of the initial clone, then diverges. The initial clone pass strips Fintella-proprietary content so customer deployments start clean.
 
-Implementation approach: a new `prisma/seed-default.ts` or `scripts/seed-generic.js` that only runs on fresh customer deployments (gated on `FINTELLA_OS_TENANT=true`). The existing `FINTELLA_LIVE_MODE=true` flag on Fintella production blocks the tenant seed from running there.
+Implementation approach for the initial clone → stripped baseline:
+
+- Clone `github.com/fintella-ai/tariff-partner-portal` → `github.com/fintella-ai/fintella-os`
+- Remove Frost-Law / Fintella-specific references from:
+  - Seed scripts (`scripts/seed-all.js`, `seed-partners.ts`, etc.)
+  - FAQ defaults
+  - Email templates (replace hardcoded strings with `{{firmName}}` tokens)
+  - Nav labels + landing content defaults
+  - Docs (`/docs/install-app`, `/docs/webhook-guide`)
+  - Legal placeholders (privacy, terms, TCR copy)
+- Replace production-specific env var references with tenant-provisioning patterns
+- Rename the monorepo structure per section 3 (apps/meta-portal, apps/tenant-portal, packages/*)
+- Add a CI check in the Fintella OS repo: `grep "Frost Law"` against the tenant-seed content fails the build (final safety net)
+
+**Production Fintella's codebase is NOT modified in this process** — the clone is a one-way fork. Future Fintella production work continues in the `tariff-partner-portal` repo independently.
 
 ---
 
@@ -237,10 +272,11 @@ Weeks 7–14: V2 engineering runs in parallel to V1 sales motion.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Upstream patch breaks a customer | Customer-visible downtime | Per-customer "pin to commit" override + staged rollout (first deploy to Fintella-patient-zero, then sample customers, then all) |
+| Customer-portal upgrade breaks a customer | Customer-visible downtime | Per-customer "pin to commit" override + staged rollout (deploy to a sample customer first, then all); Fintella OS repo has its own staging environment |
 | Customer data leaks across deployments | Existential for the product | Infrastructure-level isolation (separate Neon DBs) + no code-level cross-tenant queries possible |
 | Customer wants to migrate OFF Fintella OS | Churn + PR risk | Export-all-data feature in admin (CSV for deals, partners, payouts) — ship as V1 requirement |
-| Frost-Law-branded content leaks into template | Contract risk for John | Brand-strip pass gated by CI check — `grep "Frost Law"` on the tenant-seed content fails the build |
+| Frost-Law-branded content leaks into tenant seed | Contract risk for John | Brand-strip pass gated by CI check in Fintella OS repo — `grep "Frost Law"` on the tenant-seed content fails the build |
+| Fintella OS repo + production Fintella repo drift creates confusion | Engineering overhead | Explicit "these are separate products" docs + separate CLAUDE.md + separate branch protection + separate teams/ownership; no shared PRs |
 | Customer runs illegal comp structure in regulated state | Legal liability if John could've known | Terms of service disclaimer + Starter tier help-page "compliance review required before launch" |
 | Provisioning automation breaks mid-flow | Failed customer onboarding | Provisioning steps are idempotent + rollback-safe; meta-portal shows per-step status |
 
@@ -250,11 +286,8 @@ Weeks 7–14: V2 engineering runs in parallel to V1 sales motion.
 
 These are flagged for your call before we transition to writing-plans:
 
-### 10.1 Product name
-- "Fintella OS" (current working name)
-- "Fintella Partners OS"
-- "Fintella Network Platform"
-- Something completely new (fresh brand, no "Fintella" prefix — makes white-label cleaner since customers' customers don't see Fintella branding anywhere)
+### 10.1 Product name — CLOSED
+Resolved per John's 2026-04-24 confirmation: **Fintella OS**. Repo: `github.com/fintella-ai/fintella-os`. Meta-portal domain: see 10.4.
 
 ### 10.2 Pricing tier comfort
 - $497 / $1,497 / $2,997 monthly
@@ -276,14 +309,38 @@ These are flagged for your call before we transition to writing-plans:
 - Candidate list: HubSpot CRM, Salesforce, Stripe Connect (for payouts), Pipedrive, Zoho CRM, Zapier, Make
 - Which 3 matter most based on your target ICP conversations?
 
-### 10.6 Fintella production — patient zero or stays separate?
-- **Option A (patient zero):** Fintella production becomes the first "provisioned customer" in the meta-portal. Benefits: real-world upstream-patch test, aligned incentives. Risk: complications with real-partner data.
-- **Option B (stays separate):** Fintella production runs its own deployment; meta-portal only tracks net-new customers. Cleaner separation.
-- **Recommended:** Option B — too much at stake to treat the real business as a test subject.
+### 10.6 Fintella production — CLOSED
+Resolved per John's 2026-04-24 directive: Fintella OS lives in a **completely separate repo** (`github.com/fintella-ai/fintella-os`), cloned from production Fintella as a one-time fork, then evolved independently. No patient-zero, no shared codebase, no collision risk with production. This decision is baked into Section 3 (Architecture).
 
 ---
 
-## 11. What this design explicitly does NOT do
+## 11. Adjacent product-line extensions (post-V3 / separate product)
+
+A key insight from the 2026-04-24 brainstorm: Fintella OS's V1 architecture (tenant isolation + custom fields + generic connector framework + commission-agnostic ledger + admin/partner/client role separation) makes it **easy and cheap** — ~10% of greenfield build time — to extend into adjacent SMB service-business operations. These become expansion product lines once V1/V2 are humming, OR separate SKUs sold to the same ICP.
+
+### Natural extensions the architecture already supports
+
+| Extension | What it adds | Effort on top of V1 |
+|---|---|---|
+| **Project management backend** | Kanban boards, task assignments, deadlines, per-deal project workflows | 2–3 weeks (extends Deal model with project phases + TaskItem relation) |
+| **Client support ticketing** | External client portal where customers' clients submit support tickets — already partially built via `SupportTicket` model, just needs tenant-facing UX | 1–2 weeks (leverage existing SupportTicket + TicketMessage models) |
+| **Sales front-end system** | Deal pipeline CRM view for tenant staff (not just partners) — lead → qualified → closed-won workflow with assignment, notes, follow-ups | 2–3 weeks (extends Deal model with a `leadSource=inbound_sales` path) |
+| **Client portal (end-client-facing)** | Clients of the tenant's clients log in to track their own deal, upload docs, see status | 2–3 weeks (new top-level role alongside partner/admin) |
+| **Secure document collection** | Client-upload flow for regulated docs (W-9, employment records, tax forms, incorporation docs); per-doc encryption + audit log | 2 weeks (extends Document model; add end-to-end-encrypted upload endpoint) |
+| **IRS transcript parsing** | Client uploads IRS transcript PDF → OCR → extract fields → populate deal record | 1–2 weeks (Claude-API-backed parsing pipeline; PDF → structured JSON → Deal fields) |
+| **Reporting + analytics suite** | Pre-built dashboards for tenant's business ops (pipeline velocity, conversion rate, rep performance, commission forecasts) | 2–3 weeks (extends existing `/admin/reports` tabs) |
+
+### Strategic implication
+
+This is a **defensible moat**: a tenant who adopts Fintella OS for referral-network management gets a gravity-well upgrade path into full SMB ops tooling. Competitors offering single-point solutions (just affiliate tracking, or just CRM, or just e-sign) can't match the integrated workflow.
+
+**V1 does not ship any of these extensions.** But V1's architecture is intentionally designed so each extension is a 2–3 week engineering sprint rather than a rebuild. The value is captured in the sales conversation: "Start with referral-network management. Add project management next quarter. Add client portal after that. One codebase, one login, one dataset, tenant-branded throughout."
+
+**John's capability note:** John has domain expertise in these adjacent areas — especially IRS transcript parsing + secure document collection for tax-recovery workflows. His 10% build-time estimate reflects this experience. Any of these extensions, when greenlit, starts with a dedicated brainstorm → design → writing-plans loop of its own.
+
+---
+
+## 13. What this design explicitly does NOT do
 
 - **Does NOT build a multi-tenant database.** If V3 needs it for price-sensitive tier, that's a separate ~4-week project.
 - **Does NOT build a self-serve signup flow for V1.** Sales-assisted only — you provision manually after a demo call.
@@ -295,7 +352,7 @@ These are flagged for your call before we transition to writing-plans:
 
 ---
 
-## 12. Post-design next steps
+## 14. Post-design next steps
 
 1. **John reviews this spec** — approve as-is, or push back on sections (especially section 10 open decisions)
 2. **Once approved**, I invoke the `superpowers:writing-plans` skill to produce the detailed implementation plan (task breakdown, dependency graph, per-task acceptance criteria)
