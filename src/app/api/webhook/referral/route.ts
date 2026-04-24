@@ -310,14 +310,28 @@ async function preflightCheck(
   return { ok: true };
 }
 
-// ─── Flexible body-field resolver ──────────────────────────────────────────
+// ─── Flexible field resolver ──────────────────────────────────────────────
+//
+// Tries each candidate key in order and returns the first non-empty value.
+// Looks in the POST body first (primary source for the webhook) and then
+// falls back to the request's URL query params so integrators can pass
+// things like `?ep=EA-ACME-042` without having to reshape their JSON.
 
-function makeFieldResolver(body: Record<string, any>) {
+function makeFieldResolver(
+  body: Record<string, any>,
+  searchParams?: URLSearchParams
+) {
   return (...keys: string[]): string => {
     for (const key of keys) {
       const val = body[key];
       if (val !== undefined && val !== null && val !== "") {
         return String(val).trim();
+      }
+    }
+    if (searchParams) {
+      for (const key of keys) {
+        const val = searchParams.get(key);
+        if (val !== null && val !== "") return val.trim();
       }
     }
     return "";
@@ -384,7 +398,7 @@ async function postHandler(req: NextRequest): Promise<Response> {
       }
     }
 
-    const get = makeFieldResolver(body);
+    const get = makeFieldResolver(body, req.nextUrl.searchParams);
 
     // Partner tracking (from utm_content query param passed through form)
     const partnerCode = get(
@@ -401,10 +415,12 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "ref"
     );
 
-    // Enterprise Partner tracking — utm_medium carries the EA's own internal
-    // L1 code when the referring partner is reselling under their own portal.
-    // Raw, no normalization; may be null if this isn't an EA-sourced deal.
-    const epLevel1 = get("utm_medium", "utmmedium", "utm_Medium");
+    // Enterprise Partner tracking — `ep` (URL query or body) carries the EA's
+    // own internal L1 code when the referring partner is reselling under their
+    // own portal. `utm_medium` variants remain accepted for backwards compat
+    // with any in-flight links cut before the rename. Raw, no normalization;
+    // may be null if this isn't an EA-sourced deal.
+    const epLevel1 = get("ep", "EP", "utm_medium", "utmmedium", "utm_Medium");
 
     // Client contact info
     const firstName = get(

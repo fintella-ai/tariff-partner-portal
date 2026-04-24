@@ -823,7 +823,7 @@ export default function AdminDealsPage() {
                         className={`${inputClass} w-full sm:w-1/2`}
                         value={editEpLevel1}
                         onChange={(e) => setEditEpLevel1(e.target.value)}
-                        placeholder="— (set by utm_medium on client submission)"
+                        placeholder="— (set by ?ep on client submission)"
                       />
                     ) : (
                       <div className="font-body text-[13px] text-[var(--app-text)] mt-0.5">

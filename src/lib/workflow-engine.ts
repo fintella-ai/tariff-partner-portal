@@ -132,7 +132,7 @@ export const TRIGGER_VARIABLES: Record<TriggerKey, TriggerVariable[]> = {
     { token: "{deal.id}",                    description: "Fintella deal ID (unique identifier — use for later PATCH updates)", example: "cmoabkqqi000e14ab8ybk8bv4" },
     { token: "{deal.dealName}",              description: "Deal name",                              example: "ACME Corp — Tariff Refund" },
     { token: "{deal.partnerCode}",           description: "Submitting partner's code",              example: "PTNJD8K3F" },
-    { token: "{deal.epLevel1}",              description: "Enterprise Partner's internal L1 code (from utm_medium)", example: "EA-ACME-042" },
+    { token: "{deal.epLevel1}",              description: "Enterprise Partner's internal L1 code (from ?ep URL/body param)", example: "EA-ACME-042" },
     { token: "{deal.externalDealId}",        description: "Upstream source's deal ID (e.g. HubSpot ID from Frost)",     example: "462693304018" },
     { token: "{deal.clientName}",            description: "Client display name",                    example: "Jane Doe" },
     { token: "{deal.clientFirstName}",       description: "Client first name",                      example: "Jane" },
