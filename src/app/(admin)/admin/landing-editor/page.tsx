@@ -52,6 +52,14 @@ export default function LandingEditorPage() {
   const [lastPublishedAt, setLastPublishedAt] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ tone: "ok" | "err"; msg: string } | null>(null);
   const [regenInstructions, setRegenInstructions] = useState("");
+  // Split-pane live preview (Level 1 landing builder). Opens an iframe of
+  // /landing-v2?preview=draft next to the editor; the draft route loads
+  // LandingContent.draft instead of .published so admins see their
+  // just-saved changes without publishing. `previewBump` forces the
+  // iframe to reload after every successful saveDraft().
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewBump, setPreviewBump] = useState(0);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,8 +93,11 @@ export default function LandingEditorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ draft }),
       });
-      if (res.ok) flash("ok", "Draft saved");
-      else flash("err", "Save failed");
+      if (res.ok) {
+        flash("ok", "Draft saved");
+        // Reload the live preview iframe so the admin sees their change.
+        setPreviewBump((n) => n + 1);
+      } else flash("err", "Save failed");
     } finally {
       setSaving(false);
     }
@@ -107,6 +118,7 @@ export default function LandingEditorPage() {
         setLastRegeneratedAt(new Date().toISOString());
         flash("ok", `Regenerated ${data.ai ? "with AI" : "(deterministic — set ANTHROPIC_API_KEY for AI rewriting)"}: ${data.sourcesUsed.trainingModules} training modules, ${data.sourcesUsed.faqs} FAQs, ${data.sourcesUsed.resources} resources, ${data.sourcesUsed.activePartners} partners`);
         setRegenInstructions("");
+        setPreviewBump((n) => n + 1);
       } else {
         flash("err", data.error || "Regeneration failed");
       }
@@ -164,7 +176,9 @@ export default function LandingEditorPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6 text-left">
+    <div className={`${previewOpen ? "px-4" : "max-w-7xl mx-auto px-4"} py-8 text-left`}>
+      <div className={previewOpen ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-6" : "space-y-6"}>
+        <div className="space-y-6 min-w-0">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold">Landing Page Editor</h1>
@@ -173,13 +187,20 @@ export default function LandingEditorPage() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setPreviewOpen((v) => !v)}
+            className={`px-4 py-2 rounded-lg border text-sm transition ${previewOpen ? "bg-brand-gold/10 border-brand-gold/40 text-brand-gold" : "border-[var(--app-border)] hover:bg-[var(--app-input-bg)]"}`}
+            title="Toggle split-pane live preview"
+          >
+            {previewOpen ? "◀ Close preview" : "▶ Live preview"}
+          </button>
           <a
-            href="/landing-v2"
+            href="/landing-v2?preview=draft"
             target="_blank"
             rel="noreferrer"
             className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm hover:bg-[var(--app-input-bg)] transition"
           >
-            👁 Preview (/landing-v2)
+            👁 Draft ↗
           </a>
           <button
             onClick={saveDraft}
@@ -268,6 +289,89 @@ export default function LandingEditorPage() {
             lastPublishedAt={lastPublishedAt}
           />
         )}
+      </div>
+        </div>
+
+        {/* Split-pane live preview — visible only when previewOpen AND the
+            viewport is xl+. Mobile/tablet admins use the "👁 Draft ↗" link
+            to open preview in a new tab. */}
+        {previewOpen && (
+          <div className="min-w-0 hidden xl:block">
+            <LivePreviewPane
+              bump={previewBump}
+              device={previewDevice}
+              onDeviceChange={setPreviewDevice}
+              onReload={() => setPreviewBump((n) => n + 1)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── LIVE PREVIEW PANE ────────────────────────────────────────────────────
+
+function LivePreviewPane({
+  bump,
+  device,
+  onDeviceChange,
+  onReload,
+}: {
+  bump: number;
+  device: "desktop" | "mobile";
+  onDeviceChange: (d: "desktop" | "mobile") => void;
+  onReload: () => void;
+}) {
+  // Cache-bust via query param so the iframe genuinely refetches on bump.
+  const src = `/landing-v2?preview=draft&_=${bump}`;
+  return (
+    <div className="sticky top-4 h-[calc(100vh-6rem)] border border-[var(--app-border)] rounded-lg overflow-hidden flex flex-col bg-[var(--app-bg)]">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[var(--app-border)] bg-[var(--app-input-bg)]">
+        <div className="flex items-center gap-2 text-[11px] text-[var(--app-text-muted)] min-w-0">
+          <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+          <span className="font-mono truncate">/landing-v2?preview=draft</span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => onDeviceChange("desktop")}
+            className={`text-[11px] px-2 py-1 rounded ${device === "desktop" ? "bg-brand-gold/20 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text)]"}`}
+            title="Desktop viewport"
+          >
+            🖥
+          </button>
+          <button
+            onClick={() => onDeviceChange("mobile")}
+            className={`text-[11px] px-2 py-1 rounded ${device === "mobile" ? "bg-brand-gold/20 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text)]"}`}
+            title="Mobile viewport"
+          >
+            📱
+          </button>
+          <button
+            onClick={onReload}
+            className="text-[11px] px-2 py-1 rounded text-[var(--app-text-muted)] hover:text-[var(--app-text)]"
+            title="Reload preview"
+          >
+            ↻
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-auto bg-[var(--app-input-bg)] flex items-start justify-center py-4">
+        <iframe
+          key={bump}
+          src={src}
+          title="Landing preview"
+          className={`border-0 bg-white transition-all ${
+            device === "mobile"
+              ? "w-[390px] h-[844px] rounded-xl shadow-lg"
+              : "w-full h-full"
+          }`}
+          style={device === "desktop" ? { minHeight: "100%" } : undefined}
+        />
+      </div>
+      <div className="px-3 py-1.5 border-t border-[var(--app-border)] bg-[var(--app-input-bg)] font-body text-[10px] text-[var(--app-text-muted)]">
+        Previewing draft. Save draft above to refresh this pane; Publish when
+        you&apos;re ready to go live.
       </div>
     </div>
   );

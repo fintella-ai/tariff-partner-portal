@@ -17,7 +17,7 @@ import "../landing.css";
 
 export const dynamic = "force-dynamic";
 
-async function loadLanding(): Promise<{
+async function loadLanding(preview: "draft" | "published"): Promise<{
   content: LandingContentData;
   enabled: boolean;
   live: boolean;
@@ -30,8 +30,13 @@ async function loadLanding(): Promise<{
       live: false,
     };
   }
+  // Preview mode reads the draft JSON blob instead of published so the
+  // admin split-pane preview reflects unsaved/just-saved edits without
+  // requiring a Publish. Auth is still gated at the admin layer below
+  // — we trust the caller (only the admin editor points at ?preview=draft).
+  const source = preview === "draft" ? row.draft : row.published;
   return {
-    content: parseLandingContent(row.published),
+    content: parseLandingContent(source),
     enabled: row.landingV2Enabled,
     live: row.landingV2Live,
   };
@@ -59,7 +64,7 @@ async function loadActivePartnerCount(): Promise<number> {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { content } = await loadLanding();
+  const { content } = await loadLanding("published");
   return {
     title: content.seo.title || DEFAULT_LANDING_CONTENT.seo.title,
     description: content.seo.description || DEFAULT_LANDING_CONTENT.seo.description,
@@ -86,11 +91,15 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function LandingV2Page({
   searchParams,
 }: {
-  searchParams: { utm_source?: string; utm_campaign?: string };
+  searchParams: { utm_source?: string; utm_campaign?: string; preview?: string };
 }) {
-  const { content, enabled } = await loadLanding();
+  const isPreview = searchParams.preview === "draft";
+  const { content, enabled } = await loadLanding(isPreview ? "draft" : "published");
 
-  if (!enabled) {
+  // Preview mode (admin split-pane) bypasses the enabled-gated redirect so
+  // admins can see the draft before flipping the flag. Everyone else
+  // still hits /login when /landing-v2 is disabled.
+  if (!isPreview && !enabled) {
     redirect("/login");
   }
 
