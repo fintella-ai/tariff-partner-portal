@@ -603,6 +603,7 @@ const TOOL_LABELS: Record<string, string> = {
   initiate_live_transfer: "Live call initiated",
   offer_schedule_slots: "Slots offered",
   book_slot: "Call booked",
+  investigate_bug: "Bug triaged",
 };
 
 function ToolCallChip({ call }: { call: ToolCallRecord }) {
@@ -741,6 +742,15 @@ function describeToolCall(call: ToolCallRecord): string {
       const routed = (output.routedTo ?? {}) as Record<string, unknown>;
       const role = typeof routed.role === "string" ? routed.role : "";
       return `${when}${role ? ` · ${role}` : ""}`;
+    }
+    case "investigate_bug": {
+      const classification =
+        typeof output.classification === "string"
+          ? output.classification.replace(/_/g, " ")
+          : "";
+      const priority =
+        typeof output.priority === "string" ? output.priority : "";
+      return `${classification}${priority ? ` · ${priority}` : ""}`;
     }
     default:
       return "";
