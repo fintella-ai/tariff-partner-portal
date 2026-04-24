@@ -5,6 +5,7 @@ import { computeDealCommissions, getL1CommissionRateSnapshot, roundCents, resolv
 import { resolveDealFinancials } from "@/lib/dealCalc";
 import { sendDealStatusUpdateEmail } from "@/lib/sendgrid";
 import { appendDealPayload } from "@/lib/appendDealPayload";
+import { normalizeStateName } from "@/lib/stateNames";
 
 /**
  * ═════════════════════════════════════════════════════════════════════════════
@@ -655,7 +656,7 @@ async function postHandler(req: NextRequest): Promise<Response> {
           businessStreetAddress: businessStreetAddress || null,
           businessStreetAddress2: businessStreetAddress2 || null,
           businessCity: businessCity || null,
-          businessState: businessState || null,
+          businessState: normalizeStateName(businessState) || null,
           businessZip: businessZip || null,
           importsGoods: importsGoods || null,
           importCountries: importCountries || null,
@@ -955,7 +956,7 @@ async function patchHandler(req: NextRequest): Promise<Response> {
     const businessCity = pickStr("city", "City", "business_city", "businessCity");
     if (businessCity) data.businessCity = businessCity;
     const businessState = pickStr("state", "State", "business_state", "businessState", "region");
-    if (businessState) data.businessState = businessState;
+    if (businessState) data.businessState = normalizeStateName(businessState);
     const businessZip = pickStr("zip", "Zip", "zip_code", "zipCode", "postal_code", "postalCode", "postcode");
     if (businessZip) data.businessZip = businessZip;
 

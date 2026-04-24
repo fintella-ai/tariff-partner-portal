@@ -135,7 +135,7 @@ const FIELDS = [
       "state",
       "zip",
     ],
-    desc: "Business/company details and location. `state` should be the full state name (e.g. \"California\", not \"CA\").",
+    desc: "Business/company details and location. `state` accepts either the 2-letter abbreviation (\"CA\") or the full name (\"California\") — we normalize to the full name on save. Unknown values pass through unchanged; the webhook never rejects a submission over a state/country/address quirk.",
   },
   {
     category: "Tariff",
@@ -522,7 +522,7 @@ Retry-After: 17
                     "state",
                     "zip",
                   ],
-                  desc: "Update the business entity name, EIN, service of interest, street address lines, or location. `state` should be the full state name (e.g. \"California\").",
+                  desc: "Update the business entity name, EIN, service of interest, street address lines, or location. `state` accepts \"CA\" or \"California\" — we normalize to the full name. Unknown values are stored as-is rather than rejected.",
                 },
                 {
                   category: "Tariff Fields",
