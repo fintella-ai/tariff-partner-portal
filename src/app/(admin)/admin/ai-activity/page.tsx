@@ -41,6 +41,14 @@ interface ActivityPayload {
         errorRate: number;
       }[];
     };
+    cache?: {
+      inputTokens: number;
+      outputTokens: number;
+      cacheReadTokens: number;
+      cacheCreationTokens: number;
+      hitRate: number;
+      costUsd: number;
+    };
   };
   onlineAdmins: {
     id: string;
@@ -157,6 +165,54 @@ export default function AiActivityPage() {
           warn={data.inboxes.some((i) => i.assignedCount === 0)}
         />
       </div>
+
+      {/* Prompt cache + cost panel — Phase 4. Only shown when cache data
+          is present (backfill tolerant). */}
+      {data.stats.cache && (
+        <section className="card p-5">
+          <h2 className="font-display text-[14px] font-semibold text-[var(--app-text)] mb-3">
+            Anthropic prompt cache (last {data.windowDays}d)
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+            <MiniStat
+              label="Cache hit rate"
+              value={`${(data.stats.cache.hitRate * 100).toFixed(0)}%`}
+              sub={data.stats.cache.hitRate > 0.7
+                ? "healthy"
+                : data.stats.cache.hitRate > 0.3
+                  ? "warming"
+                  : "cold"}
+              warn={data.stats.cache.hitRate < 0.3}
+            />
+            <MiniStat
+              label="Input tokens"
+              value={formatCompact(data.stats.cache.inputTokens)}
+              sub="uncached new input"
+            />
+            <MiniStat
+              label="Cache read"
+              value={formatCompact(data.stats.cache.cacheReadTokens)}
+              sub="cheap hits"
+            />
+            <MiniStat
+              label="Cache write"
+              value={formatCompact(data.stats.cache.cacheCreationTokens)}
+              sub="expensive misses"
+              warn={
+                data.stats.cache.cacheCreationTokens >
+                data.stats.cache.cacheReadTokens * 0.5
+              }
+            />
+          </div>
+          <div className="font-body text-[12px] text-[var(--app-text-muted)]">
+            Approx spend this window:{" "}
+            <span className="text-[var(--app-text)] font-semibold">
+              ${data.stats.cache.costUsd.toFixed(2)}
+            </span>{" "}
+            at Sonnet 4.6 pricing
+          </div>
+        </section>
+      )}
 
       {/* Tool-call breakdown */}
       <section className="card p-5">
@@ -328,6 +384,49 @@ function StatCard({
       </div>
     </div>
   );
+}
+
+function MiniStat({
+  label,
+  value,
+  sub,
+  warn,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  warn?: boolean;
+}) {
+  return (
+    <div
+      className={`border rounded-md p-2.5 ${
+        warn
+          ? "border-amber-500/30 bg-amber-500/5"
+          : "border-[var(--app-border)] bg-[var(--app-input-bg)]"
+      }`}
+    >
+      <div className="font-body text-[9px] uppercase tracking-wider text-[var(--app-text-muted)]">
+        {label}
+      </div>
+      <div
+        className={`font-display text-[18px] font-bold mt-0.5 ${
+          warn ? "text-amber-500" : "text-[var(--app-text)]"
+        }`}
+      >
+        {value}
+      </div>
+      <div className="font-body text-[10px] text-[var(--app-text-muted)]">
+        {sub}
+      </div>
+    </div>
+  );
+}
+
+/** Format 12345 → "12.3k", 123456 → "123k", 1234567 → "1.2M". */
+function formatCompact(n: number): string {
+  if (n < 1000) return n.toString();
+  if (n < 1_000_000) return (n / 1000).toFixed(n < 10_000 ? 1 : 0) + "k";
+  return (n / 1_000_000).toFixed(1) + "M";
 }
 
 function ToolBar({

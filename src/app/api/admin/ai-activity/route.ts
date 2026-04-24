@@ -84,6 +84,10 @@ export async function GET() {
           id: true,
           speakerPersona: true,
           toolCalls: true,
+          inputTokens: true,
+          outputTokens: true,
+          cacheReadTokens: true,
+          cacheCreationTokens: true,
           createdAt: true,
         },
         take: 500,
@@ -105,6 +109,11 @@ export async function GET() {
     const toolCallTotals: Record<string, { count: number; errors: number }> = {};
     let totalToolCalls = 0;
     let messagesWithTools = 0;
+    // Prompt-cache metrics — aggregated over the same message set.
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+    let totalCacheReadTokens = 0;
+    let totalCacheCreationTokens = 0;
     for (const m of messagesWithToolCalls) {
       const calls = Array.isArray(m.toolCalls)
         ? (m.toolCalls as Array<{ name?: string; isError?: boolean }>)
@@ -117,11 +126,32 @@ export async function GET() {
         toolCallTotals[name].count += 1;
         if (c?.isError) toolCallTotals[name].errors += 1;
       }
+      totalInputTokens += m.inputTokens ?? 0;
+      totalOutputTokens += m.outputTokens ?? 0;
+      totalCacheReadTokens += m.cacheReadTokens ?? 0;
+      totalCacheCreationTokens += m.cacheCreationTokens ?? 0;
     }
     const avgToolsPerMessage =
       messagesWithTools > 0
         ? Number((totalToolCalls / messagesWithTools).toFixed(2))
         : 0;
+
+    // Cache hit rate = cacheReadTokens / (cacheReadTokens + cacheCreationTokens)
+    // High hit rate = cache is warm (cheap). Low = we're burning cache writes.
+    const cacheTokenTotal = totalCacheReadTokens + totalCacheCreationTokens;
+    const cacheHitRate =
+      cacheTokenTotal > 0
+        ? +(totalCacheReadTokens / cacheTokenTotal).toFixed(3)
+        : 0;
+    // Approximate USD cost at Sonnet 4.6 pricing (input $3/MTok, output
+    // $15/MTok, cache read $0.30/MTok, cache write $3.75/MTok).
+    const costUsd = +(
+      (totalInputTokens * 3 +
+        totalOutputTokens * 15 +
+        totalCacheReadTokens * 0.3 +
+        totalCacheCreationTokens * 3.75) /
+      1_000_000
+    ).toFixed(2);
 
     // Resolve inbox display names for the by-inbox stats + recents.
     const inboxById = new Map(inboxes.map((i) => [i.id, i]));
@@ -149,6 +179,14 @@ export async function GET() {
             priority: r.priority,
             count: r._count._all,
           })),
+        },
+        cache: {
+          inputTokens: totalInputTokens,
+          outputTokens: totalOutputTokens,
+          cacheReadTokens: totalCacheReadTokens,
+          cacheCreationTokens: totalCacheCreationTokens,
+          hitRate: cacheHitRate,
+          costUsd,
         },
         toolCalls: {
           total: totalToolCalls,

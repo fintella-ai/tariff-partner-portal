@@ -288,6 +288,12 @@ export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
       },
       required: ["subject", "category", "priority", "reason"],
     },
+    // `cache_control` on the LAST tool marks a cache breakpoint — Anthropic
+    // caches the entire OLLIE_TOOLS array up to here as one segment. With
+    // 10 tools × ~500 tokens of schema + descriptions, this saves ~4-5k
+    // input tokens on every Ollie turn after the first cache write.
+    // Phase 4 of the PartnerOS roadmap.
+    cache_control: { type: "ephemeral" } as const,
   },
 ];
 
