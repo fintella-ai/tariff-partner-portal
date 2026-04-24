@@ -9,6 +9,28 @@ import SortHeader, { type SortDir } from "@/components/ui/SortHeader";
 
 type SortKey = string;
 
+// ─── Per-admin layout (drag-to-reorder via "Edit layout" button) ──────────
+// Same pattern as /admin/reports and /admin (AdminWorkspacePage). Section
+// order persists in localStorage.
+type SectionId = "summary" | "breakdown" | "enterprise" | "deals";
+const DEFAULT_SECTION_ORDER: SectionId[] = ["summary", "breakdown", "enterprise", "deals"];
+const LAYOUT_KEY = "fintella.admin.revenue.layout.v1";
+
+function readLayout(): SectionId[] {
+  if (typeof window === "undefined") return DEFAULT_SECTION_ORDER;
+  try {
+    const raw = window.localStorage.getItem(LAYOUT_KEY);
+    if (!raw) return DEFAULT_SECTION_ORDER;
+    const parsed = JSON.parse(raw) as SectionId[];
+    const known = new Set<SectionId>(DEFAULT_SECTION_ORDER);
+    const preserved = parsed.filter((s) => known.has(s));
+    const appended = DEFAULT_SECTION_ORDER.filter((s) => !preserved.includes(s));
+    return [...preserved, ...appended];
+  } catch {
+    return DEFAULT_SECTION_ORDER;
+  }
+}
+
 const FINTELLA_FEE_RATE = 0.40; // Fintella receives 40% of firm fee (Frost Law contract)
 const MAX_PARTNER_RATE = 0.25;  // Maximum commission rate any partner can have (used for projected pipeline fallback)
 
@@ -145,6 +167,44 @@ export default function RevenuePage() {
   // in the same view as firm-fee totals + a breakdown table per EP.
   const [enterprises, setEnterprises] = useState<EnterprisePartnerData[]>([]);
   const [epLoading, setEpLoading] = useState(true);
+
+  // Drag-to-reorder layout state (per-admin via localStorage)
+  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(DEFAULT_SECTION_ORDER);
+  const [editMode, setEditMode] = useState(false);
+  const [draggedSection, setDraggedSection] = useState<SectionId | null>(null);
+
+  useEffect(() => { setSectionOrder(readLayout()); }, []);
+
+  const persistLayout = useCallback((next: SectionId[]) => {
+    setSectionOrder(next);
+    if (typeof window !== "undefined") {
+      try { window.localStorage.setItem(LAYOUT_KEY, JSON.stringify(next)); } catch {}
+    }
+  }, []);
+
+  const onSectionDragStart = (e: React.DragEvent, id: SectionId) => {
+    if (!editMode) return;
+    setDraggedSection(id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+  const onSectionDragOver = (e: React.DragEvent) => {
+    if (!editMode || !draggedSection) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+  const onSectionDrop = (e: React.DragEvent, targetId: SectionId) => {
+    if (!editMode || !draggedSection) return;
+    e.preventDefault();
+    if (draggedSection === targetId) { setDraggedSection(null); return; }
+    const next = [...sectionOrder];
+    const src = next.indexOf(draggedSection);
+    const dst = next.indexOf(targetId);
+    if (src < 0 || dst < 0) { setDraggedSection(null); return; }
+    next.splice(src, 1);
+    next.splice(dst, 0, draggedSection);
+    persistLayout(next);
+    setDraggedSection(null);
+  };
   const [filter, setFilter] = useState<"all" | "closedwon" | "pipeline">("all");
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -291,18 +351,43 @@ export default function RevenuePage() {
   }
 
   return (
-    <div>
-      <ReportingTabs />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <div>
-          <h2 className="font-display text-[22px] font-bold mb-1">Company Revenue</h2>
-          <p className="font-body text-[13px] theme-text-muted">
-            Fintella receives {Math.round(FINTELLA_FEE_RATE * 100)}% of firm fees. Partner commission rates vary per deal (up to {Math.round(MAX_PARTNER_RATE * 100)}%); totals below use each deal&rsquo;s own rate.
-          </p>
+    <div className="flex flex-col">
+      <div style={{ order: -1 }}>
+        <ReportingTabs />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div>
+            <h2 className="font-display text-[22px] font-bold mb-1">Company Revenue</h2>
+            <p className="font-body text-[13px] theme-text-muted">
+              Fintella receives {Math.round(FINTELLA_FEE_RATE * 100)}% of firm fees. Partner commission rates vary per deal (up to {Math.round(MAX_PARTNER_RATE * 100)}%); totals below use each deal&rsquo;s own rate.
+            </p>
+          </div>
+          <button
+            onClick={() => setEditMode((v) => !v)}
+            className={`font-body text-[12px] px-3 py-2 rounded-lg border transition-colors shrink-0 ${
+              editMode
+                ? "bg-brand-gold text-black border-brand-gold font-semibold"
+                : "border-[var(--app-border)] theme-text-secondary hover:bg-brand-gold/10 hover:border-brand-gold/40"
+            }`}
+            title="Drag to reorder sections — saved per admin via localStorage"
+          >
+            {editMode ? "✓ Done editing" : "✎ Edit layout"}
+          </button>
         </div>
       </div>
 
       {/* ═══ REVENUE SUMMARY ═══ */}
+      <section
+        key="summary"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "summary")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "summary")}
+        className={`${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move mb-6" : ""}`}
+        style={{ order: sectionOrder.indexOf("summary") }}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">⋮⋮ Revenue Summary — drag to reorder</div>
+        )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <div className="stat-card">
           <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Total Deal Value</div>
@@ -337,8 +422,21 @@ export default function RevenuePage() {
           <div className="font-body text-[10px] theme-text-muted mt-1">{pipelineDeals.length} active deals</div>
         </div>
       </div>
+      </section>
 
       {/* ═══ BREAKDOWN CARD ═══ */}
+      <section
+        key="breakdown"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "breakdown")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "breakdown")}
+        className={`${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move mb-6" : ""}`}
+        style={{ order: sectionOrder.indexOf("breakdown") }}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">⋮⋮ Revenue Breakdown — drag to reorder</div>
+        )}
       <div className="card p-5 sm:p-6 mb-6">
         <div className="font-body font-semibold text-sm mb-4">Revenue Breakdown</div>
         <div className="space-y-3">
@@ -376,6 +474,7 @@ export default function RevenuePage() {
           </div>
         </div>
       </div>
+      </section>
 
       {/* ═══ ENTERPRISE REPORTING & PAYOUTS ═══
           Duplicated from the Custom Commissions → Enterprise Reporting
@@ -384,7 +483,19 @@ export default function RevenuePage() {
           same per-EP card shape: 5 summary metrics + per-deal table
           with Fintella 40% / L1 commission / enterprise override /
           Fintella net.  */}
-      <div className="mb-6">
+      <section
+        key="enterprise"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "enterprise")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "enterprise")}
+        className={`mb-6 ${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move" : ""}`}
+        style={{ order: sectionOrder.indexOf("enterprise") }}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">⋮⋮ Enterprise Reporting &amp; Payouts — drag to reorder</div>
+        )}
+      <div>
         <h3 className="font-display text-lg font-bold mb-1">Enterprise Reporting &amp; Payouts</h3>
         <p className="font-body text-[13px] theme-text-muted mb-5">
           Deal-level breakdown for each active enterprise partner — Fintella&rsquo;s 40% gross share, L1 commission paid, EP override paid, and net company profit after all payouts.
@@ -489,8 +600,21 @@ export default function RevenuePage() {
           </div>
         )}
       </div>
+      </section>
 
       {/* ═══ DEAL-BY-DEAL TABLE ═══ */}
+      <section
+        key="deals"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "deals")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "deals")}
+        className={`${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move mb-6" : ""}`}
+        style={{ order: sectionOrder.indexOf("deals") }}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">⋮⋮ Deal Revenue Detail — drag to reorder</div>
+        )}
       <div className="card">
         <div className="px-5 py-4 flex flex-col gap-3" style={{ borderBottom: "1px solid var(--app-border)" }}>
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -699,6 +823,7 @@ export default function RevenuePage() {
           </div>
         )}
       </div>
+      </section>
     </div>
   );
 }

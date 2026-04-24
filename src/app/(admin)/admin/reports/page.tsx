@@ -1,10 +1,33 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { fmt$ } from "@/lib/format";
 import PartnerLink from "@/components/ui/PartnerLink";
 import ReportingTabs from "@/components/ui/ReportingTabs";
 import SortHeader, { type SortDir } from "@/components/ui/SortHeader";
+
+// ─── Per-admin layout (drag-to-reorder via "Edit layout" button) ──────────
+// Mirrors the pattern on /admin (AdminWorkspacePage). Section order
+// persists in localStorage so the layout is per-browser/per-admin with no
+// schema change.
+type SectionId = "keyMetrics" | "partnerStats" | "monthly" | "topPartners";
+const DEFAULT_SECTION_ORDER: SectionId[] = ["keyMetrics", "partnerStats", "monthly", "topPartners"];
+const LAYOUT_KEY = "fintella.admin.reports.layout.v1";
+
+function readLayout(): SectionId[] {
+  if (typeof window === "undefined") return DEFAULT_SECTION_ORDER;
+  try {
+    const raw = window.localStorage.getItem(LAYOUT_KEY);
+    if (!raw) return DEFAULT_SECTION_ORDER;
+    const parsed = JSON.parse(raw) as SectionId[];
+    const known = new Set<SectionId>(DEFAULT_SECTION_ORDER);
+    const preserved = parsed.filter((s) => known.has(s));
+    const appended = DEFAULT_SECTION_ORDER.filter((s) => !preserved.includes(s));
+    return [...preserved, ...appended];
+  } catch {
+    return DEFAULT_SECTION_ORDER;
+  }
+}
 
 type Stats = {
   totalPipeline: number;
@@ -43,6 +66,44 @@ export default function ReportsPage() {
   const [topPartners, setTopPartners] = useState<TopPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchPartner, setSearchPartner] = useState("");
+
+  // Drag-to-reorder state
+  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(DEFAULT_SECTION_ORDER);
+  const [editMode, setEditMode] = useState(false);
+  const [draggedSection, setDraggedSection] = useState<SectionId | null>(null);
+
+  useEffect(() => { setSectionOrder(readLayout()); }, []);
+
+  const persistLayout = useCallback((next: SectionId[]) => {
+    setSectionOrder(next);
+    if (typeof window !== "undefined") {
+      try { window.localStorage.setItem(LAYOUT_KEY, JSON.stringify(next)); } catch {}
+    }
+  }, []);
+
+  const onSectionDragStart = (e: React.DragEvent, id: SectionId) => {
+    if (!editMode) return;
+    setDraggedSection(id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+  const onSectionDragOver = (e: React.DragEvent) => {
+    if (!editMode || !draggedSection) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+  const onSectionDrop = (e: React.DragEvent, targetId: SectionId) => {
+    if (!editMode || !draggedSection) return;
+    e.preventDefault();
+    if (draggedSection === targetId) { setDraggedSection(null); return; }
+    const next = [...sectionOrder];
+    const src = next.indexOf(draggedSection);
+    const dst = next.indexOf(targetId);
+    if (src < 0 || dst < 0) { setDraggedSection(null); return; }
+    next.splice(src, 1);
+    next.splice(dst, 0, draggedSection);
+    persistLayout(next);
+    setDraggedSection(null);
+  };
 
   useEffect(() => {
     fetch("/api/admin/reports")
@@ -113,47 +174,74 @@ export default function ReportsPage() {
     conversionRate: 0,
   };
 
-  return (
-    <div>
-      <ReportingTabs />
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h2 className="font-display text-[22px] font-bold mb-1.5">Reports & Analytics</h2>
-          <p className="font-body text-[13px] text-[var(--app-text-muted)]">Overview of pipeline, commissions, and partner performance.</p>
+  const sectionRenderers: Record<SectionId, () => JSX.Element> = {
+    keyMetrics: () => (
+      <section
+        key="keyMetrics"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "keyMetrics")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "keyMetrics")}
+        className={`mb-6 ${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move" : ""}`}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">⋮⋮ Key Metrics — drag to reorder</div>
+        )}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Total Pipeline", value: fmt$(s.totalPipeline), color: "text-[var(--app-text)]" },
+            { label: "Commissions Paid", value: fmt$(s.totalCommissionsPaid), color: "text-green-400" },
+            { label: "Commissions Due", value: fmt$(s.totalCommissionsDue), color: "text-blue-400" },
+            { label: "Commissions Pending", value: fmt$(s.totalCommissionsPending), color: "text-yellow-400" },
+          ].map((m) => (
+            <div key={m.label} className="stat-card">
+              <div className="font-body text-[9px] tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-2">{m.label}</div>
+              <div className={`font-display text-xl sm:text-2xl font-bold ${m.color}`}>{m.value}</div>
+            </div>
+          ))}
         </div>
-      </div>
-
-      {/* KEY METRICS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Total Pipeline", value: fmt$(s.totalPipeline), color: "text-[var(--app-text)]" },
-          { label: "Commissions Paid", value: fmt$(s.totalCommissionsPaid), color: "text-green-400" },
-          { label: "Commissions Due", value: fmt$(s.totalCommissionsDue), color: "text-blue-400" },
-          { label: "Commissions Pending", value: fmt$(s.totalCommissionsPending), color: "text-yellow-400" },
-        ].map((m) => (
-          <div key={m.label} className="stat-card">
-            <div className="font-body text-[9px] tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-2">{m.label}</div>
-            <div className={`font-display text-xl sm:text-2xl font-bold ${m.color}`}>{m.value}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Total Partners", value: String(s.totalPartners) },
-          { label: "Active Partners", value: String(s.activePartners) },
-          { label: "New This Month", value: `+${s.newPartnersThisMonth}` },
-          { label: "Conversion Rate", value: `${s.conversionRate}%` },
-        ].map((m) => (
-          <div key={m.label} className="stat-card">
-            <div className="font-body text-[9px] tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-2">{m.label}</div>
-            <div className="font-display text-xl sm:text-2xl font-bold text-brand-gold">{m.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* MONTHLY TRENDS */}
-      <div className="card mb-6">
+      </section>
+    ),
+    partnerStats: () => (
+      <section
+        key="partnerStats"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "partnerStats")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "partnerStats")}
+        className={`mb-6 ${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move" : ""}`}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">⋮⋮ Partner Stats — drag to reorder</div>
+        )}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Total Partners", value: String(s.totalPartners) },
+            { label: "Active Partners", value: String(s.activePartners) },
+            { label: "New This Month", value: `+${s.newPartnersThisMonth}` },
+            { label: "Conversion Rate", value: `${s.conversionRate}%` },
+          ].map((m) => (
+            <div key={m.label} className="stat-card">
+              <div className="font-body text-[9px] tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-2">{m.label}</div>
+              <div className="font-display text-xl sm:text-2xl font-bold text-brand-gold">{m.value}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+    monthly: () => (
+      <section
+        key="monthly"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "monthly")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "monthly")}
+        className={`mb-6 ${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move" : ""}`}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">⋮⋮ Monthly Commission Report — drag to reorder</div>
+        )}
+        <div className="card">
         <div className="px-6 py-4 border-b border-[var(--app-border)]">
           <div className="font-body font-semibold text-sm">Monthly Commission Report</div>
         </div>
@@ -201,10 +289,22 @@ export default function ReportsPage() {
             </div>
           </>
         )}
-      </div>
-
-      {/* TOP PARTNERS */}
-      <div className="card">
+        </div>
+      </section>
+    ),
+    topPartners: () => (
+      <section
+        key="topPartners"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "topPartners")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "topPartners")}
+        className={`mb-6 ${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move" : ""}`}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">⋮⋮ Top Partners by Commission — drag to reorder</div>
+        )}
+        <div className="card">
         <div className="px-6 py-4 border-b border-[var(--app-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="font-body font-semibold text-sm">Top Partners by Commission</div>
           <input
@@ -266,7 +366,33 @@ export default function ReportsPage() {
             </div>
           </>
         )}
+        </div>
+      </section>
+    ),
+  };
+
+  return (
+    <div>
+      <ReportingTabs />
+      <div className="flex justify-between items-start mb-6 flex-wrap gap-3">
+        <div>
+          <h2 className="font-display text-[22px] font-bold mb-1.5">Reports &amp; Analytics</h2>
+          <p className="font-body text-[13px] text-[var(--app-text-muted)]">Overview of pipeline, commissions, and partner performance.</p>
+        </div>
+        <button
+          onClick={() => setEditMode((v) => !v)}
+          className={`font-body text-[12px] px-3 py-2 rounded-lg border transition-colors ${
+            editMode
+              ? "bg-brand-gold text-black border-brand-gold font-semibold"
+              : "border-[var(--app-border)] theme-text-secondary hover:bg-brand-gold/10 hover:border-brand-gold/40"
+          }`}
+          title="Drag to reorder sections — saved per admin via localStorage"
+        >
+          {editMode ? "✓ Done editing" : "✎ Edit layout"}
+        </button>
       </div>
+
+      {sectionOrder.map((id) => sectionRenderers[id]())}
     </div>
   );
 }
