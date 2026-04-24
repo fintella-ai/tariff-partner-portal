@@ -126,10 +126,10 @@ export async function GET(req: NextRequest) {
       : [];
     const allLiveSet = new Set(allExistingStatsDeals.map((d) => d.id));
     const allComm = allRawComm.filter((c) => allLiveSet.has(c.dealId) || c.status === "paid");
-    const totalDue = allComm.filter((c) => c.status === "due").reduce((s, c) => s + c.amount, 0);
-    const totalPending = allComm.filter((c) => c.status === "pending").reduce((s, c) => s + c.amount, 0);
-    const totalPaid = allComm.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
-    const partnersToPay = new Set(allComm.filter((c) => c.status === "due").map((c) => c.partnerCode)).size;
+    let totalDue = allComm.filter((c) => c.status === "due").reduce((s, c) => s + c.amount, 0);
+    let totalPending = allComm.filter((c) => c.status === "pending").reduce((s, c) => s + c.amount, 0);
+    let totalPaid = allComm.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
+    const partnersToPaySet = new Set(allComm.filter((c) => c.status === "due").map((c) => c.partnerCode));
 
     // ─── Enterprise override payouts ─────────────────────────────────
     // Calculate enterprise overrides from active enterprise partners and add to payouts list
@@ -141,6 +141,18 @@ export async function GET(req: NextRequest) {
     if (enterprises.length > 0) {
       const allDeals = await prisma.deal.findMany();
 
+      // Any EP payouts already persisted as CommissionLedger rows (tier="ep")
+      // — skip synthesizing duplicates for the same (ep partner, deal) pair.
+      // These exist once an admin has included an EP payout in a batch
+      // (see create_batch below).
+      const persistedEpRows = await prisma.commissionLedger.findMany({
+        where: { tier: "ep" },
+        select: { dealId: true, partnerCode: true, status: true },
+      });
+      const persistedEpKeys = new Set(
+        persistedEpRows.map((r) => `${r.partnerCode}|${r.dealId}`),
+      );
+
       for (const ep of enterprises) {
         // Get applicable deals
         const l1Codes = ep.overrides.map((o) => o.l1PartnerCode);
@@ -149,6 +161,11 @@ export async function GET(req: NextRequest) {
           : allDeals.filter((d) => l1Codes.includes(d.partnerCode));
 
         for (const deal of epDeals) {
+          // Skip deals that already have a persisted EP CommissionLedger
+          // row for this enterprise partner — they'll render via the
+          // regular ledger mapping above at line 90.
+          if (persistedEpKeys.has(`${ep.partnerCode}|${deal.id}`)) continue;
+
           const firmFee = deal.firmFeeAmount || deal.estimatedRefundAmount * (deal.firmFeeRate || 0.20);
           // EP earns a fixed override rate on top of whatever the L1/L2/L3
           // waterfall already pays. No dependency on the L1's actual rate —
@@ -171,7 +188,19 @@ export async function GET(req: NextRequest) {
             ? (deal.paymentReceivedAt ? "due" : "pending")
             : "pending";
 
-          // Check status filter
+          // Stats feed BEFORE the status filter so the stat cards
+          // reflect the full EP payout universe, not just the tab
+          // currently visible on screen.
+          if (epStatus === "due") {
+            totalDue += overrideAmount;
+            partnersToPaySet.add(ep.partnerCode);
+          } else if (epStatus === "pending") {
+            totalPending += overrideAmount;
+          } else if (epStatus === "paid") {
+            totalPaid += overrideAmount;
+          }
+
+          // Check status filter (affects only what renders in the table)
           if (statusFilter && statusFilter !== "all" && epStatus !== statusFilter) continue;
 
           payouts.push({
@@ -200,13 +229,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Recalculate stats including EP payouts
-    const allPayoutAmounts = payouts;
-    const epDue = allPayoutAmounts.filter((p) => p.status === "due").reduce((s, p) => s + p.amount, 0);
-    const epPending = allPayoutAmounts.filter((p) => p.status === "pending").reduce((s, p) => s + p.amount, 0);
-    const epPaid = allPayoutAmounts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
-    const allPartnersToPay = new Set(allPayoutAmounts.filter((p) => p.status === "due").map((p) => p.partnerCode)).size;
-
     // Payout batches
     const batches = await prisma.payoutBatch.findMany({
       orderBy: { createdAt: "desc" },
@@ -215,7 +237,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       payouts,
-      stats: { totalDue: epDue, totalPending: epPending, totalPaid: epPaid, partnersToPay: allPartnersToPay },
+      // Stats were accumulated across BOTH the CommissionLedger rows
+      // (above) and every EP synthetic payout (in the EP loop), so the
+      // cards reflect ALL money due/pending/paid regardless of which
+      // tab the admin is currently viewing.
+      stats: { totalDue, totalPending, totalPaid, partnersToPay: partnersToPaySet.size },
       batches,
     });
   } catch (e) {
@@ -243,7 +269,58 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     if (body.action === "create_batch") {
-      // Gather all "due" commissions
+      // ── Enterprise payout materialization ─────────────────────────────
+      // EP payouts are synthetic in the GET (computed from active EPs +
+      // deals), but they need to live as real CommissionLedger rows the
+      // moment an admin bundles them into a batch. We upsert one
+      // tier="ep" row per due EP-on-deal pair before gathering the
+      // due list. The @@unique([dealId, partnerCode, tier]) constraint
+      // guards against duplicates if this handler is called twice.
+      const activeEPs = await prisma.enterprisePartner.findMany({
+        where: { status: "active" },
+        include: { overrides: { where: { status: "active" } } },
+      });
+      if (activeEPs.length > 0) {
+        const allDeals = await prisma.deal.findMany({
+          where: { stage: "closedwon", paymentReceivedAt: { not: null } },
+        });
+        for (const ep of activeEPs) {
+          const l1Codes = ep.overrides.map((o) => o.l1PartnerCode);
+          const epDeals = ep.applyToAll
+            ? allDeals.filter((d) => d.partnerCode !== ep.partnerCode)
+            : allDeals.filter((d) => l1Codes.includes(d.partnerCode));
+          for (const deal of epDeals) {
+            const firmFee = deal.firmFeeAmount || deal.estimatedRefundAmount * (deal.firmFeeRate || 0.20);
+            const overrideAmount = firmFee * (ep.overrideRate ?? 0);
+            if (overrideAmount <= 0) continue;
+            // Upsert is idempotent via the unique(dealId,partnerCode,tier)
+            // constraint — safe to run on repeat calls.
+            await prisma.commissionLedger.upsert({
+              where: {
+                dealId_partnerCode_tier: {
+                  dealId: deal.id,
+                  partnerCode: ep.partnerCode,
+                  tier: "ep",
+                },
+              },
+              create: {
+                partnerCode: ep.partnerCode,
+                dealId: deal.id,
+                dealName: deal.dealName,
+                tier: "ep",
+                amount: overrideAmount,
+                status: "due",
+              },
+              // If a row already exists (e.g. a previous batch already
+              // processed it), leave its status alone — only top up the
+              // amount in case the deal's firm fee was later edited.
+              update: { amount: overrideAmount },
+            });
+          }
+        }
+      }
+
+      // Gather all "due" commissions (includes EP rows we just materialized)
       const dueCommissions = await prisma.commissionLedger.findMany({
         where: { status: "due" },
       });
@@ -393,12 +470,57 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.action === "approve_single" && body.commissionId) {
+      // Synthetic EP row ids look like "ep-{enterprisePartnerId}-{dealId}"
+      // — they aren't backed by a CommissionLedger row yet, so we have
+      // to materialize one before we can flip it to paid.
+      let commissionId: string = String(body.commissionId);
+      if (commissionId.startsWith("ep-")) {
+        const rest = commissionId.slice(3);
+        // Deal ids are cuids (25 chars). EP ids are also cuids. The
+        // synthetic key is ep-{epId}-{dealId}; split on the last
+        // dash-boundary that precedes a cuid-shaped token. Simpler:
+        // we know the dealId is the trailing cuid segment, so split at
+        // the last dash.
+        const lastDash = rest.lastIndexOf("-");
+        if (lastDash < 0) {
+          return NextResponse.json({ error: "Malformed EP payout id" }, { status: 400 });
+        }
+        const epId = rest.slice(0, lastDash);
+        const dealId = rest.slice(lastDash + 1);
+        const ep = await prisma.enterprisePartner.findUnique({ where: { id: epId } });
+        const deal = await prisma.deal.findUnique({ where: { id: dealId } });
+        if (!ep || !deal) {
+          return NextResponse.json({ error: "Enterprise or deal not found" }, { status: 404 });
+        }
+        const firmFee = deal.firmFeeAmount || deal.estimatedRefundAmount * (deal.firmFeeRate || 0.20);
+        const overrideAmount = firmFee * (ep.overrideRate ?? 0);
+        const row = await prisma.commissionLedger.upsert({
+          where: {
+            dealId_partnerCode_tier: {
+              dealId: deal.id,
+              partnerCode: ep.partnerCode,
+              tier: "ep",
+            },
+          },
+          create: {
+            partnerCode: ep.partnerCode,
+            dealId: deal.id,
+            dealName: deal.dealName,
+            tier: "ep",
+            amount: overrideAmount,
+            status: "due",
+          },
+          update: { amount: overrideAmount },
+        });
+        commissionId = row.id;
+      }
+
       const before = await prisma.commissionLedger.findUnique({
-        where: { id: body.commissionId },
+        where: { id: commissionId },
         select: { partnerCode: true, dealName: true, amount: true, status: true },
       });
       const commission = await prisma.commissionLedger.update({
-        where: { id: body.commissionId },
+        where: { id: commissionId },
         data: { status: "paid", payoutDate: new Date() },
       });
       if (before && before.status !== "paid") {
