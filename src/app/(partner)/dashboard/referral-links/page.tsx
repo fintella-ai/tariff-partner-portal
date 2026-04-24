@@ -102,47 +102,50 @@ export default function ReferralLinksPage() {
     [loadInvites]
   );
 
-  // Auto-generate one invite per rate if none exist for that rate
-  const ensureInvitesExist = useCallback(async (rates: number[]) => {
-    for (const rate of rates) {
-      const existing = invites.find((i) => Math.round(i.commissionRate * 100) === Math.round(rate * 100) && i.status === "active");
-      if (!existing) {
-        await fetch("/api/invites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rate }),
-        });
-      }
-    }
-    await loadInvites();
-  }, [invites, loadInvites]);
+  // Lazy-create a single invite for a specific rate. Used when the partner
+  // first clicks Copy / Send on a rate that has no invite yet. Replaces the
+  // old ensureInvitesExist auto-gen so the Tracking tab isn't pre-populated
+  // with unused links (a brand new partner's Tracking tab should start empty).
+  const createInviteForRate = useCallback(
+    async (rate: number): Promise<Invite | null> => {
+      const existing = invites.find(
+        (i) =>
+          Math.round(i.commissionRate * 100) === Math.round(rate * 100) &&
+          i.status === "active"
+      );
+      if (existing) return existing;
+      const res = await fetch("/api/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rate }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      await loadInvites();
+      return (data.invite as Invite) ?? null;
+    },
+    [invites, loadInvites]
+  );
 
   // Determine which rates this partner can offer (comes from API, dynamic based on their own rate)
   const canRecruit = (partnerTier === "l1" || (partnerTier === "l2" && l3Enabled)) && allowedDownlineRates.length > 0;
   const availableRates = allowedDownlineRates;
   const targetTierLabel = partnerTier === "l1" ? "L2" : "L3";
 
-  // Auto-generate invites once we know the rates
-  useEffect(() => {
-    if (canRecruit && availableRates.length > 0 && invites.length >= 0) {
-      const missing = availableRates.filter((rate) =>
-        !invites.some((i) => Math.round(i.commissionRate * 100) === Math.round(rate * 100) && i.status === "active")
-      );
-      if (missing.length > 0) {
-        ensureInvitesExist(availableRates);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canRecruit, availableRates.length, invites.length]);
-
   // Get invite link for a specific rate
   function getInviteForRate(rate: number): Invite | undefined {
     return invites.find((i) => Math.round(i.commissionRate * 100) === Math.round(rate * 100) && i.status === "active");
   }
 
-  function copyRateLink(rate: number) {
-    const inv = getInviteForRate(rate);
-    if (!inv) return;
+  async function copyRateLink(rate: number) {
+    let inv = getInviteForRate(rate);
+    if (!inv) {
+      inv = await createInviteForRate(rate);
+      if (!inv) {
+        alert("Couldn't create invite link — please try again.");
+        return;
+      }
+    }
     navigator.clipboard.writeText(`${baseUrl}/signup?token=${inv.token}`);
     setCopiedRate(rate);
     setTimeout(() => setCopiedRate(null), 2000);
@@ -154,7 +157,8 @@ export default function ReferralLinksPage() {
     if (!sendRate || !sendEmail.trim()) return;
     setSending(true);
     try {
-      const inv = getInviteForRate(sendRate);
+      let inv = getInviteForRate(sendRate);
+      if (!inv) inv = await createInviteForRate(sendRate);
       if (!inv) { alert("No invite link available for this rate"); return; }
       // For now, record the invite send (actual email/SMS sending will be Phase 15)
       // We'll store it as a notification for tracking
