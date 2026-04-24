@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { STAGE_LABELS } from "@/lib/constants";
 import { getOnlineAdminsForInbox } from "@/lib/admin-online";
 import { getOfferedSlots } from "@/lib/scheduling";
+import { emergencyCallSuperAdmin } from "@/lib/emergency-call";
 
 export type OllieToolName =
   | "lookupDeal"
@@ -24,7 +25,8 @@ export type OllieToolName =
   | "start_live_chat"
   | "initiate_live_transfer"
   | "offer_schedule_slots"
-  | "book_slot";
+  | "book_slot"
+  | "investigate_bug";
 
 // Categories Ollie may assign to a ticket. These feed AdminInbox.categories
 // to route email + notifications. Keep this list in sync with the seed in
@@ -129,6 +131,42 @@ export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
         },
       },
       required: ["category", "reason"],
+    },
+  },
+  {
+    name: "investigate_bug",
+    description:
+      "Run a structured bug triage when a partner reports a portal issue (button broken, error, page not loading, etc.). Interview the partner first for symptom + browser + device + exact error text. Then call this tool with the collected info. The tool runs auto-diagnostics (checks the partner's account state), classifies outcome (user_error / needs_admin_investigation / confirmed_bug), and on `confirmed_bug` automatically fires the IT emergency call chain + creates a high-priority tech_error ticket. DO NOT call this tool speculatively — only call when the partner has described a concrete issue.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        symptom: {
+          type: "string" as const,
+          description:
+            "1-2 sentence description of what's broken from the partner's words. Example: \"Submit Client button does nothing when I click it\" or \"Page goes blank after signing agreement\".",
+        },
+        browser: {
+          type: "string" as const,
+          description:
+            "Browser + version the partner is using if they shared it (e.g. \"Chrome 120\"). Empty string if unknown.",
+        },
+        device: {
+          type: "string" as const,
+          description:
+            "Device the partner is on — \"iPhone 15\" / \"Windows 11 laptop\" / \"iPad\" / etc. Empty if unknown.",
+        },
+        errorText: {
+          type: "string" as const,
+          description:
+            "Exact error message the partner saw, if any. Preserves case + punctuation. Empty string if the partner didn't see an explicit error.",
+        },
+        whenStarted: {
+          type: "string" as const,
+          description:
+            "Partner's best guess at when the issue started — \"just now\", \"this morning\", \"since yesterday\". Empty string if unknown.",
+        },
+      },
+      required: ["symptom"],
     },
   },
   {
@@ -305,6 +343,8 @@ export async function executeOllieTool(
         return await offerScheduleSlots(args);
       case "book_slot":
         return await bookSlot(partnerCode, args, ctx);
+      case "investigate_bug":
+        return await investigateBug(partnerCode, args, ctx);
       default:
         return err(`Unknown tool: ${name}`);
     }
@@ -1171,5 +1211,158 @@ async function bookSlot(
     adminsNotified: recipientEmails.length,
     note:
       "Slot booked — admins notified. Real Google Calendar event creation ships in a follow-up PR. For now the admin will add it to their calendar manually from the notification.",
+  });
+}
+
+// ─── BUG TRIAGE TOOL (Phase 3d v1 — no screenshots yet) ───────────────────
+
+/**
+ * Heuristic classifier — intentionally narrow on `confirmed_bug` so we
+ * don't page super admin for ambiguous reports. Tuning knobs are all here
+ * in one place for easy iteration.
+ */
+const CONFIRMED_BUG_SIGNALS = [
+  /\b5\d\d\b/i,              // 5xx HTTP error in errorText
+  /unexpected error/i,
+  /stack trace/i,
+  /internal server error/i,
+  /application error/i,
+  /page is blank/i,
+  /white screen/i,
+  /crashes?|crashed/i,
+  /can't (submit|click|save|load|open)/i,
+  /not (working|loading|responding)/i,
+  /keeps? failing/i,
+];
+const USER_ERROR_SIGNALS = [
+  /forgot my password/i,
+  /can't find/i,
+  /where is/i,
+  /how do i/i,
+  /what('s| is) the/i,
+];
+
+async function investigateBug(
+  partnerCode: string,
+  args: Record<string, unknown>,
+  ctx: ExecuteCtx
+) {
+  const symptom = String(args.symptom ?? "").trim();
+  const browser = String(args.browser ?? "").trim();
+  const device = String(args.device ?? "").trim();
+  const errorText = String(args.errorText ?? "").trim();
+  const whenStarted = String(args.whenStarted ?? "").trim();
+
+  if (!symptom) return err("Symptom is required.");
+
+  // Auto-diagnostics — partner account state that often explains a "broken"
+  // experience (e.g. trying to submit a client before the agreement is
+  // signed looks like "the button is broken" from the partner's side).
+  const partner = await prisma.partner.findUnique({
+    where: { partnerCode },
+    select: {
+      firstName: true,
+      lastName: true,
+      email: true,
+      status: true,
+      tier: true,
+    },
+  });
+  const agreement = await prisma.partnershipAgreement.findFirst({
+    where: { partnerCode },
+    orderBy: { updatedAt: "desc" },
+    select: { status: true },
+  });
+  const diagnostics = {
+    partnerStatus: partner?.status ?? "unknown",
+    partnerTier: partner?.tier ?? "unknown",
+    agreementStatus: agreement?.status ?? "not_sent",
+    hasUsableAccount:
+      partner?.status === "active" &&
+      (agreement?.status === "signed" || agreement?.status === "amended"),
+  };
+
+  // Classification heuristic — combine symptom + error text.
+  const combined = `${symptom}\n${errorText}`;
+  let classification: "user_error" | "needs_admin_investigation" | "confirmed_bug" =
+    "needs_admin_investigation";
+  const hitConfirmed = CONFIRMED_BUG_SIGNALS.some((re) => re.test(combined));
+  const hitUserError = USER_ERROR_SIGNALS.some((re) => re.test(combined));
+  if (hitConfirmed) classification = "confirmed_bug";
+  else if (hitUserError && !diagnostics.hasUsableAccount === false) classification = "user_error";
+  else if (hitUserError) classification = "user_error";
+
+  // Compose the ticket body.
+  const bodyLines = [
+    `SYMPTOM: ${symptom}`,
+    whenStarted ? `WHEN: ${whenStarted}` : "",
+    browser ? `BROWSER: ${browser}` : "",
+    device ? `DEVICE: ${device}` : "",
+    errorText ? `ERROR TEXT:\n${errorText}` : "",
+    "",
+    "AUTO-DIAGNOSTICS:",
+    `  partnerStatus: ${diagnostics.partnerStatus}`,
+    `  partnerTier: ${diagnostics.partnerTier}`,
+    `  agreementStatus: ${diagnostics.agreementStatus}`,
+    `  hasUsableAccount: ${diagnostics.hasUsableAccount}`,
+    "",
+    `CLASSIFICATION: ${classification.replace(/_/g, " ")}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const priority: "low" | "normal" | "high" | "urgent" =
+    classification === "confirmed_bug" ? "urgent" : "high";
+
+  const subject = `[${classification.replace(/_/g, " ")}] ${symptom.slice(0, 100)}`;
+
+  // Always create a tech_error ticket — even on user_error, because the
+  // auto-diagnostics may reveal a pattern we want to fix (e.g. many users
+  // hitting the submit-client page before agreement — that's a UX bug
+  // even if each individual case is technically user_error).
+  const ticketResult = await createSupportTicket(
+    partnerCode,
+    {
+      subject,
+      category: "tech_error",
+      priority,
+      reason: bodyLines,
+    },
+    ctx
+  );
+
+  // On confirmed_bug, fire the emergency call chain.
+  let emergencyResult:
+    | Awaited<ReturnType<typeof emergencyCallSuperAdmin>>
+    | null = null;
+  if (classification === "confirmed_bug") {
+    emergencyResult = await emergencyCallSuperAdmin({
+      reason: symptom.slice(0, 100),
+      details: bodyLines,
+      partnerCode,
+      conversationId: ctx.conversationId,
+    });
+  }
+
+  return ok({
+    classification,
+    priority,
+    diagnostics,
+    ticket: (ticketResult as any).output ?? null,
+    emergency: emergencyResult
+      ? {
+          contactCount: emergencyResult.contactCount,
+          emailStatus: emergencyResult.emailStatus,
+          notificationsCreated: emergencyResult.notificationsCreated,
+          workspacePosted: emergencyResult.workspacePosted,
+          twilioDialStatus: emergencyResult.twilioDialStatus,
+        }
+      : null,
+    note:
+      classification === "confirmed_bug"
+        ? `Confirmed bug — urgent ticket created AND IT emergency chain fired. ${emergencyResult?.contactCount ?? 0} contact(s) paged.`
+        : classification === "user_error"
+          ? "Classified as user_error — high-priority ticket created, admins can coach the partner; no emergency paged."
+          : "Ambiguous — high-priority ticket created for admin investigation; no emergency paged.",
   });
 }
