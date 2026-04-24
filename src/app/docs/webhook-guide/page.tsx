@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "Fintella Webhook Integration Guide",
-  description: "Referral webhook integration guide for Frost Law",
+  description: "Referral webhook integration guide for Fintella's referral partners",
 };
 
 /**
@@ -167,8 +167,8 @@ const FIELDS = [
 ];
 
 const STEPS = [
-  <>Fintella partners share a referral link:<br /><span style={{ fontFamily: "monospace", fontSize: 12 }}>https://referral.frostlawaz.com/l/ANNEXATIONPR/?utm_content=PTNABC123</span></>,
-  "When a client is qualified by our referral partner, our partner fills out the Frost Law referral form with the client's required information",
+  <>Fintella partners share a referral link with their tracking code:<br /><span style={{ fontFamily: "monospace", fontSize: 12 }}>https://[our-referral-partner-intake-url]/?utm_content=PTNABC123</span></>,
+  "When a client is qualified by our referral partner, the partner fills out the intake form with the client's required information",
   <>The form system passes the <Code>utm_content</Code> value through to the webhook payload<br /><span style={{ display: "block", marginTop: 6, paddingLeft: 16, fontSize: 13, color: "var(--doc-text-muted)" }}>&#8226; <strong style={{ color: "var(--doc-gold)" }}>NOTE:</strong> HubSpot CRM will automatically pull the &quot;utm_content&quot; parameters into the contact when created in HubSpot with no further integration needed. This is our partner referral code.</span></>,
   "Fintella records the deal and attributes it to the correct partner",
   "The partner sees the deal in their portal dashboard",

@@ -1447,7 +1447,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelClass}>Signer Name</label>
-              <input className={inputClass} value={fintellaSignerName} onChange={(e) => setFintellaSignerName(e.target.value)} placeholder="Michael Furdock" />
+              <input className={inputClass} value={fintellaSignerName} onChange={(e) => setFintellaSignerName(e.target.value)} placeholder="Fintella cosigner name" />
             </div>
             <div>
               <label className={labelClass}>Signer Email</label>

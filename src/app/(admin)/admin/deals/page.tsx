@@ -890,7 +890,7 @@ export default function AdminDealsPage() {
                       onChange={(e) => setEditActualRefund(e.target.value)}
                       placeholder="—"
                       inputMode="decimal"
-                      title="Set once Frost Law confirms the refund check the client actually received"
+                      title="Set once our referral partner confirms the refund check the client actually received"
                     />
                   </div>
                   <div>
@@ -921,7 +921,7 @@ export default function AdminDealsPage() {
                     <button
                       onClick={() => handlePaymentReceived(deal.id, deal.dealName)}
                       className="font-body text-[11px] font-semibold text-green-300 bg-green-500/15 border border-green-400/40 rounded-lg px-4 py-2 hover:bg-green-500/25 transition-colors min-h-[44px]"
-                      title="Confirm Frost Law has paid Fintella — creates L1/L2/L3 commission ledger entries"
+                      title="Confirm our referral partner has paid Fintella — creates L1/L2/L3 commission ledger entries"
                     >
                       ✓ Mark Payment Received
                     </button>

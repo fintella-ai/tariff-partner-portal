@@ -249,7 +249,7 @@ function QuickLinksTab({ data }: { data: DevData | null }) {
           <a href="/docs/webhook-guide" target="_blank"
             className="p-3.5 rounded-lg border border-[var(--app-border)] hover:border-brand-gold/30 transition-colors">
             <div className="font-body text-sm text-[var(--app-text)] mb-1">Webhook Guide</div>
-            <div className="font-body text-[10px] theme-text-muted">Frost Law referral webhook integration spec</div>
+            <div className="font-body text-[10px] theme-text-muted">Referral-partner webhook integration spec</div>
           </a>
           {d?.repo && (
             <a href={`https://github.com/${d.repo}/blob/main/CLAUDE.md`} target="_blank" rel="noopener noreferrer"
@@ -1168,7 +1168,7 @@ function WebhookTab() {
           <div>
             <div className="font-body font-semibold text-sm">Referral Webhook Harness</div>
             <div className="font-body text-[11px] theme-text-muted">
-              Test <code className="text-brand-gold">/api/webhook/referral</code> with auto-injected auth — exactly as Frost Law calls it
+              Test <code className="text-brand-gold">/api/webhook/referral</code> with auto-injected auth — exactly as our referral partner calls it
             </div>
           </div>
         </div>

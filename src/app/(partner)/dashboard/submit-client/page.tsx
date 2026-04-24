@@ -17,7 +17,7 @@ export default function SubmitClientPage() {
   const partnerName = user?.name || "Partner";
   const [agreementSigned, setAgreementSigned] = useState<boolean | null>(null);
   // Incrementing key forces the iframe to unmount/remount, resetting the
-  // Frost Law flow back to the submission form. Used after a partner
+  // referral-partner flow back to the submission form. Used after a partner
   // finishes one referral (form → calendar book) and wants to submit
   // another without reloading the whole dashboard page.
   const [iframeKey, setIframeKey] = useState(0);
@@ -150,7 +150,7 @@ export default function SubmitClientPage() {
             Refresh
           </button>
         </div>
-        {/* Cropped iframe — hides Frost Law nav+hero at top and the footer /
+        {/* Cropped iframe — hides the referral partner's nav+hero at top and the footer /
             newsletter block at the bottom. Container height is the visible
             window; iframe is positioned absolute with a negative `top` to
             push the hero out of view and enough extra height to keep the

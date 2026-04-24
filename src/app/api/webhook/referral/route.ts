@@ -626,7 +626,7 @@ async function postHandler(req: NextRequest): Promise<Response> {
           consultBookedTime: consultBookedTime || null,
           l1CommissionRate: l1RateSnapshot,
           idempotencyKey: idempotencyKey || null,
-          notes: `Source: Frost Law Referral Form | Partner: ${
+          notes: `Source: Referral partner intake form | Partner: ${
             partnerCode || "none"
           }${externalStage ? ` | External Stage: ${externalStage}` : ""}`,
         },
@@ -1168,7 +1168,7 @@ async function patchHandler(req: NextRequest): Promise<Response> {
           data: {
             dealId: d.id,
             content:
-              `Deal auto-transitioned to closed_won via Frost Law webhook. ` +
+              `Deal auto-transitioned to closed_won via referral-partner webhook. ` +
               `Firm fee: $${effectiveFirmFee.toFixed(2)}. ` +
               `Pending commissions created: ${entriesToCreate.length} entries totaling $${totalCommission.toFixed(2)} ` +
               `(${entriesToCreate
@@ -1177,8 +1177,8 @@ async function patchHandler(req: NextRequest): Promise<Response> {
                     `${e.tier.toUpperCase()} ${e.partnerCode} $${e.amount.toFixed(2)}`
                 )
                 .join(", ")}). ` +
-              `Admin must click "Mark Payment Received" on /admin/deals once Frost Law sends the override to Fintella.`,
-            authorName: "Frost Law Webhook",
+              `Admin must click "Mark Payment Received" on /admin/deals once the referral partner sends the override to Fintella.`,
+            authorName: "Referral Partner Webhook",
             authorEmail: "webhook@fintella.partners",
           },
         });
@@ -1395,7 +1395,7 @@ function getHandler(): Response {
       update: "PATCH /api/webhook/referral",
     },
     description:
-      "Frost Law referral form webhook. POST creates deals, PATCH updates existing deals by dealId.",
+      "Referral-partner intake webhook. POST creates deals, PATCH updates existing deals by dealId.",
     tracking:
       "Include utm_content={partnerCode} in the form URL to attribute deals to partners.",
     create_fields: {

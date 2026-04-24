@@ -7,7 +7,7 @@ import { resolveDealFinancials } from "@/lib/dealCalc";
 /**
  * POST /api/admin/deals/[id]/payment-received
  *
- * Admin confirms Frost Law has paid Fintella for this closed-won deal. This is
+ * Admin confirms our referral partner has paid Fintella for this closed-won deal. This is
  * the critical link in the commission chain — it both stamps the Deal and
  * creates the CommissionLedger entries (status="due") that the payout batch
  * flow picks up.
@@ -119,7 +119,7 @@ export async function POST(
           0
         );
         const noteBody =
-          `Payment received from Frost Law confirmed by ${adminName} (${adminEmail}). ` +
+          `Payment received from referral partner confirmed by ${adminName} (${adminEmail}). ` +
           `${existingPending.length} pending commission ${existingPending.length === 1 ? "entry" : "entries"} ` +
           `flipped to "due" (total $${totalCommission.toFixed(2)}): ` +
           existingPending
@@ -221,7 +221,7 @@ export async function POST(
         );
 
         const noteBody =
-          `Payment received from Frost Law confirmed by ${adminName} (${adminEmail}). ` +
+          `Payment received from referral partner confirmed by ${adminName} (${adminEmail}). ` +
           `Firm fee: $${deal.firmFeeAmount.toFixed(2)}. ` +
           `Commissions created directly as "due" (fallback — no pending ledger existed, likely because the deal closed before the webhook two-phase path shipped or was closed via admin stage edit): ` +
           `${computed.entries.length} entries totaling $${computed.totalAmount.toFixed(2)} ` +

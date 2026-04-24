@@ -31,7 +31,7 @@ function readLayout(): SectionId[] {
   }
 }
 
-const FINTELLA_FEE_RATE = 0.40; // Fintella receives 40% of firm fee (Frost Law contract)
+const FINTELLA_FEE_RATE = 0.40; // Fintella receives 40% of firm fee (per referral-partner contract)
 const MAX_PARTNER_RATE = 0.25;  // Maximum commission rate any partner can have (used for projected pipeline fallback)
 
 // Shape returned by /api/admin/enterprise — mirrors the shape used on

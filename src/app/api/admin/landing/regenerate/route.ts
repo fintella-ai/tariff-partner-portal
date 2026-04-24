@@ -231,17 +231,17 @@ async function aiAssembly(input: {
 - Slogan: ${input.settings?.firmSlogan || "Fighting for what's owed, reclaiming what's fair."}
 - Active partners: ${input.partnerCount}+
 - Primary product: IEEPA tariff refund recovery for U.S. importers
-- Primary law-firm partners: Frost Law (flagship), Furdock & Foglia Law LLP (co-counsel, refund recovery + collections), ERC Tax Law (partner network)
+- Counsel network: Fintella works with top-tier nationally recognized tax-controversy and tariff-refund law firms. ABSOLUTE RULE: never cite specific partner firm names in the generated copy. Use generic descriptors like "our nationally recognized tax-refund counsel" or "our partner law firms" instead. The only firm name that appears in Fintella marketing is "Fintella" itself.
 - Cross-product opportunities: Tariff refunds, ERC credits, R&D credits, SALT, Litigation recovery
 
 ### Verified market facts (use these — do not invent numbers)
 - $166B+ owed to approximately 330,000 U.S. importers following Supreme Court's IEEPA decision (source: National Law Review / CNN, April 2026)
 - $22M/day in statutory interest continues to accrue on unfiled refund claims
-- Higher estimates up to $175B (Quinn Emanuel)
+- Higher estimates up to $175B
 - Strict 180-day protest deadline from the date of liquidation — a hard legal cutoff that creates real urgency
 - Trump administration is publicly pressuring companies to file claims (CNBC, April 21 2026) — this is a tailwind
 - Contingency-fee industry standard: clients pay nothing until their refund arrives
-- Downstream-business theory (Frost Law original angle): breach-of-contract + unjust-enrichment claims available to businesses who didn't import directly but paid the tariff pass-through — this dramatically widens the addressable client pool beyond direct importers
+- "Downstream-business" theory: breach-of-contract + unjust-enrichment claims available to businesses who didn't import directly but paid the tariff pass-through — this dramatically widens the addressable client pool beyond direct importers
 
 ### Commission structure
 - Total partner commission capped at 25% of firm fee (L1 max)
@@ -305,8 +305,8 @@ ${JSON.stringify(
         trustBadges: ["3-4 short ✓ bullets"],
       },
       lawFirmStrip: {
-        prefix: "In partnership with",
-        firms: [{ name: "Frost Law" }, { name: "Furdock & Foglia Law LLP" }, { name: "ERC Tax Law" }],
+        prefix: "Built with",
+        firms: [{ name: "Top U.S. tax-refund recovery law firms" }],
       },
       opportunity: { eyebrow: "string", title: "string", body: "string", stats: [{ headline: "string", sub: "string" }] },
       crossProduct: { eyebrow: "string", title: "string", body: "string", products: [{ icon: "emoji", title: "string", body: "string" }] },

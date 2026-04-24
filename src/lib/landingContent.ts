@@ -173,11 +173,9 @@ export const DEFAULT_LANDING_CONTENT: LandingContentData = {
     ],
   },
   lawFirmStrip: {
-    prefix: "In partnership with",
+    prefix: "Built with",
     firms: [
-      { name: "Frost Law" },
-      { name: "Furdock & Foglia Law LLP" },
-      { name: "ERC Tax Law" },
+      { name: "Top U.S. tax-refund recovery law firms" },
     ],
   },
   opportunity: {
@@ -240,9 +238,9 @@ export const DEFAULT_LANDING_CONTENT: LandingContentData = {
     title: "Backed by top-tier tax law firms. Armed with a partner portal built for the long haul.",
     body: "This isn't a pop-up affiliate program. It's a production-grade partner infrastructure built on the same legal muscle that already recovers millions for clients.",
     firms: [
-      { title: "Frost Law", body: "Nationally recognized tax controversy and tariff refund firm. Fintella's primary recovery partner for IEEPA tariff refund claims." },
-      { title: "Furdock &amp; Foglia Law LLP", body: "Co-counsel firm with massive track record in refund recovery and collections. Partnered with ERC Tax Law to deliver cross-product results for shared clients." },
-      { title: "ERC Tax Law", body: "ERC refund specialists inside the partner network. Your tariff client may also be an ERC client — and every recovery earns separately." },
+      { title: "Nationally recognized tax-refund counsel", body: "Fintella works with top-tier U.S. tax controversy and tariff-refund law firms to recover IEEPA-eligible refunds for client importers. Every case is co-counseled by attorneys with massive track records in refund recovery and collections." },
+      { title: "Cross-product tax-credit network", body: "ERC, R&D, SALT, and litigation recovery are all available through the same network of counsel. Your tariff client may also be an ERC client — and every recovery earns separately for you." },
+      { title: "Dedicated partner portal infrastructure", body: "Production-grade partner platform: 3-phase commission ledger, downline visibility, passkey auth, mobile PWA, real-time deal tracking. Built for partners who take their network seriously." },
     ],
     supportTiles: [
       { icon: "💬", title: "Live partner support chat" },
