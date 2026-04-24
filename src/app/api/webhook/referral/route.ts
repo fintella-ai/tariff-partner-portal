@@ -346,14 +346,13 @@ async function postHandler(req: NextRequest): Promise<Response> {
       );
     }
 
-    // Optional event-type whitelist (only enforced if the field is present)
-    if (body.event !== undefined) {
-      if (typeof body.event !== "string" || !ALLOWED_EVENTS.has(body.event)) {
-        return NextResponse.json(
-          {
-            error: `Invalid event type. Must be one of: ${Array.from(ALLOWED_EVENTS).join(", ")}`,
-          },
-          { status: 400 }
+    // Event-type is LOG-ONLY now — we accept whatever the caller sends so
+    // Frost Law's integration testing never gets blocked by an unexpected
+    // event string. Unknown types are stored in rawPayload for review.
+    if (body.event !== undefined && typeof body.event === "string") {
+      if (!ALLOWED_EVENTS.has(body.event)) {
+        console.log(
+          `[webhook/referral POST] unrecognized event type "${body.event}" — accepting anyway`
         );
       }
     }
@@ -616,13 +615,13 @@ async function postHandler(req: NextRequest): Promise<Response> {
       email ||
       "Referral Form Submission";
 
-    // Validate minimum data
-    if (!firstName && !lastName && !email && !legalEntityName) {
-      return NextResponse.json(
-        { error: "At least one of: name, email, or company is required" },
-        { status: 400 }
-      );
-    }
+    // NO GATEKEEPING BEYOND AUTH — if the caller has a valid API key we
+    // accept the payload even if it's missing every identifier. We store
+    // whatever they sent in `rawPayload` so nothing is lost, and return a
+    // 201 with a `warning` field flagging the sparse data rather than a
+    // hard 400. (Directive from John 2026-04-24: during Frost Law's
+    // integration push, zero validation errors while they're testing.)
+    const sparseData = !firstName && !lastName && !email && !legalEntityName;
 
     // Snapshot the L1 commission rate at deal-creation time so later
     // changes to Partner.commissionRate don't retro-affect this deal.
@@ -706,6 +705,10 @@ async function postHandler(req: NextRequest): Promise<Response> {
         dealId: deal.id,
         dealName: deal.dealName,
         partnerCode: deal.partnerCode,
+        ...(sparseData && {
+          warning:
+            "Accepted but the payload had no identifying fields (name / email / company). Full payload saved to rawPayload for admin review.",
+        }),
       },
       { status: 201 }
     );
