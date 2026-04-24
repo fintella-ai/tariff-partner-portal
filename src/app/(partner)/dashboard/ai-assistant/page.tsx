@@ -12,6 +12,13 @@ interface Message {
   content: string;
   createdAt: string;
   speakerPersona?: string | null;
+  handoffMetadata?: {
+    from?: string;
+    to?: string;
+    reason?: string;
+    summary?: string;
+    triggeredBy?: "llm_tool" | "user_button";
+  } | null;
 }
 
 interface ConversationSummary {
@@ -44,6 +51,7 @@ export default function AiAssistantPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [preferredGeneralist, setPreferredGeneralist] = useState<string | null | undefined>(undefined);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pinnedSpecialist, setPinnedSpecialist] = useState<"tara" | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ─── LOAD CONVERSATIONS + CONFIG ─────────────────────────────────────
@@ -153,7 +161,11 @@ export default function AiAssistantPage() {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId: activeId, message: trimmed }),
+        body: JSON.stringify({
+          conversationId: activeId,
+          message: trimmed,
+          pinnedSpecialist: pinnedSpecialist ?? undefined,
+        }),
       });
       const data = await res.json();
 
@@ -247,6 +259,21 @@ export default function AiAssistantPage() {
                   className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[var(--app-text)] underline-offset-2 hover:underline"
                 >
                   Switch
+                </button>
+              )}
+              {pinnedSpecialist === "tara" ? (
+                <button
+                  onClick={() => setPinnedSpecialist(null)}
+                  className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[var(--app-text)] underline-offset-2 hover:underline"
+                >
+                  ← Back to {preferredGeneralist === "stella" ? "Stella" : "Finn"}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setPinnedSpecialist("tara")}
+                  className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[#5e7eb8] underline-offset-2 hover:underline"
+                >
+                  Talk to Tara
                 </button>
               )}
             </div>
@@ -351,9 +378,32 @@ export default function AiAssistantPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                {messages.map((msg) => (
-                  <MessageBubble key={msg.id} message={msg} />
-                ))}
+                {messages.map((msg, i) => {
+                  const prev = messages[i - 1];
+                  const showTransition =
+                    msg.role === "assistant" &&
+                    msg.speakerPersona &&
+                    prev?.role === "assistant" &&
+                    prev.speakerPersona &&
+                    prev.speakerPersona !== msg.speakerPersona;
+                  return (
+                    <div key={msg.id}>
+                      {showTransition && (
+                        <div className="flex items-center gap-2 my-2 px-3 py-2 rounded-lg bg-[var(--app-input-bg)] border border-[var(--app-border)]">
+                          <PersonaAvatar personaId={prev?.speakerPersona} size="sm" showName />
+                          <span className="font-body text-[10px] text-[var(--app-text-muted)]">→</span>
+                          <PersonaAvatar personaId={msg.speakerPersona} size="sm" showName />
+                          {msg.handoffMetadata?.reason && (
+                            <span className="font-body text-[10px] text-[var(--app-text-muted)] italic truncate">
+                              {msg.handoffMetadata.reason}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <MessageBubble message={msg} />
+                    </div>
+                  );
+                })}
                 {sending && (
                   <div className="flex justify-start">
                     <div className="bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-xl rounded-bl-sm px-4 py-3 max-w-[85%]">
