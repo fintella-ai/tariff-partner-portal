@@ -10,6 +10,7 @@
  */
 
 import type Anthropic from "@anthropic-ai/sdk";
+import { buildProductSpecialistPrompt } from "./ai-knowledge";
 
 export type PersonaId = "finn" | "stella" | "tara" | "ollie";
 
@@ -29,9 +30,9 @@ export interface Persona {
   voiceWrapperMarkdown: string; // prepended to the shared knowledge block in the system prompt
 }
 
-// Phase 1 registry — Finn + Stella only. Phase 2/3 add tara + ollie and
-// extend the Persona interface with tools + systemPromptBuilder overrides.
-export const PERSONAS: Record<"finn" | "stella", Persona> = {
+// Phase 2 registry — Finn + Stella (generalists) + Tara (product specialist).
+// Phase 3 adds ollie (support specialist).
+export const PERSONAS: Record<"finn" | "stella" | "tara", Persona> = {
   finn: {
     id: "finn",
     displayName: "Finn",
@@ -79,14 +80,40 @@ export const PERSONAS: Record<"finn" | "stella", Persona> = {
       'Example tone: "Nice — three deals closed! Let\'s look at what\'s ready for payout and I\'ll walk you through the next step."',
     ].join("\n"),
   },
+  tara: {
+    id: "tara",
+    displayName: "Tara",
+    role: "product_specialist",
+    avatarSrc: "/ai-avatars/tara.svg",
+    accentHex: "#5e7eb8",
+    tagline: "Tariff refund expert. Cites sources.",
+    longDescription:
+      "Tara has read every training module and FAQ. Ask her about pitch scripts, pre-qualification questions, rebuttals, marketing-copy compliance, or anything about the refund service itself. Finn and Stella hand off to her automatically when a question needs product depth.",
+    voiceWrapperMarkdown: [
+      "## Your persona — Tara",
+      "",
+      "You are **Tara**, the tariff refund product SME on the Fintella Partner Portal AI team. Your voice is:",
+      "",
+      "- Authoritative but not stiff. Structured answers — numbered or bulleted when it helps clarity.",
+      '- Cite sources explicitly: "Per the Eligibility module…", "From the pitch-script playbook…". Builds trust.',
+      "- Always distinguish what Fintella does (partner network) from what Frost Law does (legal filing).",
+      "- Proactively flag compliance risks in marketing-copy requests: point out the rule before suggesting a compliant rewrite.",
+      "- Never invent. If the answer isn't in your knowledge base above, say so and offer to hand the conversation back to Stella/Finn to open a ticket.",
+      "",
+      "When a prospect-facing marketing or pitch-copy question comes up, your first instinct is ALWAYS to check the compliance rules at the top of this prompt. If the partner's phrasing violates one, rewrite it compliantly and explain why.",
+    ].join("\n"),
+  },
 };
 
 /**
  * Map unknown/null persona selections to the default. Use this at every
  * boundary (API read, UI render) so we never pass an invalid id downstream.
  */
-export function resolvePersonaId(input: string | null | undefined): "finn" | "stella" {
+export function resolvePersonaId(
+  input: string | null | undefined
+): "finn" | "stella" | "tara" {
   if (input === "stella") return "stella";
+  if (input === "tara") return "tara";
   return "finn"; // default fallback
 }
 
@@ -105,3 +132,55 @@ export function buildPersonaVoiceBlock(
     text: persona.voiceWrapperMarkdown,
   };
 }
+
+/**
+ * Tara's system prompt is built differently from the generalists: the
+ * portal KNOWLEDGE_BASE is replaced by her own product-focused knowledge
+ * blob (compliance rules + training modules + FAQs + eventually PDFs +
+ * transcripts). The voice wrapper is tiny + persona-specific so it stays
+ * uncached; the knowledge blob carries its own cache_control.
+ */
+export async function buildTaraSystemBlocks(): Promise<
+  Anthropic.Messages.TextBlockParam[]
+> {
+  const knowledge = await buildProductSpecialistPrompt();
+  return [
+    knowledge,
+    {
+      type: "text",
+      text: PERSONAS.tara.voiceWrapperMarkdown,
+    },
+  ];
+}
+
+/**
+ * The hand_off tool — Finn and Stella carry this so they can transfer
+ * depth-requiring questions to a specialist. Phase 2 enables "tara"
+ * only; Phase 3 will extend the enum to include "ollie".
+ */
+export const HAND_OFF_TOOL: Anthropic.Messages.Tool = {
+  name: "hand_off",
+  description:
+    "Transfer the conversation to a specialist when the user's question requires deep product knowledge about the tariff refund service (pitch scripts, pre-qualification, compliance, rebuttals, marketing copy). Only call when you cannot answer confidently from the portal knowledge base. Do NOT use for questions about the user's own deals, commissions, or portal how-to — answer those yourself.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      to: {
+        type: "string" as const,
+        enum: ["tara"],
+        description: "Which specialist to hand off to.",
+      },
+      reason: {
+        type: "string" as const,
+        description:
+          "One-line summary of why the specialist is needed (e.g. \"partner asked about pitch script compliance\").",
+      },
+      summary: {
+        type: "string" as const,
+        description:
+          "2-3 sentence recap of the conversation so far. The specialist sees this as the opening context so the user does not have to re-explain.",
+      },
+    },
+    required: ["to", "reason", "summary"],
+  },
+};

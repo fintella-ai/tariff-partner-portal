@@ -11,6 +11,9 @@ import { prisma } from "@/lib/prisma";
 import { FIRM_NAME, FIRM_SHORT, STAGE_LABELS } from "@/lib/constants";
 import {
   buildPersonaVoiceBlock,
+  buildTaraSystemBlocks,
+  HAND_OFF_TOOL,
+  PERSONAS,
   resolvePersonaId,
   type PersonaId,
 } from "./ai-personas";
@@ -330,6 +333,16 @@ export interface GenerateResult {
   /** Tokens written to the prompt cache as part of this request (cache miss — expensive). */
   cacheCreationTokens: number;
   mocked: boolean;
+  /**
+   * Populated when a generalist calls the `hand_off` tool. Controller
+   * (`/api/ai/chat/route.ts`) re-invokes generateResponse with the target
+   * specialist + the summary prepended to history.
+   */
+  handOff?: {
+    to: "tara";
+    reason: string;
+    summary: string;
+  };
 }
 
 export async function generateResponse(
@@ -339,11 +352,12 @@ export async function generateResponse(
 ): Promise<GenerateResult> {
   const client = getClient();
   const resolvedPersona = resolvePersonaId(personaId);
+  const persona = PERSONAS[resolvedPersona];
 
   // ── MOCK FALLBACK (no API key) ──
   if (!client) {
     const lastUserMsg = history.filter((m) => m.role === "user").pop();
-    const mockReply = `[Mock Response from ${resolvedPersona === "stella" ? "Stella" : "Finn"} — ANTHROPIC_API_KEY not set in environment]
+    const mockReply = `[Mock Response from ${persona.displayName} — ANTHROPIC_API_KEY not set in environment]
 
 I received your question: "${lastUserMsg?.content.slice(0, 200) || ""}"
 
@@ -365,20 +379,32 @@ In the meantime, you can:
   }
 
   // ── REAL ANTHROPIC CALL ──
-  // System prompt = knowledge base (cached) + per-user context (not cached)
-  // Prompt caching on the knowledge base gives ~90% discount on repeat queries.
-  const systemBlocks: Anthropic.Messages.TextBlockParam[] = [
-    {
-      type: "text",
-      text: KNOWLEDGE_BASE,
-      cache_control: { type: "ephemeral" },
-    },
-    buildPersonaVoiceBlock(resolvedPersona),
-    {
-      type: "text",
-      text: userContext,
-    },
-  ];
+  // System-prompt assembly branches on persona.role:
+  // - generalists (Finn, Stella): cached portal KNOWLEDGE_BASE + uncached voice wrapper + user context
+  // - product_specialist (Tara): cached product-knowledge blob (with its own cache_control) + uncached voice wrapper + user context
+  let systemBlocks: Anthropic.Messages.TextBlockParam[];
+  if (persona.role === "product_specialist") {
+    const taraBlocks = await buildTaraSystemBlocks();
+    systemBlocks = [...taraBlocks, { type: "text", text: userContext }];
+  } else {
+    systemBlocks = [
+      {
+        type: "text",
+        text: KNOWLEDGE_BASE,
+        cache_control: { type: "ephemeral" },
+      },
+      buildPersonaVoiceBlock(resolvedPersona as "finn" | "stella"),
+      {
+        type: "text",
+        text: userContext,
+      },
+    ];
+  }
+
+  // Only generalists carry the hand_off tool. Phase 3 will add hand_back
+  // to the specialists so control can return to the generalist.
+  const tools: Anthropic.Messages.Tool[] | undefined =
+    persona.role === "generalist" ? [HAND_OFF_TOOL] : undefined;
 
   // Convert history to Anthropic message format
   const messages: Anthropic.Messages.MessageParam[] = history.map((m) => ({
@@ -392,13 +418,38 @@ In the meantime, you can:
       max_tokens: MAX_OUTPUT_TOKENS,
       system: systemBlocks,
       messages,
+      ...(tools ? { tools } : {}),
     });
 
-    const textBlock = response.content.find((b) => b.type === "text");
+    // Detect a hand_off tool call — controller re-invokes with the target
+    // specialist + the tool's summary prepended as context.
+    const toolUseBlock = response.content.find(
+      (b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use"
+    );
+    let handOff: GenerateResult["handOff"];
+    if (toolUseBlock && toolUseBlock.name === "hand_off") {
+      const input = toolUseBlock.input as {
+        to?: string;
+        reason?: string;
+        summary?: string;
+      };
+      if (input.to === "tara") {
+        handOff = {
+          to: "tara",
+          reason: input.reason ?? "",
+          summary: input.summary ?? "",
+        };
+      }
+    }
+
+    const textBlock = response.content.find(
+      (b): b is Anthropic.Messages.TextBlock => b.type === "text"
+    );
     const content =
-      textBlock && textBlock.type === "text"
-        ? textBlock.text
-        : "I don't have a response right now — please try again.";
+      textBlock?.text ??
+      (handOff
+        ? `(handing you off to ${handOff.to} for that one)`
+        : "I don't have a response right now — please try again.");
 
     // The Anthropic API returns two separate cache token counts: tokens
     // served from an existing cache block (cheap) and tokens written as
@@ -412,6 +463,7 @@ In the meantime, you can:
       cacheReadTokens: (response.usage as any).cache_read_input_tokens || 0,
       cacheCreationTokens: (response.usage as any).cache_creation_input_tokens || 0,
       mocked: false,
+      handOff,
     };
   } catch (err: any) {
     console.error("[ai] generateResponse error:", err?.message || err);

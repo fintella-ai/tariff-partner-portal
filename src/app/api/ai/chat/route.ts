@@ -32,7 +32,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { conversationId, message } = body as { conversationId?: string; message?: string };
+    const { conversationId, message, pinnedSpecialist } = body as {
+      conversationId?: string;
+      message?: string;
+      pinnedSpecialist?: "tara";
+    };
 
     if (!message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -110,25 +114,83 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Call Anthropic (or mock)
-    const result = await generateResponse(userContext, history, personaId);
+    // If the UI force-pinned a specialist (e.g. "Talk to Tara" button),
+    // use that as the initial persona instead of the generalist.
+    const initialPersona: "finn" | "stella" | "tara" =
+      pinnedSpecialist === "tara" ? "tara" : personaId;
 
-    // Persist assistant reply. We now record cache reads and cache writes
-    // as two separate token counts so daily-usage cost math can price them
-    // at their distinct rates (~$0.30/MTok vs ~$3.75/MTok on Sonnet 4.6).
-    // `cachedTokens` is kept in sync with `cacheReadTokens` for back-compat
-    // with any historical admin views that still read the old column.
+    // Call Anthropic (or mock) as the initial persona
+    const result = await generateResponse(userContext, history, initialPersona);
+
+    // If the generalist called hand_off, re-invoke with the target specialist.
+    // The specialist sees the hand-off summary prepended as a user turn so the
+    // partner doesn't have to re-explain.
+    let finalResult = result;
+    let finalPersonaId: "finn" | "stella" | "tara" = initialPersona;
+    let handoffMeta:
+      | {
+          from: string;
+          to: string;
+          reason: string;
+          summary: string;
+          triggeredBy: "llm_tool" | "user_button";
+        }
+      | null = null;
+
+    if (result.handOff && result.handOff.to === "tara") {
+      finalPersonaId = "tara";
+      handoffMeta = {
+        from: initialPersona,
+        to: "tara",
+        reason: result.handOff.reason,
+        summary: result.handOff.summary,
+        triggeredBy: "llm_tool",
+      };
+      const specialistHistory: ChatMessage[] = [
+        ...history,
+        {
+          role: "user",
+          content: `[context from ${initialPersona}]: ${result.handOff.summary}`,
+        },
+      ];
+      finalResult = await generateResponse(
+        userContext,
+        specialistHistory,
+        finalPersonaId
+      );
+    }
+
+    // If the UI pin forced Tara, record it as a user_button-triggered handoff
+    // for telemetry even though no tool call happened server-side.
+    if (!handoffMeta && pinnedSpecialist === "tara" && personaId !== "tara") {
+      handoffMeta = {
+        from: personaId,
+        to: "tara",
+        reason: "user clicked Talk to Tara",
+        summary: "",
+        triggeredBy: "user_button",
+      };
+    }
+
+    // Persist assistant reply. Token counts sum across initial + specialist
+    // calls if a handoff fired.
+    const totalInput = result.inputTokens + (finalResult === result ? 0 : finalResult.inputTokens);
+    const totalOutput = result.outputTokens + (finalResult === result ? 0 : finalResult.outputTokens);
+    const totalCacheRead = result.cacheReadTokens + (finalResult === result ? 0 : finalResult.cacheReadTokens);
+    const totalCacheCreate = result.cacheCreationTokens + (finalResult === result ? 0 : finalResult.cacheCreationTokens);
+
     const assistantMessage = await prisma.aiMessage.create({
       data: {
         conversationId: conversation.id,
         role: "assistant",
-        content: result.content,
-        inputTokens: result.inputTokens,
-        outputTokens: result.outputTokens,
-        cachedTokens: result.cacheReadTokens,
-        cacheReadTokens: result.cacheReadTokens,
-        cacheCreationTokens: result.cacheCreationTokens,
-        speakerPersona: personaId,
+        content: finalResult.content,
+        inputTokens: totalInput,
+        outputTokens: totalOutput,
+        cachedTokens: totalCacheRead,
+        cacheReadTokens: totalCacheRead,
+        cacheCreationTokens: totalCacheCreate,
+        speakerPersona: finalPersonaId,
+        handoffMetadata: handoffMeta ?? undefined,
       },
     });
 
@@ -138,14 +200,15 @@ export async function POST(req: NextRequest) {
       data: { updatedAt: new Date() },
     });
 
-    // Record usage (rate limit + budget tracking)
-    if (!result.mocked) {
+    // Record usage (rate limit + budget tracking) — uses summed totals
+    // so hand-off turns correctly count both the initial and specialist LLM calls.
+    if (!finalResult.mocked) {
       await recordUsage(
         userId,
-        result.inputTokens,
-        result.outputTokens,
-        result.cacheReadTokens,
-        result.cacheCreationTokens
+        totalInput,
+        totalOutput,
+        totalCacheRead,
+        totalCacheCreate
       );
     }
 
@@ -163,9 +226,10 @@ export async function POST(req: NextRequest) {
         content: assistantMessage.content,
         createdAt: assistantMessage.createdAt,
         speakerPersona: assistantMessage.speakerPersona,
+        handoffMetadata: assistantMessage.handoffMetadata,
       },
-      mocked: result.mocked,
-      persona: personaId,
+      mocked: finalResult.mocked,
+      persona: finalPersonaId,
     });
   } catch (err: any) {
     console.error("[api/ai/chat] error:", err);
