@@ -322,7 +322,7 @@ function buildText(opts: ShellOpts): string {
 }
 
 /** Convenience wrapper: build both shells from a single ShellOpts. */
-function emailShell(opts: ShellOpts): { html: string; text: string } {
+export function emailShell(opts: ShellOpts): { html: string; text: string } {
   return { html: buildHtml(opts), text: buildText(opts) };
 }
 

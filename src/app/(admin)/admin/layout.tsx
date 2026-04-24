@@ -23,7 +23,7 @@ const isGroup = (n: NavItem): n is NavGroup => (n as NavGroup).children !== unde
 // IDs here must match ADMIN_NAV_ITEMS map below.
 const ADMIN_NAV_IDS_DEFAULT = [
   "home",
-  "partners", "deals", "reporting",
+  "partners", "applications", "deals", "reporting",
   "communications", "internalChats", "partnerSupport",
   "training", "conference", "documents",
   "settings", "users", "features", "dev",
@@ -52,6 +52,7 @@ const BUILT_IN_ADMIN_ICONS: Record<string, string> = {
 const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   home:         { id: "home", href: "/admin", icon: "🏠", label: "Home" },
   partners:     { id: "partners", href: "/admin/partners", icon: "👥", label: "Partners" },
+  applications: { id: "applications", href: "/admin/applications", icon: "📝", label: "Applications" },
   deals:        { id: "deals", href: "/admin/deals", icon: "📋", label: "Deals" },
   // "reporting" is a synthetic umbrella for Reports / Revenue /
   // Custom Commissions / Payouts. The finance pages share a ReportingTabs

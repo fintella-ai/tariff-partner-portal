@@ -1,0 +1,124 @@
+/* Landing page styles (scoped via .landing-root ancestor).
+   Kept separate from globals.css so removing or re-theming the landing
+   page is a single-file surgery. */
+
+.landing-root {
+  background: radial-gradient(
+      1000px 600px at 80% -10%,
+      rgba(196, 160, 80, 0.12),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 500px at -10% 20%,
+      rgba(196, 160, 80, 0.08),
+      transparent 55%
+    ),
+    var(--app-bg);
+}
+
+/* Hero subtle animated glow — absolute inside a position:relative parent. */
+.landing-hero-glow {
+  position: absolute;
+  top: -30%;
+  right: -20%;
+  width: 70vw;
+  height: 70vw;
+  max-width: 900px;
+  max-height: 900px;
+  background: radial-gradient(
+    circle,
+    rgba(196, 160, 80, 0.25) 0%,
+    rgba(196, 160, 80, 0.08) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  animation: landing-pulse 14s ease-in-out infinite;
+}
+
+@keyframes landing-pulse {
+  0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.9; }
+  50% { transform: scale(1.08) translate(-10px, 20px); opacity: 1; }
+}
+
+/* Headline gradient — gold-to-brand for the primary "Earn 20%" accent. */
+.landing-gradient-text {
+  background: linear-gradient(
+    90deg,
+    #c4a050 0%,
+    #e8c060 50%,
+    #c4a050 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  animation: landing-shimmer 6s ease-in-out infinite;
+}
+
+@keyframes landing-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* The application form card in the hero — elevated, subtly glowing. */
+.landing-apply-card {
+  background: var(--app-card-bg);
+  border: 1px solid var(--app-card-border);
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow:
+    0 20px 60px -20px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(196, 160, 80, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-apply-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    #c4a050 0%,
+    #e8c060 50%,
+    #c4a050 100%
+  );
+  opacity: 0.8;
+}
+
+/* Stat card in the opportunity section — brand glow on hover. */
+.landing-stat-card {
+  background: var(--app-card-bg);
+  border: 1px solid var(--app-card-border);
+  transition: all 0.3s ease;
+}
+
+.landing-stat-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(196, 160, 80, 0.5);
+  box-shadow: 0 12px 32px -12px rgba(196, 160, 80, 0.3);
+}
+
+/* Scroll-triggered fade-in — starts at 0 opacity + 20px y-offset. */
+.fade-in {
+  animation: landing-fade-up 0.9s ease-out both;
+}
+
+@keyframes landing-fade-up {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Honor reduced-motion — kill all keyframe animations for accessibility. */
+@media (prefers-reduced-motion: reduce) {
+  .landing-hero-glow,
+  .landing-gradient-text,
+  .fade-in {
+    animation: none !important;
+  }
+}

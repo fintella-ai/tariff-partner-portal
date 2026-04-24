@@ -1310,3 +1310,107 @@ model PasswordResetToken {
   @@index([email])
   @@index([expiresAt])
 }
+
+// ─── PUBLIC LANDING: PARTNER APPLICATIONS + BOOKING ─────────────────────────
+// Public landing page at `/` collects leads from prospective referral
+// partners. A PartnerApplication is a LEAD, NOT a Partner — it has no
+// portal access and triggers zero automated communications until an admin
+// explicitly approves it. Approval flow: admin reviews → qualification
+// call (via Booking) → clicks "Approve & Send Invite" → existing
+// RecruitmentInvite flow takes over (creates a standard L2 invite under
+// the target upline code, defaulting to PTNS4XDMN). This preserves the
+// invite-only partner rule.
+model PartnerApplication {
+  id                String    @id @default(cuid())
+  firstName         String
+  lastName          String
+  email             String
+  phone             String?
+  companyName       String?
+  website           String?
+  // Free-text "tell us about your network / industry / client access"
+  audienceContext   String?
+  referralSource    String?   // how did you hear about us
+  // Workflow status: new → contacted → qualified → approved → rejected
+  status            String    @default("new")
+  // Upline this applicant will be placed under when the invite fires.
+  // Defaults to PTNS4XDMN (John Orlando) since the public landing page
+  // lives under John's marketing funnel.
+  uplineCode        String    @default("PTNS4XDMN")
+  adminNotes        String?
+  approvedAt        DateTime?
+  approvedByAdminId String?
+  rejectedAt        DateTime?
+  rejectionReason   String?
+  // RecruitmentInvite.id once the admin fires the invite flow from the
+  // applications page. Null while the lead is still in qualification.
+  inviteId          String?
+  // UTM tracking for marketing attribution
+  utmSource         String?
+  utmMedium         String?
+  utmCampaign       String?
+  utmContent        String?
+  ipAddress         String?
+  userAgent         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+}
+
+// Admin-defined time windows when John (or whoever) is available for
+// qualification calls. Each slot has a capacity (1-5 seats) so one 30-min
+// group call can screen multiple applicants.
+model BookingSlot {
+  id            String   @id @default(cuid())
+  startsAt      DateTime
+  endsAt        DateTime
+  capacity      Int      @default(1)  // 1-5 seats
+  location      String   @default("jitsi") // jitsi, zoom, phone, other
+  title         String   @default("Partner Qualification Call")
+  notes         String?
+  status        String   @default("open") // open, closed, canceled
+  // Google Calendar event id (created lazily on first booking). We attach
+  // all bookers to the same event as guests so John sees one meeting on
+  // his calendar, not one-per-applicant.
+  googleEventId String?
+  // Jitsi room name (derived from slot id). Same room shared by all
+  // capacity seats in a single slot.
+  jitsiRoom     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@index([startsAt])
+  @@index([status])
+}
+
+// A single applicant's reservation of one seat in a BookingSlot.
+model Booking {
+  id                 String   @id @default(cuid())
+  slotId             String
+  applicationId      String
+  // Denormalized snapshot for display in admin / calendar events — the
+  // application may be re-edited but the booking should reflect the
+  // identity at reservation time.
+  name               String
+  email              String
+  phone              String?
+  status             String   @default("confirmed") // confirmed, canceled, no_show, completed
+  canceledAt         DateTime?
+  cancellationReason String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  slot        BookingSlot        @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  application PartnerApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([slotId])
+  @@index([applicationId])
+  @@index([email])
+}
