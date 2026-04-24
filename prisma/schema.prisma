@@ -887,6 +887,7 @@ model AiMessage {
   speakerPersona      String?  // "finn" | "stella" | "tara" | "ollie"; null for user messages
   handoffMetadata     Json?    // { from, to, reason, summary, triggeredBy } — populated when a specialist handoff fires (Phase 2+)
   attachments         Json?    // [{ url, mimeType, width, height }] — populated for bug-triage screenshots (Phase 3)
+  toolCalls           Json?    // [{ name, input, output, isError? }] — populated when a persona with tools (e.g. Ollie) called one or more DB lookups while producing this reply (Phase 3b)
   createdAt           DateTime @default(now())
   conversation        AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 

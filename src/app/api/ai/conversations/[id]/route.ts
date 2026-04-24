@@ -32,6 +32,7 @@ export async function GET(
             createdAt: true,
             speakerPersona: true,
             handoffMetadata: true,
+            toolCalls: true,
           },
         },
       },

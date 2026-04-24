@@ -123,8 +123,12 @@ export async function POST(req: NextRequest) {
           ? "ollie"
           : personaId;
 
-    // Call Anthropic (or mock) as the initial persona
-    const result = await generateResponse(userContext, history, initialPersona);
+    // Call Anthropic (or mock) as the initial persona. Pass userId+userType
+    // so Ollie's DB tools can scope their lookups to the signed-in partner.
+    const result = await generateResponse(userContext, history, initialPersona, {
+      userId,
+      userType,
+    });
 
     // If the generalist called hand_off, re-invoke with the target specialist.
     // The specialist sees the hand-off summary prepended as a user turn so the
@@ -163,7 +167,8 @@ export async function POST(req: NextRequest) {
       finalResult = await generateResponse(
         userContext,
         specialistHistory,
-        finalPersonaId
+        finalPersonaId,
+        { userId, userType }
       );
     }
 
@@ -191,6 +196,15 @@ export async function POST(req: NextRequest) {
     const totalCacheRead = result.cacheReadTokens + (finalResult === result ? 0 : finalResult.cacheReadTokens);
     const totalCacheCreate = result.cacheCreationTokens + (finalResult === result ? 0 : finalResult.cacheCreationTokens);
 
+    // Merge tool-call traces across initial + specialist calls. When the
+    // generalist hands off to Ollie and Ollie then runs lookups, we want the
+    // full chain on the persisted message so the UI can render chips for
+    // every tool that fired.
+    const mergedToolCalls = [
+      ...(result.toolCalls ?? []),
+      ...(finalResult !== result ? finalResult.toolCalls ?? [] : []),
+    ];
+
     const assistantMessage = await prisma.aiMessage.create({
       data: {
         conversationId: conversation.id,
@@ -203,6 +217,12 @@ export async function POST(req: NextRequest) {
         cacheCreationTokens: totalCacheCreate,
         speakerPersona: finalPersonaId,
         handoffMetadata: handoffMeta ?? undefined,
+        // Prisma Json columns require a plain JSON-serializable input; our
+        // TS interface has optional fields that don't satisfy InputJsonObject
+        // structurally. Cast — runtime shape is already JSON-safe.
+        toolCalls: mergedToolCalls.length > 0
+          ? (mergedToolCalls as unknown as object[])
+          : undefined,
       },
     });
 
@@ -239,6 +259,7 @@ export async function POST(req: NextRequest) {
         createdAt: assistantMessage.createdAt,
         speakerPersona: assistantMessage.speakerPersona,
         handoffMetadata: assistantMessage.handoffMetadata,
+        toolCalls: assistantMessage.toolCalls,
       },
       mocked: finalResult.mocked,
       persona: finalPersonaId,
