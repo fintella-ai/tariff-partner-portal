@@ -56,6 +56,10 @@ const MAIN_NAV: Array<{
     shortLabel: "Help",
     activePaths: ["/dashboard/ai-assistant", "/dashboard/support"],
   },
+  // Direct entry for the full notifications log — kept alongside the
+  // Communications group (which still tabs into /dashboard/notifications)
+  // so partners have a one-click shortcut from the sidebar.
+  { id: "notifications", href: "/dashboard/notifications", icon: "🔔", label: "Notifications", shortLabel: "Alerts" },
   { id: "feature-request", href: "/dashboard/feature-request", icon: "💡", label: "Feature Requests", shortLabel: "Ideas" },
 ];
 
@@ -74,6 +78,7 @@ const BUILT_IN_PARTNER_ICONS: Record<string, string> = {
   "referral-links": "/icons/referral-links-chain.svg",
   communications: "/icons/communications-chat.svg",
   "partner-support": "/icons/support-chat-question.svg",
+  notifications: "/icons/communications-chat.svg",
   "feature-request": "/icons/features-lightbulb.svg",
 };
 
@@ -286,7 +291,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         ) : logoUrl ? (
           <div className="mb-2">
-            <img src={logoUrl} alt={firmShort} className="max-h-40 w-full object-contain" />
+            <img src={logoUrl} alt={firmShort} className="max-h-56 w-full object-contain" />
           </div>
         ) : (
           <div className="font-display text-sm font-bold text-brand-gold tracking-[1px]">

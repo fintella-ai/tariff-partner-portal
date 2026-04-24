@@ -232,7 +232,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ? <img src={logoUrl} alt={FIRM_SHORT} className="h-10 w-10 mx-auto object-contain" />
             : <div className="font-display text-lg font-bold text-brand-gold leading-none">{FIRM_SHORT.charAt(0)}</div>
         ) : logoUrl ? (
-          <img src={logoUrl} alt={FIRM_SHORT} className="max-h-40 w-full object-contain mb-2" />
+          <img src={logoUrl} alt={FIRM_SHORT} className="max-h-56 w-full object-contain mb-2" />
         ) : (
           <div className="font-display text-xl font-bold text-brand-gold tracking-[1px] mb-1">{FIRM_SHORT}</div>
         )}

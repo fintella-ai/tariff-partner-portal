@@ -16,23 +16,45 @@ export async function GET(req: NextRequest) {
   const recipientType = role === "partner" ? "partner" : "admin";
   const recipientId = role === "partner" ? partnerCode : session.user.email || "";
 
-  const unreadOnly = req.nextUrl.searchParams.get("unread") === "true";
+  const params = req.nextUrl.searchParams;
+  const unreadOnly = params.get("unread") === "true";
+  const type = params.get("type") || "";
+  // Clamp page-size so a malicious/misconfigured caller can't pull the
+  // whole table. `all=1` still respects a hard ceiling.
+  const limitRaw = parseInt(params.get("limit") || "20", 10);
+  const limit = Math.max(1, Math.min(200, isNaN(limitRaw) ? 20 : limitRaw));
+  const offsetRaw = parseInt(params.get("offset") || "0", 10);
+  const offset = Math.max(0, isNaN(offsetRaw) ? 0 : offsetRaw);
+  const fetchAll = params.get("all") === "1";
 
   try {
     const where: any = { recipientType, recipientId };
     if (unreadOnly) where.read = false;
+    if (type) where.type = type;
 
-    const notifications = await prisma.notification.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
+    // All three queries run in parallel — total + unreadCount + typesList
+    // are cheap (COUNT + GROUP BY) and needed by the page header.
+    const [notifications, total, unreadCount, typesRows] = await Promise.all([
+      prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: fetchAll ? undefined : offset,
+        take: fetchAll ? 500 : limit,
+      }),
+      prisma.notification.count({ where }),
+      prisma.notification.count({ where: { recipientType, recipientId, read: false } }),
+      prisma.notification.groupBy({
+        by: ["type"],
+        where: { recipientType, recipientId },
+        _count: { type: true },
+      }),
+    ]);
 
-    const unreadCount = await prisma.notification.count({
-      where: { recipientType, recipientId, read: false },
-    });
+    const types = typesRows
+      .map((r) => ({ type: r.type, count: r._count.type }))
+      .sort((a, b) => b.count - a.count);
 
-    return NextResponse.json({ notifications, unreadCount });
+    return NextResponse.json({ notifications, total, unreadCount, types });
   } catch (e) {
     console.error("Notifications API error:", e);
     return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
