@@ -6,6 +6,13 @@ import PageTabBar from "@/components/ui/PageTabBar";
 import PersonaAvatar from "@/components/ai/PersonaAvatar";
 import PersonaPickerModal from "@/components/ai/PersonaPickerModal";
 
+interface ToolCallRecord {
+  name: string;
+  input: unknown;
+  output: unknown;
+  isError?: boolean;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -19,6 +26,7 @@ interface Message {
     summary?: string;
     triggeredBy?: "llm_tool" | "user_button";
   } | null;
+  toolCalls?: ToolCallRecord[] | null;
 }
 
 interface ConversationSummary {
@@ -540,6 +548,7 @@ function ConversationList({
 
 function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
+  const toolCalls = Array.isArray(message.toolCalls) ? message.toolCalls : [];
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
@@ -559,6 +568,13 @@ function MessageBubble({ message }: { message: Message }) {
             />
           </div>
         )}
+        {toolCalls.length > 0 && (
+          <div className="mb-2 flex flex-col gap-1.5">
+            {toolCalls.map((tc, i) => (
+              <ToolCallChip key={i} call={tc} />
+            ))}
+          </div>
+        )}
         <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed whitespace-pre-wrap break-words">
           {message.content}
         </div>
@@ -571,4 +587,117 @@ function MessageBubble({ message }: { message: Message }) {
       </div>
     </div>
   );
+}
+
+// ─── OLLIE TOOL-CALL CHIP ─────────────────────────────────────────────────
+// Renders a compact summary chip for each DB lookup Ollie ran to produce the
+// reply. Click to expand and see the raw input + output JSON. Works in both
+// light + dark themes via var(--app-*) vars; no hardcoded hex.
+const TOOL_LABELS: Record<string, string> = {
+  lookupDeal: "Deal lookup",
+  lookupCommissions: "Commission lookup",
+  lookupAgreement: "Agreement lookup",
+  lookupDownline: "Downline lookup",
+};
+
+function ToolCallChip({ call }: { call: ToolCallRecord }) {
+  const [open, setOpen] = useState(false);
+  const label = TOOL_LABELS[call.name] || call.name;
+  const summary = describeToolCall(call);
+  return (
+    <div
+      className={`rounded-md border text-[11px] ${
+        call.isError
+          ? "border-red-500/30 bg-red-500/5"
+          : "border-[var(--app-border)] bg-[var(--app-surface)]"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-left"
+      >
+        <span className="flex items-center gap-1.5 min-w-0">
+          <span className="text-sm leading-none" aria-hidden>
+            🔎
+          </span>
+          <span className="font-body font-medium text-[var(--app-text)] shrink-0">
+            {label}
+          </span>
+          <span className="font-body text-[var(--app-text-muted)] truncate">
+            {summary}
+          </span>
+        </span>
+        <span className="font-body text-[var(--app-text-muted)] shrink-0">
+          {open ? "▾" : "▸"}
+        </span>
+      </button>
+      {open && (
+        <div className="border-t border-[var(--app-border)] px-2.5 py-2 space-y-2 font-mono text-[10px] leading-snug">
+          <div>
+            <div className="text-[var(--app-text-muted)] mb-0.5">input</div>
+            <pre className="overflow-x-auto text-[var(--app-text)]">
+              {safeJson(call.input)}
+            </pre>
+          </div>
+          <div>
+            <div className="text-[var(--app-text-muted)] mb-0.5">
+              {call.isError ? "error" : "output"}
+            </div>
+            <pre className="overflow-x-auto text-[var(--app-text)]">
+              {safeJson(call.output)}
+            </pre>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function describeToolCall(call: ToolCallRecord): string {
+  const input = (call.input ?? {}) as Record<string, unknown>;
+  const output = (call.output ?? {}) as Record<string, unknown>;
+  if (call.isError) return "failed";
+  switch (call.name) {
+    case "lookupDeal": {
+      const q = typeof input.query === "string" ? `"${input.query}"` : "";
+      const n = typeof output.count === "number" ? output.count : undefined;
+      return `${q}${n !== undefined ? ` — ${n} match${n === 1 ? "" : "es"}` : ""}`;
+    }
+    case "lookupCommissions": {
+      const status =
+        typeof input.status === "string" ? input.status : "all";
+      const totals = (output.totals ?? {}) as Record<string, number>;
+      const count = totals.count ?? 0;
+      return `${status} · ${count} entr${count === 1 ? "y" : "ies"}`;
+    }
+    case "lookupAgreement": {
+      const has = output.hasAgreement;
+      const status =
+        typeof output.status === "string" ? ` · ${output.status}` : "";
+      return has === false ? "none on file" : `found${status}`;
+    }
+    case "lookupDownline": {
+      const depth = typeof input.depth === "number" ? input.depth : 1;
+      const direct =
+        typeof output.directCount === "number" ? output.directCount : 0;
+      const grand =
+        typeof output.grandDownlineCount === "number"
+          ? output.grandDownlineCount
+          : undefined;
+      return depth === 2 && grand !== undefined
+        ? `direct ${direct} · grand ${grand}`
+        : `direct ${direct}`;
+    }
+    default:
+      return "";
+  }
+}
+
+function safeJson(v: unknown): string {
+  try {
+    return JSON.stringify(v, null, 2);
+  } catch {
+    return String(v);
+  }
 }
