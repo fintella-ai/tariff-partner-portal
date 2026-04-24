@@ -309,6 +309,28 @@ model TrainingResource {
   fileSize    String?  // "1.2 MB"
   sortOrder   Int      @default(0)
   published   Boolean  @default(true)
+  // PartnerOS AI Phase 2b — PDF text extracted on upload via pdf-parse.
+  // Populated for fileType === "pdf"; stays null for other types.
+  // Included in Tara's cached knowledge blob (see src/lib/ai-knowledge.ts).
+  extractedText String?
+  extractedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── TRAINING GLOSSARY ───────────────────────────────────────────────────────
+// PartnerOS AI Phase 2b — admin-editable glossary of tariff refund terms.
+// Partner-facing Glossary tab lives on /dashboard/training. Tara includes
+// these definitions in her cached knowledge so she can define terms with
+// authoritative source-cited answers.
+model TrainingGlossary {
+  id          String   @id @default(cuid())
+  term        String   @unique
+  aliases     String[]             // alternate spellings, acronyms, singular/plural
+  definition  String                // markdown, 1-3 sentences
+  category    String?               // optional grouping — "legal", "tariff_types", "process"
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
