@@ -205,6 +205,7 @@ export default function AdminTrainingPage() {
   const [previewScript, setPreviewScript] = useState<{ script: any; title: string } | null>(null);
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+  const [generatingHeyGenId, setGeneratingHeyGenId] = useState<string | null>(null);
 
   // Max file size before we refuse to embed — base64 bloats ~33% and
   // Vercel serverless caps request bodies around 4.5MB. Anything bigger
@@ -659,6 +660,32 @@ export default function AdminTrainingPage() {
     await fetchModules();
   };
 
+  /** Generate a real HeyGen avatar video for a module */
+  const handleGenerateHeyGen = async (mod: TrainingModule) => {
+    if (!confirm(`Generate a HeyGen avatar video for "${mod.title}"? This takes 2-5 minutes and uses your HeyGen credits.`)) return;
+    setGeneratingHeyGenId(mod.id);
+    try {
+      const res = await fetch(`/api/admin/training/modules/${mod.id}/generate-heygen`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.success && data.videoUrl) {
+        alert(`HeyGen video ready! Duration: ${Math.round(data.duration || 0)}s`);
+      } else if (res.status === 202) {
+        alert(data.error || "Video is still rendering. It will appear when ready.");
+      } else {
+        alert(data.error || "Failed to generate HeyGen video.");
+      }
+      await fetchModules();
+    } catch {
+      alert("Failed to generate HeyGen video. Please try again.");
+    } finally {
+      setGeneratingHeyGenId(null);
+    }
+  };
+
   // ─── COMPUTED STATS ───────────────────────────────────────────────────────
 
   const moduleStats = {
@@ -1060,6 +1087,17 @@ export default function AdminTrainingPage() {
                             Preview
                           </button>
                         )}
+                        <button
+                          onClick={() => handleGenerateHeyGen(mod)}
+                          disabled={generatingHeyGenId === mod.id}
+                          className="text-xs text-emerald-400/70 hover:text-emerald-400 transition disabled:opacity-50"
+                        >
+                          {generatingHeyGenId === mod.id
+                            ? "Rendering..."
+                            : mod.videoUrl
+                            ? "Re-render HeyGen"
+                            : "HeyGen Video"}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1159,6 +1197,17 @@ export default function AdminTrainingPage() {
                       Preview
                     </button>
                   )}
+                  <button
+                    onClick={() => handleGenerateHeyGen(mod)}
+                    disabled={generatingHeyGenId === mod.id}
+                    className="text-xs text-emerald-400/70 hover:text-emerald-400 transition disabled:opacity-50"
+                  >
+                    {generatingHeyGenId === mod.id
+                      ? "Rendering..."
+                      : mod.videoUrl
+                      ? "Re-render HeyGen"
+                      : "HeyGen Video"}
+                  </button>
                 </div>
               </div>
             ))}
