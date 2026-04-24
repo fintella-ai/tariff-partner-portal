@@ -171,18 +171,21 @@ export default function MyAvailabilityCard() {
         </div>
 
         {isSuperAdmin && (
-          <Toggle
-            label="Receive IT emergency calls"
-            sub="When Ollie classifies a portal symptom as a confirmed bug, Twilio will outbound-dial your personal cell above. Super admin only."
-            value={data.isITEmergencyContact}
-            onChange={(v) => save({ isITEmergencyContact: v })}
-            disabled={saving || !data.personalCellPhone}
-            warn={
-              data.isITEmergencyContact && !data.personalCellPhone
-                ? "Enable personal cell above first — this toggle has no effect without a number."
-                : undefined
-            }
-          />
+          <>
+            <Toggle
+              label="Receive IT emergency calls"
+              sub="When Ollie classifies a portal symptom as a confirmed bug, Twilio will outbound-dial your personal cell above. Super admin only."
+              value={data.isITEmergencyContact}
+              onChange={(v) => save({ isITEmergencyContact: v })}
+              disabled={saving || !data.personalCellPhone}
+              warn={
+                data.isITEmergencyContact && !data.personalCellPhone
+                  ? "Enable personal cell above first — this toggle has no effect without a number."
+                  : undefined
+              }
+            />
+            <EmergencyTestButton />
+          </>
         )}
 
         {savedAt && Date.now() - savedAt < 3000 && (
@@ -191,6 +194,61 @@ export default function MyAvailabilityCard() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function EmergencyTestButton() {
+  const [firing, setFiring] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function fire() {
+    if (!confirm("Fire a TEST IT emergency? This will send a [TEST]-marked email + notifications to every admin with isITEmergencyContact=true.")) {
+      return;
+    }
+    setFiring(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch("/api/admin/emergency-test", { method: "POST" });
+      if (!res.ok) {
+        const { error: msg } = await res.json().catch(() => ({}));
+        throw new Error(msg || `Test failed (${res.status})`);
+      }
+      const { result: r } = await res.json();
+      setResult(
+        `Fired — paged ${r.contactCount} contact${r.contactCount === 1 ? "" : "s"}, email ${r.emailStatus}, ${r.notificationsCreated} notification${r.notificationsCreated === 1 ? "" : "s"}, workspace ${r.workspacePosted ? "posted" : "skipped"}.`
+      );
+    } catch (e: any) {
+      setError(e?.message || "Test failed");
+    } finally {
+      setFiring(false);
+    }
+  }
+
+  return (
+    <div className="pt-2 border-t border-[var(--app-border)]">
+      <button
+        type="button"
+        onClick={fire}
+        disabled={firing}
+        className="font-body text-[12px] text-red-500 border border-red-500/30 hover:bg-red-500/5 rounded-md px-3 py-1.5 disabled:opacity-50"
+      >
+        {firing ? "Firing test…" : "🚨 Send test IT emergency"}
+      </button>
+      <p className="font-body text-[11px] text-[var(--app-text-muted)] mt-1">
+        Dry-run the IT emergency chain without a real partner incident. Verifies
+        email routing + notification fan-out + workspace post. [TEST]-prefixed.
+      </p>
+      {result && (
+        <div className="mt-2 font-body text-[11px] text-green-500">
+          ✓ {result}
+        </div>
+      )}
+      {error && (
+        <div className="mt-2 font-body text-[11px] text-red-500">{error}</div>
+      )}
     </div>
   );
 }
