@@ -3,12 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDevice } from "@/lib/useDevice";
 import PageTabBar from "@/components/ui/PageTabBar";
+import PersonaAvatar from "@/components/ai/PersonaAvatar";
+import PersonaPickerModal from "@/components/ai/PersonaPickerModal";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   createdAt: string;
+  speakerPersona?: string | null;
 }
 
 interface ConversationSummary {
@@ -39,6 +42,8 @@ export default function AiAssistantPage() {
   const [mocked, setMocked] = useState(false);
   const [aiEnabled, setAiEnabled] = useState<boolean | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [preferredGeneralist, setPreferredGeneralist] = useState<string | null | undefined>(undefined);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ─── LOAD CONVERSATIONS + CONFIG ─────────────────────────────────────
@@ -62,9 +67,47 @@ export default function AiAssistantPage() {
     } catch {}
   }
 
+  async function loadPersona() {
+    try {
+      const res = await fetch("/api/partner/settings");
+      if (res.ok) {
+        const data = await res.json();
+        setPreferredGeneralist(data.preferredGeneralist ?? null);
+      } else {
+        setPreferredGeneralist(null);
+      }
+    } catch {
+      setPreferredGeneralist(null);
+    }
+  }
+
   useEffect(() => {
-    Promise.all([loadConversations(), loadConfig()]).then(() => setLoading(false));
+    Promise.all([loadConversations(), loadConfig(), loadPersona()]).then(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (preferredGeneralist === null) {
+      setPickerOpen(true);
+    }
+  }, [preferredGeneralist]);
+
+  async function handlePickPersona(personaId: "finn" | "stella") {
+    try {
+      const res = await fetch("/api/partner/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preferredGeneralist: personaId }),
+      });
+      if (res.ok) {
+        setPreferredGeneralist(personaId);
+        setPickerOpen(false);
+      } else {
+        setError("Could not save your preference. Please try again.");
+      }
+    } catch {
+      setError("Network error saving your preference.");
+    }
+  }
 
   // ─── LOAD A CONVERSATION'S MESSAGES ──────────────────────────────────
   const loadConversation = useCallback(async (id: string) => {
@@ -163,6 +206,13 @@ export default function AiAssistantPage() {
 
   return (
     <div className="flex flex-col" style={{ height: "calc(100vh - 120px)" }}>
+      <PersonaPickerModal
+        open={pickerOpen}
+        onPick={handlePickPersona}
+        onClose={preferredGeneralist ? () => setPickerOpen(false) : undefined}
+        allowClose={!!preferredGeneralist}
+        title={preferredGeneralist ? "Switch assistant" : "Pick your AI assistant"}
+      />
 
       <PageTabBar
         title="Partner Support"
@@ -184,9 +234,22 @@ export default function AiAssistantPage() {
                 Beta
               </span>
             </h2>
-            <p className="font-body text-[12px] text-[var(--app-text-muted)]">
-              Ask me anything about the portal, your deals, commissions, or downline.
-            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <PersonaAvatar
+                personaId={preferredGeneralist}
+                size="sm"
+                showName
+                showTagline
+              />
+              {preferredGeneralist && (
+                <button
+                  onClick={() => setPickerOpen(true)}
+                  className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[var(--app-text)] underline-offset-2 hover:underline"
+                >
+                  Switch
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex gap-2">
             {!device.isDesktop && (
@@ -429,8 +492,13 @@ function MessageBubble({ message }: { message: Message }) {
         }`}
       >
         {!isUser && (
-          <div className="font-body text-[10px] font-semibold text-brand-gold mb-1 tracking-wider uppercase">
-            PartnerOS
+          <div className="mb-1">
+            <PersonaAvatar
+              personaId={message.speakerPersona}
+              size="sm"
+              showName
+              showTagline={false}
+            />
           </div>
         )}
         <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed whitespace-pre-wrap break-words">
