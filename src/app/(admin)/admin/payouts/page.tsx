@@ -38,16 +38,19 @@ type PayoutStats = {
   partnersToPay: number;
 };
 
-const tabs = ["Due", "Pending Payment", "Projected", "Paid", "Lost"] as const;
+const tabs = ["All", "Lost", "Projected", "Pending Payment", "Due", "Paid"] as const;
 type Tab = (typeof tabs)[number];
 
 // Map the human tab label to the status value the API filters on.
+// "all" is a sentinel — the row-filter bypasses tabToStatus for it
+// and returns every row.
 const tabToStatus: Record<Tab, string> = {
-  "Due": "due",
-  "Pending Payment": "pending_payment",
-  "Projected": "projected",
-  "Paid": "paid",
+  "All": "all",
   "Lost": "lost",
+  "Projected": "projected",
+  "Pending Payment": "pending_payment",
+  "Due": "due",
+  "Paid": "paid",
 };
 
 const tierBadge: Record<string, string> = {
@@ -135,6 +138,7 @@ export default function PayoutManagementPage() {
 
   const filtered = payouts.filter((p) => {
     const target = tabToStatus[tab];
+    if (target === "all") return true;
     if (target === "pending_payment") {
       // Legacy "pending" rows still in the DB render under this tab
       // until a backfill migrates them to "pending_payment".
@@ -242,6 +246,7 @@ export default function PayoutManagementPage() {
           >
             {t} ({payouts.filter((p) => {
               const target = tabToStatus[t];
+              if (target === "all") return true;
               if (target === "pending_payment") return p.status === "pending_payment" || p.status === "pending";
               return p.status === target;
             }).length})
