@@ -120,7 +120,7 @@ const FIELDS = [
     category: "Client Info",
     colorVar: "--doc-green",
     fields: ["first_name", "last_name", "email", "phone", "business_title"],
-    desc: "Client contact details. At least one of name, email, or company is required.",
+    desc: "Client contact details. Nothing is strictly required — if the payload is sparse we still accept it, save the raw body for admin review, and return 201 with a `warning` field.",
   },
   {
     category: "Business",
@@ -407,7 +407,7 @@ Retry-After: 17
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <ResponseBlock color="var(--doc-green)" label="201 Created (new deal)" body={`{\n  "received": true,\n  "dealId": "clx1234...",\n  "dealName": "Acme Imports LLC",\n  "partnerCode": "PTNABC123"\n}`} />
               <ResponseBlock color="var(--doc-blue)" label="200 OK (idempotent replay — same idempotencyKey as a prior POST)" body={`{\n  "received": true,\n  "dealId": "clx1234...",\n  "dealName": "Acme Imports LLC",\n  "partnerCode": "PTNABC123",\n  "idempotent": true\n}`} />
-              <ResponseBlock color="var(--doc-yellow)" label="400 Validation Error" body={`{\n  "error": "At least one of: name, email, or company is required"\n}`} />
+              <ResponseBlock color="var(--doc-yellow)" label="201 Created with warning (sparse payload)" body={`{\n  "received": true,\n  "dealId": "clx1234...",\n  "dealName": "Referral Form Submission",\n  "partnerCode": "UNATTRIBUTED",\n  "warning": "Accepted but the payload had no identifying fields (name / email / company). Full payload saved to rawPayload for admin review."\n}`} />
               <ResponseBlock color="var(--doc-red)" label="401 Unauthorized (missing or wrong API key)" body={`{\n  "error": "Unauthorized"\n}`} />
               <ResponseBlock color="var(--doc-orange)" label="429 Too Many Requests (rate limit)" body={`{\n  "error": "Too many requests",\n  "retryAfter": 17\n}`} />
             </div>
