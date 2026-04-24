@@ -24,3 +24,8 @@ Thumbs.db
 
 .vercel
 .env*.local
+
+# Claude Code multi-terminal coordination heartbeats — local-only status
+# files each terminal writes so peers can avoid colliding on files/branches.
+.claude/coordination/
+tsconfig.tsbuildinfo
