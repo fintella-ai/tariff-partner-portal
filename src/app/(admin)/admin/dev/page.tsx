@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import WorkflowsPanel from "../workflows/WorkflowsPanel";
+import LandingEditorPage from "../landing-editor/page";
 import { fmt$ } from "@/lib/format";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type Tab = "links" | "errors" | "email" | "webhook" | "customapi" | "apilog" | "commits" | "automations" | "cleanup";
+type Tab = "links" | "errors" | "email" | "webhook" | "customapi" | "apilog" | "commits" | "landing" | "cleanup";
 
 type Commit = {
   sha: string;
@@ -52,6 +52,7 @@ type ErrorsData = {
   total?: number;
   message?: string;
   error?: string;
+  hint?: string;
 };
 
 type ApiLog = {
@@ -299,8 +300,13 @@ function ErrorsTab({ errors }: { errors: ErrorsData | null }) {
           </div>
         </div>
       ) : errors.error ? (
-        <div className="px-5 py-6 text-center">
-          <div className="font-body text-[12px] text-red-400">{errors.error}</div>
+        <div className="px-5 py-6 text-left">
+          <div className="font-body text-[12px] text-red-400 mb-2 break-words">{errors.error}</div>
+          {errors.hint && (
+            <div className="font-body text-[11px] text-[var(--app-text-secondary)] leading-relaxed bg-yellow-500/[0.06] border border-yellow-500/20 rounded-lg p-3 mt-2">
+              <strong className="text-yellow-400">How to fix:</strong> {errors.hint}
+            </div>
+          )}
         </div>
       ) : errors.issues.length === 0 ? (
         <div className="px-5 py-10 text-center">
@@ -1293,7 +1299,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "webhook",     label: "Webhook Test",    icon: "🧪" },
   { id: "customapi",   label: "Custom API",      icon: "🛰️" },
   { id: "apilog",      label: "API Log",         icon: "📋" },
-  { id: "automations", label: "Automations",     icon: "⚡" },
+  { id: "landing",     label: "Landing Editor",  icon: "🪄" },
   { id: "commits",     label: "Recent Commits",  icon: "📦" },
   { id: "cleanup",     label: "Data Cleanup",    icon: "🧹" },
 ];
@@ -1364,7 +1370,7 @@ export default function DevPage() {
       {tab === "webhook"   && <WebhookTab />}
       {tab === "customapi" && <CustomSenderSection />}
       {tab === "apilog"    && <ApiLogSection />}
-      {tab === "automations" && <WorkflowsPanel />}
+      {tab === "landing"   && <LandingEditorPage />}
       {tab === "commits"   && <CommitsTab data={data} />}
       {tab === "cleanup"   && <CleanupTab />}
     </div>

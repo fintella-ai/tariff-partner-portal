@@ -5,17 +5,17 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import EmailInboxTabImpl from "./EmailInboxTabImpl";
 import EmailComposeTabImpl from "./EmailComposeTabImpl";
-import EmailTemplatesTabImpl from "./EmailTemplatesTabImpl";
 import SmsTabImpl from "./SmsTabImpl";
 import PhoneTabImpl from "./PhoneTabImpl";
 import TeamChatPanel from "../team-chat/TeamChatPanel";
 import ChannelsListPanel from "../channels/ChannelsListPanel";
 
 type Tab = "email" | "sms" | "phone" | "team-chat" | "channels";
-type EmailView = "inbox" | "compose" | "templates";
+type EmailView = "inbox" | "compose";
 
-// Automations moved to Admin → Development → Automations tab so the
-// Communications hub stays focused on partner-facing channels.
+// Email Templates moved to Admin → Automations → Email Templates. The
+// Communications hub stays focused on partner-facing channels (inbox,
+// compose, SMS, phone, team chat, channels).
 const ALL_TABS: { id: Tab; label: string; superAdminOnly?: boolean }[] = [
   { id: "email",     label: "Email" },
   { id: "sms",       label: "SMS" },
@@ -27,7 +27,6 @@ const ALL_TABS: { id: Tab; label: string; superAdminOnly?: boolean }[] = [
 const EMAIL_VIEWS: { id: EmailView; label: string }[] = [
   { id: "inbox",     label: "Inbox" },
   { id: "compose",   label: "Compose" },
-  { id: "templates", label: "Templates" },
 ];
 
 /**
@@ -99,7 +98,6 @@ function CommunicationsHostInner() {
           </div>
           {emailView === "inbox"     && <EmailInboxTabImpl />}
           {emailView === "compose"   && <EmailComposeTabImpl />}
-          {emailView === "templates" && <EmailTemplatesTabImpl />}
         </>
       )}
 

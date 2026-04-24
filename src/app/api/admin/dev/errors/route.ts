@@ -28,8 +28,18 @@ export async function GET() {
   }
 
   try {
-    // Sentry API: list unresolved issues from the last 24h, sorted by last-seen
-    const url = `https://sentry.io/api/0/projects/${org}/${project}/issues/?query=is:unresolved+age:-24h&sort=freq&limit=20`;
+    // Sentry API: list unresolved issues from the last 24h. Uses the
+    // organization-level issues endpoint with a `project` filter — the
+    // older project-scoped endpoint works but is less reliably documented,
+    // and the org-level one gives us the modern auth-token scopes Sentry
+    // now provisions by default.
+    const params = new URLSearchParams({
+      query: "is:unresolved age:-24h",
+      sort: "freq",
+      limit: "20",
+      project: project,
+    });
+    const url = `https://sentry.io/api/0/organizations/${org}/issues/?${params.toString()}`;
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${authToken}`,
@@ -39,10 +49,23 @@ export async function GET() {
     });
 
     if (!res.ok) {
+      // Surface the actual Sentry error body so the admin can diagnose
+      // (missing scope, wrong slug, expired token, etc.) instead of the
+      // opaque "Sentry API returned 401" message. Truncate aggressively —
+      // some Sentry 4xx responses include large JSON payloads.
+      const bodyText = await res.text().catch(() => "");
+      const detail = bodyText.length > 400 ? bodyText.slice(0, 400) + "…" : bodyText;
       return NextResponse.json({
         issues: [],
         configured: true,
-        error: `Sentry API returned ${res.status}`,
+        error: `Sentry API returned ${res.status}${detail ? `: ${detail}` : ""}`,
+        hint: res.status === 401
+          ? "Token is invalid or expired. Generate a new internal integration token in Sentry with `event:read` + `project:read` scopes and update SENTRY_AUTH_TOKEN on Vercel."
+          : res.status === 403
+            ? "Token is valid but missing scopes. Needs `event:read` + `project:read`."
+            : res.status === 404
+              ? `Org "${org}" or project "${project}" not found. Check SENTRY_ORG and SENTRY_PROJECT match the slugs in your Sentry URL.`
+              : undefined,
       });
     }
 

@@ -23,9 +23,10 @@ const isGroup = (n: NavItem): n is NavGroup => (n as NavGroup).children !== unde
 // IDs here must match ADMIN_NAV_ITEMS map below.
 const ADMIN_NAV_IDS_DEFAULT = [
   "home",
-  "partners", "applications", "landingEditor", "deals", "reporting",
+  "partners", "applications", "deals", "reporting",
   "communications", "internalChats", "partnerSupport",
   "training", "conference", "documents",
+  "automations",
   "settings", "users", "features", "dev",
 ];
 
@@ -52,8 +53,7 @@ const BUILT_IN_ADMIN_ICONS: Record<string, string> = {
 const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   home:         { id: "home", href: "/admin", icon: "🏠", label: "Home" },
   partners:     { id: "partners", href: "/admin/partners", icon: "👥", label: "Partners" },
-  applications: { id: "applications", href: "/admin/applications", icon: "📝", label: "Applications" },
-  landingEditor: { id: "landingEditor", href: "/admin/landing-editor", icon: "🪄", label: "Landing Editor" },
+  applications: { id: "applications", href: "/admin/applications", icon: "📥", label: "Applications" },
   deals:        { id: "deals", href: "/admin/deals", icon: "📋", label: "Deals" },
   // "reporting" is a synthetic umbrella for Reports / Revenue /
   // Custom Commissions / Payouts. The finance pages share a ReportingTabs
@@ -71,6 +71,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   training:     { id: "training", href: "/admin/training", icon: "📖", label: "Training" },
   conference:   { id: "conference", href: "/admin/conference", icon: "📹", label: "Live Weekly" },
   documents:    { id: "documents", href: "/admin/documents", icon: "📁", label: "Documents" },
+  automations:  { id: "automations", href: "/admin/automations", icon: "⚡", label: "Automations" },
   settings:     { id: "settings", href: "/admin/settings", icon: "⚙️", label: "Settings" },
   users:        { id: "users", href: "/admin/users", icon: "🔐", label: "Admin Users" },
   dev:          { id: "dev", href: "/admin/dev", icon: "🛠️", label: "Development" },
