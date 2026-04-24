@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/format";
-import { computeDealCommissions, getL1CommissionRateSnapshot, roundCents } from "@/lib/commission";
+import { computeDealCommissions, getL1CommissionRateSnapshot, roundCents, resolveCommissionStatus } from "@/lib/commission";
 import { resolveDealFinancials } from "@/lib/dealCalc";
 import { sendDealStatusUpdateEmail } from "@/lib/sendgrid";
 import { appendDealPayload } from "@/lib/appendDealPayload";
@@ -1003,6 +1003,27 @@ async function patchHandler(req: NextRequest): Promise<Response> {
     const isClosedWonTransition =
       data.stage === "closedwon" && deal.stage !== "closedwon";
 
+    // Broader lifecycle gate (Option C — commission-status-lifecycle):
+    // The webhook creates / upserts commission ledger rows on any
+    // transition that enters a state with a non-null resolveCommissionStatus
+    // result (client_engaged, in_process, closed_won, closed_lost).
+    // resolveCommissionStatus() maps stage → canonical status; the
+    // upsert below applies that status to existing or new rows.
+    const prevLedgerStatus = resolveCommissionStatus(
+      deal.stage,
+      deal.paymentReceivedAt ?? null,
+    );
+    const nextLedgerStatus = resolveCommissionStatus(
+      data.stage ?? deal.stage,
+      (data.paymentReceivedAt ?? deal.paymentReceivedAt) ?? null,
+    );
+    // A ledger-relevant transition is any change that lands in a
+    // status-producing state, OR any status flip between two
+    // status-producing states (e.g. projected → pending_payment on
+    // closed-won, pending_payment → due on payment received).
+    const isLedgerLifecycleTransition =
+      !!nextLedgerStatus && nextLedgerStatus !== prevLedgerStatus;
+
     // Compute ledger entries OUTSIDE the transaction so any DB read errors
     // surface before we start writing. Effective firm fee is the value
     // in this PATCH if provided, else the existing deal row.
@@ -1101,7 +1122,10 @@ async function patchHandler(req: NextRequest): Promise<Response> {
               dealName: d.dealName,
               tier: entry.tier,
               amount: entry.amount,
-              status: "pending",
+              // Closed-won transition: firm hasn't paid Fintella yet, so
+              // status is "pending_payment". Flips to "due" once
+              // paymentReceivedAt is stamped on the deal.
+              status: "pending_payment",
               periodMonth: new Date().toISOString().slice(0, 7),
             },
           });
@@ -1119,15 +1143,15 @@ async function patchHandler(req: NextRequest): Promise<Response> {
         const hasLedgerTier = (t: string) => entriesToCreate.some((e) => e.tier === t);
         if (waterfallSnapshot.l1Amount > 0) {
           dealFieldUpdate.l1CommissionAmount = roundCents(waterfallSnapshot.l1Amount);
-          if (hasLedgerTier("l1")) dealFieldUpdate.l1CommissionStatus = "pending";
+          if (hasLedgerTier("l1")) dealFieldUpdate.l1CommissionStatus = "pending_payment";
         }
         if (waterfallSnapshot.l2Amount > 0) {
           dealFieldUpdate.l2CommissionAmount = roundCents(waterfallSnapshot.l2Amount);
-          if (hasLedgerTier("l2")) dealFieldUpdate.l2CommissionStatus = "pending";
+          if (hasLedgerTier("l2")) dealFieldUpdate.l2CommissionStatus = "pending_payment";
         }
         if (waterfallSnapshot.l3Amount > 0) {
           dealFieldUpdate.l3CommissionAmount = roundCents(waterfallSnapshot.l3Amount);
-          if (hasLedgerTier("l3")) dealFieldUpdate.l3CommissionStatus = "pending";
+          if (hasLedgerTier("l3")) dealFieldUpdate.l3CommissionStatus = "pending_payment";
         }
         if (Object.keys(dealFieldUpdate).length > 0) {
           await tx.deal.update({
@@ -1162,6 +1186,118 @@ async function patchHandler(req: NextRequest): Promise<Response> {
 
       return d;
     });
+
+    // ─── Commission lifecycle transitions that aren't closed-won ────────
+    // The closed_won block above handles the initial creation and sets
+    // status="pending_payment". This block covers the remaining
+    // transitions that flip status WITHOUT creating new rows:
+    //   → closed_lost: flip any existing rows to "lost"
+    //   → client_engaged / in_process: if no rows yet, create with
+    //     status "projected" so partners see a row during the engagement
+    //     phase (before firm fee is paid).
+    //   → back TO client_engaged / in_process from closed_won: flip
+    //     existing rows from pending_payment/due back to "projected"
+    //     (stage regression; rare but possible).
+    if (isLedgerLifecycleTransition && nextLedgerStatus && !isClosedWonTransition) {
+      if (nextLedgerStatus === "lost") {
+        // Flip every existing row for the deal to "lost". If no rows
+        // exist (deal never reached client_engaged), nothing to do.
+        await prisma.commissionLedger.updateMany({
+          where: { dealId, status: { notIn: ["paid"] } },
+          data: { status: "lost" },
+        });
+        // Mirror onto the Deal.l{1,2,3}CommissionStatus snapshot fields.
+        await prisma.deal.update({
+          where: { id: dealId },
+          data: {
+            l1CommissionStatus: "lost",
+            l2CommissionStatus: "lost",
+            l3CommissionStatus: "lost",
+          },
+        });
+      } else if (nextLedgerStatus === "projected") {
+        // Client-engaged or in-process transition. If rows already
+        // exist (e.g. from a prior closed-won that got rolled back),
+        // flip them back to projected. Otherwise create fresh rows
+        // with projected status using the same waterfall computation
+        // the closed-won path uses, so partners see their expected
+        // earnings starting at engagement.
+        const existingRows = await prisma.commissionLedger.findMany({
+          where: { dealId },
+          select: { id: true, status: true },
+        });
+        if (existingRows.length > 0) {
+          await prisma.commissionLedger.updateMany({
+            where: { dealId, status: { notIn: ["paid", "lost"] } },
+            data: { status: "projected" },
+          });
+          await prisma.deal.update({
+            where: { id: dealId },
+            data: {
+              l1CommissionStatus: "projected",
+              l2CommissionStatus: "projected",
+              l3CommissionStatus: "projected",
+            },
+          });
+        } else {
+          // No rows exist yet → create projected rows. Uses the same
+          // firm-fee resolution as the closed-won path above so the
+          // projected amounts match what the partner will ultimately
+          // be paid (if the deal closes won).
+          const projectedEstimated =
+            typeof data.estimatedRefundAmount === "number"
+              ? data.estimatedRefundAmount
+              : deal.estimatedRefundAmount;
+          const projectedFirmFeeRate =
+            typeof data.firmFeeRate === "number"
+              ? data.firmFeeRate
+              : deal.firmFeeRate;
+          const projectedFirmFeeAmount =
+            typeof data.firmFeeAmount === "number" && data.firmFeeAmount > 0
+              ? data.firmFeeAmount
+              : deal.firmFeeAmount || 0;
+          const fin = resolveDealFinancials({
+            estimatedRefundAmount: projectedEstimated,
+            actualRefundAmount: null,
+            stage: data.stage ?? deal.stage,
+            firmFeeRate: projectedFirmFeeRate,
+            firmFeeAmount: projectedFirmFeeAmount,
+            l1CommissionRate: deal.l1CommissionRate,
+            l1CommissionAmount: 0,
+          });
+          const effFee = fin.firmFeeAmount;
+          if (effFee > 0) {
+            const computed = await computeDealCommissions(prisma, {
+              partnerCode: deal.partnerCode,
+              firmFeeAmount: effFee,
+            });
+            for (const entry of computed.entries) {
+              // Use upsert so concurrent webhook replays don't trip the
+              // @@unique([dealId, partnerCode, tier]) constraint.
+              await prisma.commissionLedger.upsert({
+                where: {
+                  dealId_partnerCode_tier: {
+                    dealId,
+                    partnerCode: entry.partnerCode,
+                    tier: entry.tier,
+                  },
+                },
+                create: {
+                  partnerCode: entry.partnerCode,
+                  dealId,
+                  dealName: deal.dealName,
+                  tier: entry.tier,
+                  amount: entry.amount,
+                  status: "projected",
+                  periodMonth: new Date().toISOString().slice(0, 7),
+                },
+                update: { amount: entry.amount, status: "projected" },
+              });
+            }
+          }
+        }
+      }
+    }
 
     // Fire workflow triggers for stage changes (fire-and-forget)
     if (data.stage && data.stage !== deal.stage) {

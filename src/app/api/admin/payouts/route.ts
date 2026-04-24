@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendCommissionPaidEmail } from "@/lib/sendgrid";
 import { createTransfer } from "@/lib/stripe";
+import { resolveCommissionStatus } from "@/lib/commission";
 
 /**
  * GET /api/admin/payouts
@@ -127,7 +128,19 @@ export async function GET(req: NextRequest) {
     const allLiveSet = new Set(allExistingStatsDeals.map((d) => d.id));
     const allComm = allRawComm.filter((c) => allLiveSet.has(c.dealId) || c.status === "paid");
     let totalDue = allComm.filter((c) => c.status === "due").reduce((s, c) => s + c.amount, 0);
-    let totalPending = allComm.filter((c) => c.status === "pending").reduce((s, c) => s + c.amount, 0);
+    // "pending_payment" is the post-2026-04 lifecycle label for closed-won
+    // rows waiting on firm payment. Legacy "pending" rows pre-migration
+    // map to the same bucket so summary stats don't regress while the
+    // DB is partially migrated.
+    let totalPendingPayment = allComm
+      .filter((c) => c.status === "pending_payment" || c.status === "pending")
+      .reduce((s, c) => s + c.amount, 0);
+    let totalProjected = allComm
+      .filter((c) => c.status === "projected")
+      .reduce((s, c) => s + c.amount, 0);
+    let totalLost = allComm
+      .filter((c) => c.status === "lost")
+      .reduce((s, c) => s + c.amount, 0);
     let totalPaid = allComm.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
     const partnersToPaySet = new Set(allComm.filter((c) => c.status === "due").map((c) => c.partnerCode));
 
@@ -177,16 +190,15 @@ export async function GET(req: NextRequest) {
           const overrideAmount = firmFee * epOverrideRate;
           if (overrideAmount <= 0) continue;
 
-          // EP status follows the same lifecycle as L1/L2/L3 ledger rows:
-          //   closed_won + payment NOT received → "pending" (deal closed
-          //     but Frost hasn't paid Fintella yet, so nothing to disburse)
-          //   closed_won + paymentReceivedAt set → "due" (ready to batch)
-          //   closed_lost → skip entirely (no payout ever)
-          //   pre-close stages → "pending" (same as ledger pending-on-close)
-          if (deal.stage === "closedlost") continue;
-          const epStatus = deal.stage === "closedwon"
-            ? (deal.paymentReceivedAt ? "due" : "pending")
-            : "pending";
+          // EP status follows the canonical commission lifecycle defined
+          // in resolveCommissionStatus():
+          //   closed_won + paymentReceivedAt set → "due"
+          //   closed_won + no payment             → "pending_payment"
+          //   client_engaged / in_process         → "projected"
+          //   closed_lost                         → "lost"
+          //   pre-engagement stages               → null (skipped)
+          const epStatus = resolveCommissionStatus(deal.stage, deal.paymentReceivedAt ?? null);
+          if (!epStatus) continue;
 
           // Stats feed BEFORE the status filter so the stat cards
           // reflect the full EP payout universe, not just the tab
@@ -194,10 +206,12 @@ export async function GET(req: NextRequest) {
           if (epStatus === "due") {
             totalDue += overrideAmount;
             partnersToPaySet.add(ep.partnerCode);
-          } else if (epStatus === "pending") {
-            totalPending += overrideAmount;
-          } else if (epStatus === "paid") {
-            totalPaid += overrideAmount;
+          } else if (epStatus === "pending_payment") {
+            totalPendingPayment += overrideAmount;
+          } else if (epStatus === "projected") {
+            totalProjected += overrideAmount;
+          } else if (epStatus === "lost") {
+            totalLost += overrideAmount;
           }
 
           // Check status filter (affects only what renders in the table)
@@ -241,7 +255,17 @@ export async function GET(req: NextRequest) {
       // (above) and every EP synthetic payout (in the EP loop), so the
       // cards reflect ALL money due/pending/paid regardless of which
       // tab the admin is currently viewing.
-      stats: { totalDue, totalPending, totalPaid, partnersToPay: partnersToPaySet.size },
+      // Stats now surface the full lifecycle. `totalPending` kept as an
+      // alias of totalPendingPayment for any legacy UI still reading it.
+      stats: {
+        totalDue,
+        totalPendingPayment,
+        totalPending: totalPendingPayment, // legacy alias
+        totalProjected,
+        totalLost,
+        totalPaid,
+        partnersToPay: partnersToPaySet.size,
+      },
       batches,
     });
   } catch (e) {

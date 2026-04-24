@@ -77,8 +77,14 @@ export async function POST(
     //      This covers deals that closed BEFORE the two-phase path shipped,
     //      and deals that somehow reached closed_won without going through
     //      the webhook (e.g. admin manual stage edit in /admin/deals).
+    // Flip rows that are waiting on firm payment. Accept BOTH the new
+    // "pending_payment" status (post-lifecycle-refactor) and the legacy
+    // "pending" value (pre-refactor rows still in the DB). Also accept
+    // "projected" — if the admin is marking payment received before the
+    // webhook has flipped a projected row to pending_payment, we treat
+    // it the same as pending_payment and skip the intermediate state.
     const existingPending = await prisma.commissionLedger.findMany({
-      where: { dealId: deal.id, status: "pending" },
+      where: { dealId: deal.id, status: { in: ["pending_payment", "pending", "projected"] } },
     });
 
     let result;
@@ -104,7 +110,7 @@ export async function POST(
         });
 
         await tx.commissionLedger.updateMany({
-          where: { dealId: deal.id, status: "pending" },
+          where: { dealId: deal.id, status: { in: ["pending_payment", "pending", "projected"] } },
           data: { status: "due" },
         });
 
@@ -328,10 +334,11 @@ export async function DELETE(
     const dueRows = ledgerRows.filter((r) => r.status === "due");
 
     const result = await prisma.$transaction(async (tx) => {
-      // Revert ledger: due → pending. Any row already "pending" stays.
+      // Revert ledger: due → pending_payment (post-lifecycle-refactor the
+      // "not yet paid" state is pending_payment, not legacy "pending").
       const reverted = await tx.commissionLedger.updateMany({
         where: { dealId: deal.id, status: "due" },
-        data: { status: "pending" },
+        data: { status: "pending_payment" },
       });
 
       // Revert Deal status fields + clear the payment-received stamp.
@@ -341,13 +348,13 @@ export async function DELETE(
           paymentReceivedAt: null,
           paymentReceivedBy: null,
           l1CommissionStatus: dueRows.some((r) => r.tier === "l1")
-            ? "pending"
+            ? "pending_payment"
             : deal.l1CommissionStatus,
           l2CommissionStatus: dueRows.some((r) => r.tier === "l2")
-            ? "pending"
+            ? "pending_payment"
             : deal.l2CommissionStatus,
           l3CommissionStatus: dueRows.some((r) => r.tier === "l3")
-            ? "pending"
+            ? "pending_payment"
             : deal.l3CommissionStatus,
         },
       });

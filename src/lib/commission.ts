@@ -4,6 +4,36 @@ export function calcFirmFee(refund: number, rate = DEFAULT_FIRM_FEE_RATE): numbe
   return refund * rate;
 }
 
+/**
+ * Map a deal's stage + payment state to the canonical commission status.
+ *
+ *   Pre-client-engaged stages    → null   (no ledger row yet)
+ *   client_engaged / in_process  → "projected"
+ *   closed_won + no payment      → "pending_payment"
+ *   closed_won + paymentReceived → "due"
+ *   closed_lost                  → "lost"
+ *
+ * Callers use `null` to mean "don't create / delete any row for this deal
+ * in this lifecycle phase". Callers writing a row should upsert with the
+ * returned value; callers updating an existing row should flip to it.
+ *
+ * Status names align with COMMISSION_STATUSES in src/lib/constants.ts.
+ * The legacy "pending" value is never returned by this function — new
+ * writes use "pending_payment" — but the payouts + UI layers still
+ * display "pending" rows correctly as a transitional back-compat until
+ * a data backfill renames them in the DB.
+ */
+export function resolveCommissionStatus(
+  stage: string | null | undefined,
+  paymentReceivedAt: Date | null | undefined,
+): "projected" | "pending_payment" | "due" | "lost" | null {
+  if (!stage) return null;
+  if (stage === "closedlost") return "lost";
+  if (stage === "closedwon") return paymentReceivedAt ? "due" : "pending_payment";
+  if (stage === "client_engaged" || stage === "in_process") return "projected";
+  return null; // pre-engagement stages — no commission row
+}
+
 // ─── Feature flag: sliding-window vs legacy waterfall ─────────────────────
 // Flip via env var WATERFALL_SLIDING_WINDOW=true to switch every
 // commission-computation call site to the Option B sliding-window model.
