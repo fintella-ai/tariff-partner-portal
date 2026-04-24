@@ -52,6 +52,7 @@ function compressImage(file: File, maxDim: number, quality: number): Promise<str
 // Any item present there but missing here is rendered on the partner
 // sidebar but is NOT reorderable / hide-able from the admin editor.
 const ALL_NAV_ITEMS = [
+  { id: "notifications", label: "Notifications", icon: "🔔" },
   { id: "home", label: "Home", icon: "🏠" },
   { id: "getting-started", label: "Getting Started", icon: "⭐" },
   { id: "overview", label: "Overview", icon: "📊" },
