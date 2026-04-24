@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { fmtDate, fmtPhone, normalizePhone } from "@/lib/format";
 import LevelTag from "@/components/ui/LevelTag";
+import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
 
 type Partner = {
   id: string;
@@ -17,6 +18,7 @@ type Partner = {
   mobilePhone: string | null;
   status: string;
   tier: string;
+  commissionRate?: number; // Prisma returns it, consumed by tree view
   referredByPartnerCode: string | null;
   notes: string | null;
   signupDate: string;
@@ -109,7 +111,11 @@ export default function AdminPartnersPage() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<TabType>("all");
-  const [levelFilter, setLevelFilter] = useState<"all" | "l1" | "l2" | "l3">("all");
+  const [levelFilter, setLevelFilter] = useState<"all" | "l1" | "l2" | "l3" | "l4plus">("all");
+  // View toggle: classic list/table vs. an org-chart tree forest rooted
+  // at each L1. Tree ignores the current level filter + level chips —
+  // only the tab (active/pending/etc.) and search shape the dataset.
+  const [viewMode, setViewMode] = useState<"list" | "tree">("list");
   const [showForm, setShowForm] = useState(false);
 
   // Add partner form
@@ -424,10 +430,31 @@ export default function AdminPartnersPage() {
   // Lets admins see the approval queue without scanning.
   const needsReview = (p: Partner) => p.agreementStatus === "under_review" || p.w9Status === "under_review";
 
+  // Depth helper mirroring the one used by the L4+ chip — lets the
+  // filteredPartners list use the same level-matching logic as the
+  // chip counts. Shared map keyed by partnerCode for O(depth) lookup.
+  const partnersByCode: Record<string, Partner> = {};
+  for (const p of partners) partnersByCode[p.partnerCode] = p;
+  const partnerDepth = (p: Partner): number => {
+    let d = 0;
+    let cur: Partner | undefined = p;
+    for (let i = 0; i < 10 && cur?.referredByPartnerCode; i++) {
+      const parent: Partner | undefined = partnersByCode[cur.referredByPartnerCode];
+      if (!parent) break;
+      cur = parent;
+      d++;
+    }
+    return d;
+  };
+
   const filteredPartners = (activeTab === "all" || activeTab === "invited"
     ? partners
     : partners.filter((p) => p.status === activeTab)
-  ).filter((p) => levelFilter === "all" ? true : (p.tier || "l1") === levelFilter)
+  ).filter((p) => {
+    if (levelFilter === "all") return true;
+    if (levelFilter === "l4plus") return partnerDepth(p) >= 3;
+    return (p.tier || "l1") === levelFilter;
+  })
    .slice().sort((a, b) => {
     // Priority bump: any row needing review jumps to the top.
     const aReview = needsReview(a) ? 0 : 1;
@@ -729,13 +756,35 @@ export default function AdminPartnersPage() {
         const byStatus = activeTab === "all"
           ? partners
           : partners.filter((p) => p.status === activeTab);
-        const countByLevel = (k: "l1" | "l2" | "l3") =>
-          byStatus.filter((p) => (p.tier || "l1") === k).length;
-        const chips: { key: "all" | "l1" | "l2" | "l3"; label: string; count: number }[] = [
+
+        // Depth-from-root for the L4+ bucket. Walk each partner up the
+        // referredByPartnerCode chain via a code→partner map. A chain of
+        // N hops = depth N. Cap at 10 to guard against accidental cycles.
+        const byCode: Record<string, Partner> = {};
+        for (const p of byStatus) byCode[p.partnerCode] = p;
+        const depthOf = (p: Partner): number => {
+          let d = 0;
+          let cur: Partner | undefined = p;
+          for (let i = 0; i < 10 && cur?.referredByPartnerCode; i++) {
+            const parent: Partner | undefined = byCode[cur.referredByPartnerCode];
+            if (!parent) break;
+            cur = parent;
+            d++;
+          }
+          return d;
+        };
+        const matchesLevel = (p: Partner, k: "l1" | "l2" | "l3" | "l4plus"): boolean => {
+          if (k === "l4plus") return depthOf(p) >= 3;
+          return (p.tier || "l1") === k;
+        };
+        const countByLevel = (k: "l1" | "l2" | "l3" | "l4plus") =>
+          byStatus.filter((p) => matchesLevel(p, k)).length;
+        const chips: { key: "all" | "l1" | "l2" | "l3" | "l4plus"; label: string; count: number }[] = [
           { key: "all", label: "All levels", count: byStatus.length },
           { key: "l1", label: "L1", count: countByLevel("l1") },
           { key: "l2", label: "L2", count: countByLevel("l2") },
           { key: "l3", label: "L3", count: countByLevel("l3") },
+          { key: "l4plus", label: "L4+", count: countByLevel("l4plus") },
         ];
         // Tier-matched accent colors for the L1/L2/L3 chips — gold / silver /
         // bronze, same palette as LevelTag. The "All levels" chip stays neutral.
@@ -755,6 +804,13 @@ export default function AdminPartnersPage() {
           l3: {
             on: "bg-[rgba(184,115,51,0.22)] text-[#d99a6c] border border-[rgba(184,115,51,0.55)]",
             off: "border border-[rgba(184,115,51,0.3)] text-[#c9895c] hover:bg-[rgba(184,115,51,0.1)]",
+          },
+          // L4+ uses a neutral slate tone so it reads as "depth overflow"
+          // rather than a new tier color — these are still L3 or deeper
+          // partners by stored tier, just past the three-ladder.
+          l4plus: {
+            on: "bg-[rgba(100,116,139,0.22)] text-[#94a3b8] border border-[rgba(100,116,139,0.55)]",
+            off: "border border-[rgba(100,116,139,0.3)] text-[#64748b] hover:bg-[rgba(100,116,139,0.1)]",
           },
         };
         return (
@@ -777,6 +833,39 @@ export default function AdminPartnersPage() {
           </div>
         );
       })()}
+
+      {/* View toggle — list (classic table) vs tree (org-chart forest rooted
+          at each L1). Tree view ignores the level filter + bulk actions
+          but still respects the active tab + search. */}
+      {activeTab !== "invited" && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="font-body text-[11px] text-[var(--app-text-muted)]">View:</span>
+          <div className="inline-flex rounded-lg border border-[var(--app-border)] overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`font-body text-[11px] px-3 py-1.5 transition-colors ${
+                viewMode === "list"
+                  ? "bg-brand-gold/20 text-brand-gold"
+                  : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
+              }`}
+            >
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("tree")}
+              className={`font-body text-[11px] px-3 py-1.5 transition-colors border-l border-[var(--app-border)] ${
+                viewMode === "tree"
+                  ? "bg-brand-gold/20 text-brand-gold"
+                  : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
+              }`}
+            >
+              Tree
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="mb-4">
@@ -1022,7 +1111,65 @@ export default function AdminPartnersPage() {
             </div>
           )}
 
-          {/* Partners — Desktop Table */}
+          {/* Tree view — org-chart forest rooted at each L1. Extends the
+              existing DownlineTree component from the partner side for
+              arbitrary depth; Option B has no hard cap on chain depth.
+              Ignores the level filter since the whole point is to see
+              the full structure. Uses filteredPartners AFTER tab / search
+              filters so admins can narrow to e.g. "pending partners"
+              and still see them anchored in their chain. */}
+          {viewMode === "tree" && (() => {
+            const poolByCode: Record<string, Partner> = {};
+            for (const p of partners) poolByCode[p.partnerCode] = p;
+            const visibleCodes = new Set(filteredPartners.map((p) => p.partnerCode));
+
+            // Build the tree shape by walking down from each L1 root.
+            // L2/L3/L4+ partners render under their respective L1 parent.
+            const toNode = (p: Partner): TreePartner => {
+              const children = partners
+                .filter((c) => c.referredByPartnerCode === p.partnerCode)
+                .sort((a, b) => (a.lastName || "").localeCompare(b.lastName || ""))
+                .map(toNode);
+              return {
+                id: p.id,
+                partnerCode: p.partnerCode,
+                firstName: p.firstName || "",
+                lastName: p.lastName || "",
+                status: p.status,
+                commissionRate: p.commissionRate,
+                children,
+              };
+            };
+
+            const roots = partners
+              .filter((p) => (p.tier || "l1") === "l1" && !p.referredByPartnerCode)
+              .sort((a, b) => (a.lastName || "").localeCompare(b.lastName || ""))
+              .map(toNode);
+
+            if (roots.length === 0) {
+              return (
+                <div className="card p-12 text-center font-body text-[13px] text-[var(--app-text-muted)]">
+                  No L1 partners to show in the tree.
+                </div>
+              );
+            }
+
+            return (
+              <div className="space-y-8">
+                <div className="font-body text-[11px] text-[var(--app-text-muted)]">
+                  {roots.length} L1 chain{roots.length === 1 ? "" : "s"} · {visibleCodes.size} matching partner{visibleCodes.size === 1 ? "" : "s"} highlighted by current filters
+                </div>
+                {roots.map((root) => (
+                  <div key={root.id} className="card p-4 sm:p-5 overflow-x-auto">
+                    <DownlineTree root={root} />
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* Partners — Desktop Table + Mobile Cards (list view) */}
+          {viewMode === "list" && (<>
           <div className="card hidden sm:block overflow-x-auto">
             <div className="grid gap-3 px-5 py-3 border-b border-[var(--app-border)]" style={{ gridTemplateColumns: partnerGridCols }}>
               {(canBulkAct ? ([
@@ -1194,6 +1341,7 @@ export default function AdminPartnersPage() {
               <div className="text-center py-10 font-body text-[13px] text-[var(--app-text-muted)]">No partners found.</div>
             )}
           </div>
+          </>)}
         </>
       )}
     </div>
