@@ -29,6 +29,8 @@ export const TRIGGER_KEYS = [
   "sms.received",
   "sms.opt_in",
   "sms.opt_out",
+  "email.sent",
+  "email.failed",
 ] as const;
 
 export type TriggerKey = (typeof TRIGGER_KEYS)[number];
@@ -50,6 +52,8 @@ export const TRIGGER_LABELS: Record<TriggerKey, string> = {
   "sms.received":               "SMS Received (Inbound)",
   "sms.opt_in":                 "Partner Opted Into SMS",
   "sms.opt_out":                "Partner Replied STOP",
+  "email.sent":                 "Email Sent (outbound)",
+  "email.failed":               "Email Failed / Skipped",
 };
 
 // ─── Action types ─────────────────────────────────────────────────────────────
@@ -90,6 +94,8 @@ export const TRIGGER_DESCRIPTIONS: Record<TriggerKey, string> = {
   "sms.received":               "Fires when a partner texts our Twilio number (inbound SMS that isn't a STOP/START keyword).",
   "sms.opt_in":                 "Fires when a partner replies START (or taps the opt-in link) and Partner.smsOptIn flips true.",
   "sms.opt_out":                "Fires when a partner replies STOP and their smsOptIn flag flips false.",
+  "email.sent":                 "Fires after any outbound email is accepted by SendGrid (status=sent). Does NOT fire for demo-mode or failed sends. Use to chain follow-ups (e.g. notify admin when the welcome email reaches a new partner).",
+  "email.failed":               "Fires when an outbound email either errors out or is skipped by the demo gate. Payload includes the error reason — handy for admin notifications when transactional mail can't leave.",
 };
 
 export const ACTION_DESCRIPTIONS: Record<ActionType, string> = {
@@ -239,6 +245,19 @@ export const TRIGGER_VARIABLES: Record<TriggerKey, TriggerVariable[]> = {
     { token: "{sms.partnerCode}",  description: "Partner who texted us (looked up by phone)", example: "PTNJD8K3F" },
     { token: "{sms.fromPhone}",    description: "Sender phone in E.164",              example: "+14105551234" },
     { token: "{sms.body}",         description: "Inbound message body",               example: "When do I get paid?" },
+  ],
+  "email.sent": [
+    { token: "{template}",        description: "Template key (or literal string) of the email that was sent", example: "welcome" },
+    { token: "{to}",              description: "Recipient email address",                                      example: "jane@firm.com" },
+    { token: "{partnerCode}",     description: "Partner code if the send attributed to a partner (may be empty)", example: "PTNJD8K3F" },
+    { token: "{messageId}",       description: "SendGrid X-Message-Id header (tracking + dedup)",              example: "x-msg-abc123" },
+  ],
+  "email.failed": [
+    { token: "{template}",        description: "Template key of the email that failed",                        example: "welcome" },
+    { token: "{to}",              description: "Intended recipient email address",                             example: "jane@firm.com" },
+    { token: "{partnerCode}",     description: "Partner code if the send attributed to a partner",             example: "PTNJD8K3F" },
+    { token: "{reason}",          description: "Short reason string (\"demo-mode\", error message, etc.)",     example: "demo-mode" },
+    { token: "{statusCode}",      description: "SendGrid HTTP status code (0 for demo/network)",               example: "0" },
   ],
   "sms.opt_in": [
     { token: "{partner.partnerCode}", description: "Partner who opted in",            example: "PTNJD8K3F" },
@@ -433,16 +452,59 @@ async function executeAction(
         const bodyText = renderVars(tpl.bodyText, vars);
         const bodyHtml = renderVars(tpl.bodyHtml, vars);
 
-        const toEmail = String(config.recipientEmail || "");
-        if (!toEmail) throw new Error("email.send: recipientEmail is required");
+        // Resolve recipient — three modes:
+        //   1. explicit config.recipientEmail  → use as-is (legacy)
+        //   2. recipientType: "partner" + partnerCode|"deal_partner" →
+        //      look up Partner.email in DB
+        //   3. recipientType: "admin" + recipientId (email) → use that email
+        //
+        // The partner-lookup path mirrors sms.send so admins can template
+        // emails against an event (e.g. partner.created) without having to
+        // hand-wire {partner.email} into the action config every time.
+        let toEmail = String(config.recipientEmail || "");
+        let resolvedPartnerCode: string | null = null;
+        const recipientType = String(config.recipientType || "").toLowerCase();
+
+        if (!toEmail && recipientType === "partner") {
+          let partnerCode = String(config.partnerCode || "");
+          if (!partnerCode || partnerCode === "deal_partner") {
+            const deal = payload.deal as Record<string, unknown> | undefined;
+            const partner = payload.partner as Record<string, unknown> | undefined;
+            partnerCode = String(deal?.partnerCode || partner?.partnerCode || "");
+          }
+          if (!partnerCode) throw new Error("email.send: partnerCode could not be resolved");
+          const partner = await prisma.partner.findUnique({
+            where: { partnerCode },
+            select: { partnerCode: true, email: true, firstName: true, lastName: true },
+          });
+          if (!partner?.email) throw new Error(`email.send: partner ${partnerCode} has no email on file`);
+          toEmail = partner.email;
+          resolvedPartnerCode = partner.partnerCode;
+          // Expose short-name partner fields so {firstName} etc. work even
+          // if the trigger payload doesn't include the full partner object.
+          vars.firstName = partner.firstName || "";
+          vars.lastName = partner.lastName || "";
+          vars.partnerCode = partner.partnerCode;
+        } else if (!toEmail && recipientType === "admin") {
+          toEmail = String(config.recipientId || "");
+          if (!toEmail) throw new Error("email.send: recipientId is required when recipientType=\"admin\"");
+        }
+
+        if (!toEmail) throw new Error("email.send: recipientEmail is required (or set recipientType)");
+
+        // Re-render now that vars may have picked up the resolved partner.
+        const finalSubject = renderVars(tpl.subject, vars);
+        const finalText = renderVars(tpl.bodyText, vars);
+        const finalHtml = renderVars(tpl.bodyHtml, vars);
 
         const { sendEmail } = await import("@/lib/sendgrid");
         await sendEmail({
           to: toEmail,
-          subject,
-          html: bodyHtml,
-          text: bodyText,
+          subject: finalSubject,
+          html: finalHtml,
+          text: finalText,
           template: templateKey,
+          partnerCode: resolvedPartnerCode,
           fromEmail: tpl.fromEmail || undefined,
           fromName: tpl.fromName || undefined,
           replyTo: tpl.replyTo || undefined,

@@ -98,6 +98,16 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       providerMessageId: null,
       errorMessage: null,
     });
+    // email.failed trigger — "demo-mode" skips still count as a non-send
+    // so automations can react to "no real email actually went out"
+    // during local/preview testing.
+    fireEmailTrigger("email.failed", {
+      template: input.template || null,
+      to: input.to,
+      partnerCode: input.partnerCode ?? null,
+      reason: "demo-mode",
+      statusCode: 0,
+    });
     return { status: "demo", messageId: null };
   }
 
@@ -147,6 +157,13 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         errorMessage: err,
       });
       console.error("[SendGrid]", err);
+      fireEmailTrigger("email.failed", {
+        template: input.template || null,
+        to: input.to,
+        partnerCode: input.partnerCode ?? null,
+        reason: err,
+        statusCode: res.status,
+      });
       return { status: "failed", messageId: null, error: err };
     }
 
@@ -163,6 +180,12 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       providerMessageId: messageId,
       errorMessage: null,
     });
+    fireEmailTrigger("email.sent", {
+      template: input.template || null,
+      to: input.to,
+      partnerCode: input.partnerCode ?? null,
+      messageId: messageId || null,
+    });
     return { status: "sent", messageId };
   } catch (err: any) {
     const message = err?.message || String(err);
@@ -178,8 +201,28 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       errorMessage: message,
     });
     console.error("[SendGrid] send threw:", message);
+    fireEmailTrigger("email.failed", {
+      template: input.template || null,
+      to: input.to,
+      partnerCode: input.partnerCode ?? null,
+      reason: message,
+      statusCode: 0,
+    });
     return { status: "failed", messageId: null, error: message };
   }
+}
+
+/**
+ * Fire-and-forget workflow trigger for email lifecycle events. Dynamic
+ * import keeps this file from taking a compile-time dependency on the
+ * workflow engine (which imports prisma and would circularly pull this
+ * file back in during test builds). Swallow any failure — a broken
+ * trigger must NEVER block the email pipeline.
+ */
+function fireEmailTrigger(triggerKey: string, payload: Record<string, unknown>): void {
+  import("@/lib/workflow-engine")
+    .then(({ fireWorkflowTrigger }) => fireWorkflowTrigger(triggerKey as any, payload))
+    .catch((e) => console.error("[SendGrid] fireEmailTrigger dispatch failed:", e));
 }
 
 // ─── EmailLog persistence (best-effort, never throws) ────────────────────────
