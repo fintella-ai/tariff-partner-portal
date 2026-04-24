@@ -9,6 +9,7 @@ import { markGettingStartedVideoWatched } from "@/lib/markGettingStarted";
 import GlossaryText from "@/components/ui/GlossaryText";
 import EditableText from "@/components/ui/EditableText";
 import EditableSection from "@/components/ui/EditableSection";
+import { useEditLayout } from "@/components/admin/EditLayoutContext";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DEMO DATA
@@ -117,6 +118,7 @@ function rankBadgeCls(rank: number) {
 
 export default function HomePage() {
   const device = useDevice();
+  const { getSection } = useEditLayout();
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
@@ -246,10 +248,42 @@ export default function HomePage() {
     liveWeekly: "Live Weekly Call",
     getting_started: "Getting Started",
   };
+  // Phase C — compute the effective render order by sorting the admin's
+  // homeModuleOrder with any star-admin-saved `order` overrides layered on
+  // top. Sections with a saved order win; unsaved sections keep their
+  // default index as the tiebreaker so the list stays stable during an
+  // in-progress reorder.
+  const effectiveOrderFor = (id: string, defaultIdx: number): number => {
+    const override = getSection(`home.${id}`);
+    return typeof override?.order === "number" ? override.order : defaultIdx;
+  };
+  const orderedModuleIds = [...moduleOrder]
+    .map((id, idx) => ({ id, order: effectiveOrderFor(id, idx), defaultIdx: idx }))
+    .sort((a, b) => a.order - b.order || a.defaultIdx - b.defaultIdx);
+  // Position lookup so each EditableSection can announce its prev/next
+  // neighbor's id + effective order for swap-based reordering.
+  const sortedIds = orderedModuleIds.map((r) => r.id);
+  const orderById: Record<string, number> = {};
+  for (const row of orderedModuleIds) orderById[row.id] = row.order;
   const sectionWrap = (id: string, children: React.ReactNode, defaults: ModuleLayout = {}) => {
     const { alignment } = getLayout(id, defaults);
+    const pos = sortedIds.indexOf(id);
+    const prevDefaultId = pos > 0 ? sortedIds[pos - 1] : null;
+    const nextDefaultId = pos >= 0 && pos < sortedIds.length - 1 ? sortedIds[pos + 1] : null;
+    const prev = prevDefaultId
+      ? { id: `home.${prevDefaultId}`, effectiveOrder: orderById[prevDefaultId] }
+      : null;
+    const next = nextDefaultId
+      ? { id: `home.${nextDefaultId}`, effectiveOrder: orderById[nextDefaultId] }
+      : null;
     return (
-      <EditableSection id={`home.${id}`} title={SECTION_TITLES[id] || id}>
+      <EditableSection
+        id={`home.${id}`}
+        title={SECTION_TITLES[id] || id}
+        effectiveOrder={orderById[id]}
+        prev={prev}
+        next={next}
+      >
         <div className={`mb-6 sm:mb-8 animate-fade-up ${alignWrap(alignment)}`}>
           {children}
         </div>

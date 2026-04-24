@@ -29,11 +29,24 @@
 import { useState, type ReactNode } from "react";
 import { useEditLayout } from "@/components/admin/EditLayoutContext";
 
+type ReorderNeighbor = {
+  id: string;
+  effectiveOrder: number;
+};
+
 type Props = {
   id: string;
   title?: string;
   className?: string;
   children: ReactNode;
+  /** Phase C — effective order of this section (default index OR saved
+   * order). Needed so move-up / move-down swaps assign the correct int. */
+  effectiveOrder?: number;
+  /** Phase C — the neighbor above in render order, or null if this is
+   * already first. When null, the ↑ arrow hides. */
+  prev?: ReorderNeighbor | null;
+  /** Phase C — the neighbor below, or null if last. When null, ↓ hides. */
+  next?: ReorderNeighbor | null;
 };
 
 export default function EditableSection({
@@ -41,6 +54,9 @@ export default function EditableSection({
   title,
   className,
   children,
+  effectiveOrder,
+  prev,
+  next,
 }: Props) {
   const { canEdit, editMode, getSection, saveSection } = useEditLayout();
   const section = getSection(id);
@@ -60,6 +76,20 @@ export default function EditableSection({
     }
   };
 
+  const swapWith = async (neighbor: ReorderNeighbor | null | undefined) => {
+    if (!neighbor || effectiveOrder === undefined) return;
+    setBusy(true);
+    try {
+      // Two sequential saves — the second overwrites the first in state.
+      // Ordering matters: write the neighbor first so its row reflects
+      // *our* previous position even if we crash between the two.
+      await saveSection(neighbor.id, { order: effectiveOrder });
+      await saveSection(id, { order: neighbor.effectiveOrder });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!isEditing) {
     // Display mode — render naked so there's zero layout impact.
     return <>{children}</>;
@@ -74,6 +104,38 @@ export default function EditableSection({
         <span className="rounded-full bg-black/80 text-brand-gold text-[10px] font-body tracking-[1px] uppercase px-2 py-0.5 border border-brand-gold/40">
           {title || id}
         </span>
+        {prev !== undefined && (
+          <button
+            type="button"
+            onClick={() => swapWith(prev)}
+            disabled={busy || !prev}
+            aria-label="Move section up"
+            title="Move up"
+            className={`w-7 h-7 rounded-full border transition-colors shadow-md flex items-center justify-center text-sm leading-none ${
+              prev
+                ? "bg-black/80 text-brand-gold border-brand-gold/40 hover:bg-black"
+                : "bg-black/40 text-brand-gold/30 border-brand-gold/10 cursor-not-allowed"
+            } ${busy ? "opacity-60" : ""}`}
+          >
+            ↑
+          </button>
+        )}
+        {next !== undefined && (
+          <button
+            type="button"
+            onClick={() => swapWith(next)}
+            disabled={busy || !next}
+            aria-label="Move section down"
+            title="Move down"
+            className={`w-7 h-7 rounded-full border transition-colors shadow-md flex items-center justify-center text-sm leading-none ${
+              next
+                ? "bg-black/80 text-brand-gold border-brand-gold/40 hover:bg-black"
+                : "bg-black/40 text-brand-gold/30 border-brand-gold/10 cursor-not-allowed"
+            } ${busy ? "opacity-60" : ""}`}
+          >
+            ↓
+          </button>
+        )}
         <button
           type="button"
           onClick={toggleHidden}
