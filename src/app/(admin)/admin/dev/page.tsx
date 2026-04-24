@@ -620,6 +620,74 @@ function CleanupTab() {
 
       {/* ── Orphaned admin-chat threads ─────────────────────────────── */}
       <OrphanedChatSection />
+
+      {/* ── Demo ConferenceSchedule rows (cs-week-*) ─────────────────── */}
+      <DemoConferenceCleanupSection />
+    </div>
+  );
+}
+
+// ── Demo ConferenceSchedule rows ──
+// The seed script used to upsert `cs-week-*` rows on every build. That seed
+// is now gated on FINTELLA_LIVE_MODE and skipped on prod, but existing rows
+// from before the flip persist in the DB and show up for partners under
+// Past Recordings. Super admin clicks here once to purge them.
+function DemoConferenceCleanupSection() {
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<{ deleted: number } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const run = async () => {
+    const ok = confirm(
+      'This will DELETE all ConferenceSchedule rows whose id starts with "cs-week-". These are demo-seeded entries from before live mode was enabled.\n\nPartners will no longer see them under Past Recordings. Continue?'
+    );
+    if (!ok) return;
+    setRunning(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/admin/dev/cleanup-demo-conference", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      setResult({ deleted: data.deleted ?? 0 });
+    } catch (e: any) {
+      setErr(e?.message ?? "Failed");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <div className="card p-4 sm:p-5 mt-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div className="font-display text-[15px] font-bold mb-0.5">
+            Demo Conference Rows
+          </div>
+          <div className="font-body text-[12px] text-[var(--app-text-muted)]">
+            Purge <code>cs-week-*</code> seeded ConferenceSchedule rows.
+            Idempotent — safe to click multiple times.
+          </div>
+        </div>
+        <button
+          onClick={run}
+          disabled={running}
+          className="btn-gold font-body text-sm px-4 py-2 rounded-lg disabled:opacity-50 whitespace-nowrap"
+        >
+          {running ? "Running…" : "Purge demo rows"}
+        </button>
+      </div>
+      {result && (
+        <div className="mt-3 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg px-3 py-2 font-body text-[12px]">
+          Deleted {result.deleted} row{result.deleted === 1 ? "" : "s"}.
+        </div>
+      )}
+      {err && (
+        <div className="mt-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg px-3 py-2 font-body text-[12px]">
+          {err}
+        </div>
+      )}
     </div>
   );
 }
