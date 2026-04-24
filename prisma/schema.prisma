@@ -305,15 +305,19 @@ model TrainingResource {
   title       String
   description String?
   fileUrl     String
-  fileType    String   // "pdf", "checklist", "template", "guide"
+  fileType    String   // "pdf", "checklist", "template", "guide", "audio", "video"
   fileSize    String?  // "1.2 MB"
   sortOrder   Int      @default(0)
   published   Boolean  @default(true)
   // PartnerOS AI Phase 2b — PDF text extracted on upload via pdf-parse.
   // Populated for fileType === "pdf"; stays null for other types.
-  // Included in Tara's cached knowledge blob (see src/lib/ai-knowledge.ts).
   extractedText String?
   extractedAt   DateTime?
+  // PartnerOS AI Phase 2c — Whisper transcription for fileType === "audio".
+  // Stays null when OPENAI_API_KEY unset (demo-gated). Video transcription
+  // requires ffmpeg audio extraction which is deferred to 2c.1.
+  audioTranscript String?
+  transcribedAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

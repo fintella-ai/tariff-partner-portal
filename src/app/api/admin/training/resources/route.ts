@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { bumpKnowledgeVersion } from "@/lib/ai-knowledge-version";
 import { extractPdfTextFromUrl } from "@/lib/pdf-extraction";
+import { transcribeAudioFromUrl } from "@/lib/transcription";
 
 /**
  * GET /api/admin/training/resources
@@ -73,16 +74,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // For PDFs: extract text at upload time so Tara can cite it. We run
-    // extraction first (non-fatal on failure) then write the row with the
-    // extracted text in one atomic create.
+    // For PDFs / audio: extract text or transcribe at upload time so Tara
+    // can cite the content. Both helpers are non-fatal on failure; we
+    // write the row with whatever we got (possibly null) in one atomic
+    // create. Demo-gate preserved for audio when OPENAI_API_KEY is unset.
     let extractedText: string | null = null;
     let extractedAt: Date | null = null;
+    let audioTranscript: string | null = null;
+    let transcribedAt: Date | null = null;
     if (fileType === "pdf") {
       const result = await extractPdfTextFromUrl(fileUrl);
       if (result.text) {
         extractedText = result.text;
         extractedAt = new Date();
+      }
+    } else if (fileType === "audio") {
+      const result = await transcribeAudioFromUrl(fileUrl, { fileType });
+      if (result.text) {
+        audioTranscript = result.text;
+        transcribedAt = new Date();
       }
     }
 
@@ -99,6 +109,8 @@ export async function POST(req: NextRequest) {
         published,
         extractedText,
         extractedAt,
+        audioTranscript,
+        transcribedAt,
       },
     });
 

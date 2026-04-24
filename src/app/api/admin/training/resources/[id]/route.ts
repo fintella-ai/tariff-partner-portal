@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { bumpKnowledgeVersion } from "@/lib/ai-knowledge-version";
 import { extractPdfTextFromUrl } from "@/lib/pdf-extraction";
+import { transcribeAudioFromUrl } from "@/lib/transcription";
 
 /**
  * PUT /api/admin/training/resources/[id]
@@ -48,24 +49,37 @@ export async function PUT(
       }
     }
 
-    // If fileUrl changed on a PDF resource, re-extract the text so Tara's
-    // knowledge reflects the new file. Runs BEFORE the update so the row
-    // can be written in one atomic operation.
-    if (
-      (updateData.fileUrl || updateData.fileType) &&
-      updateData.fileType === "pdf"
-    ) {
-      const url = (updateData.fileUrl as string) || "";
-      if (url) {
-        const result = await extractPdfTextFromUrl(url);
-        if (result.text) {
-          updateData.extractedText = result.text;
-          updateData.extractedAt = new Date();
-        } else {
-          // Empty result — clear any stale text from previous extraction
-          updateData.extractedText = null;
-          updateData.extractedAt = null;
-        }
+    // Re-run extraction/transcription if fileUrl or fileType changed.
+    // Runs BEFORE the update so the row writes atomically.
+    const urlChanged = updateData.fileUrl !== undefined;
+    const typeChanged = updateData.fileType !== undefined;
+    if (urlChanged || typeChanged) {
+      // Pull the row to learn the combined post-update fileUrl + fileType
+      const existing = await prisma.trainingResource.findUnique({
+        where: { id },
+        select: { fileUrl: true, fileType: true },
+      });
+      const finalUrl = (updateData.fileUrl as string | undefined) ?? existing?.fileUrl ?? "";
+      const finalType = (updateData.fileType as string | undefined) ?? existing?.fileType ?? "";
+      if (finalType === "pdf" && finalUrl) {
+        const result = await extractPdfTextFromUrl(finalUrl);
+        updateData.extractedText = result.text || null;
+        updateData.extractedAt = result.text ? new Date() : null;
+        // clear any stale audio transcript from a prior fileType
+        updateData.audioTranscript = null;
+        updateData.transcribedAt = null;
+      } else if (finalType === "audio" && finalUrl) {
+        const result = await transcribeAudioFromUrl(finalUrl, { fileType: "audio" });
+        updateData.audioTranscript = result.text || null;
+        updateData.transcribedAt = result.text ? new Date() : null;
+        updateData.extractedText = null;
+        updateData.extractedAt = null;
+      } else {
+        // non-extractable type — clear both
+        updateData.extractedText = null;
+        updateData.extractedAt = null;
+        updateData.audioTranscript = null;
+        updateData.transcribedAt = null;
       }
     }
 
