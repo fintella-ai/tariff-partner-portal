@@ -22,6 +22,9 @@ export default function EmailTemplatesTabImpl() {
   const router = useRouter();
 
   const [templates, setTemplates] = useState<Template[]>([]);
+  // Per-template workflow usage — populated by /api/admin/email-templates
+  // alongside the templates list. Keyed by template.key.
+  const [templateUsage, setTemplateUsage] = useState<Record<string, { total: number; enabled: number; workflows: Array<{ id: string; name: string; enabled: boolean }> }>>({});
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [templatesError, setTemplatesError] = useState<string | null>(null);
 
@@ -54,6 +57,7 @@ export default function EmailTemplatesTabImpl() {
       }
       const data = await res.json();
       setTemplates(data.templates || []);
+      setTemplateUsage(data.usage || {});
     } catch (err: any) {
       setTemplatesError(err?.message || "Failed to load templates");
     } finally {
@@ -385,8 +389,21 @@ export default function EmailTemplatesTabImpl() {
                       </span>
                     )}
                   </div>
-                  <div className="font-mono text-[10px] text-[var(--app-text-faint)] mt-0.5">
-                    key: {t.key}
+                  <div className="font-mono text-[10px] text-[var(--app-text-faint)] mt-0.5 flex items-center gap-2 flex-wrap">
+                    <span>key: {t.key}</span>
+                    {templateUsage[t.key] && (
+                      <span
+                        className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full font-semibold tracking-wider uppercase ${
+                          templateUsage[t.key].enabled > 0
+                            ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                            : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]"
+                        }`}
+                        title={templateUsage[t.key].workflows.map((w) => `${w.enabled ? "✓" : "○"} ${w.name}`).join("\n")}
+                      >
+                        Used by {templateUsage[t.key].total} workflow{templateUsage[t.key].total === 1 ? "" : "s"}
+                        {templateUsage[t.key].enabled > 0 && ` · ${templateUsage[t.key].enabled} active`}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <span

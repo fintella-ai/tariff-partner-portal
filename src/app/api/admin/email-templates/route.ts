@@ -18,10 +18,34 @@ export async function GET() {
   }
 
   try {
-    const templates = await prisma.emailTemplate.findMany({
-      orderBy: [{ isDraft: "asc" }, { category: "asc" }, { name: "asc" }],
-    });
-    return NextResponse.json({ templates });
+    // Fetch templates + workflows in parallel so the Templates tab can show
+    // a "Used by N workflow(s)" badge for each template without a second
+    // round-trip. Prisma can't filter JSON at the DB layer portably, so we
+    // load all workflows (typically <50 rows) and match in JS.
+    const [templates, workflows] = await Promise.all([
+      prisma.emailTemplate.findMany({
+        orderBy: [{ isDraft: "asc" }, { category: "asc" }, { name: "asc" }],
+      }),
+      prisma.workflow.findMany({
+        select: { id: true, name: true, enabled: true, actions: true },
+      }),
+    ]);
+
+    const usage: Record<string, { total: number; enabled: number; workflows: Array<{ id: string; name: string; enabled: boolean }> }> = {};
+    for (const wf of workflows) {
+      const actions = Array.isArray(wf.actions) ? wf.actions : [];
+      for (const a of actions as Array<{ type?: string; config?: { template?: string } }>) {
+        if (a?.type === "email.send" && typeof a.config?.template === "string") {
+          const key = a.config.template;
+          if (!usage[key]) usage[key] = { total: 0, enabled: 0, workflows: [] };
+          usage[key].total += 1;
+          if (wf.enabled) usage[key].enabled += 1;
+          usage[key].workflows.push({ id: wf.id, name: wf.name, enabled: wf.enabled });
+        }
+      }
+    }
+
+    return NextResponse.json({ templates, usage });
   } catch (e) {
     console.error("[email-templates GET] error:", e);
     return NextResponse.json(

@@ -762,6 +762,124 @@ async function main() {
   }
   console.log("✓ " + smsTemplates.length + " SMS templates seeded (all disabled pending A2P)");
 
+  // ── Default email-migration workflows (disabled) ───────────────────────
+  //
+  // PR C of the email-templates → workflow-actions migration seeds these
+  // with `enabled: false` so they're inert by default. Admins can flip any
+  // one on to take over from the hardcoded sendgrid helpers for that event.
+  // When a workflow is enabled, admins should also disable the matching
+  // EmailTemplate row (or the seeded email will DOUBLE-SEND — once from
+  // the hardcoded helper, once from the workflow action).
+  //
+  // Stable IDs keep upsert idempotent. Using `update: {}` preserves any
+  // admin edits to the workflow's name/config after first deploy.
+  const defaultEmailWorkflows = [
+    {
+      id: "default-email-welcome",
+      name: "Default — Welcome email to new partner",
+      description: "Fires after partner.created. Sends the welcome EmailTemplate to the new partner. Enable to take over from the hardcoded sendWelcomeEmail path.",
+      enabled: false,
+      trigger: "partner.created",
+      triggerConfig: null,
+      conditions: null,
+      actions: [
+        {
+          type: "email.send",
+          config: {
+            template: "welcome",
+            recipientType: "partner",
+            partnerCode: "deal_partner",
+          },
+        },
+      ],
+    },
+    {
+      id: "default-email-agreement-ready",
+      name: "Default — Agreement ready email",
+      description: "Fires after partner.agreement_sent. Sends the agreement_ready EmailTemplate with {signingUrl} to the partner.",
+      enabled: false,
+      trigger: "partner.agreement_sent",
+      triggerConfig: null,
+      conditions: null,
+      actions: [
+        {
+          type: "email.send",
+          config: {
+            template: "agreement_ready",
+            recipientType: "partner",
+            partnerCode: "deal_partner",
+          },
+        },
+      ],
+    },
+    {
+      id: "default-email-agreement-signed",
+      name: "Default — Agreement signed (welcome-aboard) email",
+      description: "Fires after partner.activated (SignWell document_completed webhook). Sends the agreement_signed EmailTemplate.",
+      enabled: false,
+      trigger: "partner.activated",
+      triggerConfig: null,
+      conditions: null,
+      actions: [
+        {
+          type: "email.send",
+          config: {
+            template: "agreement_signed",
+            recipientType: "partner",
+            partnerCode: "deal_partner",
+          },
+        },
+      ],
+    },
+    {
+      id: "default-email-deal-status-update",
+      name: "Default — Deal status update email",
+      description: "Fires on deal.stage_changed. Sends the deal_status_update EmailTemplate to the submitting partner.",
+      enabled: false,
+      trigger: "deal.stage_changed",
+      triggerConfig: null,
+      conditions: null,
+      actions: [
+        {
+          type: "email.send",
+          config: {
+            template: "deal_status_update",
+            recipientType: "partner",
+            partnerCode: "deal_partner",
+          },
+        },
+      ],
+    },
+    {
+      id: "default-email-commission-paid",
+      name: "Default — Commission paid email",
+      description: "Fires on commission.paid during payout batch processing. Sends the commission_payment_notification EmailTemplate.",
+      enabled: false,
+      trigger: "commission.paid",
+      triggerConfig: null,
+      conditions: null,
+      actions: [
+        {
+          type: "email.send",
+          config: {
+            template: "commission_payment_notification",
+            recipientType: "partner",
+            partnerCode: "deal_partner",
+          },
+        },
+      ],
+    },
+  ];
+
+  for (const w of defaultEmailWorkflows) {
+    await prisma.workflow.upsert({
+      where: { id: w.id },
+      update: {}, // preserve admin edits after first seed
+      create: w,
+    });
+  }
+  console.log("✓ " + defaultEmailWorkflows.length + " default email workflows seeded (all DISABLED — admin enables to opt in)");
+
   // ── Portal Settings ───────────────────────────────────────────────────
   await prisma.portalSettings.upsert({
     where: { id: "global" },
