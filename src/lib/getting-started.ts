@@ -18,16 +18,18 @@ import { prisma } from "@/lib/prisma";
 export type StepStatus = "done" | "ready" | "locked";
 
 export interface ChecklistStep {
-  id: StepId;
+  id: string;
   title: string;
   description: string;
   ctaLabel: string;
   ctaUrl: string;
+  icon?: string | null;       // emoji or /icons/xxx.svg path; null = renderer uses a generic marker
+  isCustom?: boolean;          // true for admin-authored steps (beyond the 9 built-ins)
   status: StepStatus;
   done: boolean;
 }
 
-export type StepId =
+export type BuiltInStepId =
   | "sign_agreement"
   | "complete_profile"
   | "add_payout"
@@ -37,6 +39,33 @@ export type StepId =
   | "share_link"
   | "submit_client"
   | "invite_downline";
+
+/** @deprecated retained for backward-compat; use `string` or BuiltInStepId. */
+export type StepId = BuiltInStepId;
+
+/** Shape of an entry in `PortalSettings.gettingStartedStepOverrides`. All fields
+ *  optional. When `hidden=true`, the step is filtered out entirely. */
+export interface StepOverride {
+  title?: string;
+  description?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  icon?: string;
+  hidden?: boolean;
+  order?: number;
+}
+
+/** Shape of an entry in `PortalSettings.gettingStartedCustomSteps`. */
+export interface CustomStep {
+  id: string;            // "custom_<slug>"
+  title: string;
+  description: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  icon?: string;
+  doneWhen?: "never" | "manual";
+  order?: number;
+}
 
 export interface OnboardingState {
   dismissed?: boolean;
@@ -142,7 +171,14 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     prisma.deal.count({ where: { partnerCode } }),
     prisma.partner.count({ where: { referredByPartnerCode: partnerCode } }),
     prisma.recruitmentInvite.count({ where: { inviterCode: partnerCode } }),
-    prisma.portalSettings.findUnique({ where: { id: "global" }, select: { gettingStartedExpectations: true, gettingStartedStepOverrides: true } }),
+    prisma.portalSettings.findUnique({
+      where: { id: "global" },
+      select: {
+        gettingStartedExpectations: true,
+        gettingStartedStepOverrides: true,
+        gettingStartedCustomSteps: true,
+      },
+    }),
   ]);
 
   const agreementSigned =
@@ -172,13 +208,14 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
   const locked = !agreementSigned;
   const agreementCtaUrl = agreement?.embeddedSigningUrl || "/dashboard/deals";
 
-  const steps: ChecklistStep[] = [
+  const builtInSteps: ChecklistStep[] = [
     {
       id: "sign_agreement",
       title: "Sign your Partnership Agreement",
       description: "Your partnership goes live the moment both signatures are on the document.",
       ctaLabel: agreementSigned ? "Signed" : "Sign now",
       ctaUrl: agreementCtaUrl,
+      icon: "📝",
       status: agreementSigned ? "done" : "ready",
       done: agreementSigned,
     },
@@ -188,6 +225,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
       description: "Add your address so we can generate accurate tax forms and ship any rewards.",
       ctaLabel: profileComplete ? "Complete" : "Finish profile",
       ctaUrl: "/dashboard/settings?tab=address",
+      icon: "👤",
       status: profileComplete ? "done" : locked ? "locked" : "ready",
       done: profileComplete,
     },
@@ -197,6 +235,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
       description: "Bank, ACH, check, or PayPal. We can't pay you until this is set.",
       ctaLabel: payoutComplete ? "Complete" : "Add payout info",
       ctaUrl: "/dashboard/settings?tab=payout",
+      icon: "💸",
       status: payoutComplete ? "done" : locked ? "locked" : "ready",
       done: payoutComplete,
     },
@@ -206,6 +245,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
       description: "A two-minute tour of the portal and how referrals flow through Fintella.",
       ctaLabel: videoWatched ? "Watched" : "Watch now",
       ctaUrl: "/dashboard/home",
+      icon: "🎬",
       status: videoWatched ? "done" : locked ? "locked" : "ready",
       done: videoWatched,
     },
@@ -215,6 +255,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
       description: "This is where you actually learn the product. Join one this week.",
       ctaLabel: callJoined ? "Joined" : "Join this week",
       ctaUrl: "/dashboard/conference",
+      icon: "📹",
       status: callJoined ? "done" : locked ? "locked" : "ready",
       done: callJoined,
     },
@@ -224,6 +265,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
       description: "Pick any module in Partner Training to build your referral playbook.",
       ctaLabel: trainingDone ? "Complete" : "Start training",
       ctaUrl: "/dashboard/training",
+      icon: "📖",
       status: trainingDone ? "done" : locked ? "locked" : "ready",
       done: trainingDone,
     },
@@ -233,6 +275,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
       description: "Your unique link tracks every client you send our way.",
       ctaLabel: linkShared ? "Shared" : "Copy your link",
       ctaUrl: "/dashboard/referral-links",
+      icon: "🔗",
       status: linkShared ? "done" : locked ? "locked" : "ready",
       done: linkShared,
     },
@@ -242,6 +285,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
       description: "Use the Submit Client form whenever you're ready to send a warm lead over.",
       ctaLabel: hasDeal ? "Submitted" : "Submit a client",
       ctaUrl: "/dashboard/submit-client",
+      icon: "✉️",
       status: hasDeal ? "done" : locked ? "locked" : "ready",
       done: hasDeal,
     },
@@ -251,32 +295,85 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
       description: "Earn override commissions on every deal your recruits close.",
       ctaLabel: hasDownline ? "Invited" : "Invite a partner",
       ctaUrl: "/dashboard/referral-links",
+      icon: "👥",
       status: hasDownline ? "done" : locked ? "locked" : "ready",
       done: hasDownline,
     },
   ];
 
-  // Apply admin overrides from PortalSettings.gettingStartedStepOverrides.
-  // Shape: { [stepId]: { title?: string; description?: string } }. Only
-  // title + description are overridable — CTA labels, URLs, and status are
-  // tied to computed state and stay hardcoded.
+  // Admin-authored custom steps. Each carries its own full content + CTA +
+  // icon; status is either always "ready" (doneWhen=never) or flipped
+  // manually by the admin via the partner detail page (doneWhen=manual —
+  // marker persisted on Partner.onboardingState under a custom key).
+  const customStepDefs: CustomStep[] = Array.isArray(settings?.gettingStartedCustomSteps)
+    ? ((settings!.gettingStartedCustomSteps as unknown) as CustomStep[])
+    : [];
+  const customSteps: ChecklistStep[] = customStepDefs
+    .filter((c) => c && typeof c.id === "string" && c.id.startsWith("custom_"))
+    .map((c) => {
+      const manualKey = `custom_done_${c.id}`;
+      const manuallyDone =
+        c.doneWhen === "manual" && !!(state as Record<string, unknown>)[manualKey];
+      return {
+        id: c.id,
+        title: c.title || "(custom step)",
+        description: c.description || "",
+        ctaLabel: c.ctaLabel || "Open",
+        ctaUrl: c.ctaUrl || "/dashboard",
+        icon: c.icon || "⭐",
+        isCustom: true,
+        status: manuallyDone ? ("done" as const) : locked ? ("locked" as const) : ("ready" as const),
+        done: manuallyDone,
+      };
+    });
+
+  // Merge built-ins + custom, apply overrides, filter hidden, sort by
+  // explicit `order` (ties broken by built-in declaration order).
   const overrides = (settings?.gettingStartedStepOverrides ?? null) as Record<
     string,
-    { title?: string; description?: string } | undefined
+    StepOverride | undefined
   > | null;
+
+  const merged: ChecklistStep[] = [...builtInSteps, ...customSteps];
+  const explicitOrder = new Map<string, number>();
+  merged.forEach((s, i) => explicitOrder.set(s.id, i)); // declaration order default
+
   if (overrides) {
-    for (const step of steps) {
+    for (const step of merged) {
       const o = overrides[step.id];
       if (!o) continue;
       if (typeof o.title === "string" && o.title.trim()) step.title = o.title;
       if (typeof o.description === "string" && o.description.trim())
         step.description = o.description;
+      // CTA overrides only take effect for built-ins that don't have
+      // computed-state-tied CTAs — but we're permissive: admin knows what
+      // they're doing. The built-in status logic stays authoritative;
+      // only the label + url strings swap.
+      if (typeof o.ctaLabel === "string" && o.ctaLabel.trim())
+        step.ctaLabel = o.ctaLabel;
+      if (typeof o.ctaUrl === "string" && o.ctaUrl.trim())
+        step.ctaUrl = o.ctaUrl;
+      if (typeof o.icon === "string" && o.icon.trim())
+        step.icon = o.icon;
+      if (typeof o.order === "number" && Number.isFinite(o.order))
+        explicitOrder.set(step.id, o.order);
     }
   }
 
-  const completedCount = steps.filter((s) => s.done).length;
-  const totalCount = steps.length;
-  const progressPercent = Math.round((completedCount / totalCount) * 100);
+  const visibleSteps = merged.filter((s) => {
+    const o = overrides?.[s.id];
+    return !(o && o.hidden === true);
+  });
+  visibleSteps.sort((a, b) => {
+    const ao = explicitOrder.get(a.id) ?? 999;
+    const bo = explicitOrder.get(b.id) ?? 999;
+    return ao - bo;
+  });
+
+  const completedCount = visibleSteps.filter((s) => s.done).length;
+  const totalCount = visibleSteps.length;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const steps = visibleSteps;
 
   return {
     steps,

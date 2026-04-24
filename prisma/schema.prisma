@@ -633,14 +633,41 @@ model PortalSettings {
   // Markdown-rendered. When null, src/lib/getting-started.ts renders the hardcoded
   // default copy so new portals aren't blank on day one.
   gettingStartedExpectations String?
-  // Per-step title + description overrides for the 9-step Getting-Started
-  // checklist. JSON shape: { [stepId]: { title?, description? } } where
-  // stepId is one of: sign_agreement, complete_profile, add_payout,
-  // watch_video, join_call, complete_training, share_link, submit_client,
-  // invite_downline. getting-started.ts merges overrides over hardcoded
-  // defaults; unset fields keep the default. CTA labels + target URLs
-  // stay hardcoded since they're tied to computed state.
+  // Per-step overrides for the built-in Getting-Started checklist.
+  // Expanded 2026-04-24 beyond just title/description — admin can now
+  // override every displayable field + hide the step + set a display
+  // order.
+  // JSON shape: {
+  //   [stepId]: {
+  //     title?: string,
+  //     description?: string,
+  //     ctaLabel?: string,
+  //     ctaUrl?: string,       // ignored for computed-state steps
+  //     icon?: string,          // emoji or /icons/xxx.svg path
+  //     hidden?: boolean,       // filter the step out entirely
+  //     order?: number,         // 0-based display order; ties break by built-in order
+  //   }
+  // }
+  // stepId is one of the built-in ids (sign_agreement, complete_profile,
+  // add_payout, watch_video, join_call, complete_training, share_link,
+  // submit_client, invite_downline) OR a custom id from
+  // gettingStartedCustomSteps below.
   gettingStartedStepOverrides Json?
+  // Fully-custom admin-authored steps rendered alongside the built-ins.
+  // JSON shape: Array<{
+  //   id: string,              // "custom_<slug>"; stable across renames
+  //   title: string,
+  //   description: string,
+  //   ctaLabel: string,
+  //   ctaUrl: string,          // absolute or in-portal path
+  //   icon?: string,            // emoji or /icons/xxx.svg
+  //   doneWhen?: "never" | "manual", // v1: "manual" = admin marks done via partner detail; "never" = always incomplete
+  //   order?: number,
+  // }>
+  // These steps are NEVER auto-computed by real DB signals — if marked
+  // doneWhen="manual", the admin can mark them done on the partner detail
+  // page (PartnerCodeHistory-like side effect).
+  gettingStartedCustomSteps Json?
   // Timestamps
   updatedAt DateTime @updatedAt
 }
