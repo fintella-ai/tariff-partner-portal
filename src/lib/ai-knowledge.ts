@@ -24,12 +24,16 @@ export async function buildProductSpecialistPrompt(): Promise<Anthropic.Messages
       orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
       select: { title: true, category: true, content: true },
     }),
-    // Phase 2b — published PDF resources with extracted text
+    // Phase 2b — published PDF resources with extracted text.
+    // Phase 2c — published audio resources with transcripts.
+    // One query, OR'd on the "has text" side so both types flow in.
     prisma.trainingResource.findMany({
       where: {
         published: true,
-        fileType: "pdf",
-        extractedText: { not: null },
+        OR: [
+          { fileType: "pdf", extractedText: { not: null } },
+          { fileType: "audio", audioTranscript: { not: null } },
+        ],
       },
       orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
       select: {
@@ -37,6 +41,7 @@ export async function buildProductSpecialistPrompt(): Promise<Anthropic.Messages
         category: true,
         fileType: true,
         extractedText: true,
+        audioTranscript: true,
       },
     }),
     prisma.fAQ.findMany({
@@ -66,15 +71,16 @@ export async function buildProductSpecialistPrompt(): Promise<Anthropic.Messages
           .join("\n\n")
       : "(no training modules published)",
     "",
-    "# Resource documents (PDFs)",
+    "# Resource documents (PDFs + audio transcripts)",
     resources.length
       ? resources
-          .map(
-            (r) =>
-              `## ${r.title}${r.category ? ` [${r.category}]` : ""}\n\n${r.extractedText ?? ""}`
-          )
+          .map((r) => {
+            const header = `## ${r.title}${r.category ? ` [${r.category}]` : ""} [${r.fileType}]`;
+            const body = r.fileType === "audio" ? r.audioTranscript : r.extractedText;
+            return `${header}\n\n${body ?? ""}`;
+          })
           .join("\n\n")
-      : "(no PDF resources available)",
+      : "(no resource content available)",
     "",
     "# FAQs",
     faqs.length
