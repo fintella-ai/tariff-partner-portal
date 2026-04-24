@@ -83,6 +83,25 @@ export default function ReferralLinksPage() {
 
   useEffect(() => { loadInvites(); }, [loadInvites]);
 
+  // Delete a single unused invite. Used + expired invites cannot be deleted
+  // (server returns 409 — preserve audit trail). After delete we refresh the
+  // list. Note: auto-generated invites will re-create on next "Recruit L2"
+  // tab open via ensureInvitesExist; this handler is for removing extras
+  // or cleaning up unused demo-era links.
+  const deleteInvite = useCallback(
+    async (invId: string) => {
+      if (!confirm("Delete this unused invite link? This cannot be undone.")) return;
+      const res = await fetch(`/api/invites/${invId}`, { method: "DELETE" });
+      if (res.ok) {
+        await loadInvites();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Failed to delete invite");
+      }
+    },
+    [loadInvites]
+  );
+
   // Auto-generate one invite per rate if none exist for that rate
   const ensureInvitesExist = useCallback(async (rates: number[]) => {
     for (const rate of rates) {
@@ -397,21 +416,30 @@ export default function ReferralLinksPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {inv.status === "active" && (
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(`${baseUrl}/signup?token=${inv.token}`);
-                            setCopiedRate(inv.commissionRate);
-                            setTimeout(() => setCopiedRate(null), 2000);
-                            markGettingStartedLinkShared();
-                          }}
-                          className={`font-body text-[11px] px-3 py-1.5 rounded-lg border transition-colors ${
-                            copiedRate === inv.commissionRate
-                              ? "bg-green-500/15 border-green-500/30 text-green-400"
-                              : "border-brand-gold/20 text-brand-gold/70 hover:bg-brand-gold/10"
-                          }`}
-                        >
-                          {copiedRate === inv.commissionRate ? "Copied!" : "Copy Link"}
-                        </button>
+                        <div className="inline-flex gap-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${baseUrl}/signup?token=${inv.token}`);
+                              setCopiedRate(inv.commissionRate);
+                              setTimeout(() => setCopiedRate(null), 2000);
+                              markGettingStartedLinkShared();
+                            }}
+                            className={`font-body text-[11px] px-3 py-1.5 rounded-lg border transition-colors ${
+                              copiedRate === inv.commissionRate
+                                ? "bg-green-500/15 border-green-500/30 text-green-400"
+                                : "border-brand-gold/20 text-brand-gold/70 hover:bg-brand-gold/10"
+                            }`}
+                          >
+                            {copiedRate === inv.commissionRate ? "Copied!" : "Copy Link"}
+                          </button>
+                          <button
+                            onClick={() => deleteInvite(inv.id)}
+                            title="Delete this unused invite"
+                            className="font-body text-[11px] px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400/70 hover:bg-red-500/10 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -442,20 +470,28 @@ export default function ReferralLinksPage() {
                   {inv.usedByPartnerCode && ` · Used by ${inv.usedByPartnerCode}`}
                 </div>
                 {inv.status === "active" && (
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${baseUrl}/signup?token=${inv.token}`);
-                      setCopiedRate(inv.commissionRate);
-                      setTimeout(() => setCopiedRate(null), 2000);
-                    }}
-                    className={`mt-2 font-body text-[11px] px-3 py-1.5 rounded-lg border transition-colors ${
-                      copiedRate === inv.commissionRate
-                        ? "bg-green-500/15 border-green-500/30 text-green-400"
-                        : "border-brand-gold/20 text-brand-gold/70 hover:bg-brand-gold/10"
-                    }`}
-                  >
-                    {copiedRate === inv.commissionRate ? "Copied!" : "Copy Link"}
-                  </button>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${baseUrl}/signup?token=${inv.token}`);
+                        setCopiedRate(inv.commissionRate);
+                        setTimeout(() => setCopiedRate(null), 2000);
+                      }}
+                      className={`font-body text-[11px] px-3 py-1.5 rounded-lg border transition-colors ${
+                        copiedRate === inv.commissionRate
+                          ? "bg-green-500/15 border-green-500/30 text-green-400"
+                          : "border-brand-gold/20 text-brand-gold/70 hover:bg-brand-gold/10"
+                      }`}
+                    >
+                      {copiedRate === inv.commissionRate ? "Copied!" : "Copy Link"}
+                    </button>
+                    <button
+                      onClick={() => deleteInvite(inv.id)}
+                      className="font-body text-[11px] px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400/70 hover:bg-red-500/10 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 )}
               </div>
             ))}

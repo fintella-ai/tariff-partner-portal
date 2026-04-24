@@ -142,7 +142,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     prisma.deal.count({ where: { partnerCode } }),
     prisma.partner.count({ where: { referredByPartnerCode: partnerCode } }),
     prisma.recruitmentInvite.count({ where: { inviterCode: partnerCode } }),
-    prisma.portalSettings.findUnique({ where: { id: "global" }, select: { gettingStartedExpectations: true } }),
+    prisma.portalSettings.findUnique({ where: { id: "global" }, select: { gettingStartedExpectations: true, gettingStartedStepOverrides: true } }),
   ]);
 
   const agreementSigned =
@@ -255,6 +255,24 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
       done: hasDownline,
     },
   ];
+
+  // Apply admin overrides from PortalSettings.gettingStartedStepOverrides.
+  // Shape: { [stepId]: { title?: string; description?: string } }. Only
+  // title + description are overridable — CTA labels, URLs, and status are
+  // tied to computed state and stay hardcoded.
+  const overrides = (settings?.gettingStartedStepOverrides ?? null) as Record<
+    string,
+    { title?: string; description?: string } | undefined
+  > | null;
+  if (overrides) {
+    for (const step of steps) {
+      const o = overrides[step.id];
+      if (!o) continue;
+      if (typeof o.title === "string" && o.title.trim()) step.title = o.title;
+      if (typeof o.description === "string" && o.description.trim())
+        step.description = o.description;
+    }
+  }
 
   const completedCount = steps.filter((s) => s.done).length;
   const totalCount = steps.length;

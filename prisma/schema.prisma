@@ -627,6 +627,14 @@ model PortalSettings {
   // Markdown-rendered. When null, src/lib/getting-started.ts renders the hardcoded
   // default copy so new portals aren't blank on day one.
   gettingStartedExpectations String?
+  // Per-step title + description overrides for the 9-step Getting-Started
+  // checklist. JSON shape: { [stepId]: { title?, description? } } where
+  // stepId is one of: sign_agreement, complete_profile, add_payout,
+  // watch_video, join_call, complete_training, share_link, submit_client,
+  // invite_downline. getting-started.ts merges overrides over hardcoded
+  // defaults; unset fields keep the default. CTA labels + target URLs
+  // stay hardcoded since they're tied to computed state.
+  gettingStartedStepOverrides Json?
   // Timestamps
   updatedAt DateTime @updatedAt
 }
