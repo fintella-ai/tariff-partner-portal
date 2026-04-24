@@ -9,6 +9,9 @@ import NotificationBell from "@/components/ui/NotificationBell";
 import InstallPrompt from "@/components/ui/InstallPrompt";
 import FintellaAppBanner from "@/components/ui/FintellaAppBanner";
 import { useTheme } from "@/components/layout/ThemeProvider";
+import { EditLayoutProvider } from "@/components/admin/EditLayoutContext";
+import EditLayoutButton from "@/components/admin/EditLayoutButton";
+import EditableText from "@/components/ui/EditableText";
 
 // ─── NAV STRUCTURE ───────────────────────────────────────────────────────────
 // Main nav items (top section of sidebar)
@@ -533,6 +536,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
+    <EditLayoutProvider>
     <div className="flex flex-col min-h-screen">
       {/* ── PWA INSTALL PROMPT ── */}
       {!isSudo && <InstallPrompt />}
@@ -721,9 +725,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                 )}
                 <div className="flex flex-col items-center">
-                  <div className="font-body text-[10px] text-[var(--app-text-muted)] tracking-[1.5px] uppercase">
-                    Welcome back
-                  </div>
+                  <EditableText
+                    id="home.greeting"
+                    fallback="Welcome back"
+                    as="div"
+                    className="font-body text-[10px] text-[var(--app-text-muted)] tracking-[1.5px] uppercase"
+                  />
                   <div className="font-display text-[20px] font-bold text-brand-gold mt-0.5">
                     {user?.name || "Partner"}
                   </div>
@@ -761,9 +768,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="-mx-4 sm:-mx-10 lg:-mx-24 px-4 sm:px-10 lg:px-24 pt-4 pb-5 bg-[var(--app-header-bg)]">
                 <div className="flex flex-col items-center text-center">
                   <div className="flex flex-col items-center">
-                    <div className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1">
-                      Welcome back
-                    </div>
+                    <EditableText
+                      id="home.greeting"
+                      fallback="Welcome back"
+                      as="div"
+                      className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1"
+                    />
                     <h1 className={`font-display ${device.headingSize} font-bold mb-1`}>
                       {user?.name || "Partner"}
                     </h1>
@@ -907,6 +917,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
       </div>
+      {/* Level 3 Edit Layout — floating toggle, star super admin only. */}
+      <EditLayoutButton />
     </div>
+    </EditLayoutProvider>
   );
 }

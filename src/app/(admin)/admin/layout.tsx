@@ -13,6 +13,8 @@ import { getVisibleNav, getPermissions, ROLE_LABELS, type AdminRole } from "@/li
 import { useTheme } from "@/components/layout/ThemeProvider";
 import { reconcileNavOrder } from "@/lib/reconcileNavOrder";
 import { isStarSuperAdminEmail } from "@/lib/starSuperAdmin";
+import { EditLayoutProvider } from "@/components/admin/EditLayoutContext";
+import EditLayoutButton from "@/components/admin/EditLayoutButton";
 
 type NavLeaf = { id: string; href: string; icon: string; label: string };
 type NavGroup = { id: string; icon: string; label: string; children: NavLeaf[] };
@@ -421,6 +423,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   return (
+    <EditLayoutProvider>
     <div className="flex min-h-screen">
       {/* Invisible heartbeat pinger — keeps User.lastHeartbeatAt fresh so
           Ollie knows which admins are online (Phase 3c.4a). */}
@@ -525,6 +528,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           alive across page navigation. Toggle via the floating bubble
           (bottom-right) or window.__fintellaInternalChat.toggle(). */}
       <InternalChatWidget />
+
+      {/* Level 3 Edit Layout — floating toggle, star super admin only. */}
+      <EditLayoutButton />
     </div>
+    </EditLayoutProvider>
   );
 }

@@ -7,6 +7,7 @@ import { fmt$ } from "@/lib/format";
 import { GettingStartedChecklist } from "@/components/partner/GettingStartedChecklist";
 import { markGettingStartedVideoWatched } from "@/lib/markGettingStarted";
 import GlossaryText from "@/components/ui/GlossaryText";
+import EditableText from "@/components/ui/EditableText";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DEMO DATA
@@ -377,7 +378,12 @@ export default function HomePage() {
     const { columns } = getLayout("announcements", { columns: 2, alignment: "left" });
     return sectionWrap("announcements", (
       <>
-        <h2 className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4 text-center">Announcements</h2>
+        <EditableText
+          id="home.announcements.title"
+          fallback="Announcements"
+          as="h2"
+          className="font-body text-xs tracking-[1.5px] uppercase text-[var(--app-text-muted)] mb-4 text-center"
+        />
         <div className={`grid ${colsClass(columns)} gap-3`}>
           {announcements.map((a, idx) => {
             const badge = badgeStyle(a);

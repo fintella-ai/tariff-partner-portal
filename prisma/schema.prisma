@@ -668,6 +668,16 @@ model PortalSettings {
   // doneWhen="manual", the admin can mark them done on the partner detail
   // page (PartnerCodeHistory-like side effect).
   gettingStartedCustomSteps Json?
+  // Level 3 Edit Layout — inline text overrides authored by the star super
+  // admin via <EditableText> primitives scattered across admin + partner
+  // pages. JSON shape:
+  //   { "<page>.<section>.<key>": "override string", ... }
+  // Key is a stable developer-chosen id baked into the JSX. Missing key
+  // → the component's `fallback` prop renders. Empty string or null for
+  // a key → same as missing (reverts to fallback). Additive nullable JSON
+  // means no migration risk. Mutate only through
+  // src/lib/page-text-overrides.ts.
+  pageTextOverrides Json?
   // Timestamps
   updatedAt DateTime @updatedAt
 }
