@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { FIRM_NAME, FIRM_SHORT as DEFAULT_FIRM_SHORT, FIRM_SLOGAN as DEFAULT_FIRM_SLOGAN } from "@/lib/constants";
 import { useDevice } from "@/lib/useDevice";
 import NotificationBell from "@/components/ui/NotificationBell";
@@ -99,6 +99,7 @@ function NavButton({
   collapsed = false,
   customLabel,
   customIcon,
+  badgeCount = 0,
 }: {
   item: { id: string; href: string; icon: string; label: string };
   isActive: boolean;
@@ -106,25 +107,135 @@ function NavButton({
   collapsed?: boolean;
   customLabel?: string;
   customIcon?: string;
+  badgeCount?: number;
 }) {
   const label = customLabel || item.label;
+  const hasBadge = badgeCount > 0;
   return (
     <button
       onClick={onClick}
-      title={collapsed ? label : undefined}
-      className={`flex items-center ${collapsed ? "justify-center" : "gap-3"} w-full text-left ${collapsed ? "px-2" : "px-4"} py-3 rounded-lg font-body text-[13px] transition-all min-h-[44px] ${
+      title={collapsed ? (hasBadge ? `${label} — ${badgeCount} unread` : label) : undefined}
+      className={`relative flex items-center ${collapsed ? "justify-center" : "gap-3"} w-full text-left ${collapsed ? "px-2" : "px-4"} py-3 rounded-lg font-body text-[13px] transition-all min-h-[44px] ${
+        hasBadge ? "animate-pulse" : ""
+      } ${
         isActive
           ? "bg-brand-gold/10 text-[var(--app-gold-text)]"
-          : "theme-text-secondary hover:bg-brand-gold/5"
+          : hasBadge
+            ? "bg-red-500/10 text-[var(--app-text)] ring-1 ring-red-500/30"
+            : "theme-text-secondary hover:bg-brand-gold/5"
       }`}
     >
-      {customIcon ? (
-        <img src={customIcon} alt="" className="w-5 h-5 object-contain" />
-      ) : (
-        <span className="text-base leading-none">{item.icon}</span>
+      <span className="relative inline-flex">
+        {customIcon ? (
+          <img src={customIcon} alt="" className="w-5 h-5 object-contain" />
+        ) : (
+          <span className="text-base leading-none">{item.icon}</span>
+        )}
+        {hasBadge && collapsed && (
+          <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 leading-none">
+            {badgeCount > 99 ? "99+" : badgeCount}
+          </span>
+        )}
+      </span>
+      {!collapsed && (
+        <span className="flex items-center gap-2 flex-1">
+          <span>{label}</span>
+          {hasBadge && (
+            <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1.5 leading-none">
+              {badgeCount > 99 ? "99+" : badgeCount}
+            </span>
+          )}
+        </span>
       )}
-      {!collapsed && <span>{label}</span>}
     </button>
+  );
+}
+
+/** Consolidated header "bar menu" dropdown — replaces the top Submit Client /
+ *  Referral Links / Support / Bell row. ☰ trigger pulses and shows an unread
+ *  count when the partner has unread notifications; the Notifications menu
+ *  item carries the same indicator so tapping through is obvious. */
+function HeaderMenuDropdown({
+  unreadCount,
+  navigate,
+  isActive,
+  align = "center",
+}: {
+  unreadCount: number;
+  navigate: (href: string) => void;
+  isActive: (href: string) => boolean;
+  align?: "center" | "end";
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const items: Array<{ label: string; href: string; icon: string; showBadge?: boolean }> = [
+    { label: "Submit Client", href: "/dashboard/submit-client", icon: "✅" },
+    { label: "Referral Links", href: "/dashboard/referral-links", icon: "👥" },
+    { label: "Notifications", href: "/dashboard/notifications", icon: "🔔", showBadge: true },
+    { label: "Support", href: "/dashboard/support", icon: "📩" },
+  ];
+
+  const hasUnread = unreadCount > 0;
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label={hasUnread ? `Menu — ${unreadCount} unread notifications` : "Menu"}
+        className={`relative font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2.5 transition-all flex items-center justify-center gap-2 min-h-[44px] ${
+          hasUnread
+            ? "border-red-500/60 bg-red-500/10 text-red-400 animate-pulse shadow-[0_0_14px_rgba(239,68,68,0.35)]"
+            : "border-brand-gold/30 bg-brand-gold/[0.06] text-brand-gold hover:bg-brand-gold/10"
+        }`}
+      >
+        <span className="text-base leading-none">☰</span>
+        <span>Menu</span>
+        {hasUnread && (
+          <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div
+          className={`absolute ${align === "end" ? "right-0" : "left-1/2 -translate-x-1/2"} top-full mt-2 w-[220px] bg-[var(--app-popover-bg)] border border-[var(--app-border)] rounded-xl shadow-2xl shadow-black/30 z-[1000] overflow-hidden`}
+        >
+          {items.map((it) => {
+            const active = isActive(it.href);
+            const itemBadge = it.showBadge && hasUnread;
+            return (
+              <button
+                key={it.href}
+                onClick={() => { setOpen(false); navigate(it.href); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 font-body text-[13px] text-left transition-colors border-b border-[var(--app-border)] last:border-b-0 ${
+                  active
+                    ? "bg-brand-gold/10 text-[var(--app-gold-text)]"
+                    : "text-[var(--app-text-secondary)] hover:bg-brand-gold/5"
+                } ${itemBadge ? "animate-pulse" : ""}`}
+              >
+                <span className="text-base leading-none">{it.icon}</span>
+                <span className="flex-1">{it.label}</span>
+                {itemBadge && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1.5 leading-none">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -144,6 +255,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [isSudo, setIsSudo] = useState(false);
+  // Shared unread-notification count — drives the hamburger menu blink +
+  // count badge in the header AND the sidebar Notifications row. Polls
+  // `/api/notifications` on the same 30s cadence as the bell so the two
+  // indicators stay in sync without a cross-component subscription.
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadNotifications = useCallback(() => {
+    fetch("/api/notifications", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => setUnreadCount(data.unreadCount || 0))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadNotifications();
+    const interval = setInterval(fetchUnreadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadNotifications]);
 
   // Check for admin impersonation flag
   useEffect(() => {
@@ -331,6 +460,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             collapsed={isCollapsed}
             customLabel={navLabels[`partner.${item.id}`]}
             customIcon={navIcons[`partner.${item.id}`] || BUILT_IN_PARTNER_ICONS[item.id]}
+            badgeCount={item.id === "notifications" ? unreadCount : 0}
           />
         ))}
       </div>
@@ -576,86 +706,88 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <>
               {/* Safe area spacer for iPhone notch/Dynamic Island */}
               <div style={{ paddingTop: "env(safe-area-inset-top, 12px)" }} />
-              {/* Logo section — black background, full-bleed dividers */}
+              {/* Unified black header strip — logo + centered "Welcome back /
+                  Name / Code · Active · Date". Replaces the previous three-band
+                  (logo / 4-button row / dark welcome band) stack so the page
+                  content (e.g. the "Partner Training" heading) sits snug under
+                  the header with a single hamburger menu bar between. */}
               <div className="-mx-4 border-b border-[var(--app-border)]" />
-              <div className="flex justify-center py-8 -mx-4 px-4 bg-black">
+              <div className="flex flex-col items-center gap-3 py-6 -mx-4 px-4 bg-black text-center">
                 {logoUrl ? (
-                  <img src={logoUrl} alt={firmShort} className="max-h-36 object-contain" />
+                  <img src={logoUrl} alt={firmShort} className="max-h-32 object-contain" />
                 ) : (
                   <div className="font-display text-[22px] font-bold text-brand-gold tracking-[2px]">
                     {firmShort}
                   </div>
                 )}
+                <div className="flex flex-col items-center">
+                  <div className="font-body text-[10px] text-[var(--app-text-muted)] tracking-[1.5px] uppercase">
+                    Welcome back
+                  </div>
+                  <div className="font-display text-[20px] font-bold text-brand-gold mt-0.5">
+                    {user?.name || "Partner"}
+                  </div>
+                  <div className="flex gap-2 items-center flex-wrap justify-center mt-1.5">
+                    <span className="font-body text-[10px] text-[var(--app-text-muted)] tracking-[1px]">
+                      Code: <strong className="text-brand-gold">{partnerCode}</strong>
+                    </span>
+                    <span className="font-body text-[9px] bg-green-500/10 text-green-400 border border-green-500/20 rounded-full px-2 py-0.5">
+                      Active
+                    </span>
+                  </div>
+                  <p className="font-body text-[11px] text-[var(--app-text-muted)] mt-1.5">
+                    {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                  </p>
+                </div>
               </div>
               <div className="-mx-4 border-b border-[var(--app-border)] mb-3" />
-              {/* Submit Client + Referral Links + Support + Bell */}
-              <div className="flex items-center justify-center gap-2 mb-3">
-                  <button
-                    onClick={() => navigate("/dashboard/submit-client")}
-                    className={`font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all flex items-center justify-center gap-1 min-h-[44px] ${
-                      isActive("/dashboard/submit-client")
-                        ? "bg-brand-gold/15 border-brand-gold/40 text-brand-gold"
-                        : "bg-brand-gold/[0.06] border-brand-gold/20 text-brand-gold hover:bg-brand-gold/10"
-                    }`}
-                  >
-                    ✅ Submit Client
-                  </button>
-                  <button
-                    onClick={() => navigate("/dashboard/referral-links")}
-                    className={`font-body text-[11px] font-semibold tracking-wider border rounded-lg px-3 py-2.5 transition-all flex items-center justify-center gap-1 min-h-[44px] ${
-                      isActive("/dashboard/referral-links")
-                        ? "bg-purple-500/15 border-purple-500/40 text-purple-400"
-                        : "bg-purple-500/[0.06] border-purple-500/20 text-purple-400 hover:bg-purple-500/10"
-                    }`}
-                  >
-                    👥 Referral Links
-                  </button>
-                  <a
-                    href="/dashboard/support"
-                    className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
-                    title="Support"
-                  >
-                    📩
-                  </a>
-                  <NotificationBell />
+              {/* Bar-menu dropdown — consolidates Submit Client, Referral
+                  Links, Notifications, Support. Pulses + shows an unread
+                  count when notifications are waiting. */}
+              <div className="flex items-center justify-center mb-3">
+                <HeaderMenuDropdown
+                  unreadCount={unreadCount}
+                  navigate={navigate}
+                  isActive={(href) => isActive(href)}
+                />
               </div>
-              <div className="-mx-4 border-b border-[var(--app-border)] mb-3" />
             </>
           )}
 
-          {/* Full-bleed dark header strip sits flush against the outer padding
-              so the welcome band reads as a distinct colored row above the divider. */}
-          <div className="-mx-4 sm:-mx-10 lg:-mx-24 px-4 sm:px-10 lg:px-24 pt-4 pb-5 bg-[var(--app-header-bg)]">
-            <div className="flex flex-col items-center text-center">
-              <div className="flex flex-col items-center">
-                <div className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1">
-                  Welcome back
+          {/* Full-bleed dark header strip — desktop/tablet only; on mobile it
+              has been merged into the black logo strip above. */}
+          {!device.isMobile && (
+            <>
+              <div className="-mx-4 sm:-mx-10 lg:-mx-24 px-4 sm:px-10 lg:px-24 pt-4 pb-5 bg-[var(--app-header-bg)]">
+                <div className="flex flex-col items-center text-center">
+                  <div className="flex flex-col items-center">
+                    <div className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1">
+                      Welcome back
+                    </div>
+                    <h1 className={`font-display ${device.headingSize} font-bold mb-1`}>
+                      {user?.name || "Partner"}
+                    </h1>
+                    <div className="flex gap-2 sm:gap-4 items-center flex-wrap justify-center">
+                      <span className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px]">
+                        Code: <strong className="text-brand-gold">{partnerCode}</strong>
+                      </span>
+                      <span className="font-body text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 rounded-full px-2.5 py-0.5">
+                        Active
+                      </span>
+                      <span className="font-body text-[10px] text-[var(--app-text-faint)]">
+                        {device.os !== "unknown" && `${device.os.toUpperCase()}`}
+                        {device.width > 0 && ` · ${device.width}×${device.height}`}
+                      </span>
+                    </div>
+                    <p className="font-body text-[13px] text-[var(--app-text-muted)] mt-2">
+                      {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                    </p>
+                  </div>
                 </div>
-                <h1 className={`font-display ${device.headingSize} font-bold mb-1`}>
-                  {user?.name || "Partner"}
-                </h1>
-                <div className="flex gap-2 sm:gap-4 items-center flex-wrap justify-center">
-                  <span className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px]">
-                    Code: <strong className="text-brand-gold">{partnerCode}</strong>
-                  </span>
-                  <span className="font-body text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 rounded-full px-2.5 py-0.5">
-                    Active
-                  </span>
-                  {!device.isMobile && (
-                    <span className="font-body text-[10px] text-[var(--app-text-faint)]">
-                      {device.os !== "unknown" && `${device.os.toUpperCase()}`}
-                      {device.width > 0 && ` · ${device.width}×${device.height}`}
-                    </span>
-                  )}
-                </div>
-                <p className="font-body text-[13px] text-[var(--app-text-muted)] mt-2">
-                  {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-                </p>
               </div>
-            </div>
-          </div>
-          {/* Full-bleed divider below the dark header strip. */}
-          <div className="-mx-4 sm:-mx-10 lg:-mx-24 border-b border-[var(--app-border)]" />
+              <div className="-mx-4 sm:-mx-10 lg:-mx-24 border-b border-[var(--app-border)]" />
+            </>
+          )}
         </div>
 
         {/* Partner page bodies follow the admin layout's default text
