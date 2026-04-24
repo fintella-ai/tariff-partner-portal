@@ -8,6 +8,7 @@ import Link from "next/link";
 import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
 import LevelTag from "@/components/ui/LevelTag";
+import RelativeLevelTag from "@/components/ui/RelativeLevelTag";
 import { SkeletonTableRow, SkeletonCard } from "@/components/ui/Skeleton";
 import PullToRefresh from "@/components/ui/PullToRefresh";
 import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
@@ -309,7 +310,7 @@ export default function DownlinePage() {
                         <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">
                           {p.firstName} {p.lastName}
                         </div>
-                        <LevelTag tier={p._tier} size="xs" />
+                        <RelativeLevelTag relativeLevel={p._tier === "l2" ? 2 : 3} size="xs" />
                       </div>
                       <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">
                         {p.email}
@@ -378,8 +379,8 @@ export default function DownlinePage() {
                       {p.firstName} {p.lastName}
                     </div>
                   </Link>
-                  {/* Col 2: Level */}
-                  <div><LevelTag tier={p._tier} size="xs" /></div>
+                  {/* Col 2: Level — viewer-relative ("My L2" / "My L3") */}
+                  <div><RelativeLevelTag relativeLevel={p._tier === "l2" ? 2 : 3} size="xs" /></div>
                   {/* Col 3: Email */}
                   <div className="font-body text-[13px] text-[var(--app-text-secondary)] truncate">
                     {p.email}

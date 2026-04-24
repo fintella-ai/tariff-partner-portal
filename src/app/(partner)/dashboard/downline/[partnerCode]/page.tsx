@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import StatusBadge from "@/components/ui/StatusBadge";
-import LevelTag from "@/components/ui/LevelTag";
+import RelativeLevelTag from "@/components/ui/RelativeLevelTag";
 import { fmtDate } from "@/lib/format";
 
 type DownlineDetail = {
@@ -36,6 +36,15 @@ type DownlineDetail = {
     status: string;
     createdAt: string;
   }>;
+  /**
+   * Depth of this partner below the logged-in viewer.
+   *   2 = direct recruit  ("My L2")
+   *   3 = grandchild      ("My L3")
+   * Populated by /api/partner/downline/[partnerCode] during the
+   * authorization walk — the API already has to determine it to decide
+   * whether the caller is allowed to see this row.
+   */
+  relativeDepth?: 2 | 3 | null;
 };
 
 export default function DownlineDetailPage() {
@@ -132,7 +141,7 @@ export default function DownlineDetailPage() {
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="font-display text-xl sm:text-2xl font-bold truncate">{fullName}</h1>
-              <LevelTag tier={p.tier} />
+              <RelativeLevelTag relativeLevel={data.relativeDepth ?? 2} />
             </div>
             <div className="font-body text-[13px] text-[var(--app-text-muted)] truncate">{p.email}</div>
             {p.phone && <div className="font-body text-[12px] text-[var(--app-text-muted)]">{p.phone}</div>}

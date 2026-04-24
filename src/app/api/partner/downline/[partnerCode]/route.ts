@@ -23,13 +23,20 @@ export async function GET(req: NextRequest, { params }: { params: { partnerCode:
   const partner = await prisma.partner.findUnique({ where: { partnerCode: targetCode } });
   if (!partner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
 
+  // Compute depth-from-viewer while we do the authorization walk so the
+  // detail page can render a viewer-relative "My L2 / My L3" chip without
+  // re-walking the chain on the client.
   let authorized = partner.referredByPartnerCode === uploaderCode;
+  let relativeDepth: 2 | 3 | null = authorized ? 2 : null;
   if (!authorized && partner.referredByPartnerCode) {
     const parent = await prisma.partner.findUnique({
       where: { partnerCode: partner.referredByPartnerCode },
       select: { referredByPartnerCode: true },
     });
-    if (parent?.referredByPartnerCode === uploaderCode) authorized = true;
+    if (parent?.referredByPartnerCode === uploaderCode) {
+      authorized = true;
+      relativeDepth = 3;
+    }
   }
   if (!authorized) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -43,5 +50,5 @@ export async function GET(req: NextRequest, { params }: { params: { partnerCode:
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({ partner, agreements, documents });
+  return NextResponse.json({ partner, agreements, documents, relativeDepth });
 }
