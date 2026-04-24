@@ -8,6 +8,7 @@ import { useDevice } from "@/lib/useDevice";
 import NotificationBell from "@/components/ui/NotificationBell";
 import SoftPhone from "@/components/ui/SoftPhone";
 import InternalChatWidget from "@/components/admin/InternalChatWidget";
+import AdminHeartbeatPinger from "@/components/admin/AdminHeartbeatPinger";
 import { getVisibleNav, getPermissions, ROLE_LABELS, type AdminRole } from "@/lib/permissions";
 import { useTheme } from "@/components/layout/ThemeProvider";
 import { reconcileNavOrder } from "@/lib/reconcileNavOrder";
@@ -420,6 +421,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen">
+      {/* Invisible heartbeat pinger — keeps User.lastHeartbeatAt fresh so
+          Ollie knows which admins are online (Phase 3c.4a). */}
+      <AdminHeartbeatPinger />
       {/* ── DESKTOP SIDEBAR ── */}
       {device.isDesktop && (
         <div className={`${collapsed ? "w-[68px]" : "w-60"} theme-sidebar border-r p-4 flex flex-col gap-1 shrink-0 sticky top-0 h-screen overflow-y-auto transition-all duration-200`}>
