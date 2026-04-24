@@ -284,7 +284,7 @@ export default function AdminPartnersPage() {
     if (rate == null) {
       setInviteError(
         inviteRateMode === "custom"
-          ? "Enter a custom rate between 1% and 50%."
+          ? "Enter a custom rate between 1% and 30%."
           : "Commission rate is required."
       );
       return;
@@ -535,7 +535,7 @@ export default function AdminPartnersPage() {
                       className={`${inputClass} flex-1`}
                       type="number"
                       min={1}
-                      max={50}
+                      max={30}
                       step={0.5}
                       value={inviteCustomPct}
                       onChange={(e) => setInviteCustomPct(e.target.value)}
@@ -667,7 +667,7 @@ export default function AdminPartnersPage() {
                   className={`${inputClass} flex-1`}
                   type="number"
                   min={1}
-                  max={50}
+                  max={30}
                   step={0.5}
                   value={formCustomPct}
                   onChange={(e) => setFormCustomPct(e.target.value)}

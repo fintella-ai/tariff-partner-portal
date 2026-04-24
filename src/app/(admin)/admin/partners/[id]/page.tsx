@@ -1139,7 +1139,7 @@ export default function PartnerDetailPage() {
                 <input
                   type="number"
                   min={1}
-                  max={50}
+                  max={30}
                   step={1}
                   value={Math.round(commissionRate * 100)}
                   onChange={(e) => {
@@ -1315,7 +1315,7 @@ export default function PartnerDetailPage() {
                   <input
                     type="number"
                     min={1}
-                    max={50}
+                    max={30}
                     step={0.5}
                     value={sendAgreementCustomPct}
                     onChange={(e) => setSendAgreementCustomPct(e.target.value)}

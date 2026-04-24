@@ -29,8 +29,8 @@ export const DEFAULT_FIRM_FEE_RATE = 0.20;
 // - L2 deal → L2 earns their rate, L1 earns (L1.commissionRate - L2.commissionRate)
 // - L3 deal → L3 earns their rate, L2 earns (L2.commissionRate - L3.commissionRate),
 //             L1 earns (L1.commissionRate - L2.commissionRate)
-export const MAX_COMMISSION_RATE = 0.25;          // firm-wide ceiling on downline (L2/L3) rates. Custom L1 rates may exceed this; downline is still clamped here.
-export const ALLOWED_L1_RATES = [0.10, 0.15, 0.20, 0.25]; // standard L1 bands — admin may also pick a custom rate up to 50%
+export const MAX_COMMISSION_RATE = 0.30;          // firm-wide ceiling on ANY partner rate. Bumped from 0.25 → 0.30 in Option B Phase 2 — custom L1 ceiling is now 30% (down from the old 50% cap on L1 create, up from the old 25% downline cap).
+export const ALLOWED_L1_RATES = [0.10, 0.15, 0.20, 0.25]; // standard L1 bands — admin may also pick a custom rate up to MAX_COMMISSION_RATE (0.30)
 export const RATE_INCREMENT = 0.05;               // all rates are multiples of 5%
 export const MIN_KEEP_FOR_SELF = 0.05;            // min a partner retains when recruiting downline (standard case)
 
