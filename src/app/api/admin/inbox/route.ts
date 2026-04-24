@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const filter = req.nextUrl.searchParams.get("filter") || "all";
+  const inbox = req.nextUrl.searchParams.get("inbox") || "all";
   const limitParam = req.nextUrl.searchParams.get("limit");
   const limit = Math.min(500, parseInt(limitParam || "100", 10) || 100);
 
@@ -27,16 +28,51 @@ export async function GET(req: NextRequest) {
   if (filter === "unread") where.read = false;
   if (filter === "replied") where.replied = true;
 
+  // Per-inbox filter on `toEmail`. Supported values match
+  // FINTELLA_INBOX_ADDRESSES in lib/constants.ts.
+  const INBOX_MAP: Record<string, string> = {
+    noreply: "noreply@fintella.partners",
+    support: "support@fintella.partners",
+    admin: "admin@fintella.partners",
+    legal: "legal@fintella.partners",
+    accounting: "accounting@fintella.partners",
+  };
+  if (inbox !== "all" && INBOX_MAP[inbox]) {
+    where.toEmail = {
+      contains: INBOX_MAP[inbox],
+      mode: "insensitive" as const,
+    };
+  }
+
   const emails = await prisma.inboundEmail.findMany({
     where,
     orderBy: { createdAt: "desc" },
     take: limit,
   });
 
+  // Per-inbox counts so the UI can render unread badges on each filter pill.
+  const inboxCounts = await Promise.all(
+    Object.entries(INBOX_MAP).map(async ([key, address]) => {
+      const [total, unread] = await Promise.all([
+        prisma.inboundEmail.count({
+          where: { toEmail: { contains: address, mode: "insensitive" as const } },
+        }),
+        prisma.inboundEmail.count({
+          where: {
+            toEmail: { contains: address, mode: "insensitive" as const },
+            read: false,
+          },
+        }),
+      ]);
+      return { inbox: key, total, unread };
+    })
+  );
+
   const stats = {
     total: await prisma.inboundEmail.count(),
     unread: await prisma.inboundEmail.count({ where: { read: false } }),
     replied: await prisma.inboundEmail.count({ where: { replied: true } }),
+    byInbox: inboxCounts,
   };
 
   return NextResponse.json({ emails, stats });

@@ -15,6 +15,23 @@ export const ALLOWED_SENDER_EMAILS: ReadonlyArray<string> = [
   "noreply@fintella.partners",
   "support@fintella.partners",
   "admin@fintella.partners",
+  "legal@fintella.partners",
+  "accounting@fintella.partners",
+];
+
+/** All @fintella.partners inbox addresses used for PartnerOS routing, in
+ *  display order. Keep in sync with AdminInbox seed rows + ALLOWED_SENDER_EMAILS
+ *  above. Used by /api/admin/inbox filtering + communications UI. */
+export const FINTELLA_INBOX_ADDRESSES: ReadonlyArray<{
+  role: "noreply" | "support" | "admin" | "legal" | "accounting";
+  email: string;
+  displayName: string;
+}> = [
+  { role: "noreply", email: "noreply@fintella.partners", displayName: "No-Reply" },
+  { role: "support", email: "support@fintella.partners", displayName: "Support" },
+  { role: "admin", email: "admin@fintella.partners", displayName: "Admin" },
+  { role: "legal", email: "legal@fintella.partners", displayName: "Legal" },
+  { role: "accounting", email: "accounting@fintella.partners", displayName: "Accounting" },
 ];
 
 // ─── COMMISSION DEFAULTS ─────────────────────────────────────────────────────

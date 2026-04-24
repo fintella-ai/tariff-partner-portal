@@ -3,10 +3,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { fmtDateTime } from "@/lib/format";
 import { useResizableColumns } from "@/components/ui/ResizableTable";
+import { FINTELLA_INBOX_ADDRESSES } from "@/lib/constants";
 import type { Email } from "./_shared";
 
 const inboxFilters = ["All", "Unread", "Replied"] as const;
 type InboxFilter = (typeof inboxFilters)[number];
+
+// Per-address filter row. "all" shows every inbox; the other keys match the
+// roles in FINTELLA_INBOX_ADDRESSES. Keep in sync with the API's INBOX_MAP
+// in src/app/api/admin/inbox/route.ts.
+type InboxRoleFilter = "all" | "noreply" | "support" | "admin" | "legal" | "accounting";
+
+interface InboxCount {
+  inbox: string;
+  total: number;
+  unread: number;
+}
 
 /**
  * Inbox section of the Communications hub. Owns its own state:
@@ -23,6 +35,8 @@ export default function EmailInboxTabImpl() {
     useResizableColumns([250, 300, 150, 100, 100], { storageKey: "comms-inbox" });
 
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>("All");
+  const [inboxRole, setInboxRole] = useState<InboxRoleFilter>("all");
+  const [inboxCounts, setInboxCounts] = useState<InboxCount[]>([]);
   const [inboxEmails, setInboxEmails] = useState<Email[]>([]);
   const [inboxLoading, setInboxLoading] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
@@ -33,15 +47,20 @@ export default function EmailInboxTabImpl() {
   const loadInbox = useCallback(async () => {
     setInboxLoading(true);
     try {
-      const res = await fetch(`/api/admin/inbox?filter=${inboxFilter.toLowerCase()}`);
+      const res = await fetch(
+        `/api/admin/inbox?filter=${inboxFilter.toLowerCase()}&inbox=${inboxRole}`
+      );
       if (res.ok) {
         const data = await res.json();
         setInboxEmails(data.emails || []);
+        setInboxCounts(
+          Array.isArray(data?.stats?.byInbox) ? data.stats.byInbox : []
+        );
       }
     } catch {} finally {
       setInboxLoading(false);
     }
-  }, [inboxFilter]);
+  }, [inboxFilter, inboxRole]);
 
   useEffect(() => {
     loadInbox();
@@ -96,9 +115,42 @@ export default function EmailInboxTabImpl() {
     return true;
   });
 
+  // Build per-address filter pills from the registry — "All" first, then
+  // one pill per @fintella.partners inbox in the canonical order.
+  const inboxCountByKey: Record<string, InboxCount | undefined> = {};
+  for (const c of inboxCounts) inboxCountByKey[c.inbox] = c;
+  const totalUnread = inboxCounts.reduce((a, c) => a + c.unread, 0);
+  const totalCount = inboxCounts.reduce((a, c) => a + c.total, 0);
+
   return (
     <>
-      {/* Inbox filters */}
+      {/* Per-inbox address filter (to-field) — shows one pill per
+          @fintella.partners role with unread badge. */}
+      <div className="flex gap-2 mb-3 overflow-x-auto">
+        <FilterPill
+          label="All"
+          active={inboxRole === "all"}
+          onClick={() => setInboxRole("all")}
+          unread={totalUnread}
+          total={totalCount}
+        />
+        {FINTELLA_INBOX_ADDRESSES.map((a) => {
+          const c = inboxCountByKey[a.role];
+          return (
+            <FilterPill
+              key={a.role}
+              label={a.displayName}
+              sub={a.email}
+              active={inboxRole === a.role}
+              onClick={() => setInboxRole(a.role)}
+              unread={c?.unread ?? 0}
+              total={c?.total ?? 0}
+            />
+          );
+        })}
+      </div>
+
+      {/* Read-state filter (All / Unread / Replied) */}
       <div className="flex gap-2 mb-6 overflow-x-auto">
         {inboxFilters.map((f) => (
           <button
@@ -362,5 +414,53 @@ export default function EmailInboxTabImpl() {
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * Per-inbox filter pill. Shows the inbox's display name, the address on a
+ * second line (muted), and an unread-count badge on the right when there
+ * are unread rows for that inbox.
+ */
+function FilterPill({
+  label,
+  sub,
+  active,
+  onClick,
+  unread,
+  total,
+}: {
+  label: string;
+  sub?: string;
+  active: boolean;
+  onClick: () => void;
+  unread: number;
+  total: number;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`font-body text-left px-3 py-1.5 rounded-xl whitespace-nowrap transition-colors shrink-0 border ${
+        active
+          ? "bg-brand-gold/15 text-brand-gold border-brand-gold/40"
+          : "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] border-[var(--app-border)] hover:border-brand-gold/30"
+      }`}
+      title={sub}
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-[13px] font-semibold">{label}</span>
+        {unread > 0 && (
+          <span className="inline-block bg-brand-gold text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+            {unread}
+          </span>
+        )}
+        <span className="text-[10px] opacity-60">({total})</span>
+      </div>
+      {sub && (
+        <div className="text-[10px] opacity-60 font-mono leading-tight mt-0.5">
+          {sub}
+        </div>
+      )}
+    </button>
   );
 }
