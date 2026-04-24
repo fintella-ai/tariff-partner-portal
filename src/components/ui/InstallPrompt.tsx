@@ -44,10 +44,16 @@ export default function InstallPrompt() {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain"
       style={{ background: "#000000" }}
     >
-      <div className="w-full max-w-3xl mx-auto px-6 py-10 text-center">
+      {/* Inner flex wrapper so short content still centers on tall viewports
+          while tall content scrolls on short viewports. Without overflow-y-auto
+          on the outer container + min-h-full on the inner, users on smaller
+          screens could never reach the Continue to Portal button at the
+          bottom of the prompt (reported frozen-page bug on /dashboard/home). */}
+      <div className="min-h-full w-full flex items-center justify-center py-10">
+      <div className="w-full max-w-3xl mx-auto px-6 text-center">
         {/* Logo */}
         <div className="mb-8">
           {logoUrl ? (
@@ -216,6 +222,7 @@ export default function InstallPrompt() {
             Continue to Portal &rarr;
           </button>
         </div>
+      </div>
       </div>
     </div>
   );
