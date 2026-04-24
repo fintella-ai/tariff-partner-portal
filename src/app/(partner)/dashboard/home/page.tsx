@@ -8,6 +8,7 @@ import { GettingStartedChecklist } from "@/components/partner/GettingStartedChec
 import { markGettingStartedVideoWatched } from "@/lib/markGettingStarted";
 import GlossaryText from "@/components/ui/GlossaryText";
 import EditableText from "@/components/ui/EditableText";
+import EditableSection from "@/components/ui/EditableSection";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DEMO DATA
@@ -235,12 +236,24 @@ export default function HomePage() {
 
   // ─── Section renderers ─────────────────────────────────────────────
   // Each returns null when the module is hidden or has no content to render.
+  // Human-friendly labels for the edit-mode Hide/Show overlay.
+  const SECTION_TITLES: Record<string, string> = {
+    events: "Upcoming Events",
+    announcements: "Announcements",
+    opportunities: "Referral Opportunities",
+    leaderboard: "Leaderboard",
+    video: "Welcome Video",
+    liveWeekly: "Live Weekly Call",
+    getting_started: "Getting Started",
+  };
   const sectionWrap = (id: string, children: React.ReactNode, defaults: ModuleLayout = {}) => {
     const { alignment } = getLayout(id, defaults);
     return (
-      <div className={`mb-6 sm:mb-8 animate-fade-up ${alignWrap(alignment)}`}>
-        {children}
-      </div>
+      <EditableSection id={`home.${id}`} title={SECTION_TITLES[id] || id}>
+        <div className={`mb-6 sm:mb-8 animate-fade-up ${alignWrap(alignment)}`}>
+          {children}
+        </div>
+      </EditableSection>
     );
   };
 

@@ -678,6 +678,16 @@ model PortalSettings {
   // means no migration risk. Mutate only through
   // src/lib/page-text-overrides.ts.
   pageTextOverrides Json?
+  // Level 3 Edit Layout — Phase B/C section-level overrides keyed by the
+  // <EditableSection id="..."> marker. JSON shape:
+  //   { "<page>.<section>": { hidden?: boolean, order?: number } }
+  // - hidden=true → section renders null in display mode.
+  // - order → integer used by a page to reorder wrapped sections (Phase
+  //   C; Phase B ignores the field).
+  // Null blob, missing key, or empty object for a key all mean "use the
+  // page's default layout." Mutate only through
+  // src/lib/page-section-overrides.ts.
+  pageSectionOverrides Json?
   // Timestamps
   updatedAt DateTime @updatedAt
 }
