@@ -5,6 +5,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import AnnouncementCard from "@/components/ui/AnnouncementCard";
 import CallLinkComposer, { type CallMetaInput } from "@/components/ui/CallLinkComposer";
+import ChannelMemberManager from "@/components/admin/ChannelMemberManager";
 
 type Channel = {
   id: string;
@@ -277,6 +278,8 @@ function Inner() {
 
       {/* Replies panel */}
       <div className="space-y-2">
+        <ChannelMemberManager channelId={channelId} onMembersChanged={loadChannel} />
+
         <div className="text-sm font-medium">💬 Reply threads</div>
         {threads.length === 0 && (
           <div className="text-xs opacity-70">No partner has replied yet.</div>

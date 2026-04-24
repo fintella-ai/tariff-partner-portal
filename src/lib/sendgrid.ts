@@ -851,6 +851,57 @@ This invitation link expires in 7 days.`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Channel-invite email — fired from the /api/admin/channels/[id]/members
+// POST endpoint whenever a new partner is added to an AnnouncementChannel.
+// Template key: partner_added_to_channel. Falls back to the hardcoded copy
+// below if the template row is missing/disabled.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export async function sendChannelInviteEmail(opts: {
+  toEmail: string;
+  toName: string | null;
+  channelName: string;
+  channelUrl: string;
+  partnerCode: string;
+}): Promise<SendEmailResult> {
+  const name = opts.toName || "there";
+  const heading = `You've been added to the "${opts.channelName}" channel`;
+  const bodyHtml = `
+    <p>Hi ${escapeHtml(name)},</p>
+    <p>An admin just added you to the <strong>${escapeHtml(opts.channelName)}</strong> announcement channel on ${escapeHtml(FIRM_SHORT)}.</p>
+    <p>Announcements posted there will now show up in your Announcements tab. You can reply to start a private thread with the admin team on any post.</p>
+    <p style="font-size:12px;color:#888;">Where to go: open the portal → sidebar → <strong>Communications &rarr; Announcements</strong>, or tap the button below.</p>`;
+  const bodyText = `Hi ${name},
+
+An admin just added you to the "${opts.channelName}" announcement channel on ${FIRM_SHORT}.
+
+Announcements posted there will now show up in your Announcements tab. You can reply to start a private thread with the admin team on any post.
+
+Open the channel: ${opts.channelUrl}
+
+Where to go: portal sidebar → Communications → Announcements.`;
+
+  const { html, text } = emailShell({
+    preheader: `You've been added to the "${opts.channelName}" channel.`,
+    heading,
+    bodyHtml,
+    bodyText,
+    ctaLabel: "Open Channel",
+    ctaUrl: opts.channelUrl,
+  });
+
+  return sendEmail({
+    to: opts.toEmail,
+    toName: opts.toName || undefined,
+    subject: `You've been added to the "${opts.channelName}" channel`,
+    html,
+    text,
+    template: "partner_added_to_channel",
+    partnerCode: opts.partnerCode,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Monthly newsletter — fired by Vercel cron on the 1st of each month,
 // iterates every active partner and sends one email each
 // ═══════════════════════════════════════════════════════════════════════════
