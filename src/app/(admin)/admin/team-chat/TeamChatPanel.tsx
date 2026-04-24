@@ -50,8 +50,17 @@ function TeamChatInner({ searchQuery, compact }: { searchQuery: string; compact:
   const [partnerMap, setPartnerMap] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  // Local deal-thread filter used on the standalone /admin/internal-chats
+  // page. The compact (widget) mode keeps reading the parent-provided
+  // `searchQuery` prop.
+  const [dealSearch, setDealSearch] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const esRef = useRef<EventSource | null>(null);
+  // Auto-select the global thread exactly once on initial load. Without
+  // this guard the "back to thread list" button in compact mode would
+  // glitch — setting activeThreadId=null would immediately re-run
+  // loadThreads and snap back into the global room.
+  const didAutoSelect = useRef(false);
 
   // Load partner list once for `[partner:CODE]` token rendering. Best-
   // effort: if the endpoint 403s for the role we just skip and let the
@@ -76,9 +85,10 @@ function TeamChatInner({ searchQuery, compact }: { searchQuery: string; compact:
     if (r.ok) {
       const d = await r.json();
       setThreads(d.threads || []);
-      if (!activeThreadId && d.threads?.length) {
+      if (!activeThreadId && d.threads?.length && !didAutoSelect.current) {
         const globalThread = d.threads.find((t: Thread) => t.type === "global");
         setActiveThreadId(globalThread?.id || d.threads[0].id);
+        didAutoSelect.current = true;
       }
     }
   }, [activeThreadId]);
@@ -178,26 +188,42 @@ function TeamChatInner({ searchQuery, compact }: { searchQuery: string; compact:
             ? (activeThreadId ? "hidden" : "flex")
             : (activeThreadId ? "hidden md:flex" : "flex")
         } w-full ${compact ? "" : "md:w-[280px]"} shrink-0 card flex-col overflow-hidden`}>
+          {/* Inline deal-thread search — non-compact only. The compact
+              widget has its own search input at the widget level. Keeps
+              the thread list lean when the admin has dozens of deal
+              threads: Global Room always renders, deal threads only
+              appear when the query has ≥2 chars. */}
+          {!compact && (
+            <div className="px-3 py-2 border-b border-[var(--app-border)]">
+              <input
+                type="text"
+                value={dealSearch}
+                onChange={(e) => setDealSearch(e.target.value)}
+                placeholder="Search deal threads… (type 2+ chars)"
+                className="w-full rounded-lg px-3 py-1.5 font-body text-[12px] bg-[var(--app-input-bg)] border border-[var(--app-border)] focus:border-brand-gold/40 focus:outline-none"
+              />
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto">
-            {/* When the widget passes a `searchQuery`, filter threads by
-                name (Global / deal name). Minimal client-side filter —
-                no API change needed. */}
             {(() => {
-              const q = (searchQuery || "").trim().toLowerCase();
-              const visible = q
-                ? threads.filter((t) => {
-                    const title = t.type === "global" ? "global room" : (t.dealName || "").toLowerCase();
-                    return title.includes(q);
-                  })
-                : threads;
-              if (q && visible.length === 0) {
-                return (
-                  <div className="px-4 py-6 text-center font-body text-[12px] text-[var(--app-text-muted)]">
-                    No threads match &ldquo;{searchQuery}&rdquo;.
-                  </div>
-                );
-              }
-              return visible.map((t) => (
+              // Compact widget uses parent-provided searchQuery; standalone
+              // page uses local `dealSearch`. Deal threads (non-global) are
+              // hidden until the query has ≥2 chars — prevents the list
+              // from becoming a wall of every deal once volume grows.
+              const q = (compact ? (searchQuery || "") : dealSearch).trim().toLowerCase();
+              const visible = threads.filter((t) => {
+                if (t.type === "global") return true;
+                if (q.length < 2) return false;
+                const title = (t.dealName || "").toLowerCase();
+                return title.includes(q);
+              });
+              const hint = !compact && q.length < 2
+                ? "Type 2+ characters above to search deal threads."
+                : (q.length >= 2 && visible.every((t) => t.type === "global"))
+                  ? `No deal threads match "${q}".`
+                  : null;
+              return (<>
+                {visible.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveThreadId(t.id)}
@@ -215,7 +241,13 @@ function TeamChatInner({ searchQuery, compact }: { searchQuery: string; compact:
                 </div>
                 <div className="font-body text-[10px] text-[var(--app-text-faint)]">{t.messageCount} messages</div>
               </button>
-              ));
+                ))}
+                {hint && (
+                  <div className="px-4 py-6 text-center font-body text-[11px] text-[var(--app-text-muted)] leading-relaxed">
+                    {hint}
+                  </div>
+                )}
+              </>);
             })()}
           </div>
         </div>

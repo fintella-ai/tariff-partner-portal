@@ -118,7 +118,7 @@ export default function PhoneTabImpl() {
                     {c.initiatedByName || c.initiatedByEmail || "—"}
                   </td>
                   <td className="px-4 py-3 text-center font-mono text-[12px]">{fmtDuration(c.durationSeconds)}</td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-4 py-3 text-left">
                     <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${statusBadge}`}>
                       {c.status || "—"}
                     </span>

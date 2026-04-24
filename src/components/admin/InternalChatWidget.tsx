@@ -227,8 +227,14 @@ export default function InternalChatWidget() {
       >
         <span className="text-base" aria-hidden>💬</span>
         <div className="font-body text-[13px] font-semibold flex-1 truncate">Internal Chat</div>
+        {/* Minimize — pointer events stopped so the parent drag header
+            doesn't swallow the click (previously took 2-3 taps because
+            the pointerdown started a drag on the header instead of
+            firing the button click). */}
         <button
-          onClick={() => setOpen(false)}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); setOpen(false); }}
           title="Minimize"
           aria-label="Minimize chat"
           className="w-7 h-7 flex items-center justify-center rounded-md theme-text-muted hover:bg-brand-gold/10 transition-colors"

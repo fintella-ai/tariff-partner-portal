@@ -275,8 +275,12 @@ h2, h3, h4 { font-weight: 600; }
    touch the /docs/* public pages. Tables that explicitly set `text-left`
    or `text-right` on a <th> still win via later selector specificity.
    ──────────────────────────────────────────────────────────────────── */
-table thead th { text-align: center; }
-table thead th:first-child { text-align: left; }
+/* Explicit `text-left` / `text-center` / `text-right` classes win over
+   these defaults — the `:not([class*="text-"])` scope lets per-table
+   overrides stay authoritative (fixes e.g. the "When" column on the
+   Phone tab which explicitly sets `text-center` on the first <th>). */
+table thead th:not([class*="text-"]) { text-align: center; }
+table thead th:first-child:not([class*="text-"]) { text-align: left; }
 
 /* ─────────────────────────────────────────────────────────────────────
    Slight weight reduction (2026-04-25)
