@@ -40,10 +40,10 @@ export async function GET(req: NextRequest) {
       partners = await prisma.partner.findMany({ orderBy: { createdAt: "desc" } });
     }
 
-    // Fetch agreement and W9 status for each partner
+    // Fetch agreement, W9, profile, stripe, deal counts, downline counts in parallel.
     const partnerCodes = partners.map((p: any) => p.partnerCode);
 
-    const [agreements, w9Docs] = await Promise.all([
+    const [agreements, w9Docs, profiles, stripeAccounts, dealCounts, downlineCounts, inviteCounts] = await Promise.all([
       prisma.partnershipAgreement.findMany({
         where: { partnerCode: { in: partnerCodes } },
         orderBy: { version: "desc" },
@@ -56,19 +56,93 @@ export async function GET(req: NextRequest) {
         distinct: ["partnerCode"],
         select: { partnerCode: true, status: true },
       }),
+      prisma.partnerProfile.findMany({
+        where: { partnerCode: { in: partnerCodes } },
+        select: {
+          partnerCode: true, street: true, city: true, state: true, zip: true,
+          payoutMethod: true, bankName: true, accountNumber: true, routingNumber: true, paypalEmail: true,
+        },
+      }),
+      prisma.stripeAccount.findMany({
+        where: { partnerCode: { in: partnerCodes } },
+        select: { partnerCode: true, status: true },
+      }).catch(() => [] as { partnerCode: string; status: string }[]),
+      prisma.deal.groupBy({
+        by: ["partnerCode"],
+        where: { partnerCode: { in: partnerCodes } },
+        _count: { _all: true },
+      }).catch(() => [] as { partnerCode: string; _count: { _all: number } }[]),
+      prisma.partner.groupBy({
+        by: ["referredByPartnerCode"],
+        where: { referredByPartnerCode: { in: partnerCodes } },
+        _count: { _all: true },
+      }),
+      prisma.recruitmentInvite.groupBy({
+        by: ["inviterCode"],
+        where: { inviterCode: { in: partnerCodes } },
+        _count: { _all: true },
+      }),
     ]);
 
     const agreementMap: Record<string, string> = {};
-    agreements.forEach((a: any) => { agreementMap[a.partnerCode] = a.status; });
-
+    agreements.forEach((a) => { agreementMap[a.partnerCode] = a.status; });
     const w9Map: Record<string, string> = {};
-    w9Docs.forEach((d: any) => { w9Map[d.partnerCode] = d.status; });
+    w9Docs.forEach((d) => { w9Map[d.partnerCode] = d.status; });
+    const profileMap: Record<string, (typeof profiles)[number]> = {};
+    profiles.forEach((p) => { profileMap[p.partnerCode] = p; });
+    const stripeMap: Record<string, string> = {};
+    stripeAccounts.forEach((s: { partnerCode: string; status: string }) => { stripeMap[s.partnerCode] = s.status; });
+    const dealCountMap: Record<string, number> = {};
+    dealCounts.forEach((d: { partnerCode: string; _count: { _all: number } }) => { dealCountMap[d.partnerCode] = d._count._all; });
+    const downlineCountMap: Record<string, number> = {};
+    downlineCounts.forEach((d) => { if (d.referredByPartnerCode) downlineCountMap[d.referredByPartnerCode] = d._count._all; });
+    const inviteCountMap: Record<string, number> = {};
+    inviteCounts.forEach((i) => { if (i.inviterCode) inviteCountMap[i.inviterCode] = i._count._all; });
 
-    const enriched = partners.map((p: any) => ({
-      ...p,
-      agreementStatus: agreementMap[p.partnerCode] || "none",
-      w9Status: w9Map[p.partnerCode] || "needed",
-    }));
+    const STALL_THRESHOLD_DAYS = 7;
+    const now = Date.now();
+
+    const enriched = partners.map((p: any) => {
+      let state: Record<string, unknown> = {};
+      try { state = JSON.parse(p.onboardingState || "{}"); if (typeof state !== "object" || !state) state = {}; } catch { state = {}; }
+
+      const profile = profileMap[p.partnerCode];
+      const stripeStatus = stripeMap[p.partnerCode];
+      const agreementSigned = p.status === "active" || agreementMap[p.partnerCode] === "signed" || agreementMap[p.partnerCode] === "amended";
+      const profileComplete = !!(profile?.street && profile?.city && profile?.state && profile?.zip);
+      const payoutComplete = stripeStatus === "active" || (
+        profile?.payoutMethod === "check" ? true :
+        profile?.payoutMethod === "paypal" ? !!profile?.paypalEmail :
+        (profile?.payoutMethod === "wire" || profile?.payoutMethod === "ach") ? !!(profile?.bankName && profile?.accountNumber && profile?.routingNumber) :
+        false
+      );
+      const videoWatched = !!state.watchedWelcomeVideoAt;
+      const callJoined = !!state.firstCallJoinedAt;
+      const trainingDone = !!state.firstTrainingCompletedAt;
+      const linkShared = !!state.referralLinkSharedAt;
+      const hasDeal = (dealCountMap[p.partnerCode] || 0) > 0;
+      const hasDownline = (downlineCountMap[p.partnerCode] || 0) > 0 || (inviteCountMap[p.partnerCode] || 0) > 0;
+
+      const onboardingCompleted =
+        Number(agreementSigned) + Number(profileComplete) + Number(payoutComplete) +
+        Number(videoWatched) + Number(callJoined) + Number(trainingDone) +
+        Number(linkShared) + Number(hasDeal) + Number(hasDownline);
+      const onboardingTotal = 9;
+      const onboardingPercent = Math.round((onboardingCompleted / onboardingTotal) * 100);
+      const daysSinceSignup = Math.floor((now - new Date(p.signupDate || p.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+      const onboardingStalled = onboardingCompleted < onboardingTotal && daysSinceSignup >= STALL_THRESHOLD_DAYS && !state.dismissed;
+
+      return {
+        ...p,
+        agreementStatus: agreementMap[p.partnerCode] || "none",
+        w9Status: w9Map[p.partnerCode] || "needed",
+        onboardingCompleted,
+        onboardingTotal,
+        onboardingPercent,
+        onboardingStalled,
+        onboardingDaysSinceSignup: daysSinceSignup,
+      };
+    });
 
     return NextResponse.json({ partners: enriched });
   } catch {

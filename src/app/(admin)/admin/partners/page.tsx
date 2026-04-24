@@ -24,6 +24,11 @@ type Partner = {
   signupDate: string;
   agreementStatus: string;
   w9Status: string;
+  onboardingCompleted: number;
+  onboardingTotal: number;
+  onboardingPercent: number;
+  onboardingStalled: boolean;
+  onboardingDaysSinceSignup: number;
 };
 
 type Invite = {
@@ -43,6 +48,28 @@ type TabType = "all" | "active" | "pending" | "invited" | "blocked";
 // Normalize a stored mobile number to E.164 for the softphone Device.
 // Uses normalizePhone from @/lib/format (imported above).
 // Wrapper kept to preserve null semantics for the softphone (must be valid E.164 or null).
+function OnboardingProgressCell({ partner }: { partner: Partner }) {
+  const done = partner.onboardingCompleted === partner.onboardingTotal;
+  const stalled = partner.onboardingStalled;
+  const barColor = done ? "bg-green-500" : stalled ? "bg-yellow-500" : "bg-brand-gold";
+  const labelColor = done ? "text-green-400" : stalled ? "text-yellow-400" : "text-[var(--app-text-secondary)]";
+  return (
+    <div
+      className="w-full flex items-center gap-1.5 min-w-0"
+      title={stalled
+        ? `${partner.onboardingCompleted}/${partner.onboardingTotal} · stalled ${partner.onboardingDaysSinceSignup}d since signup`
+        : `${partner.onboardingCompleted}/${partner.onboardingTotal} steps complete`}
+    >
+      <div className="flex-1 h-1 rounded-full bg-[var(--app-input-bg)] overflow-hidden min-w-[40px]">
+        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${partner.onboardingPercent}%` }} />
+      </div>
+      <span className={`font-body text-[10px] font-semibold tabular-nums ${labelColor} shrink-0`}>
+        {partner.onboardingPercent}%
+      </span>
+    </div>
+  );
+}
+
 function normalizeForSoftphone(raw: string | null | undefined): string | null {
   return normalizePhone(raw);
 }
@@ -98,9 +125,9 @@ export default function AdminPartnersPage() {
   // array length after toggling.
   const { columnWidths: partnerCols, getResizeHandler: partnerResize } = useResizableColumns(
     bulkOn
-      ? [36, 180, 70, 120, 140, 180, 90, 110, 80, 110]
-      : [180, 70, 120, 140, 180, 90, 110, 80, 110],
-    { storageKey: bulkOn ? "partners-v5-bulk" : "partners-v5" }
+      ? [36, 180, 70, 120, 140, 180, 90, 110, 80, 120, 110]
+      : [180, 70, 120, 140, 180, 90, 110, 80, 120, 110],
+    { storageKey: bulkOn ? "partners-v6-bulk" : "partners-v6" }
   );
   const partnerGridCols = partnerCols.map((w) => `${w}px`).join(" ");
 
@@ -1227,6 +1254,7 @@ export default function AdminPartnersPage() {
                 { label: "Status", col: "status" as SortCol },
                 { label: "Agreement", col: null },
                 { label: "W9", col: null },
+                { label: "Onboarding", col: null },
                 { label: "Joined", col: "joined" as SortCol },
               ]) : ([
                 { label: "Partner", col: "name" as SortCol },
@@ -1237,6 +1265,7 @@ export default function AdminPartnersPage() {
                 { label: "Status", col: "status" as SortCol },
                 { label: "Agreement", col: null },
                 { label: "W9", col: null },
+                { label: "Onboarding", col: null },
                 { label: "Joined", col: "joined" as SortCol },
               ])).map((h, i) => (
                 h.label === "__select" ? (
@@ -1324,6 +1353,9 @@ export default function AdminPartnersPage() {
                       {p.w9Status === "under_review" ? "review" : p.w9Status}
                     </span>
                   </div>
+                  <div className="flex items-center justify-center">
+                    <OnboardingProgressCell partner={p} />
+                  </div>
                   <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">{fmtDate(p.signupDate)}</div>
                 </div>
               );
@@ -1377,6 +1409,10 @@ export default function AdminPartnersPage() {
                       <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${docBadge[p.w9Status] || docBadge.needed}`}>
                         {p.w9Status === "under_review" ? "review" : p.w9Status}
                       </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-body text-[9px] text-[var(--app-text-muted)] uppercase">Onb:</span>
+                      <OnboardingProgressCell partner={p} />
                     </div>
                   </div>
                 </div>
