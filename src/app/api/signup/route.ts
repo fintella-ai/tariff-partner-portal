@@ -317,6 +317,15 @@ export async function POST(req: NextRequest) {
       },
     }).catch(() => {});
 
+    // Fire workflow trigger — lets admins chain automations to a new
+    // partner (e.g. admin Slack ping, auto-invite to a channel). The
+    // direct welcome email + SMS below still fire unchanged; a seeded
+    // workflow action would be additive. Fire-and-forget; a broken
+    // workflow must never block signup.
+    import("@/lib/workflow-engine").then(({ fireWorkflowTrigger }) =>
+      fireWorkflowTrigger("partner.created", { partner })
+    ).catch(() => {});
+
     // Phase 15a/15b — transactional emails + SMS. Awaited so Vercel doesn't
     // kill the function before the network calls complete. Run in parallel
     // where possible; failures are non-fatal (logged internally by each helper).

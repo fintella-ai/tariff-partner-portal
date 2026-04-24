@@ -220,6 +220,17 @@ export async function POST(
       },
     }).catch(() => {});
 
+    // Fire workflow trigger — admins can chain extra actions (slack ping,
+    // add to onboarding channel, schedule a reminder). The direct email
+    // below still fires; workflow actions are additive.
+    import("@/lib/workflow-engine").then(({ fireWorkflowTrigger }) =>
+      fireWorkflowTrigger("partner.agreement_sent", {
+        partner,
+        signingUrl: embeddedSigningUrl || null,
+        agreementId: agreement?.id || null,
+      })
+    ).catch(() => {});
+
     // Phase 15a — fire transactional "agreement ready to sign" email.
     // Best-effort; never blocks the API response.
     sendAgreementReadyEmail(
