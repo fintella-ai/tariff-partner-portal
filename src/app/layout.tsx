@@ -48,7 +48,7 @@ export default function RootLayout({
     <html lang="en">
       {/* Anti-flash: set data-theme before first paint so there's no flicker */}
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));}catch(e){}` }} />
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));var p=localStorage.getItem('portalTheme');if(p&&p!=='default'){document.documentElement.setAttribute('data-portal-theme',p);}}catch(e){}` }} />
       </head>
       <body className="antialiased">
         <ThemeProvider>
