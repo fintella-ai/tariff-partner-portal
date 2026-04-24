@@ -7,6 +7,7 @@ import { FIRM_NAME, FIRM_SHORT as DEFAULT_FIRM_SHORT, FIRM_SLOGAN as DEFAULT_FIR
 import { useDevice } from "@/lib/useDevice";
 import NotificationBell from "@/components/ui/NotificationBell";
 import InstallPrompt from "@/components/ui/InstallPrompt";
+import FintellaAppBanner from "@/components/ui/FintellaAppBanner";
 import { useTheme } from "@/components/layout/ThemeProvider";
 
 // ─── NAV STRUCTURE ───────────────────────────────────────────────────────────
@@ -392,6 +393,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex flex-col min-h-screen">
       {/* ── PWA INSTALL PROMPT ── */}
       {!isSudo && <InstallPrompt />}
+
+      {/* ── FLASHING "GET THE FINTELLA APP" BANNER ──
+          Sits above the layout, auto-hides when installed, and stays
+          dismissed across reloads via localStorage. Mobile UA → "Mobile
+          App" copy; desktop UA → "Desktop App" copy. Hidden while the
+          admin is sudoing a partner so the banner doesn't cover the
+          purple sudo bar. */}
+      {!isSudo && <FintellaAppBanner />}
 
       {/* ── ADMIN SUDO BANNER ── */}
       {isSudo && (
