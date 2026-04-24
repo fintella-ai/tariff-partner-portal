@@ -278,6 +278,26 @@ h2, h3, h4 { font-weight: 600; }
 table thead th { text-align: center; }
 table thead th:first-child { text-align: left; }
 
+/* ─────────────────────────────────────────────────────────────────────
+   Slight weight reduction (2026-04-25)
+   The portal felt visually heavy after the Inter switch. Drop each
+   heavy weight class down by one step globally, but restore the
+   original weights inside:
+     - navigation sidebars (`.theme-sidebar`) so nav items stay bold
+     - tables so column data stays legible
+   Default body weight (400) is unchanged.
+   ──────────────────────────────────────────────────────────────────── */
+.font-medium   { font-weight: 450; }
+.font-semibold { font-weight: 500; }
+.font-bold     { font-weight: 600; }
+
+.theme-sidebar .font-medium,
+table .font-medium   { font-weight: 500; }
+.theme-sidebar .font-semibold,
+table .font-semibold { font-weight: 600; }
+.theme-sidebar .font-bold,
+table .font-bold     { font-weight: 700; }
+
 /* ── Prevent PWA pull-to-refresh bounce on iOS (standalone mode only) ── */
 @media (display-mode: standalone) {
   html, body {

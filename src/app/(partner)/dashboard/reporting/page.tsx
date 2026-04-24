@@ -11,6 +11,7 @@ import { fmt$, fmtDate, fmtDateTime } from "@/lib/format";
 import { FIRM_SHORT, DEFAULT_FIRM_FEE_RATE, COMMISSION_STATUS_LABELS } from "@/lib/constants";
 import DownlineTree, { type TreePartner } from "@/components/ui/DownlineTree";
 import SortHeader, { type SortDir } from "@/components/ui/SortHeader";
+import { useResizableColumns } from "@/components/ui/ResizableTable";
 import { compareRows } from "@/lib/sortRows";
 import DocumentsView from "@/components/partner/DocumentsView";
 
@@ -28,6 +29,23 @@ export default function PartnerReportingPage() {
   const [l3Partners, setL3Partners] = useState<any[]>([]);
   const [ledger, setLedger] = useState<any[]>([]);
   const [commissionRate, setCommissionRate] = useState(0.25);
+
+  // Resizable columns — one hook per table so column widths persist
+  // separately across tabs. 9 cols on the main all-deals overview, 8 on
+  // the My Deals list, 9 on the Downline deals list. Storage keys are
+  // namespaced under `partner-reporting-*`.
+  const { columnWidths: ovDealsCols, getResizeHandler: ovDealsResize } = useResizableColumns(
+    [260, 130, 100, 110, 80, 110, 80, 120, 100],
+    { storageKey: "partner-reporting-overview-deals" }
+  );
+  const { columnWidths: myDealsCols, getResizeHandler: myDealsResize } = useResizableColumns(
+    [260, 110, 110, 80, 110, 80, 130, 100],
+    { storageKey: "partner-reporting-my-deals" }
+  );
+  const { columnWidths: dnDealsCols, getResizeHandler: dnDealsResize } = useResizableColumns(
+    [260, 130, 100, 110, 80, 110, 80, 130, 100],
+    { storageKey: "partner-reporting-downline-deals" }
+  );
   const [tier, setTier] = useState("l1");
   const [payoutDownlineEnabled, setPayoutDownlineEnabled] = useState(false);
   const [topL1PayoutDownlineEnabled, setTopL1PayoutDownlineEnabled] = useState<boolean | null>(null);
@@ -357,30 +375,29 @@ export default function PartnerReportingPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full" style={{ tableLayout: "fixed" }}>
                   <thead>
                     <tr className="border-b border-[var(--app-border)]">
                       {(() => {
                         const on = (k: string) => cycleSort(k, overviewSort, overviewDir, setOverviewSort, setOverviewDir);
-                        const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
-
-                          <th className={props.className || "px-3 py-3 text-center"}>
-
+                        // H now renders width + resize handle so all 9 cols
+                        // can be dragged or double-clicked to fit content.
+                        const H = (props: { label: string; k: string; i: number; className?: string; sortable?: boolean }) => (
+                          <th style={{ width: ovDealsCols[props.i], position: "relative" }} className={props.className || "px-3 py-3 text-center"}>
                             <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
-
+                            <span {...ovDealsResize(props.i)} />
                           </th>
-
                         );
                         return (<>
-                          <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
-                          <H label="Partner" k="source" />
-                          <H label="Stage" k="stage" />
-                          <H label="Refund" k="estimatedRefundAmount" />
-                          <H label="Fee %" k="firmFeeRate" />
-                          <H label="Firm Fee" k="firmFeeAmount" sortable={false} />
-                          <H label="Comm %" k="commRate" sortable={false} />
-                          <H label="Commission" k="commission" />
-                          <H label="Date" k="createdAt" />
+                          <H label="Deal" k="dealName" i={0} className="px-4 sm:px-6 py-3 text-left" />
+                          <H label="Partner" k="source" i={1} />
+                          <H label="Stage" k="stage" i={2} />
+                          <H label="Refund" k="estimatedRefundAmount" i={3} />
+                          <H label="Fee %" k="firmFeeRate" i={4} />
+                          <H label="Firm Fee" k="firmFeeAmount" i={5} sortable={false} />
+                          <H label="Comm %" k="commRate" i={6} sortable={false} />
+                          <H label="Commission" k="commission" i={7} />
+                          <H label="Date" k="createdAt" i={8} />
                         </>);
                       })()}
                     </tr>
@@ -460,29 +477,26 @@ export default function PartnerReportingPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full" style={{ tableLayout: "fixed" }}>
                     <thead>
                       <tr className="border-b border-[var(--app-border)]">
                         {(() => {
                           const on = (k: string) => cycleSort(k, myDealsSort, myDealsDir, setMyDealsSort, setMyDealsDir);
-                          const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
-
-                            <th className={props.className || "px-3 py-3 text-center"}>
-
+                          const H = (props: { label: string; k: string; i: number; className?: string; sortable?: boolean }) => (
+                            <th style={{ width: myDealsCols[props.i], position: "relative" }} className={props.className || "px-3 py-3 text-center"}>
                               <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
-
+                              <span {...myDealsResize(props.i)} />
                             </th>
-
                           );
                           return (<>
-                            <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
-                            <H label="Stage" k="stage" />
-                            <H label="Refund" k="estimatedRefundAmount" />
-                            <H label="Fee %" k="firmFeeRate" />
-                            <H label="Firm Fee" k="firmFeeAmount" sortable={false} />
-                            <H label="Comm %" k="commRate" sortable={false} />
-                            <H label="Commission" k="commission" />
-                            <H label="Date" k="createdAt" />
+                            <H label="Deal" k="dealName" i={0} className="px-4 sm:px-6 py-3 text-left" />
+                            <H label="Stage" k="stage" i={1} />
+                            <H label="Refund" k="estimatedRefundAmount" i={2} />
+                            <H label="Fee %" k="firmFeeRate" i={3} />
+                            <H label="Firm Fee" k="firmFeeAmount" i={4} sortable={false} />
+                            <H label="Comm %" k="commRate" i={5} sortable={false} />
+                            <H label="Commission" k="commission" i={6} />
+                            <H label="Date" k="createdAt" i={7} />
                           </>);
                         })()}
                       </tr>
@@ -674,30 +688,27 @@ export default function PartnerReportingPage() {
                 ))
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full" style={{ tableLayout: "fixed" }}>
                     <thead>
                       <tr className="border-b border-[var(--app-border)]">
                         {(() => {
                           const on = (k: string) => cycleSort(k, downlineDealsSort, downlineDealsDir, setDownlineDealsSort, setDownlineDealsDir);
-                          const H = (props: { label: string; k: string; className?: string; sortable?: boolean }) => (
-
-                            <th className={props.className || "px-3 py-3 text-center"}>
-
+                          const H = (props: { label: string; k: string; i: number; className?: string; sortable?: boolean }) => (
+                            <th style={{ width: dnDealsCols[props.i], position: "relative" }} className={props.className || "px-3 py-3 text-center"}>
                               <span className="font-body text-[10px] tracking-[1px] uppercase theme-text-muted">{props.label}</span>
-
+                              <span {...dnDealsResize(props.i)} />
                             </th>
-
                           );
                           return (<>
-                            <H label="Deal" k="dealName" className="px-4 sm:px-6 py-3 text-left" />
-                            <H label="Partner" k="submittingPartner" />
-                            <H label="Stage" k="stage" />
-                            <H label="Refund" k="estimatedRefundAmount" />
-                            <H label="Fee %" k="firmFeeRate" />
-                            <H label="Firm Fee" k="firmFeeAmount" sortable={false} />
-                            <H label="Comm %" k="commRate" sortable={false} />
-                            <H label="Commission" k="commission" />
-                            <H label="Date" k="createdAt" />
+                            <H label="Deal" k="dealName" i={0} className="px-4 sm:px-6 py-3 text-left" />
+                            <H label="Partner" k="submittingPartner" i={1} />
+                            <H label="Stage" k="stage" i={2} />
+                            <H label="Refund" k="estimatedRefundAmount" i={3} />
+                            <H label="Fee %" k="firmFeeRate" i={4} />
+                            <H label="Firm Fee" k="firmFeeAmount" i={5} sortable={false} />
+                            <H label="Comm %" k="commRate" i={6} sortable={false} />
+                            <H label="Commission" k="commission" i={7} />
+                            <H label="Date" k="createdAt" i={8} />
                           </>);
                         })()}
                       </tr>

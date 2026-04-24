@@ -441,44 +441,75 @@ export default function AdminDealsPage() {
       {/* ═══ STATS ═══ */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="card p-4">
+          <div className="card p-4 text-center">
             <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Total Deals</div>
             <div className="font-display text-2xl font-bold">{stats.totalDeals}</div>
           </div>
-          <div className="card p-4">
+          <div className="card p-4 text-center">
             <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Refund Pipeline</div>
             <div className="font-display text-2xl font-bold text-blue-400">{fmt$(stats.totalRefundPipeline)}</div>
           </div>
-          <div className="card p-4">
+          <div className="card p-4 text-center">
             <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Total Firm Fees</div>
             <div className="font-display text-2xl font-bold text-green-400">{fmt$(stats.totalFirmFees)}</div>
           </div>
-          <div className="card p-4">
+          <div className="card p-4 text-center">
             <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Total Commissions</div>
             <div className="font-display text-2xl font-bold text-brand-gold">{fmt$(stats.totalCommissions)}</div>
           </div>
         </div>
       )}
 
-      {/* ═══ STAGE PIPELINE ═══ */}
+      {/* ═══ STAGE PIPELINE (at-a-glance colored chips, no counts) ═══ */}
       {stats?.byStage && (
-        <div className="card p-4 sm:p-5 mb-6">
-          <div className="font-body font-semibold text-sm mb-3">Deal Pipeline</div>
+        <div className="card p-4 sm:p-5 mb-4">
+          <div className="font-body font-semibold text-[13px] mb-3">Deal Pipeline</div>
           <div className="flex flex-wrap gap-2">
-            {STAGES.filter((s) => s.value !== "all").map((s) => {
-              const count = stats.byStage[s.value] || 0;
+            {STAGES.filter((s) => s.value !== "all").map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setStageFilter(stageFilter === s.value ? "all" : s.value)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors border ${
+                  stageFilter === s.value
+                    ? "bg-brand-gold/20 border-brand-gold/30"
+                    : "bg-[var(--app-card-bg)] border-[var(--app-border)] hover:bg-[var(--app-card-bg)]"
+                }`}
+              >
+                <StageBadge stage={s.value} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ STAGE TABS — above search, drive `stageFilter` with counts ═══
+          Mirrors the Deal Pipeline order but adds a leading "All" tab and
+          renders the per-stage deal counts. Click to filter; active tab
+          gets the gold highlight. Horizontally scrollable on narrow
+          viewports so the whole row never clips. */}
+      {stats?.byStage && (
+        <div className="mb-4 border-b border-[var(--app-border)] overflow-x-auto">
+          <div className="flex gap-1 min-w-max">
+            {([{ value: "all", label: "All" } as { value: string; label: string }, ...STAGES.filter((s) => s.value !== "all")]).map((s) => {
+              const count = s.value === "all"
+                ? Object.values(stats.byStage as Record<string, number>).reduce((a, b) => a + b, 0)
+                : (stats.byStage[s.value] || 0);
+              const active = stageFilter === s.value;
               return (
                 <button
                   key={s.value}
-                  onClick={() => setStageFilter(stageFilter === s.value ? "all" : s.value)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-body text-[12px] transition-colors border ${
-                    stageFilter === s.value
-                      ? "bg-brand-gold/20 text-brand-gold border-brand-gold/30"
-                      : "bg-[var(--app-card-bg)] text-[var(--app-text-secondary)] border-[var(--app-border)] hover:bg-[var(--app-card-bg)]"
+                  type="button"
+                  onClick={() => setStageFilter(s.value)}
+                  className={`font-body text-[12px] px-3 py-2 rounded-t-lg border border-b-0 transition-colors whitespace-nowrap min-h-[36px] ${
+                    active
+                      ? "text-brand-gold border-[var(--app-border)] bg-[var(--app-card-bg)] -mb-px font-semibold"
+                      : "text-[var(--app-text-muted)] border-transparent hover:text-[var(--app-text-secondary)] hover:bg-brand-gold/5"
                   }`}
                 >
-                  <StageBadge stage={s.value} />
-                  <span className="font-semibold">{count}</span>
+                  {s.label}
+                  <span className={`ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${active ? "bg-brand-gold/20 text-brand-gold" : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)]"}`}>
+                    {count}
+                  </span>
                 </button>
               );
             })}

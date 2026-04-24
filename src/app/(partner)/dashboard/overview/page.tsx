@@ -7,6 +7,7 @@ import StageBadge from "@/components/ui/StageBadge";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { SkeletonStatCard, SkeletonTableRow } from "@/components/ui/Skeleton";
 import PullToRefresh from "@/components/ui/PullToRefresh";
+import { useResizableColumns } from "@/components/ui/ResizableTable";
 import { fmt$, fmtDate } from "@/lib/format";
 import { useDevice } from "@/lib/useDevice";
 export default function OverviewPage() {
@@ -18,6 +19,17 @@ export default function OverviewPage() {
   const [downlineDeals, setDownlineDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [overviewTab, setOverviewTab] = useState<"direct" | "downline">("direct");
+
+  // Resizable columns — one hook call per table so the width maps stay
+  // separate in localStorage. Matches the pattern used across admin tables.
+  const { columnWidths: directCols, getResizeHandler: directResize } = useResizableColumns(
+    [240, 100, 120, 110, 90, 120, 130],
+    { storageKey: "partner-overview-direct" }
+  );
+  const { columnWidths: downlineCols, getResizeHandler: downlineResize } = useResizableColumns(
+    [240, 140, 100, 120, 120, 150],
+    { storageKey: "partner-overview-downline" }
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -170,16 +182,16 @@ export default function OverviewPage() {
         ) : (
           /* ── Desktop/Tablet: Table ── */
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full" style={{ tableLayout: "fixed" }}>
               <thead>
                 <tr className="border-b border-[var(--app-border)]">
-                  <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Client / Deal</th>
-                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
-                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Est. Refund</th>
-                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Firm Fee</th>
-                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Comm %</th>
-                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                  <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission</th>
+                  <th style={{ width: directCols[0], position: "relative" }} className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Client / Deal<span {...directResize(0)} /></th>
+                  <th style={{ width: directCols[1], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage<span {...directResize(1)} /></th>
+                  <th style={{ width: directCols[2], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Est. Refund<span {...directResize(2)} /></th>
+                  <th style={{ width: directCols[3], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Firm Fee<span {...directResize(3)} /></th>
+                  <th style={{ width: directCols[4], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Comm %<span {...directResize(4)} /></th>
+                  <th style={{ width: directCols[5], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status<span {...directResize(5)} /></th>
+                  <th style={{ width: directCols[6], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Commission<span {...directResize(6)} /></th>
                 </tr>
               </thead>
               <tbody>
@@ -242,15 +254,15 @@ export default function OverviewPage() {
           ) : (
             /* ── Desktop/Tablet: Grid table ── */
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full" style={{ tableLayout: "fixed" }}>
                 <thead>
                   <tr className="border-b border-[var(--app-border)]">
-                    <th className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Client / Deal</th>
-                    <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Partner</th>
-                    <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage</th>
-                    <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Est. Refund</th>
-                    <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status</th>
-                    <th className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">My L2 Commission</th>
+                    <th style={{ width: downlineCols[0], position: "relative" }} className="px-4 sm:px-6 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-left">Client / Deal<span {...downlineResize(0)} /></th>
+                    <th style={{ width: downlineCols[1], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Partner<span {...downlineResize(1)} /></th>
+                    <th style={{ width: downlineCols[2], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Stage<span {...downlineResize(2)} /></th>
+                    <th style={{ width: downlineCols[3], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Est. Refund<span {...downlineResize(3)} /></th>
+                    <th style={{ width: downlineCols[4], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">Status<span {...downlineResize(4)} /></th>
+                    <th style={{ width: downlineCols[5], position: "relative" }} className="px-3 py-3 text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider font-medium text-center">My L2 Commission<span {...downlineResize(5)} /></th>
                   </tr>
                 </thead>
                 <tbody>
