@@ -36,7 +36,7 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
     "partners", "applications", "landingEditor", "deals",
     "communications", "internalChats", "partnerSupport",
     "training", "conference", "documents",
-    "automations", "gettingStartedEditor",
+    "automations", "gettingStartedEditor", "aiActivity",
     "payouts", "revenue", "reports",
     "settings", "users", "dev", "features",
   ],
@@ -45,7 +45,7 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
     "partners", "applications", "landingEditor", "deals",
     "communications", "internalChats", "partnerSupport",
     "training", "conference", "documents",
-    "automations", "gettingStartedEditor",
+    "automations", "gettingStartedEditor", "aiActivity",
     "payouts", "reports",
     "settings",
   ],
@@ -54,6 +54,7 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
     "deals", "documents",
     "payouts", "revenue", "reports",
     "communications",
+    "aiActivity",
   ],
   partner_support: [
     "home",
@@ -62,6 +63,7 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
     "training", "conference", "documents",
     "payouts",
     "settings",
+    "aiActivity",
   ],
 };
 

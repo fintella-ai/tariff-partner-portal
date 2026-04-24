@@ -84,6 +84,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "applications", label: "Applications", icon: "📥" },
   { id: "automations", label: "Automations", icon: "⚡" },
   { id: "gettingStartedEditor", label: "Getting Started", icon: "✅" },
+  { id: "aiActivity", label: "AI Activity", icon: "🤖" },
   { id: "deals", label: "Deals", icon: "📋" },
   { id: "communications", label: "Communications", icon: "💬" },
   { id: "internalChats", label: "Internal Chats", icon: "💬" },
