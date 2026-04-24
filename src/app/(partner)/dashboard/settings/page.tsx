@@ -5,6 +5,8 @@ import { useDevice } from "@/lib/useDevice";
 import { useRouter } from "next/navigation";
 import CountryCodeSelect, { parseMobilePhone, buildMobilePhone } from "@/components/ui/CountryCodeSelect";
 import PasskeysCard from "@/components/partner/PasskeysCard";
+import PersonaAvatar from "@/components/ai/PersonaAvatar";
+import { PERSONAS } from "@/lib/ai-personas";
 import { US_STATES } from "@/lib/constants";
 
 interface SettingsData {
@@ -17,6 +19,8 @@ interface SettingsData {
   mobilePhone: string;
   emailOptIn: boolean;
   smsOptIn: boolean;
+  // PartnerOS AI Phase 1 — persona choice ("finn" | "stella"); null in API = prompt on first AI visit
+  preferredGeneralist: string | null;
   street: string;
   street2: string;
   city: string;
@@ -40,6 +44,7 @@ const EMPTY: SettingsData = {
   firstName: "", lastName: "", companyName: "", tin: "",
   email: "", phone: "", mobilePhone: "",
   emailOptIn: false, smsOptIn: false,
+  preferredGeneralist: null,
   street: "", street2: "", city: "", state: "", zip: "",
   payoutMethod: "", bankName: "", accountType: "", routingNumber: "",
   accountNumber: "", beneficiaryName: "",
@@ -374,6 +379,53 @@ export default function AccountSettingsPage() {
               )}
             </div>
           </label>
+
+          {/* ── AI Assistant (Phase 1 — persona picker) ── */}
+          <div className="mt-8">
+            <div className="font-body text-[12px] font-semibold text-[var(--app-text-secondary)] tracking-wider uppercase mb-2">
+              AI Assistant
+            </div>
+            <div className="font-body text-[12px] text-[var(--app-text-muted)] mb-4">
+              Pick the voice you want for your PartnerOS assistant. Both have the same knowledge; only the tone differs.
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(["finn", "stella"] as const).map((id) => {
+                const persona = PERSONAS[id];
+                const selected = (form.preferredGeneralist || "finn") === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setForm((prev) => ({ ...prev, preferredGeneralist: id }));
+                      if (message) setMessage(null);
+                    }}
+                    className="text-left bg-[var(--app-input-bg)] rounded-lg p-3 border transition-colors"
+                    style={{
+                      borderColor: selected ? persona.accentHex : "var(--app-border)",
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <PersonaAvatar personaId={id} size="md" showName={false} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-body text-[13px] font-semibold" style={{ color: persona.accentHex }}>
+                          {persona.displayName}
+                        </div>
+                        <div className="font-body text-[11px] text-[var(--app-text-muted)] truncate">
+                          {persona.tagline}
+                        </div>
+                      </div>
+                      {selected && (
+                        <span className="font-body text-[10px] font-semibold uppercase tracking-wider" style={{ color: persona.accentHex }}>
+                          Current
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         )}

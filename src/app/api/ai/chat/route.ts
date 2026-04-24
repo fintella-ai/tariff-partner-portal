@@ -88,8 +88,30 @@ export async function POST(req: NextRequest) {
     // Build per-user dynamic context (not cached, changes frequently)
     const userContext = await buildUserContext(userId, userType);
 
+    // Resolve the caller's preferred generalist persona. Partners store it
+    // on Partner.preferredGeneralist; admin users on User.preferredGeneralist
+    // (admin UI for this lands later — for now admins always get the default).
+    let personaId: "finn" | "stella" = "finn";
+    if (userType === "partner") {
+      const partnerPref = await prisma.partner.findUnique({
+        where: { partnerCode: userId },
+        select: { preferredGeneralist: true },
+      });
+      if (partnerPref?.preferredGeneralist === "stella") {
+        personaId = "stella";
+      }
+    } else if (session.user.email) {
+      const userPref = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { preferredGeneralist: true },
+      });
+      if (userPref?.preferredGeneralist === "stella") {
+        personaId = "stella";
+      }
+    }
+
     // Call Anthropic (or mock)
-    const result = await generateResponse(userContext, history);
+    const result = await generateResponse(userContext, history, personaId);
 
     // Persist assistant reply. We now record cache reads and cache writes
     // as two separate token counts so daily-usage cost math can price them
@@ -106,6 +128,7 @@ export async function POST(req: NextRequest) {
         cachedTokens: result.cacheReadTokens,
         cacheReadTokens: result.cacheReadTokens,
         cacheCreationTokens: result.cacheCreationTokens,
+        speakerPersona: personaId,
       },
     });
 
@@ -139,8 +162,10 @@ export async function POST(req: NextRequest) {
         role: "assistant",
         content: assistantMessage.content,
         createdAt: assistantMessage.createdAt,
+        speakerPersona: assistantMessage.speakerPersona,
       },
       mocked: result.mocked,
+      persona: personaId,
     });
   } catch (err: any) {
     console.error("[api/ai/chat] error:", err);

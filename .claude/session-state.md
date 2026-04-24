@@ -1,83 +1,73 @@
 # Session State
 
-🕒 Last updated: 2026-04-24 — PR #469 merged: swapped Reporting emoji (📊) for a custom hand-drawn bar-chart SVG icon with rising trend line (`/public/icons/reporting-chart.svg`, gold `#c4a050` stroke). Added `BUILT_IN_ADMIN_ICONS` + `BUILT_IN_PARTNER_ICONS` maps to both layouts — nav rendering now falls through PortalSettings.navIcons upload → built-in SVG → emoji. Applied to both top-level render and nested collapsed-group child render on the admin side. Earlier today: PR #467 merged: aligned email + SMS consent text across /signup + /getstarted to the plain-English "I agree to receive …" style matching the Twilio submission. Email strings now include an "unsubscribe at any time" clause mirroring the SMS "Reply STOP" disclosure. Earlier: PRs #463 + #464 + #465 merged (A2P 10DLC resubmit prep): #463 updated Fintella mailing address on /privacy + /terms to `111 2nd Ave NE #1250, St. Petersburg, FL 33701`; #464 added Privacy + Terms links to the partner dashboard footer (centered under the copyright, new-tab); #465 updated the signup SMS consent checkbox text to match the Twilio campaign submission verbatim. Earlier: #461 made /signup a public preview when no token is present — all three URLs (/signup, /privacy, /terms) are now ready to resubmit. #459 widget body fills its own box; #457 fit fixes; #455 partner tagging; #454 widget V1 + orphan cleanup. V1 (#454) mounted InternalChatWidget in admin/layout.tsx (floating 💬 bubble → 440×640 panel, localStorage position + open state, search filter passed into TeamChatPanel, embeds the existing TeamChatPanel for SSE/mentions/send). Also shipped a new /api/admin/dev/orphaned-chat endpoint + Data Cleanup section for AdminChatThread rows whose dealId points to a deleted Deal. V2 (#455) added partner tagging via `&partner` trigger — new parsePartnerRefs + renderer segment + pink-chip UI linking to /admin/partners?code=; MentionInput now supports @admin / #deal / &partner side-by-side. Earlier today: #442 workspace V1, #444 Home in admin nav reorder registry, #446 workspace V2 (PartnerContextDrawer + Activity Timeline + per-admin reorder), #448 open invites in the workspace Needs-Attention feed, #450 Level column on partner Full Reporting → Downline → Your Partners, #452 Google Calendar embed on workspace. 2026-04-23 session had 21 PRs (Google Calendar OAuth, Jitsi embed, HubSpot-style workflow editor, reminder triggers, orphan cleanup, etc.).
+🕒 Last updated: 2026-04-24 — **PartnerOS AI Phase 1 (persona split) implemented** on branch `claude/partneros-phase-1-persona-split`. Design spec at `docs/superpowers/specs/2026-04-24-partneros-ai-roadmap-design.md` and Phase 1 plan at `docs/superpowers/plans/2026-04-24-partneros-phase-1-persona-split.md` on branch `claude/partneros-ai-roadmap-design` (commits `5d7884b` + `3afcc27`). Phase 1 ships Finn + Stella generalist split: persona registry, voice wrappers, first-visit picker modal, persistent banner with switch link, per-message speaker avatar, Account Settings switcher in Communication Preferences tab. No new capabilities — same knowledge base + same rate limits as pre-existing PartnerOS. Both branches are **local only, not pushed yet** (awaiting John's explicit go-ahead). Main is at `bc0bd5f` (#529 SendGrid engagement stats). Earlier sessions: #521-#529 Getting-Started end-to-end + admin Automations + SendGrid engagement stats; #389-#402 partner home overhaul (drag reorder, video embed, header strip, footer, text-center cascade); 2026-04-23 had 21 PRs (Google Calendar OAuth, Jitsi embed, workflow editor, reminder triggers, orphan cleanup).
 
 ## 🌿 Git state
-- **main HEAD:** `4fd283a` — chore(consent): align email + SMS opt-in text across signup + getstarted (#467)
+- **main HEAD:** `bc0bd5f` — feat(sendgrid): event webhook + per-template engagement stats (#529)
 - **origin/main:** in sync
-- **Open non-dependabot PRs:** 0 (#357 still DRAFT — flagged, don't merge)
+- **Active branch:** `claude/partneros-phase-1-persona-split` (9 commits ahead of main; local only, not pushed)
+- **Sibling branch:** `claude/partneros-ai-roadmap-design` (spec + plan docs only; 2 commits ahead of main; local only, not pushed)
 - **Working tree:** clean
-- **Active branch:** main
+- **Open non-dependabot PRs on origin:** 0 (#357 still DRAFT — flagged, don't merge)
 
-## ✅ This session (late 2026-04-22) — 14 PRs shipped
+## ✅ This session — PartnerOS AI brainstorm → spec → plan → Phase 1 impl
 
-**Partner home overhaul (Phase 1 → Phase 2):**
-- **#389** Partner home Phase 1 — centered welcome, embedded video (HeyGen/YouTube/Vimeo), 2-col desktop layout, per-module visibility toggles. Schema: `homeEmbedVideoUrl` + `homeHiddenModules`.
-- **#392** Reorder home sections: Events → Announcements → Leaderboard → Opportunities, all section headers centered, 2-col announcements.
-- **#394** Phase 2 — drag-to-reorder modules + per-module columns (1/2/3) + per-module alignment (left/center). Schema: `homeModuleOrder` + `homeModuleLayout`. HTML5 native drag on the admin Module Layout & Order card.
-- **#397** Highlighted (featured card) flag on Announcements + Upcoming Events (parity with Referral Opportunities).
-- **#398** Support + NotificationBell pulled out of the floating top-right fixed corner into the right side of the sticky top bar. Home module cards (events/announcements/opportunities) all text-centered.
+**Brainstorm → spec (branch `claude/partneros-ai-roadmap-design`):**
+- Locked cast: **Finn** (male generalist) · **Stella** (female generalist) · **Tara** (product SME, phase 2) · **Ollie** (support + escalation + bug triage, phase 3).
+- Locked multi-inbox routing: `support@` / `legal@` / `admin@` / `accounting@` each with their own Google Calendar OAuth + category-based email routing. `support@` is the universal outbound From for AI-initiated email.
+- Locked escalation ladder: live text chat (auto-transfer if admin online) → live phone transfer (ask first, Twilio) → 15-min scheduled call on the inbox's calendar → ticket. Plus IT emergency call chain: confirmed portal bug → Twilio outbound call from Fintella number TO super admin's personal cell.
+- 981-line design spec + 1586-line Phase 1 plan committed on the design branch.
 
-**Shared header + footer + layout polish:**
-- **#390** Center ★ Star Super Admin row in admin sidebar footer.
-- **#391** Center welcome block, left-align Submit/Referral sticky CTAs.
-- **#395** Move date under the header (shared partner layout), add full-bleed divider, drop duplicate "Welcome Back" from home body.
-- **#396** Site-wide partner footer with favicon + "© Fintella Financial Intelligence Network 2026" + `mt-24 sm:mt-32` breathing room.
-- **#399** Bump desktop padding `px-10` → `px-14`, add `overflow-x-hidden` to both portal main content containers.
-- **#401** Further padding bump `px-14` → `px-24` desktop + `px-10` tablet.
-- **#402** Dark header strip via new `--app-header-bg` CSS var (light `#cfd3dd` / dark `#070c18`); `text-center` wrapper on `{children}` cascades centered alignment to every partner page body.
+**Phase 1 impl (branch `claude/partneros-phase-1-persona-split`, 9 commits):**
+- `f59011e` schema — Partner/User.preferredGeneralist + AiMessage.speakerPersona/handoffMetadata/attachments.
+- `db5f48b` avatars — Finn gold (#c4a050) + Stella rose (#d8a5a5) abstract geometric SVGs under public/ai-avatars/.
+- `ff001ab` persona registry — src/lib/ai-personas.ts typed records + voice wrapper builder.
+- `1ab6d62` ai.ts threading — generateResponse accepts personaId; cached KNOWLEDGE_BASE stays cache-hittable across personas, only the ~200-token voice wrapper is uncached per turn; /api/ai/chat loads preferredGeneralist, persists speakerPersona; conversation GET includes speakerPersona in select.
+- `e76cf13` components — PersonaAvatar + PersonaPickerModal in src/components/ai/.
+- `9069704` AI assistant page — first-visit picker, persistent banner with Switch link, MessageBubble renders speaker avatar.
+- `6441686` partner settings API — accepts preferredGeneralist with strict finn|stella allowlist.
+- `c3e3c50` settings page — AI Assistant picker card in Communication Preferences tab.
 
-**Fixes / misc:**
-- **#393** Restore Communications tab bar on Live Weekly Call page (regression from #388 — PageTabBar was inside the loading branch only).
-- **#400** Swap Partner Support icon 🎧 → 🙋 to match admin; move Documents from sidebar into `/dashboard/reporting` as rightmost tab; extract shared `<DocumentsView />` component so `/dashboard/documents` deep-link still works.
+## 🎯 Queued next
 
-## 🎯 Queued for tomorrow (top of stack)
-
-1. **Email templates → workflow actions** — mirror SMS pattern from #358/#360. Start with brainstorming skill. Keep `password_reset` hardcoded (security). 7 other sends to migrate. See `project_fintella_email_workflow_migration` memory.
-
-2. **Contabo VPS / MinIO bootstrap** — unblocks PR #357 multi-file note attachments. See `project_fintella_minio_vps_plan` memory.
-
-3. **Post-#404 live verification (light)** — click through each partner route on the Vercel preview to confirm the left-align default + tightened mobile padding read correctly on forms, tables, and the home page.
-
-4. **Flagged from earlier sessions:**
-   - Live Weekly column formatting + resizable columns
-   - Notification bell mentions rollup (verify #293 plumbing first)
-   - HTTP method selector on webhook.post for PATCH updates
+1. **John reviews spec + Phase 1 impl** — then push both branches to origin + open PRs.
+2. **Phase 2 — Product Specialist (Tara) + knowledge ingestion** — next superpowers:writing-plans run once Phase 1 merges. Includes Whisper transcription pipeline for videos / audio / weekly call recordings. ~10 PRs.
+3. **Phase 3 — Support Specialist (Ollie) + escalation ladder + admin-inbox routing + bug triage** — largest phase (~14 PRs).
+4. **Still flagged from earlier sessions:**
+   - MinIO VPS bootstrap → unblocks PR #357 note attachments.
+   - SendGrid Event Webhook wiring in SendGrid dashboard (ops, John).
+   - Optional: enable onboarding_nudge workflow via /admin/automations.
 
 ## 🧠 Context that matters for resuming
 
-- **Partner portal is visually finished for this pass.** Home page fully customizable (drag order, columns, alignment, visibility per module). Highlighted flag works on all 3 content modules. Video embed. Admin-configured layout persists. Header has a dark strip above a full-bleed divider. All page bodies inherit centered text. Footer shows favicon + copyright with big breathing room. Sticky top bar has Submit/Referral left + Support/Bell right.
-- **Admin portal also got the padding + overflow-x-hidden treatment** (#399 #401). ★ Star Super Admin row centered (#390).
-- **No schema migrations pending.** All new PortalSettings fields are additive with defaults — safe to push.
-- **Build is clean at 97/97 static pages** (pre-existing `global-error.tsx` Sentry warning is the only warning).
-- **Vercel auto-deploys main on every push** — all 14 merges already deployed.
+- Phase 1 is **entirely additive** — three nullable schema columns, two new component files, small edits to ai.ts / chat route / settings route / settings page / ai-assistant page. No behavior change for existing partners until they either (a) pick a persona on first AI visit, or (b) switch in Settings → Communication Preferences.
+- DATABASE_URL was not in shell during impl — Vercel build will apply `prisma db push --accept-data-loss` automatically on first deploy. All three new columns are nullable; no data loss.
+- CLAUDE.md line "97/97 static pages" is **stale** — project now builds **177 static pages**. Otherwise CLAUDE.md remains accurate.
+- ESLint config not present locally — `npm run lint` prompts for interactive setup. CI does not enforce lint; `next build` is the authoritative pre-commit check.
+- The persona voice wrapper block is intentionally **not cached** to preserve the shared KNOWLEDGE_BASE cache hit across both personas. Cost impact is trivial (~200 tokens/turn at uncached rate).
+- First-visit modal is **not closable** until the partner picks — `allowClose` prop on `PersonaPickerModal` gates the close button.
+- Mock mode (no `ANTHROPIC_API_KEY`) is persona-aware: the `[Mock Response from Finn/Stella …]` prefix confirms the persona threaded through the API → lib correctly even without a live API key.
 
 ## 📂 Relevant files for the next task (by priority)
 
-### If tackling email→workflow migration
-- `src/app/api/workflows/execute/route.ts` — action dispatch
-- `src/lib/sendgrid.ts` — existing email helpers
-- `src/app/api/cron/monthly-newsletter/route.ts` — cron (rearchitected out)
-- PR #358 + #360 — SMS pattern to mirror
-- Start with brainstorming skill per user preference
+### If pushing + opening PRs for Phase 1 design + impl
+- Branch: `claude/partneros-ai-roadmap-design` — docs only (spec + plan)
+- Branch: `claude/partneros-phase-1-persona-split` — code
+- Recommended order: push design branch first (PR body cites spec/plan), then push impl branch (PR body references design PR)
 
-### If bootstrapping MinIO on Contabo VPS
-- `~/.claude/plans/can-a-vps-contabo-humble-moon.md` — full plan document
-- VPS: `ssh root@217.216.52.147`
-- Bucket name target: `fintella-attachments`
-- `prisma/schema.prisma:341-343` — `NoteAttachment.url` migration seam
-- `src/app/api/admin/notes/route.ts:72-90` — POST handler to rewire
-- `src/app/api/admin/deal-notes/route.ts:56-74` — POST handler to rewire
+### If starting Phase 2 (Tara + knowledge ingestion)
+- Spec §4 in `docs/superpowers/specs/2026-04-24-partneros-ai-roadmap-design.md`
+- `src/lib/ai-personas.ts` — extend `PERSONAS` to add `tara` + update TypeScript unions
+- `src/lib/ai.ts` — route to Tara's system prompt builder
+- `src/app/api/ai/chat/route.ts` — routing logic + `hand_off` tool-call handling
+- New files: `src/lib/ai-knowledge.ts`, `src/lib/ai-compliance.ts`, `src/lib/transcription.ts`
+- Schema: `TrainingModule.videoTranscript`, `TrainingResource.extractedText/audioTranscript`, `ConferenceSchedule.transcript`, new `TrainingGlossary`, `AiKnowledgeVersion`, `AiTranscriptionJob`
+- Env: `OPENAI_API_KEY` (Whisper, demo-gated)
 
-### If eyeballing partner text-center cascade
-- `src/app/(partner)/dashboard/layout.tsx:~610` — `<div className="text-center">{children}</div>`
-- Inspect each top-level partner route: deals, commissions, training, reporting, submit-client, referral-links, feature-request
-
-### If tweaking home page layout further
-- `src/app/(partner)/dashboard/home/page.tsx` — module dispatcher + renderers
-- `src/app/(admin)/admin/settings/page.tsx` — Module Layout & Order card (search for `DEFAULT_MODULE_ORDER`)
-- `src/components/partner/DocumentsView.tsx` — extracted Documents content
-- `prisma/schema.prisma` — PortalSettings with homeModuleOrder, homeModuleLayout, homeEmbedVideoUrl, homeHiddenModules
+### If starting Phase 3 (Ollie + escalation ladder + inbox routing)
+- Spec §5, §6, §7 in the design doc
+- Schema: User escalation fields, new `AdminInbox` model, new `AiEscalation` model
+- Each rung (live chat, live phone, scheduled call, ticket) is its own sub-task
 
 ## Previous sessions preserved below (condensed)
 

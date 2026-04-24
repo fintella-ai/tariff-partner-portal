@@ -30,6 +30,7 @@ export async function GET(
             role: true,
             content: true,
             createdAt: true,
+            speakerPersona: true,
           },
         },
       },

@@ -10,13 +10,15 @@ datasource db {
 
 // ─── ADMIN USERS ─────────────────────────────────────────────────────────────
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String?
-  role         String   @default("admin") // super_admin, admin, accounting, partner_support
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  email                 String   @unique
+  passwordHash          String
+  name                  String?
+  role                  String   @default("admin") // super_admin, admin, accounting, partner_support
+  // PartnerOS AI — Phase 1 persona split (spec §3.6). Slot for future admin AI experience.
+  preferredGeneralist   String?  // "finn" | "stella"
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
 }
 
@@ -60,6 +62,8 @@ model Partner {
   // profile, payout) are computed live in src/lib/getting-started.ts and do NOT
   // live here — this column only tracks actions that aren't otherwise recorded.
   onboardingState       String   @default("{}")
+  // PartnerOS AI — Phase 1 persona split (spec §3.6). null = prompt on first AI visit.
+  preferredGeneralist   String?  // "finn" | "stella"
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -845,6 +849,10 @@ model AiMessage {
   cachedTokens        Int?     // DEPRECATED: prompt cache hit tokens (mirrors cacheReadTokens for rows written before the split). Retained so historical rows still render.
   cacheReadTokens     Int?     // tokens served from an existing prompt cache block (cheap — $0.30/MTok on Sonnet 4.6)
   cacheCreationTokens Int?     // tokens written into a new cache block as part of this request (expensive — $3.75/MTok on Sonnet 4.6, ~12x cache read)
+  // PartnerOS AI Phase 17b persona system (spec §8.1)
+  speakerPersona      String?  // "finn" | "stella" | "tara" | "ollie"; null for user messages
+  handoffMetadata     Json?    // { from, to, reason, summary, triggeredBy } — populated when a specialist handoff fires (Phase 2+)
+  attachments         Json?    // [{ url, mimeType, width, height }] — populated for bug-triage screenshots (Phase 3)
   createdAt           DateTime @default(now())
   conversation        AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 

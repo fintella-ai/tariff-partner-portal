@@ -39,6 +39,8 @@ export async function GET() {
       // Communications opt-ins (Phase 15a / 15b)
       emailOptIn: !!partner.emailOptIn,
       smsOptIn: !!partner.smsOptIn,
+      // PartnerOS AI Phase 1 — persona choice (null = prompt on first AI visit)
+      preferredGeneralist: partner.preferredGeneralist || null,
       street: profile?.street || "",
       street2: profile?.street2 || "",
       city: profile?.city || "",
@@ -91,6 +93,7 @@ export async function PATCH(req: NextRequest) {
       payoutMethod, bankName, accountType, routingNumber,
       accountNumber, beneficiaryName,
       bankStreet, bankStreet2, bankCity, bankState, bankZip,
+      preferredGeneralist,
     } = body;
 
     // Fetch current partner to detect name/company changes
@@ -130,6 +133,11 @@ export async function PATCH(req: NextRequest) {
         ...(typeof emailOptIn === "boolean" && { emailOptIn }),
         ...(typeof smsOptIn === "boolean" && { smsOptIn }),
         ...(flippedOnOptIn && { optInDate: new Date() }),
+        // Strict allowlist — only "finn" or "stella" may ever be persisted
+        ...(typeof preferredGeneralist === "string" &&
+        (preferredGeneralist === "finn" || preferredGeneralist === "stella")
+          ? { preferredGeneralist }
+          : {}),
       },
     });
 

@@ -9,6 +9,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import { FIRM_NAME, FIRM_SHORT, STAGE_LABELS } from "@/lib/constants";
+import {
+  buildPersonaVoiceBlock,
+  resolvePersonaId,
+  type PersonaId,
+} from "./ai-personas";
 
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
@@ -329,14 +334,16 @@ export interface GenerateResult {
 
 export async function generateResponse(
   userContext: string,
-  history: ChatMessage[]
+  history: ChatMessage[],
+  personaId: PersonaId | null | undefined
 ): Promise<GenerateResult> {
   const client = getClient();
+  const resolvedPersona = resolvePersonaId(personaId);
 
   // ── MOCK FALLBACK (no API key) ──
   if (!client) {
     const lastUserMsg = history.filter((m) => m.role === "user").pop();
-    const mockReply = `[Mock Response — ANTHROPIC_API_KEY not set in environment]
+    const mockReply = `[Mock Response from ${resolvedPersona === "stella" ? "Stella" : "Finn"} — ANTHROPIC_API_KEY not set in environment]
 
 I received your question: "${lastUserMsg?.content.slice(0, 200) || ""}"
 
@@ -366,6 +373,7 @@ In the meantime, you can:
       text: KNOWLEDGE_BASE,
       cache_control: { type: "ephemeral" },
     },
+    buildPersonaVoiceBlock(resolvedPersona),
     {
       type: "text",
       text: userContext,
