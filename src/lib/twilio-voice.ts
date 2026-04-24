@@ -204,6 +204,144 @@ export async function initiateBridgedCall(
   }
 }
 
+// ─── OUTBOUND EMERGENCY DIAL (one-way TTS call) ─────────────────────────────
+// Used by src/lib/emergency-call.ts to page every isITEmergencyContact
+// admin's personalCellPhone when Ollie classifies a portal report as a
+// confirmed bug. Unlike initiateBridgedCall, this is a ONE-WAY dial — we
+// just play a Twilio TTS message announcing the incident and invite the
+// admin to press 1 to acknowledge.
+
+export interface EmergencyDialInput {
+  /** Admin's personal cell, E.164. */
+  to: string;
+  /** Short reason shown via TTS + included in Twilio log. */
+  reason: string;
+  /** Marks the call as a test fire so TwiML prefixes the spoken message. */
+  isTest?: boolean;
+}
+
+export interface EmergencyDialResult {
+  callLogId: string;
+  status: "initiated" | "demo" | "failed";
+  callSid: string | null;
+  error?: string;
+}
+
+export async function outboundEmergencyDial(
+  input: EmergencyDialInput
+): Promise<EmergencyDialResult> {
+  const to = (input.to || "").trim();
+  const reason = (input.reason || "").slice(0, 280);
+
+  if (!to || !isValidE164(to)) {
+    const err = `Invalid emergency-dial destination: ${to || "(empty)"}`;
+    const logRow = await createCallLogRow({
+      partnerCode: null,
+      toPhone: to,
+      fromPhone: TWILIO_FROM_NUMBER || "(unknown)",
+      initiatedByEmail: "emergency@fintella.partners",
+      initiatedByName: `${FIRM_NAME_LOCAL} IT Emergency`,
+      status: "failed",
+      providerCallSid: null,
+      errorMessage: err,
+    });
+    return { callLogId: logRow.id, status: "failed", callSid: null, error: err };
+  }
+
+  if (!isTwilioVoiceConfigured()) {
+    const logRow = await createCallLogRow({
+      partnerCode: null,
+      toPhone: to,
+      fromPhone: TWILIO_FROM_NUMBER || "(demo)",
+      initiatedByEmail: "emergency@fintella.partners",
+      initiatedByName: `${FIRM_NAME_LOCAL} IT Emergency`,
+      status: "demo",
+      providerCallSid: null,
+      errorMessage: null,
+    });
+    return { callLogId: logRow.id, status: "demo", callSid: null };
+  }
+
+  const logRow = await createCallLogRow({
+    partnerCode: null,
+    toPhone: to,
+    fromPhone: TWILIO_FROM_NUMBER,
+    initiatedByEmail: "emergency@fintella.partners",
+    initiatedByName: `${FIRM_NAME_LOCAL} IT Emergency`,
+    status: "initiated",
+    providerCallSid: null,
+    errorMessage: null,
+  });
+
+  try {
+    const voiceWebhookUrl = `${PORTAL_URL}/api/twilio/emergency-voice?reason=${encodeURIComponent(reason)}${input.isTest ? "&test=1" : ""}`;
+    const statusCallbackUrl = `${PORTAL_URL}/api/twilio/call-status?logId=${encodeURIComponent(logRow.id)}`;
+
+    const form = new URLSearchParams();
+    form.set("To", to);
+    form.set("From", TWILIO_FROM_NUMBER);
+    form.set("Url", voiceWebhookUrl);
+    form.set("StatusCallback", statusCallbackUrl);
+    form.set("StatusCallbackMethod", "POST");
+    form.append("StatusCallbackEvent", "initiated");
+    form.append("StatusCallbackEvent", "ringing");
+    form.append("StatusCallbackEvent", "answered");
+    form.append("StatusCallbackEvent", "completed");
+
+    const basic = Buffer.from(
+      `${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`
+    ).toString("base64");
+
+    const res = await fetch(TWILIO_VOICE_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${basic}`,
+      },
+      body: form.toString(),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => `HTTP ${res.status}`);
+      const err = `Twilio emergency-dial error (${res.status}): ${errText.slice(0, 500)}`;
+      await prisma.callLog
+        .update({
+          where: { id: logRow.id },
+          data: { status: "failed", errorMessage: err },
+        })
+        .catch(() => {});
+      console.error("[TwilioVoice:emergency]", err);
+      return { callLogId: logRow.id, status: "failed", callSid: null, error: err };
+    }
+
+    const json = (await res.json().catch(() => ({}))) as { sid?: string };
+    const callSid = json.sid || null;
+    await prisma.callLog
+      .update({
+        where: { id: logRow.id },
+        data: { providerCallSid: callSid },
+      })
+      .catch(() => {});
+
+    return { callLogId: logRow.id, status: "initiated", callSid };
+  } catch (err: any) {
+    const message = err?.message || String(err);
+    await prisma.callLog
+      .update({
+        where: { id: logRow.id },
+        data: { status: "failed", errorMessage: message },
+      })
+      .catch(() => {});
+    console.error("[TwilioVoice:emergency] threw:", message);
+    return { callLogId: logRow.id, status: "failed", callSid: null, error: message };
+  }
+}
+
+// Keep an inline constant rather than importing constants.ts from this file —
+// constants.ts is a dependency cluster we don't want to pull into the voice
+// lib to avoid circular edge-runtime surprises.
+const FIRM_NAME_LOCAL = "Fintella";
+
 // ─── CallLog persistence helpers ─────────────────────────────────────────────
 
 interface CreateCallLogRowInput {

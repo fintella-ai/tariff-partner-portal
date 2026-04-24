@@ -15,6 +15,7 @@ import { STAGE_LABELS } from "@/lib/constants";
 import { getOnlineAdminsForInbox } from "@/lib/admin-online";
 import { getOfferedSlots } from "@/lib/scheduling";
 import { emergencyCallSuperAdmin } from "@/lib/emergency-call";
+import { initiateBridgedCall } from "@/lib/twilio-voice";
 
 export type OllieToolName =
   | "lookupDeal"
@@ -963,15 +964,24 @@ async function initiateLiveTransfer(
     );
   }
 
-  // Record the intent. Actual Twilio bridging fires in a follow-up PR —
-  // this PR establishes the audit trail + admin notifications so the on-call
-  // admin sees the inbound call intent and can choose to pick up.
+  // Fire the actual Twilio bridged call. initiateBridgedCall dials
+  // TWILIO_ADMIN_PHONE (on-call admin) first; when that admin picks up,
+  // our /api/twilio/voice-webhook <Dial>s the partner's number and
+  // bridges the two legs. Demo-gated: when TWILIO_* env vars are unset,
+  // returns status=demo and logs a CallLog row without making a real call.
+  const dial = await initiateBridgedCall({
+    to: phone,
+    partnerCode,
+    initiatedByEmail: "ollie@fintella.partners",
+    initiatedByName: "Ollie (PartnerOS)",
+  });
+
   const escalation = ctx.conversationId
     ? await prisma.aiEscalation.create({
         data: {
           conversationId: ctx.conversationId,
           rung: "live_call",
-          status: "initiated",
+          status: dial.status === "failed" ? "failed" : "initiated",
           targetInboxId: routedInbox?.id ?? null,
           partnerCode,
           category,
@@ -982,7 +992,10 @@ async function initiateLiveTransfer(
             routedToInbox: routedInbox?.role ?? null,
             onlineAdminCount: onlineAdmins.length,
             fallbackUsed: usedFallback,
-            twilioBridgeStatus: "not_wired_yet",
+            twilioCallSid: dial.callSid,
+            twilioCallLogId: dial.callLogId,
+            twilioStatus: dial.status,
+            twilioError: dial.error ?? null,
           },
         },
         select: { id: true, createdAt: true },
@@ -1006,14 +1019,22 @@ async function initiateLiveTransfer(
     )
   );
 
+  const dialNote =
+    dial.status === "initiated"
+      ? "Twilio dialing on-call admin first — they'll be bridged to the partner when they pick up."
+      : dial.status === "demo"
+        ? "Twilio env vars not set — demo-mode, no real dial. CallLog row written for audit. Admin notified via bell so they can call back manually."
+        : `Twilio dial failed (${dial.error ?? "unknown"}). Admin was notified — will need to call back manually.`;
+
   return ok({
     escalationId: escalation?.id.substring(0, 8) ?? null,
     partnerPhone: phone,
     routedTo: routedInbox ? { role: routedInbox.role, displayName: routedInbox.displayName } : null,
     onlineAdminsNotified: onlineAdmins.length,
     fallbackUsed: usedFallback,
-    note:
-      "Live transfer intent recorded. Admins with availableForLiveCall=true + fresh heartbeat were notified. Twilio outbound bridge wiring ships in a follow-up PR — for now the admin sees the notification and can call the partner back on the confirmed number.",
+    twilioDialStatus: dial.status,
+    twilioCallSid: dial.callSid,
+    note: `${dialNote} ${onlineAdmins.length} admin(s) also got a bell notification.`,
   });
 }
 
@@ -1355,7 +1376,7 @@ async function investigateBug(
           emailStatus: emergencyResult.emailStatus,
           notificationsCreated: emergencyResult.notificationsCreated,
           workspacePosted: emergencyResult.workspacePosted,
-          twilioDialStatus: emergencyResult.twilioDialStatus,
+          twilioDials: emergencyResult.twilioDials,
         }
       : null,
     note:

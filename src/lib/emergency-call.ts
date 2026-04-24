@@ -22,6 +22,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/sendgrid";
 import { FIRM_SHORT } from "@/lib/constants";
+import { outboundEmergencyDial } from "@/lib/twilio-voice";
 
 export interface EmergencyTrigger {
   /** Short human-readable reason — "Portal Submit Client button 500s" */
@@ -42,7 +43,14 @@ export interface EmergencyFanOutResult {
   emailStatus: "sent" | "demo" | "failed" | "skipped";
   notificationsCreated: number;
   workspacePosted: boolean;
-  twilioDialStatus: "not_wired_yet";
+  /** Summary of the outbound Twilio dial leg — one entry per paged contact
+   *  that had a personalCellPhone. Empty when no contacts had phones. */
+  twilioDials: {
+    email: string;
+    status: "initiated" | "demo" | "failed";
+    callSid: string | null;
+    error?: string;
+  }[];
   escalationId: string | null;
 }
 
@@ -74,7 +82,7 @@ export async function emergencyCallSuperAdmin(
     emailStatus: "skipped",
     notificationsCreated: 0,
     workspacePosted: false,
-    twilioDialStatus: "not_wired_yet",
+    twilioDials: [],
     escalationId: null,
   };
 
@@ -123,7 +131,7 @@ export async function emergencyCallSuperAdmin(
           details: trigger.details,
           isTest: trigger.isTest ?? false,
           contactCount: contacts.length,
-          twilioDialStatus: "not_wired_yet",
+          contactsWithPhone: contacts.filter((c) => !!c.personalCellPhone).length,
         },
       },
       select: { id: true },
@@ -215,6 +223,41 @@ export async function emergencyCallSuperAdmin(
     }
   } catch (e) {
     console.error("[emergency-call] workspace post failed:", e);
+  }
+
+  // 6. Twilio outbound voice — dial every contact with a personalCellPhone.
+  //    Each leg is independent; a single-contact failure is logged + returned
+  //    in the summary but doesn't block the rest of the fan-out.
+  const phoneContacts = contacts.filter((c) => !!c.personalCellPhone);
+  if (phoneContacts.length > 0) {
+    const reasonForTTS = trigger.isTest
+      ? `Test. ${trigger.reason}`
+      : trigger.reason;
+    const dialResults = await Promise.all(
+      phoneContacts.map(async (c) => {
+        try {
+          const r = await outboundEmergencyDial({
+            to: c.personalCellPhone!,
+            reason: reasonForTTS,
+            isTest: trigger.isTest ?? false,
+          });
+          return {
+            email: c.email,
+            status: r.status,
+            callSid: r.callSid,
+            error: r.error,
+          };
+        } catch (e: any) {
+          return {
+            email: c.email,
+            status: "failed" as const,
+            callSid: null,
+            error: e?.message || String(e),
+          };
+        }
+      })
+    );
+    result.twilioDials = dialResults;
   }
 
   return result;
