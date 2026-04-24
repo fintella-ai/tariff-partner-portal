@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useResizableColumns } from "@/components/ui/ResizableTable";
+import GlossaryAdmin from "@/components/admin/GlossaryAdmin";
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 
-type ViewTab = "modules" | "progress" | "resources" | "faq";
+type ViewTab = "modules" | "progress" | "resources" | "faq" | "glossary";
 
 type TrainingModule = {
   id: string;
@@ -139,6 +140,7 @@ const categoryBadge: Record<string, string> = {
 
 const VIEW_TABS: { id: ViewTab; label: string }[] = [
   { id: "modules", label: "Modules" },
+  { id: "glossary", label: "Glossary" },
   { id: "progress", label: "Progress" },
   { id: "resources", label: "Resources" },
   { id: "faq", label: "FAQ" },
@@ -1836,6 +1838,9 @@ export default function AdminTrainingPage() {
           </div>
         </>
       )}
+
+      {/* ═══ GLOSSARY VIEW (Phase 2b) ═══ */}
+      {view === "glossary" && <GlossaryAdmin />}
     </div>
   );
 }

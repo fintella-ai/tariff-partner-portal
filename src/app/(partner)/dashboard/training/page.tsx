@@ -42,12 +42,20 @@ interface FAQItem {
   category: string;
 }
 
+interface GlossaryEntry {
+  id: string;
+  term: string;
+  aliases: string[];
+  definition: string;
+  category: string | null;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                 */
 /* -------------------------------------------------------------------------- */
 
 /** Top-level section tabs. */
-type Section = "modules" | "resources" | "faq";
+type Section = "modules" | "resources" | "faq" | "glossary";
 
 /** Module category filter options. */
 const MODULE_CATEGORIES = ["All", "Onboarding", "Sales", "Product Knowledge", "Tools"];
@@ -140,6 +148,10 @@ export default function TrainingPage() {
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
   const [activeFaqCategory, setActiveFaqCategory] = useState("All");
 
+  /* ---- Glossary state (Phase 2b) ---- */
+  const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
+  const [glossarySearch, setGlossarySearch] = useState("");
+
   /* ---- Video modal state ---- */
   const [videoModal, setVideoModal] = useState<{ isOpen: boolean; url: string; title: string }>({
     isOpen: false,
@@ -156,10 +168,11 @@ export default function TrainingPage() {
 
     async function fetchData() {
       try {
-        const [modulesRes, resourcesRes, faqRes] = await Promise.allSettled([
+        const [modulesRes, resourcesRes, faqRes, glossaryRes] = await Promise.allSettled([
           fetch("/api/training/modules"),
           fetch("/api/training/resources"),
           fetch("/api/training/faq"),
+          fetch("/api/training/glossary"),
         ]);
 
         if (cancelled) return;
@@ -187,12 +200,21 @@ export default function TrainingPage() {
         } else {
           setFaqs(DEMO_FAQS);
         }
+
+        // Glossary (Phase 2b) — no demo fallback; empty state shows if none exist
+        if (glossaryRes.status === "fulfilled" && glossaryRes.value.ok) {
+          const data = await glossaryRes.value.json();
+          setGlossary(data.entries ?? []);
+        } else {
+          setGlossary([]);
+        }
       } catch {
         // Complete failure — use all demo data
         if (!cancelled) {
           setModules(DEMO_MODULES);
           setResources(DEMO_RESOURCES);
           setFaqs(DEMO_FAQS);
+          setGlossary([]);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -319,6 +341,7 @@ export default function TrainingPage() {
           { key: "modules" as Section, label: "Modules" },
           { key: "resources" as Section, label: "Resources" },
           { key: "faq" as Section, label: "FAQ" },
+          { key: "glossary" as Section, label: "Glossary" },
         ]).map((tab) => (
           <button
             key={tab.key}
@@ -622,6 +645,78 @@ export default function TrainingPage() {
 
           {/* FAQ Accordion */}
           <Accordion items={accordionItems} />
+        </>
+      )}
+
+      {/* ================================================================== */}
+      {/*  GLOSSARY SECTION (Phase 2b)                                        */}
+      {/* ================================================================== */}
+      {!loading && activeSection === "glossary" && (
+        <>
+          <div className="mb-4">
+            <input
+              type="search"
+              value={glossarySearch}
+              onChange={(e) => setGlossarySearch(e.target.value)}
+              placeholder="Search terms, aliases, or definitions…"
+              className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-4 py-3 font-body text-sm text-[var(--app-text)] outline-none focus:border-brand-gold/40 placeholder:text-[var(--app-text-muted)]"
+            />
+          </div>
+          {glossary.length === 0 ? (
+            <div className="bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-xl p-8 text-center">
+              <div className="text-3xl mb-2">📖</div>
+              <div className="font-display text-base font-bold text-[var(--app-text)] mb-1">Glossary coming soon</div>
+              <div className="font-body text-[12px] text-[var(--app-text-muted)]">
+                Your admin team is building out definitions for tariff refund terminology. Check back soon.
+              </div>
+            </div>
+          ) : (() => {
+            const q = glossarySearch.trim().toLowerCase();
+            const filtered = q
+              ? glossary.filter((g) => {
+                  const inTerm = g.term.toLowerCase().includes(q);
+                  const inAlias = (g.aliases ?? []).some((a) => a.toLowerCase().includes(q));
+                  const inDef = g.definition.toLowerCase().includes(q);
+                  return inTerm || inAlias || inDef;
+                })
+              : glossary;
+            if (filtered.length === 0) {
+              return (
+                <div className="font-body text-[13px] text-[var(--app-text-muted)] italic text-center py-8">
+                  No terms match &ldquo;{glossarySearch}&rdquo;.
+                </div>
+              );
+            }
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {filtered.map((g) => (
+                  <div
+                    key={g.id}
+                    className="bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-xl p-4"
+                  >
+                    <div className="flex items-start gap-3 mb-1 flex-wrap">
+                      <div className="font-display text-base font-bold text-[var(--app-text)]">
+                        {g.term}
+                      </div>
+                      {g.category && (
+                        <span className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded px-2 py-0.5">
+                          {g.category}
+                        </span>
+                      )}
+                    </div>
+                    {g.aliases && g.aliases.length > 0 && (
+                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-2">
+                        aka: {g.aliases.join(", ")}
+                      </div>
+                    )}
+                    <div className="font-body text-[13px] text-[var(--app-text-secondary)] leading-relaxed whitespace-pre-wrap">
+                      {g.definition}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </>
       )}
 
