@@ -8,6 +8,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Fintella — Financial Intelligence Network Partner Portal",
   description: "Fighting for what's owed, reclaiming what's fair.",
+  openGraph: {
+    title: "Fintella — Financial Intelligence Network",
+    description: "The partner platform for IEEPA tariff recovery referrals. Track deals, earn commissions, build your network.",
+    siteName: "Fintella",
+    type: "website",
+  },
   manifest: "/api/manifest",
   icons: {
     icon: "/api/favicon",

@@ -70,8 +70,8 @@ function GetStartedContent() {
       setError("First name, last name, and email are required.");
       return;
     }
-    if (!password || password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (!password || password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
     if (password !== confirmPassword) {

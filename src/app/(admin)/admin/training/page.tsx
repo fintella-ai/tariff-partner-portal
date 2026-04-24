@@ -820,7 +820,7 @@ export default function AdminTrainingPage() {
                     className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   >
                     {MODULE_CATEGORIES.map((c) => (
-                      <option key={c} value={c} className="bg-[#1a1a2e]">
+                      <option key={c} value={c} className="bg-[var(--app-dropdown-bg)]">
                         {c.charAt(0).toUpperCase() + c.slice(1)}
                       </option>
                     ))}
@@ -1336,7 +1336,7 @@ export default function AdminTrainingPage() {
                     className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   >
                     {RESOURCE_FILE_TYPES.map((t) => (
-                      <option key={t} value={t} className="bg-[#1a1a2e]">
+                      <option key={t} value={t} className="bg-[var(--app-dropdown-bg)]">
                         {t.charAt(0).toUpperCase() + t.slice(1)}
                       </option>
                     ))}
@@ -1411,11 +1411,11 @@ export default function AdminTrainingPage() {
                     onChange={(e) => setFormModuleId(e.target.value)}
                     className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   >
-                    <option value="" className="bg-[#1a1a2e]">
+                    <option value="" className="bg-[var(--app-dropdown-bg)]">
                       None (General Resource)
                     </option>
                     {modules.map((m) => (
-                      <option key={m.id} value={m.id} className="bg-[#1a1a2e]">
+                      <option key={m.id} value={m.id} className="bg-[var(--app-dropdown-bg)]">
                         {m.title}
                       </option>
                     ))}
@@ -1775,7 +1775,7 @@ export default function AdminTrainingPage() {
                     className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 text-[var(--app-text)] font-body text-[13px] focus:border-brand-gold/50 focus:outline-none"
                   >
                     {FAQ_CATEGORIES.map((c) => (
-                      <option key={c} value={c} className="bg-[#1a1a2e]">
+                      <option key={c} value={c} className="bg-[var(--app-dropdown-bg)]">
                         {c.charAt(0).toUpperCase() + c.slice(1)}
                       </option>
                     ))}

@@ -212,7 +212,7 @@ export default function LandingEditorPage() {
           <button
             onClick={publish}
             disabled={publishing}
-            className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[#080d1c] text-sm font-semibold hover:opacity-90"
+            className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90"
           >
             {publishing ? "Publishing…" : "Publish"}
           </button>

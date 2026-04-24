@@ -84,8 +84,8 @@ function SignupContent() {
       setError("First name, last name, and email are required.");
       return;
     }
-    if (!signupPassword || signupPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (!signupPassword || signupPassword.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
     if (signupPassword !== confirmSignupPassword) {

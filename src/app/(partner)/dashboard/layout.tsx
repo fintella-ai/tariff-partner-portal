@@ -196,7 +196,7 @@ function HeaderMenuDropdown({
         aria-label={hasUnread ? `Menu — ${unreadCount} unread notifications` : "Menu"}
         className={`relative font-body text-[12px] font-semibold tracking-wider border rounded-lg px-4 py-2.5 transition-all flex items-center justify-center gap-2 min-h-[44px] ${
           hasUnread
-            ? "border-red-500/60 bg-red-500/10 text-red-400 animate-pulse shadow-[0_0_14px_rgba(239,68,68,0.35)]"
+            ? "border-red-500/60 bg-red-500/10 text-red-400 animate-pulse shadow-[0_0_14px_var(--app-error-glow)]"
             : "border-brand-gold/30 bg-brand-gold/[0.06] text-brand-gold hover:bg-brand-gold/10"
         }`}
       >
@@ -837,11 +837,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {chatEnabled && (
       <button
         onClick={() => setChatOpen(!chatOpen)}
-        className={`fixed z-[950] bg-gradient-to-br from-brand-gold to-[#e8c060] text-brand-dark rounded-full shadow-lg shadow-brand-gold/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${
-          device.isMobile
-            ? "bottom-[88px] right-4 w-12 h-12 text-xl"
-            : "bottom-6 right-6 w-14 h-14 text-2xl"
-        }`}
+        className="fixed z-[950] bg-gradient-to-br from-brand-gold to-[var(--brand-gold)] text-brand-dark rounded-full shadow-lg shadow-brand-gold/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+        style={device.isMobile
+          ? { bottom: "calc(88px + env(safe-area-inset-bottom, 0px))", right: "1rem", width: "3rem", height: "3rem", fontSize: "1.25rem" }
+          : { bottom: "1.5rem", right: "1.5rem", width: "3.5rem", height: "3.5rem", fontSize: "1.5rem" }
+        }
         title="Chat with support"
       >
         {chatOpen ? "✕" : "💬"}

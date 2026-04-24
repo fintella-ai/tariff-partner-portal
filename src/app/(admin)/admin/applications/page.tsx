@@ -181,7 +181,7 @@ export default function AdminApplicationsPage() {
           </Link>
           <button
             onClick={fetchApps}
-            className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[#080d1c] text-sm font-semibold hover:opacity-90"
+            className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90"
           >
             Refresh
           </button>
@@ -389,7 +389,7 @@ function ApplicationDetail({
         {notesDirty && (
           <button
             onClick={() => { onSaveNotes(app.id, notes); setNotesDirty(false); }}
-            className="mt-2 px-3 py-1.5 text-xs rounded-md bg-[var(--brand-gold)] text-[#080d1c] font-semibold hover:opacity-90"
+            className="mt-2 px-3 py-1.5 text-xs rounded-md bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] font-semibold hover:opacity-90"
           >
             Save notes
           </button>

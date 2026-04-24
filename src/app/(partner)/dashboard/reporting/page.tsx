@@ -1152,7 +1152,7 @@ function DealDetailPanel({ deal }: { deal: any }) {
 
       {/* Consultation */}
       {(deal.consultBookedDate || deal.consultBookedTime) && (
-        <div className="mb-4 p-3 rounded-lg flex items-center gap-4" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)" }}>
+        <div className="mb-4 p-3 rounded-lg flex items-center gap-4" style={{ background: "var(--app-gold-overlay)", border: "1px solid var(--app-gold-overlay-border)" }}>
           <div>
             <div className="font-body text-[10px] text-yellow-500/80 uppercase tracking-wider">Consultation Date</div>
             <div className="font-body text-[13px] text-[var(--app-text)] mt-0.5">{deal.consultBookedDate || "—"}</div>

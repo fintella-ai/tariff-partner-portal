@@ -58,6 +58,13 @@
   --app-scrollbar: rgba(160, 130, 50, 0.5);
   --brand-gold: #b08c30;
   --brand-gold-muted: rgba(160, 130, 50, 0.18);
+  --app-gold-overlay: rgba(176, 140, 48, 0.06);
+  --app-gold-overlay-border: rgba(176, 140, 48, 0.15);
+  --app-gold-overlay-subtle: rgba(176, 140, 48, 0.04);
+  --app-gold-overlay-border-subtle: rgba(176, 140, 48, 0.12);
+  --app-error-glow: rgba(239, 68, 68, 0.35);
+  --app-dropdown-bg: #f1f3f6;
+  --app-button-gold-text: #0f172a;
 }
 
 /* Dark theme — [data-theme="dark"] is set by ThemeProvider (JS, before first paint).
@@ -98,6 +105,13 @@
   --app-scrollbar: rgba(196, 160, 80, 0.4);
   --brand-gold: #c4a050;
   --brand-gold-muted: rgba(196, 160, 80, 0.18);
+  --app-gold-overlay: rgba(196, 160, 80, 0.06);
+  --app-gold-overlay-border: rgba(196, 160, 80, 0.15);
+  --app-gold-overlay-subtle: rgba(196, 160, 80, 0.04);
+  --app-gold-overlay-border-subtle: rgba(196, 160, 80, 0.12);
+  --app-error-glow: rgba(239, 68, 68, 0.35);
+  --app-dropdown-bg: #1a1a2e;
+  --app-button-gold-text: #000000;
   color-scheme: dark;
 }
 
@@ -129,6 +143,13 @@
     --app-gold-text: #d4ad55;
     --app-code-bg: rgba(255, 255, 255, 0.14);
     --app-scrollbar: rgba(196, 160, 80, 0.4);
+    --app-gold-overlay: rgba(196, 160, 80, 0.06);
+    --app-gold-overlay-border: rgba(196, 160, 80, 0.15);
+    --app-gold-overlay-subtle: rgba(196, 160, 80, 0.04);
+    --app-gold-overlay-border-subtle: rgba(196, 160, 80, 0.12);
+    --app-error-glow: rgba(239, 68, 68, 0.35);
+    --app-dropdown-bg: #1a1a2e;
+    --app-button-gold-text: #000000;
     color-scheme: dark;
   }
 }

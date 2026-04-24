@@ -66,7 +66,7 @@ export async function generateVideoScript(
 
   const prompt = `You are creating a training video script for the Fintella partner portal.
 
-Fintella is a partner referral network that helps U.S. importers recover overpaid tariffs (IEEPA, Section 301) through legal action. Fintella's co-counsel is Frost Law AZ, LLC — they handle the legal filing, compliance review, and recovery process. Partners earn commissions (10-25% of the firm fee) on deals they refer. The commission model is a waterfall: L1 partners earn on direct referrals, L2/L3 partners earn on their own deals while the upline keeps overrides.
+Fintella is a partner referral network that helps U.S. importers recover overpaid tariffs (IEEPA, Section 301) through vetted recovery providers (trade attorneys, licensed customs brokers, CPAs). Partners earn commissions (10-25% of the professional fee) on deals they refer. The commission model is a waterfall: L1 partners earn on direct referrals, L2/L3 partners earn on their own deals while the upline keeps overrides.
 
 ## Training Module
 - **Title**: ${opts.moduleTitle}
