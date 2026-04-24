@@ -14,7 +14,25 @@ const FIELD_MAX = {
 };
 
 function emailIsValid(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= FIELD_MAX.email;
+  // Linear-time, backtracking-free validation. Avoids the polynomial-ReDoS
+  // class that any `[^\s@]+@[^\s@]+\.[^\s@]+`-shape regex is prone to
+  // (CodeQL rule js/polynomial-redos). Parses the three structural parts
+  // via indexOf/lastIndexOf instead of regex.
+  if (email.length < 5 || email.length > FIELD_MAX.email) return false;
+  const at = email.indexOf("@");
+  if (at <= 0) return false;
+  if (at !== email.lastIndexOf("@")) return false;
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  if (!local || !domain) return false;
+  const dot = domain.lastIndexOf(".");
+  if (dot <= 0 || dot >= domain.length - 1) return false;
+  for (let i = 0; i < email.length; i++) {
+    const c = email.charCodeAt(i);
+    // Reject whitespace + control characters.
+    if (c <= 0x20 || c === 0x7f) return false;
+  }
+  return true;
 }
 
 // Lightweight IP-based rate limit: at most 5 applications from the same IP
