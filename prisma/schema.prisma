@@ -1414,3 +1414,28 @@ model Booking {
   @@index([applicationId])
   @@index([email])
 }
+
+// ─── LANDING PAGE CONTENT (singleton, admin-editable) ───────────────────────
+// Data-driven landing page that lives at `/landing-v2` (hidden behind
+// `landingV2Enabled`) and replaces `/` once published. Content is split
+// into `draft` (what the admin editor writes) and `published` (what
+// /landing-v2 renders). The `/api/admin/landing/regenerate` endpoint
+// reads TrainingModule + TrainingResource (PDFs) + FAQ + PortalSettings
+// and uses Claude to compose landing copy into `draft`.
+//
+// Both draft and published are JSON strings of the same shape (see
+// src/lib/landingContent.ts for the TypeScript type). Storing as string
+// keeps the schema stable as we add new sections — the editor + renderer
+// both schema-validate on read.
+model LandingContent {
+  id                  String   @id @default("global") // singleton
+  draft               String   @default("{}")
+  published           String   @default("{}")
+  landingV2Enabled    Boolean  @default(false) // flip to make /landing-v2 reachable (still hidden from /)
+  landingV2Live       Boolean  @default(false) // flip to make `/` serve the new landing
+  lastRegeneratedAt   DateTime?
+  lastRegeneratedBy   String?  // admin id
+  lastPublishedAt     DateTime?
+  lastPublishedBy     String?  // admin id
+  updatedAt           DateTime @updatedAt
+}
