@@ -5,7 +5,6 @@ import { useResizableColumns } from "@/components/ui/ResizableTable";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useDevice } from "@/lib/useDevice";
-import CopyButton from "@/components/ui/CopyButton";
 import { FIRM_SHORT, SUPPORT_EMAIL } from "@/lib/constants";
 
 interface Invite {
@@ -60,7 +59,6 @@ export default function ReferralLinksPage() {
   }, []);
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://fintella.partners";
-  const clientRefUrl = `https://referral.frostlawaz.com/l/ANNEXATIONPR/?utm_content=${partnerCode}`;
 
   const loadInvites = useCallback(async () => {
     try {
@@ -188,23 +186,6 @@ export default function ReferralLinksPage() {
     <div>
       <h2 className="font-display text-xl sm:text-2xl font-bold mb-2">Referral Links</h2>
       <p className="font-body text-sm text-[var(--app-text-muted)] mb-6">Share client links and recruit partners to your downline.</p>
-
-      {/* ═══ CLIENT SUBMISSION LINK ═══ */}
-      <div className={`card ${device.cardPadding} border border-[#c4a050]/30 mb-6`}>
-        <div className="flex items-center gap-3 mb-3">
-          <span className="text-2xl">📩</span>
-          <div className="font-body font-semibold text-[15px]">Client Submission Link</div>
-        </div>
-        <div className="font-body text-[12px] text-[var(--app-text-muted)] leading-relaxed mb-4">
-          Send this link to importers who may qualify for a tariff refund. Deals are tracked to your account.
-        </div>
-        <div className={`flex ${device.isMobile ? "flex-col" : "flex-row items-center"} gap-3`}>
-          <div className="flex-1 bg-[#c4a050]/5 border border-[#c4a050]/30 rounded-lg px-4 py-3 font-mono text-[13px] text-[var(--app-text-secondary)] truncate select-all min-w-0">
-            {clientRefUrl}
-          </div>
-          <CopyButton text={clientRefUrl} color="#c4a050" />
-        </div>
-      </div>
 
       {/* ═══ PARTNER RECRUITMENT — PRE-LOADED RATE LINKS ═══ */}
       {canRecruit && (

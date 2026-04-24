@@ -16,6 +16,11 @@ export default function SubmitClientPage() {
   const partnerCode = user?.partnerCode || "DEMO";
   const partnerName = user?.name || "Partner";
   const [agreementSigned, setAgreementSigned] = useState<boolean | null>(null);
+  // Incrementing key forces the iframe to unmount/remount, resetting the
+  // Frost Law flow back to the submission form. Used after a partner
+  // finishes one referral (form → calendar book) and wants to submit
+  // another without reloading the whole dashboard page.
+  const [iframeKey, setIframeKey] = useState(0);
 
   // ── Fetch agreement status ────────────────────────────────────────────────
   // Gate is satisfied only when BOTH the agreement is signed/approved AND
@@ -42,10 +47,6 @@ export default function SubmitClientPage() {
 
   // Build the referral URL with the partner's code
   const referralUrl = `${BASE_REFERRAL_URL}?utm_content=${partnerCode}`;
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(referralUrl);
-  };
 
   if (agreementSigned === null) {
     return (
@@ -129,51 +130,53 @@ export default function SubmitClientPage() {
             <div className="font-mono text-[11px] text-[var(--app-text-muted)]">{partnerCode}</div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCopyLink}
-            className="font-body text-[11px] text-brand-gold/70 border border-brand-gold/20 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors"
-          >
-            Copy Referral Link
-          </button>
-        </div>
       </div>
 
       {/* Embedded referral form */}
       <div className={`card overflow-hidden ${device.borderRadius}`}>
-        <div className="px-4 py-3 border-b border-[var(--app-border)] flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-[var(--app-border)] flex items-center justify-between gap-3">
           <div className="font-body text-[12px] text-[var(--app-text-muted)]">
             Client Submission Form — tracked to <span className="text-brand-gold font-semibold">{partnerCode}</span>
           </div>
-          <a
-            href={referralUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-body text-[11px] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition-colors"
+          <button
+            type="button"
+            onClick={() => setIframeKey((k) => k + 1)}
+            title="Reset the form to submit another client"
+            className="font-body text-[11px] text-brand-gold/80 border border-brand-gold/25 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors flex items-center gap-1.5 min-h-[32px]"
           >
-            Open in new tab ↗
-          </a>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
         </div>
-        {/* Cropped iframe — hides nav + hero, shows form directly */}
+        {/* Cropped iframe — hides Frost Law nav+hero at top and the footer /
+            newsletter block at the bottom. Container height is the visible
+            window; iframe is positioned absolute with a negative `top` to
+            push the hero out of view and enough extra height to keep the
+            form + calendar page scrollable without the footer leaking in.
+            Dropped `allow-top-navigation` so the form's post-submit
+            calendar redirect stays inside this iframe. */}
         <div
           className="overflow-hidden relative"
           style={{
             background: "#0c1630",
-            height: device.isMobile ? "calc(100vh - 200px)" : "85vh",
-            minHeight: 800,
+            height: device.isMobile ? "calc(100vh - 280px)" : "72vh",
+            minHeight: 680,
           }}
         >
           <iframe
+            key={iframeKey}
             src={referralUrl}
             className="w-full border-0 absolute"
             title="Client Referral Submission"
             allow="camera; microphone; geolocation"
-            sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-top-navigation"
+            sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
             style={{
-              top: device.isMobile ? -450 : -680,  // mobile: shorter hero; desktop: full hero crop
+              top: device.isMobile ? -450 : -680,
               left: 0,
               width: "100%",
-              height: device.isMobile ? "calc(100% + 500px)" : "calc(100% + 750px)",
+              height: device.isMobile ? "calc(100% + 800px)" : "calc(100% + 1100px)",
             }}
           />
         </div>
