@@ -820,10 +820,10 @@ async function patchHandler(req: NextRequest): Promise<Response> {
         ? body.dealId.trim()
         : null;
     const rawExternalId =
-      typeof body.hs_object_id === "string" && body.hs_object_id.trim()
-        ? body.hs_object_id.trim()
-        : typeof body.externalDealId === "string" && body.externalDealId.trim()
-        ? body.externalDealId.trim()
+      body.hs_object_id != null && String(body.hs_object_id).trim()
+        ? String(body.hs_object_id).trim()
+        : body.externalDealId != null && String(body.externalDealId).trim()
+        ? String(body.externalDealId).trim()
         : null;
 
     if (!rawDealId && !rawExternalId) {
@@ -1682,9 +1682,9 @@ export async function POST(req: NextRequest) {
     try {
       const peek = await innerReq.clone().json();
       if (peek && typeof peek === "object") {
-        const hasDealId = typeof peek.dealId === "string" && peek.dealId.trim().length > 0;
-        const hasHsId = typeof peek.hs_object_id === "string" && peek.hs_object_id.trim().length > 0;
-        const hasExtId = typeof peek.externalDealId === "string" && peek.externalDealId.trim().length > 0;
+        const hasDealId = peek.dealId != null && String(peek.dealId).trim().length > 0;
+        const hasHsId = peek.hs_object_id != null && String(peek.hs_object_id).trim().length > 0;
+        const hasExtId = peek.externalDealId != null && String(peek.externalDealId).trim().length > 0;
         looksLikeUpdate = hasDealId || hasHsId || hasExtId;
       }
     } catch {
