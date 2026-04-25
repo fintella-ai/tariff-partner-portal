@@ -37,7 +37,8 @@ export async function POST(req: NextRequest) {
   } catch {}
 
   const baseUrl = req.nextUrl.origin;
-  const targetPath = log.path || "/api/webhook/referral";
+  // Hardcoded to webhook/referral only — prevents SSRF via stored log.path
+  const targetPath = "/api/webhook/referral";
 
   try {
     const res = await fetch(`${baseUrl}${targetPath}`, {
