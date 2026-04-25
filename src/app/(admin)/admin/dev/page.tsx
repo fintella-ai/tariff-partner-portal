@@ -882,10 +882,15 @@ function ApiLogSection() {
   const [dirFilter, setDirFilter] = useState<LogFilter>("all");
   type StatusFilter = "all" | "success" | "errors";
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  type TimeFilter = "24h" | "7d" | "30d" | "all";
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("24h");
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkReplaying, setBulkReplaying] = useState(false);
   const [bulkResults, setBulkResults] = useState<Record<string, { status: number; ok: boolean }>>({});
+  const PAGE_SIZE = 100;
+  const [page, setPage] = useState(1);
+  const [dragSelecting, setDragSelecting] = useState(false);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -907,6 +912,12 @@ function ApiLogSection() {
   useEffect(() => { fetchLogs(); }, []);
 
   useEffect(() => {
+    const stopDrag = () => setDragSelecting(false);
+    window.addEventListener("mouseup", stopDrag);
+    return () => window.removeEventListener("mouseup", stopDrag);
+  }, []);
+
+  useEffect(() => {
     if (autoRefresh) {
       autoRefreshRef.current = setInterval(fetchLogs, 5000);
     } else {
@@ -921,9 +932,18 @@ function ApiLogSection() {
       if (statusFilter === "all") return true;
       const code = l.responseStatus ?? 0;
       return statusFilter === "errors" ? code >= 400 : code > 0 && code < 400;
+    })
+    .filter((l) => {
+      if (timeFilter === "all") return true;
+      const hours = timeFilter === "24h" ? 24 : timeFilter === "7d" ? 168 : 720;
+      return new Date(l.createdAt).getTime() > Date.now() - hours * 3600000;
     });
 
-  const failedIncoming = filteredLogs.filter((l) => l.direction === "incoming" && l.body && (l.responseStatus ?? 0) >= 400);
+  const totalFiltered = filteredLogs.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedLogs = filteredLogs.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const failedIncoming = paginatedLogs.filter((l) => l.direction === "incoming" && l.body && (l.responseStatus ?? 0) >= 400);
   const toggleSelect = (id: string) => setSelectedIds((prev) => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -997,19 +1017,15 @@ function ApiLogSection() {
             </button>
           ))}
           <div className="w-px h-5 bg-[var(--app-border)]" />
-          {/* Status filter pills */}
-          {(["all", "success", "errors"] as StatusFilter[]).map((f) => (
-            <button key={f} onClick={() => setStatusFilter(f)}
+          {/* Time filter */}
+          {(["24h", "7d", "30d", "all"] as TimeFilter[]).map((f) => (
+            <button key={f} onClick={() => { setTimeFilter(f); setPage(1); }}
               className={`font-body text-[10px] font-semibold uppercase tracking-wider border rounded-full px-3 py-1 min-h-[28px] transition-colors ${
-                statusFilter === f
-                  ? f === "errors"
-                    ? "bg-red-500/15 border-red-500/30 text-red-400"
-                    : f === "success"
-                      ? "bg-green-500/15 border-green-500/30 text-green-400"
-                      : "bg-brand-gold/10 border-brand-gold/30 text-brand-gold"
+                timeFilter === f
+                  ? "bg-brand-gold/10 border-brand-gold/30 text-brand-gold"
                   : "border-[var(--app-border)] theme-text-muted hover:border-brand-gold/20"
               }`}>
-              {f === "all" ? "all status" : f}
+              {f === "all" ? "all time" : f}
             </button>
           ))}
           <div className="w-px h-5 bg-[var(--app-border)]" />
@@ -1044,6 +1060,28 @@ function ApiLogSection() {
         </div>
       </div>
 
+      {/* Status tabs */}
+      <div className="flex border-b border-[var(--app-border)]">
+        {([
+          { key: "all" as StatusFilter, label: "All", count: logs.filter((l) => dirFilter === "all" || l.direction === dirFilter).length },
+          { key: "success" as StatusFilter, label: "Successful", count: logs.filter((l) => (dirFilter === "all" || l.direction === dirFilter) && (l.responseStatus ?? 0) > 0 && (l.responseStatus ?? 0) < 400).length },
+          { key: "errors" as StatusFilter, label: "Failed", count: logs.filter((l) => (dirFilter === "all" || l.direction === dirFilter) && (l.responseStatus ?? 0) >= 400).length },
+        ]).map((tab) => (
+          <button key={tab.key} onClick={() => { setStatusFilter(tab.key); setPage(1); setSelectedIds(new Set()); setBulkResults({}); }}
+            className={`flex-1 sm:flex-none px-6 py-3 font-body text-[12px] font-semibold tracking-wider transition-colors border-b-2 -mb-px ${
+              statusFilter === tab.key
+                ? tab.key === "errors"
+                  ? "border-red-500 text-red-400"
+                  : tab.key === "success"
+                    ? "border-green-500 text-green-400"
+                    : "border-brand-gold text-brand-gold"
+                : "border-transparent theme-text-muted hover:text-[var(--app-text-secondary)]"
+            }`}>
+            {tab.label} <span className="ml-1.5 font-mono text-[10px] opacity-60">{tab.count}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Bulk action bar */}
       {bulkMode && failedIncoming.length > 0 && (
         <div className="px-5 py-3 border-b border-[var(--app-border)] flex items-center gap-3 flex-wrap" style={{ background: "var(--app-gold-overlay)" }}>
@@ -1065,7 +1103,7 @@ function ApiLogSection() {
         </div>
       )}
 
-      {filteredLogs.length === 0 ? (
+      {paginatedLogs.length === 0 ? (
         <div className="px-5 py-10 text-center">
           <div className="font-body text-sm theme-text-muted mb-1">No {dirFilter === "all" ? "" : dirFilter + " "}requests logged yet.</div>
           <div className="font-body text-[11px] theme-text-faint">
@@ -1074,7 +1112,7 @@ function ApiLogSection() {
         </div>
       ) : (
         <div>
-          {filteredLogs.map((log) => {
+          {paginatedLogs.map((log) => {
             const isExpanded = expandedId === log.id;
             const statusCode = log.responseStatus;
             return (
@@ -1084,14 +1122,16 @@ function ApiLogSection() {
                   className="w-full text-left px-5 py-3 hover:bg-[var(--app-hover)] transition-colors"
                 >
                   <div className="flex items-center gap-3 flex-wrap">
-                    {/* Bulk checkbox */}
+                    {/* Bulk checkbox with drag-select */}
                     {bulkMode && log.direction === "incoming" && log.body && (statusCode ?? 0) >= 400 && (
                       <input
                         type="checkbox"
                         checked={selectedIds.has(log.id)}
                         onChange={(e) => { e.stopPropagation(); toggleSelect(log.id); }}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 accent-brand-gold shrink-0"
+                        onMouseDown={(e) => { e.stopPropagation(); setDragSelecting(true); toggleSelect(log.id); }}
+                        onMouseEnter={() => { if (dragSelecting && !selectedIds.has(log.id)) toggleSelect(log.id); }}
+                        className="w-4 h-4 accent-brand-gold shrink-0 cursor-pointer"
                       />
                     )}
                     {/* Bulk result badge */}
@@ -1201,6 +1241,36 @@ function ApiLogSection() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="px-5 py-3 border-t border-[var(--app-border)] flex items-center justify-between">
+          <span className="font-body text-[11px] theme-text-muted">
+            Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, totalFiltered)} of {totalFiltered}
+          </span>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setPage(1)} disabled={safePage <= 1}
+              className="font-body text-[11px] border border-[var(--app-border)] rounded px-2 py-1 min-h-[28px] theme-text-muted hover:border-brand-gold/20 disabled:opacity-30">
+              ««
+            </button>
+            <button onClick={() => setPage(safePage - 1)} disabled={safePage <= 1}
+              className="font-body text-[11px] border border-[var(--app-border)] rounded px-2 py-1 min-h-[28px] theme-text-muted hover:border-brand-gold/20 disabled:opacity-30">
+              ‹
+            </button>
+            <span className="font-body text-[11px] theme-text-secondary px-3">
+              {safePage} / {totalPages}
+            </span>
+            <button onClick={() => setPage(safePage + 1)} disabled={safePage >= totalPages}
+              className="font-body text-[11px] border border-[var(--app-border)] rounded px-2 py-1 min-h-[28px] theme-text-muted hover:border-brand-gold/20 disabled:opacity-30">
+              ›
+            </button>
+            <button onClick={() => setPage(totalPages)} disabled={safePage >= totalPages}
+              className="font-body text-[11px] border border-[var(--app-border)] rounded px-2 py-1 min-h-[28px] theme-text-muted hover:border-brand-gold/20 disabled:opacity-30">
+              »»
+            </button>
+          </div>
         </div>
       )}
     </div>
