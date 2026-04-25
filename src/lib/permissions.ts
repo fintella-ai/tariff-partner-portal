@@ -38,7 +38,7 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
     "training", "conference", "documents",
     "automations", "gettingStartedEditor", "aiActivity",
     "payouts", "revenue", "reports",
-    "settings", "users", "dev", "features",
+    "settings", "billing", "users", "dev", "features",
   ],
   admin: [
     "home",

@@ -96,6 +96,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "documents", label: "Documents", icon: "📁" },
   { id: "reporting", label: "Reporting", icon: "📈" },
   { id: "settings", label: "Settings", icon: "⚙️" },
+  { id: "billing", label: "Billing", icon: "💳" },
   { id: "users", label: "Admin Users", icon: "🔐" },
   { id: "dev", label: "Development", icon: "🛠️" },
   { id: "features", label: "Feature Requests", icon: "💡" },

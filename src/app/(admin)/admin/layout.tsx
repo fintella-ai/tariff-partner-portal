@@ -30,7 +30,7 @@ const ADMIN_NAV_IDS_DEFAULT = [
   "communications", "internalChats", "partnerSupport",
   "training", "conference", "documents",
   "automations", "gettingStartedEditor", "aiActivity",
-  "settings", "users", "features", "dev",
+  "settings", "billing", "users", "features", "dev",
 ];
 
 // Built-in icon overrides — wins over the default emoji, loses to an
@@ -80,6 +80,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   gettingStartedEditor: { id: "gettingStartedEditor", href: "/admin/getting-started-editor", icon: "✅", label: "Getting Started" },
   aiActivity:   { id: "aiActivity", href: "/admin/ai-activity", icon: "🤖", label: "AI Activity" },
   settings:     { id: "settings", href: "/admin/settings", icon: "⚙️", label: "Settings" },
+  billing:      { id: "billing", href: "/admin/billing", icon: "💳", label: "Billing" },
   users:        { id: "users", href: "/admin/users", icon: "🔐", label: "Admin Users" },
   dev:          { id: "dev", href: "/admin/dev", icon: "🛠️", label: "Development" },
   features:     { id: "features", href: "/admin/features", icon: "💡", label: "Feature Requests" },

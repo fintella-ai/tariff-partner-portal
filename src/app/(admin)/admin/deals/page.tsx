@@ -494,12 +494,30 @@ export default function AdminDealsPage() {
       <div className="flex items-center justify-between mb-1">
         <h2 className="font-display text-xl font-bold">Deal Management</h2>
         {isSuperAdmin && (
-          <button onClick={() => { setBulkMode((p) => !p); setSelectedDealIds(new Set()); }}
-            className={`font-body text-[11px] border rounded-lg px-3 py-1.5 min-h-[36px] transition-colors ${
-              bulkMode ? "bg-brand-gold/10 border-brand-gold/30 text-brand-gold" : "border-[var(--app-border)] theme-text-muted hover:border-brand-gold/20"
-            }`}>
-            {bulkMode ? "✕ Exit Bulk" : "☐ Bulk Actions"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (stageFilter !== "all") params.set("stage", stageFilter);
+                if (partnerFilter) params.set("partner", partnerFilter);
+                if (search) params.set("search", search);
+                window.open(`/api/admin/deals/export?${params.toString()}`);
+              }}
+              className="font-body text-[11px] border rounded-lg px-3 py-1.5 min-h-[36px] transition-colors border-[var(--app-border)] theme-text-muted hover:border-brand-gold/20"
+            >
+              📥 Export CSV
+            </button>
+            <button onClick={() => window.location.href = "/admin/deals/import"}
+              className="font-body text-[11px] border border-[var(--app-border)] theme-text-muted rounded-lg px-3 py-1.5 min-h-[36px] hover:border-brand-gold/20 transition-colors">
+              📤 Import CSV
+            </button>
+            <button onClick={() => { setBulkMode((p) => !p); setSelectedDealIds(new Set()); }}
+              className={`font-body text-[11px] border rounded-lg px-3 py-1.5 min-h-[36px] transition-colors ${
+                bulkMode ? "bg-brand-gold/10 border-brand-gold/30 text-brand-gold" : "border-[var(--app-border)] theme-text-muted hover:border-brand-gold/20"
+              }`}>
+              {bulkMode ? "✕ Exit Bulk" : "☐ Bulk Actions"}
+            </button>
+          </div>
         )}
       </div>
       <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-6">View, filter, and manage all deals across partners.</p>
