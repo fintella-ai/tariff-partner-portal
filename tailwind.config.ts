@@ -14,18 +14,32 @@ const config: Config = {
           gold: "#c4a050",
           "gold-light": "#f0d070",
           purple: "#a78bfa",
-          dark: "#080d1c",
-          "dark-lighter": "#0d1a3a",
+          dark: "#060a14",
+          "dark-lighter": "#0c1220",
+        },
+        accent: {
+          blue: "#4f6ef7",
+          "blue-light": "#6b8aff",
+          purple: "#8b5cf6",
         },
       },
       fontFamily: {
-        // Portal-wide type is Inter. Both `font-display` and `font-body`
-        // map to the same family — the visual distinction is driven by
-        // weight, not a separate font. Kept both tokens so existing
-        // `font-display` / `font-body` markup continues to compile
-        // without a codebase-wide find-replace.
-        display: ["Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        display: ['"DM Serif Display"', "Georgia", '"Times New Roman"', "serif"],
         body: ["Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        serif: ['"DM Serif Display"', "Georgia", "serif"],
+      },
+      borderRadius: {
+        "2xl": "1rem",
+        "3xl": "1.25rem",
+      },
+      boxShadow: {
+        "glass": "0 8px 32px rgba(0, 0, 0, 0.12)",
+        "glass-dark": "0 8px 32px rgba(0, 0, 0, 0.4)",
+        "gold-glow": "0 6px 24px rgba(196, 160, 80, 0.30)",
+        "blue-glow": "0 6px 24px rgba(79, 110, 247, 0.20)",
+      },
+      backdropBlur: {
+        "glass": "12px",
       },
     },
   },

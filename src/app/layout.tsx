@@ -37,8 +37,8 @@ export const viewport: Viewport = {
   // Allow pinch-zoom for accessibility (WCAG 2.1 SC 1.4.4).
   // maximumScale + userScalable:false are intentionally omitted.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f6fa" },
-    { media: "(prefers-color-scheme: dark)", color: "#080d1c" },
+    { media: "(prefers-color-scheme: light)", color: "#f8f9fc" },
+    { media: "(prefers-color-scheme: dark)", color: "#060a14" },
   ],
   // viewport-fit:cover lets us extend behind iPhone notch / home indicator;
   // fixed elements opt in to env(safe-area-inset-*) padding individually.
