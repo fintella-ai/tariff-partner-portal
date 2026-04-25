@@ -844,12 +844,19 @@ async function patchHandler(req: NextRequest): Promise<Response> {
       ? await prisma.deal.findUnique({ where: { id: rawDealId } })
       : await prisma.deal.findUnique({ where: { externalDealId: rawExternalId! } });
     if (!deal) {
-      // Deal not found — this may be a first-time submission from HubSpot
-      // that includes hs_object_id alongside full client data. Fall back
-      // to the create handler instead of returning 404.
-      // IMPORTANT: req body stream is already consumed above — must create
-      // a new Request with the raw body so postHandler can read it.
-      console.log("[Webhook/Referral] PATCH fallback: deal not found for", rawDealId || rawExternalId, "— falling back to POST create handler");
+      // Deal not found. Only fall back to create if the payload has
+      // enough data for a real deal (at minimum a name or email).
+      // Stage-update-only payloads (just hs_object_id + stage) should
+      // NOT create ghost deals with empty fields.
+      const hasClientData = body.first_name || body.firstName || body.last_name || body.lastName
+        || body.email || body.company || body.legalEntityName || body.company_name;
+      if (!hasClientData) {
+        return NextResponse.json(
+          { error: "Deal not found and payload has no client data to create one", hs_object_id: rawExternalId },
+          { status: 404 }
+        );
+      }
+      console.log("[Webhook/Referral] PATCH fallback: deal not found for", rawDealId || rawExternalId, "— payload has client data, falling back to POST create handler");
       const freshReq = new NextRequest(req.url, {
         method: "POST",
         headers: req.headers,
