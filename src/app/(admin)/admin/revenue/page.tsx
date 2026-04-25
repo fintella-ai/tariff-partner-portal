@@ -388,7 +388,7 @@ export default function RevenuePage() {
         {editMode && (
           <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">⋮⋮ Revenue Summary — drag to reorder</div>
         )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-6">
         <div className="stat-card">
           <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Total Deal Value</div>
           <div className="font-display text-xl sm:text-2xl font-bold">{fmt$(totalDealAmountWon)}</div>
@@ -409,12 +409,22 @@ export default function RevenuePage() {
         <div className="stat-card">
           <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Enterprise Overrides</div>
           <div className="font-display text-xl sm:text-2xl font-bold text-purple-400">-{fmt$(totalEnterpriseOverride)}</div>
-          <div className="font-body text-[10px] theme-text-muted mt-1">{activeEPs.length} active enterprise partner{activeEPs.length === 1 ? "" : "s"}</div>
+          <div className="font-body text-[10px] theme-text-muted mt-1">{activeEPs.length} active EP{activeEPs.length === 1 ? "" : "s"}</div>
         </div>
         <div className="stat-card">
           <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Fintella Net Revenue</div>
           <div className="font-display text-xl sm:text-2xl font-bold text-green-400">{fmt$(totalFintellaNetAfterEnterprise)}</div>
-          <div className="font-body text-[10px] theme-text-muted mt-1">After partner + enterprise payouts</div>
+          <div className="font-body text-[10px] theme-text-muted mt-1">After payouts</div>
+        </div>
+        <div className="stat-card">
+          <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Software Expenses</div>
+          <div className="font-display text-xl sm:text-2xl font-bold text-orange-400">-{fmt$(395)}</div>
+          <div className="font-body text-[10px] theme-text-muted mt-1">Monthly operating costs</div>
+        </div>
+        <div className="stat-card" style={{ border: "1px solid var(--brand-gold)", background: "rgba(196,160,80,0.04)" }}>
+          <div className="font-body text-[9px] tracking-[1.5px] uppercase text-brand-gold mb-2">Net Profit</div>
+          <div className="font-display text-xl sm:text-2xl font-bold text-brand-gold">{fmt$(totalFintellaNetAfterEnterprise - 395)}</div>
+          <div className="font-body text-[10px] theme-text-muted mt-1">After all expenses</div>
         </div>
         <div className="stat-card">
           <div className="font-body text-[9px] tracking-[1.5px] uppercase theme-text-muted mb-2">Pipeline (Projected)</div>
@@ -471,6 +481,35 @@ export default function RevenuePage() {
           <div className="flex items-center justify-between py-3 rounded-lg px-3 bg-green-500/5 border border-green-500/15">
             <span className="font-body text-[14px] font-semibold text-green-400">Fintella Net After Enterprise</span>
             <span className="font-display text-lg font-bold text-green-400">{fmt$(totalFintellaNetAfterEnterprise)}</span>
+          </div>
+
+          <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--app-border)" }}>
+            <div className="font-body text-[10px] uppercase tracking-[1.5px] theme-text-muted mb-3">Operating Expenses (Monthly Software)</div>
+            {[
+              { name: "Vercel (Portal)", cost: 20 },
+              { name: "Neon Postgres", cost: 19 },
+              { name: "SendGrid", cost: 79 },
+              { name: "SignWell", cost: 30 },
+              { name: "HeyGen", cost: 29 },
+              { name: "Contabo VPS", cost: 23 },
+              { name: "Claude Code", cost: 150 },
+              { name: "Twilio Voice", cost: 5 },
+              { name: "Anthropic API", cost: 40 },
+            ].map((item) => (
+              <div key={item.name} className="flex items-center justify-between py-1.5 pl-4">
+                <span className="font-body text-[12px] theme-text-muted">{item.name}</span>
+                <span className="font-body text-[12px] text-orange-400">-{fmt$(item.cost)}/mo</span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between py-2 mt-2" style={{ borderTop: "1px solid var(--app-border)" }}>
+              <span className="font-body text-[13px] text-orange-400">Total Monthly Software Expenses</span>
+              <span className="font-body text-[14px] font-semibold text-orange-400">-{fmt$(395)}/mo</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between py-3 rounded-lg px-3 mt-3 bg-brand-gold/5 border border-brand-gold/15">
+            <span className="font-body text-[14px] font-semibold text-brand-gold">Net Profit (Revenue − Expenses)</span>
+            <span className="font-display text-lg font-bold text-brand-gold">{fmt$(totalFintellaNetAfterEnterprise - 395)}</span>
           </div>
         </div>
       </div>
