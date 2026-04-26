@@ -55,6 +55,7 @@ type Agreement = {
   status: string;
   version: number;
   sentDate: string | null;
+  viewedAt: string | null;
   signedDate: string | null;
   embeddedSigningUrl: string | null;
   cosignerSigningUrl: string | null;
@@ -1536,7 +1537,7 @@ export default function PartnerDetailPage() {
               <div className="font-body text-[13px] text-[var(--app-text-secondary)]">Partnership Agreement</div>
               <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5">
                 {agreement
-                  ? `Version ${agreement.version} — ${agreement.signedDate ? `Signed ${fmtDate(agreement.signedDate)}` : `Sent ${fmtDate(agreement.sentDate)}`}`
+                  ? `Version ${agreement.version} — ${agreement.signedDate ? `Signed ${fmtDate(agreement.signedDate)}` : agreement.viewedAt ? `Viewed ${fmtDate(agreement.viewedAt)}` : `Sent ${fmtDate(agreement.sentDate)}`}`
                   : "No agreement on file"}
               </div>
             </div>

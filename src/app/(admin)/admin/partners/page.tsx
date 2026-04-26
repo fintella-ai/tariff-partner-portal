@@ -79,6 +79,7 @@ function normalizeForSoftphone(raw: string | null | undefined): string | null {
 const docBadge: Record<string, string> = {
   signed: "bg-green-500/10 text-green-400 border border-green-500/20",
   pending: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
+  viewed: "bg-purple-500/10 text-purple-400 border border-purple-500/20",
   amended: "bg-orange-500/10 text-orange-400 border border-orange-500/20",
   not_sent: "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]",
   none: "bg-red-500/10 text-red-400 border border-red-500/20",

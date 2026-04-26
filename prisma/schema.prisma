@@ -167,8 +167,9 @@ model PartnershipAgreement {
   cosignerSigningUrl    String?  // Signing URL for Fintella co-signer
   templateRate          Float?   // the commission rate this agreement is for (0.25, 0.20, 0.15, 0.10)
   templateId            String?  // SignWell template ID used for this agreement
-  status                String   @default("not_sent") // not_sent, pending, signed, amended
+  status                String   @default("not_sent") // not_sent, pending, viewed, signed, amended
   sentDate              DateTime?
+  viewedAt              DateTime?
   signedDate            DateTime?
   documentUrl           String?
   // Last time the agreement-reminder cron fired for this row. Null = never.
