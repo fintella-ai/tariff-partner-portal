@@ -500,7 +500,9 @@ model ConferenceSchedule {
   description  String?
   embedUrl     String?   // YouTube/Vimeo embed URL for recording playback
   joinUrl      String?   // Direct join link (Zoom/Meet) — legacy; prefer jitsiRoom
-  recordingUrl String?   // External fallback URL for recording
+  recordingUrl           String?   // External fallback URL for recording
+  recordingTranscript    String?
+  recordingTranscribedAt DateTime?
   schedule     String?   // "Weekly, Thursdays at 2pm ET"
   nextCall     DateTime?
   hostName     String?   // Presenter name
@@ -1215,6 +1217,8 @@ model CallLog {
   status            String   // "initiated"|"ringing"|"in-progress"|"completed"|"failed"|"no-answer"|"busy"|"canceled"|"demo"
   durationSeconds   Int?     // populated by Twilio status callback on completion
   recordingUrl      String?  // populated by Twilio recording webhook (if recording enabled)
+  recordingTranscript    String?
+  recordingTranscribedAt DateTime?
   recordingDurationSeconds Int?
   providerCallSid   String?  // Twilio Call SID
   errorMessage      String?
@@ -1692,4 +1696,27 @@ model PartnerActivity {
   @@index([partnerCode])
   @@index([action])
   @@index([createdAt])
+}
+
+// ─── AI KNOWLEDGE GAPS (Tara gap analysis) ──────────────────────────────────
+// When Tara (product_specialist) responds with language indicating she lacks
+// knowledge to answer a question, an AiKnowledgeGap row is created
+// automatically. Admin dashboard at /admin/knowledge-gaps surfaces these
+// so content gaps in training materials can be identified and resolved.
+model AiKnowledgeGap {
+  id             String    @id @default(cuid())
+  conversationId String
+  messageId      String
+  partnerCode    String
+  question       String
+  taraResponse   String
+  category       String?
+  resolved       Boolean   @default(false)
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([resolved])
+  @@index([createdAt])
+  @@index([category])
 }

@@ -17,7 +17,9 @@ import { renderComplianceBlock } from "./ai-compliance";
 import { getKnowledgeVersion } from "./ai-knowledge-version";
 
 export async function buildProductSpecialistPrompt(): Promise<Anthropic.Messages.TextBlockParam> {
-  const [version, modules, resources, faqs, glossary] = await Promise.all([
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const [version, modules, resources, faqs, glossary, meetingRecordings, callRecordings] = await Promise.all([
     getKnowledgeVersion(),
     prisma.trainingModule.findMany({
       where: { published: true },
@@ -54,6 +56,20 @@ export async function buildProductSpecialistPrompt(): Promise<Anthropic.Messages
       where: { published: true },
       orderBy: [{ category: "asc" }, { sortOrder: "asc" }, { term: "asc" }],
       select: { term: true, aliases: true, definition: true },
+    }),
+    // Phase 2c — conference recordings with transcripts
+    prisma.conferenceSchedule.findMany({
+      where: { recordingTranscript: { not: null }, isActive: true },
+      select: { title: true, schedule: true, recordingTranscript: true },
+      orderBy: { nextCall: "desc" },
+      take: 10,
+    }),
+    // Phase 2c — recent call recordings with transcripts (last 30 days)
+    prisma.callLog.findMany({
+      where: { recordingTranscript: { not: null }, createdAt: { gte: thirtyDaysAgo } },
+      select: { recordingTranscript: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 20,
     }),
   ]);
 
@@ -99,6 +115,26 @@ export async function buildProductSpecialistPrompt(): Promise<Anthropic.Messages
           })
           .join("\n")
       : "(no glossary entries)",
+    "",
+    "# Meeting Recordings",
+    meetingRecordings.length
+      ? meetingRecordings
+          .map(
+            (m) =>
+              `## ${m.title}${m.schedule ? ` (${m.schedule})` : ""}\n\n${m.recordingTranscript}`
+          )
+          .join("\n\n")
+      : "(no meeting recordings transcribed)",
+    "",
+    "# Recent Call Recordings",
+    callRecordings.length
+      ? callRecordings
+          .map(
+            (c) =>
+              `## Call on ${c.createdAt.toISOString().slice(0, 10)}\n\n${c.recordingTranscript}`
+          )
+          .join("\n\n")
+      : "(no recent call recordings transcribed)",
   ].join("\n\n");
 
   return {
