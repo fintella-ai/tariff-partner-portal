@@ -48,7 +48,11 @@ const TICKET_CATEGORIES = [
 
 const TICKET_PRIORITIES = ["low", "normal", "high", "urgent"] as const;
 
-export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
+// ─── SHARED_TOOLS — available to ALL personas (Ollie, Finn, Stella, etc.) ────
+// These 8 tools handle lookup + standard escalation paths that every persona
+// needs. cache_control on the last entry marks the cache breakpoint for callers
+// that pass SHARED_TOOLS alone (non-Ollie personas).
+export const SHARED_TOOLS: Anthropic.Messages.Tool[] = [
   {
     name: "lookupDeal",
     description:
@@ -136,48 +140,6 @@ export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
     },
   },
   {
-    name: "investigate_bug",
-    description:
-      "Run a structured bug triage when a partner reports a portal issue (button broken, error, page not loading, etc.). Interview the partner first for symptom + browser + device + exact error text. Then call this tool with the collected info. The tool runs auto-diagnostics (checks the partner's account state), classifies outcome (user_error / needs_admin_investigation / confirmed_bug), and on `confirmed_bug` automatically fires the IT emergency call chain + creates a high-priority tech_error ticket. DO NOT call this tool speculatively — only call when the partner has described a concrete issue.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        symptom: {
-          type: "string" as const,
-          description:
-            "1-2 sentence description of what's broken from the partner's words. Example: \"Submit Client button does nothing when I click it\" or \"Page goes blank after signing agreement\".",
-        },
-        browser: {
-          type: "string" as const,
-          description:
-            "Browser + version the partner is using if they shared it (e.g. \"Chrome 120\"). Empty string if unknown.",
-        },
-        device: {
-          type: "string" as const,
-          description:
-            "Device the partner is on — \"iPhone 15\" / \"Windows 11 laptop\" / \"iPad\" / etc. Empty if unknown.",
-        },
-        errorText: {
-          type: "string" as const,
-          description:
-            "Exact error message the partner saw, if any. Preserves case + punctuation. Empty string if the partner didn't see an explicit error.",
-        },
-        whenStarted: {
-          type: "string" as const,
-          description:
-            "Partner's best guess at when the issue started — \"just now\", \"this morning\", \"since yesterday\". Empty string if unknown.",
-        },
-        screenshotUrls: {
-          type: "array" as const,
-          items: { type: "string" as const },
-          description:
-            "Optional. Public URLs of screenshots the partner uploaded via the chat's paperclip button. Each URL came from /api/ai/upload. Include them here so the ticket body surfaces them for admin triage and the AiEscalation payload records them for audit.",
-        },
-      },
-      required: ["symptom"],
-    },
-  },
-  {
     name: "offer_schedule_slots",
     description:
       "Show the partner available 15-minute (or inbox-configured) slots for a scheduled call. Resolves category → AdminInbox → offered slots over the next 3 business days. Returns an empty slots list if the inbox has acceptScheduledCalls=false or isn't configured — fall back to opening a ticket in that case. Use this when the partner doesn't need a human NOW but wants to book time.",
@@ -226,32 +188,6 @@ export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
     },
   },
   {
-    name: "initiate_live_transfer",
-    description:
-      "Initiate a live phone transfer — Twilio will bridge a call between the partner and an on-call admin. ALWAYS confirm the partner's phone number in conversation before calling this tool. NEVER dial silently. The tool records the intent + notifies eligible admins; the actual Twilio bridge fires in a follow-up PR. If no admins with availableForLiveCall=true are online right now, the tool will return an error — fall back to offering a scheduled call or a support ticket.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        category: {
-          type: "string" as const,
-          enum: [...TICKET_CATEGORIES] as unknown as string[],
-          description: "Which admin inbox should receive the call.",
-        },
-        partnerPhone: {
-          type: "string" as const,
-          description:
-            "Partner's phone number as they just confirmed to you. E.164 preferred, but the tool will normalize.",
-        },
-        reason: {
-          type: "string" as const,
-          description:
-            "One-line summary of what the partner wants to discuss on the call.",
-        },
-      },
-      required: ["category", "partnerPhone", "reason"],
-    },
-  },
-  {
     name: "create_support_ticket",
     description:
       "Create a support ticket on behalf of the partner when a question can't be resolved in-chat or requires human action. ALWAYS confirm with the partner first before calling — state the subject, category, and priority you'd file, and only fire after they agree. Category determines which admin inbox gets notified (support / legal / admin / accounting). Use this as the fallback when lookups don't resolve the question, when the partner explicitly asks to open a ticket, or when you detect a stuck deal (isStale on lookupDeal) and they accept your offer to open one.",
@@ -288,13 +224,95 @@ export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
       },
       required: ["subject", "category", "priority", "reason"],
     },
-    // `cache_control` on the LAST tool marks a cache breakpoint — Anthropic
-    // caches the entire OLLIE_TOOLS array up to here as one segment. With
-    // 10 tools × ~500 tokens of schema + descriptions, this saves ~4-5k
-    // input tokens on every Ollie turn after the first cache write.
-    // Phase 4 of the PartnerOS roadmap.
+    // `cache_control` on the last SHARED_TOOLS entry marks a cache breakpoint
+    // for callers that pass SHARED_TOOLS alone (non-Ollie personas). Anthropic
+    // caches the tool array up to here as one segment, saving ~3-4k input
+    // tokens per turn after the first cache write. Phase 4 of the PartnerOS roadmap.
+    // NOTE: Task 2 will move this to the last entry of OLLIE_TOOLS for Ollie callers.
     cache_control: { type: "ephemeral" } as const,
   },
+];
+
+// ─── OLLIE_EXCLUSIVE_TOOLS — only available to the Ollie persona ───────────
+// These 2 tools require deeper access (bug triage + IT emergency chain,
+// live Twilio bridged calls) that general-purpose personas shouldn't expose.
+export const OLLIE_EXCLUSIVE_TOOLS: Anthropic.Messages.Tool[] = [
+  {
+    name: "investigate_bug",
+    description:
+      "Run a structured bug triage when a partner reports a portal issue (button broken, error, page not loading, etc.). Interview the partner first for symptom + browser + device + exact error text. Then call this tool with the collected info. The tool runs auto-diagnostics (checks the partner's account state), classifies outcome (user_error / needs_admin_investigation / confirmed_bug), and on `confirmed_bug` automatically fires the IT emergency call chain + creates a high-priority tech_error ticket. DO NOT call this tool speculatively — only call when the partner has described a concrete issue.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        symptom: {
+          type: "string" as const,
+          description:
+            "1-2 sentence description of what's broken from the partner's words. Example: \"Submit Client button does nothing when I click it\" or \"Page goes blank after signing agreement\".",
+        },
+        browser: {
+          type: "string" as const,
+          description:
+            "Browser + version the partner is using if they shared it (e.g. \"Chrome 120\"). Empty string if unknown.",
+        },
+        device: {
+          type: "string" as const,
+          description:
+            "Device the partner is on — \"iPhone 15\" / \"Windows 11 laptop\" / \"iPad\" / etc. Empty if unknown.",
+        },
+        errorText: {
+          type: "string" as const,
+          description:
+            "Exact error message the partner saw, if any. Preserves case + punctuation. Empty string if the partner didn't see an explicit error.",
+        },
+        whenStarted: {
+          type: "string" as const,
+          description:
+            "Partner's best guess at when the issue started — \"just now\", \"this morning\", \"since yesterday\". Empty string if unknown.",
+        },
+        screenshotUrls: {
+          type: "array" as const,
+          items: { type: "string" as const },
+          description:
+            "Optional. Public URLs of screenshots the partner uploaded via the chat's paperclip button. Each URL came from /api/ai/upload. Include them here so the ticket body surfaces them for admin triage and the AiEscalation payload records them for audit.",
+        },
+      },
+      required: ["symptom"],
+    },
+  },
+  {
+    name: "initiate_live_transfer",
+    description:
+      "Initiate a live phone transfer — Twilio will bridge a call between the partner and an on-call admin. ALWAYS confirm the partner's phone number in conversation before calling this tool. NEVER dial silently. The tool records the intent + notifies eligible admins; the actual Twilio bridge fires in a follow-up PR. If no admins with availableForLiveCall=true are online right now, the tool will return an error — fall back to offering a scheduled call or a support ticket.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        category: {
+          type: "string" as const,
+          enum: [...TICKET_CATEGORIES] as unknown as string[],
+          description: "Which admin inbox should receive the call.",
+        },
+        partnerPhone: {
+          type: "string" as const,
+          description:
+            "Partner's phone number as they just confirmed to you. E.164 preferred, but the tool will normalize.",
+        },
+        reason: {
+          type: "string" as const,
+          description:
+            "One-line summary of what the partner wants to discuss on the call.",
+        },
+      },
+      required: ["category", "partnerPhone", "reason"],
+    },
+  },
+];
+
+// ─── OLLIE_TOOLS — backward-compat combined export ────────────────────────
+// Callers that already import OLLIE_TOOLS keep working unchanged.
+// = SHARED_TOOLS (8) + OLLIE_EXCLUSIVE_TOOLS (2) = 10 total.
+export const OLLIE_TOOLS: Anthropic.Messages.Tool[] = [
+  ...SHARED_TOOLS,
+  ...OLLIE_EXCLUSIVE_TOOLS,
 ];
 
 export interface ToolCallResult {
