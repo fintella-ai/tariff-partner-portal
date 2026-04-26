@@ -1698,6 +1698,27 @@ model PartnerActivity {
   @@index([createdAt])
 }
 
+// ─── AI FAQ CANDIDATES (conversation → FAQ harvesting) ──────────────────────
+// When any AI persona gives a substantive answer to a partner question,
+// the Q&A pair is captured as a candidate. Admin reviews at
+// /admin/training/faq-candidates and can approve → creates a published FAQ.
+model AiFaqCandidate {
+  id                String    @id @default(cuid())
+  conversationId    String
+  partnerCode       String
+  question          String
+  answer            String
+  suggestedCategory String?
+  status            String    @default("pending") // pending, approved, dismissed
+  approvedBy        String?
+  approvedAt        DateTime?
+  createdFaqId      String?   // links to the FAQ created on approval
+  createdAt         DateTime  @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
 // ─── AI KNOWLEDGE GAPS (Tara gap analysis) ──────────────────────────────────
 // When Tara (product_specialist) responds with language indicating she lacks
 // knowledge to answer a question, an AiKnowledgeGap row is created

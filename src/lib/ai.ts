@@ -615,6 +615,56 @@ In the meantime, you can:
       }
     }
 
+    // ── FAQ CANDIDATE HARVESTING ──
+    // Capture good Q&A pairs from ALL personas for admin review.
+    // Fire-and-forget — never block the response.
+    if (opts?.conversationId && opts?.userId) {
+      const lastUserMsgFaq = history.filter((m) => m.role === "user").pop();
+      const userText = lastUserMsgFaq?.content?.trim() || "";
+      const isQuestion =
+        /\?/.test(userText) ||
+        /^(how|what|why|when|where|who|can|does|is|do)\b/i.test(userText);
+      const isSubstantive = content.length > 100;
+      const FAQ_GAP_PHRASES = [
+        "i don't have",
+        "not covered in my knowledge",
+        "i'm not sure about that",
+        "beyond what i currently know",
+      ];
+      const isGapFaq = FAQ_GAP_PHRASES.some((p) =>
+        content.toLowerCase().includes(p)
+      );
+
+      if (isQuestion && isSubstantive && !isGapFaq && userText.length > 10) {
+        // Auto-categorize based on keywords
+        let suggestedCategory = "general";
+        const lowerFaq =
+          userText.toLowerCase() + " " + content.toLowerCase();
+        if (/commission|payout|earn|payment|rate/.test(lowerFaq))
+          suggestedCategory = "commissions";
+        else if (/lead|client|submit|referral|deal/.test(lowerFaq))
+          suggestedCategory = "leads";
+        else if (
+          /tariff|refund|ieepa|301|import|duty|customs/.test(lowerFaq)
+        )
+          suggestedCategory = "tariff_refunds";
+        else if (/bug|error|broken|login|password|portal/.test(lowerFaq))
+          suggestedCategory = "technical";
+
+        prisma.aiFaqCandidate
+          .create({
+            data: {
+              conversationId: opts.conversationId,
+              partnerCode: opts.userId,
+              question: userText.slice(0, 500),
+              answer: content.slice(0, 2000),
+              suggestedCategory,
+            },
+          })
+          .catch(() => {}); // fire-and-forget
+      }
+    }
+
     return {
       content,
       inputTokens,
