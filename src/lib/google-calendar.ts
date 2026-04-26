@@ -367,6 +367,22 @@ export async function freeBusyForInbox(
   const token = await getAccessTokenForInbox(refreshToken, inboxId);
   if (!token) return null;
 
+  let calIds = ["primary"];
+  try {
+    const calListRes = await fetch(
+      `${CAL_BASE}/users/me/calendarList?minAccessRole=freeBusyReader&maxResults=100`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (calListRes.ok) {
+      const calListData = (await calListRes.json()) as { items?: Array<{ id: string }> };
+      if (calListData.items?.length) {
+        calIds = calListData.items.map((c) => c.id);
+      }
+    }
+  } catch {
+    // Fall back to primary only
+  }
+
   const res = await fetch(`${CAL_BASE}/freeBusy`, {
     method: "POST",
     headers: {
@@ -376,7 +392,7 @@ export async function freeBusyForInbox(
     body: JSON.stringify({
       timeMin: timeMinIso,
       timeMax: timeMaxIso,
-      items: [{ id: "primary" }],
+      items: calIds.map((id) => ({ id })),
     }),
   });
   if (!res.ok) {
@@ -388,8 +404,15 @@ export async function freeBusyForInbox(
   const data = (await res.json()) as {
     calendars?: Record<string, { busy?: Array<{ start: string; end: string }> }>;
   };
-  const busy = data.calendars?.primary?.busy ?? [];
-  return busy.map((b) => ({ startIso: b.start, endIso: b.end }));
+  const allBusy: Array<{ startIso: string; endIso: string }> = [];
+  if (data.calendars) {
+    for (const cal of Object.values(data.calendars)) {
+      for (const b of cal.busy ?? []) {
+        allBusy.push({ startIso: b.start, endIso: b.end });
+      }
+    }
+  }
+  return allBusy;
 }
 
 /**
