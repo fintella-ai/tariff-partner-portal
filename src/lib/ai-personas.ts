@@ -42,7 +42,7 @@ export const PERSONAS: Record<"finn" | "stella" | "tara" | "ollie", Persona> = {
     id: "finn",
     displayName: "Finn",
     role: "generalist",
-    avatarSrc: "/ai-avatars/finn.svg",
+    avatarSrc: "/ai-avatars/finn.png",
     accentHex: "#c4a050",
     tagline: "Direct, data-driven. Fast answers.",
     longDescription:

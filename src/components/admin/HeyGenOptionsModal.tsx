@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 const AVATARS = [
+  { id: "79fa6fd1cf184ad0b311a2018f0b2be9", label: "Finn" },
   { id: "e5bbc883bef84935a353cecdec0fb997", label: "Avatar 1" },
   { id: "83e7064aac6e4899853d3d04cb5794cc", label: "Avatar 2" },
   { id: "0396d7a22e7b4e58807fc047a58c4ab3", label: "Avatar 3" },

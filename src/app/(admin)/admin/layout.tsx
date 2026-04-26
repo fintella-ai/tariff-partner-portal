@@ -15,6 +15,7 @@ import { reconcileNavOrder } from "@/lib/reconcileNavOrder";
 import { isStarSuperAdminEmail } from "@/lib/starSuperAdmin";
 import { EditLayoutProvider } from "@/components/admin/EditLayoutContext";
 import EditLayoutButton from "@/components/admin/EditLayoutButton";
+import AdminPresenceBar from "@/components/admin/AdminPresenceBar";
 
 type NavLeaf = { id: string; href: string; icon: string; label: string };
 type NavGroup = { id: string; icon: string; label: string; children: NavLeaf[] };
@@ -28,8 +29,9 @@ const ADMIN_NAV_IDS_DEFAULT = [
   "home",
   "partners", "applications", "deals", "reporting",
   "communications", "internalChats", "partnerSupport",
-  "training", "conference", "documents",
+  "training", "faqCandidates", "conference", "documents",
   "automations", "gettingStartedEditor",
+  "knowledgeGaps", "auditLog",
   "settings", "users", "dev",
 ];
 
@@ -84,6 +86,9 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   users:        { id: "users", href: "/admin/users", icon: "🔐", label: "Admin Users" },
   dev:          { id: "dev", href: "/admin/dev", icon: "🛠️", label: "Development" },
   features:     { id: "features", href: "/admin/features", icon: "💡", label: "Feature Requests" },
+  knowledgeGaps: { id: "knowledgeGaps", href: "/admin/knowledge-gaps", icon: "🧠", label: "Knowledge Gaps" },
+  faqCandidates: { id: "faqCandidates", href: "/admin/training/faq-candidates", icon: "💬", label: "FAQ Candidates" },
+  auditLog:      { id: "auditLog", href: "/admin/audit-log", icon: "📜", label: "Audit Log" },
 };
 
 function CollapseIcon({ collapsed }: { collapsed: boolean }) {
@@ -357,6 +362,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       })}
 
       <div className="flex-1" />
+
+      {/* Team presence — who's online right now */}
+      {!collapsed && <AdminPresenceBar />}
+      {collapsed && <AdminPresenceBar compact />}
 
       {/* Collapse toggle (desktop only) */}
       {device.isDesktop && (
