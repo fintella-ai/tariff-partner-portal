@@ -161,7 +161,7 @@ export default function StandaloneBooker({ applicationId }: { applicationId: str
           {slots.map((slot) => {
             const isLoading = reservingId === slot.id;
             const locationLabel =
-              slot.location === "jitsi" ? "Video call" : slot.location === "zoom" ? "Zoom" : slot.location === "phone" ? "Phone" : slot.location;
+              slot.location === "jitsi" || slot.location === "google_meet" ? "Video call" : slot.location === "zoom" ? "Zoom" : slot.location === "phone" ? "Phone" : slot.location;
             return (
               <button
                 key={slot.id}

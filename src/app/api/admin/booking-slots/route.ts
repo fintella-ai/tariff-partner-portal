@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   if (endsAt <= startsAt) return NextResponse.json({ error: "endsAt must be after startsAt" }, { status: 400 });
 
   const capacity = Number.isFinite(body.capacity) ? Math.min(5, Math.max(1, Math.floor(body.capacity))) : 1;
-  const location = typeof body.location === "string" && body.location.trim() ? body.location.trim() : "jitsi";
+  const location = typeof body.location === "string" && body.location.trim() ? body.location.trim() : "google_meet";
   const title = typeof body.title === "string" && body.title.trim() ? body.title.trim() : "Partner Qualification Call";
   const notes = typeof body.notes === "string" ? body.notes.trim() || null : null;
 

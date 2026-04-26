@@ -520,6 +520,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 📩<span className="hidden lg:inline font-medium">Support Ticket</span>
               </a>
+              <a
+                href="/admin/applications"
+                className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
+                title="Invite Partner to Landing Page"
+              >
+                👥<span className="hidden lg:inline font-medium">Invite Partner</span>
+              </a>
               <NotificationBell draggable />
             </div>
           </div>

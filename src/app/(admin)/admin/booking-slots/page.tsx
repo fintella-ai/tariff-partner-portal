@@ -46,7 +46,7 @@ export default function AdminBookingSlotsPage() {
     startsAt: toDatetimeLocal(tomorrow9),
     endsAt: toDatetimeLocal(tomorrow930),
     capacity: 1,
-    location: "jitsi",
+    location: "google_meet",
     title: "Partner Qualification Call",
     notes: "",
   });
@@ -199,7 +199,7 @@ export default function AdminBookingSlotsPage() {
               onChange={(e) => setForm({ ...form, location: e.target.value })}
               className="w-full theme-input rounded-lg px-3 py-2"
             >
-              <option value="jitsi">Google Meet (auto)</option>
+              <option value="google_meet">Google Meet (auto)</option>
               <option value="zoom">Zoom (manual link)</option>
               <option value="phone">Phone</option>
               <option value="other">Other</option>
@@ -276,7 +276,7 @@ function SlotRow({
             {fmtDateTime(slot.startsAt)} — {fmtDateTime(slot.endsAt)}
           </div>
           <div className="text-xs text-[var(--app-text-muted)] mt-1">
-            {slot.location === "jitsi" ? "Google Meet" : slot.location}{slot.jitsiRoom ? ` · ${slot.jitsiRoom}` : ""}
+            {slot.location === "google_meet" || slot.location === "jitsi" ? "Google Meet" : slot.location}
           </div>
           {slot.notes && (
             <div className="text-xs text-[var(--app-text-muted)] mt-1 italic">{slot.notes}</div>
