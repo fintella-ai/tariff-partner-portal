@@ -1122,8 +1122,9 @@ async function offerScheduleSlots(args: Record<string, unknown>) {
       timeZone: inbox.timeZone,
       durationMinutes: inbox.callDurationMinutes,
     },
-    note:
-      "These are placeholder slots (v1). When Google Calendar per-inbox OAuth ships, slots will reflect real admin availability.",
+    note: inbox.timeZone
+      ? `Slots reflect real ${inbox.displayName} availability (${inbox.timeZone}).`
+      : "Slots generated from configured work hours.",
   });
 }
 

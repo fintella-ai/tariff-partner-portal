@@ -1,38 +1,119 @@
 /**
- * Scheduling helpers for Ollie's scheduled_call rung (Phase 3c.4d).
+ * Scheduling helpers for Ollie's scheduled-call flow.
  *
- * v1 generates placeholder slots in the future — real Google Calendar
- * free-busy integration lands in a follow-up PR when we wire per-inbox
- * OAuth refresh tokens (extending PR #433's single-inbox flow).
- *
- * Every slot honors the target inbox's `callDurationMinutes` +
- * `timeZone` + (future) `workHours`. v1 uses a fixed daytime grid
- * (9am / 11am / 2pm / 4pm inbox-local) so partners see predictable
- * options even before Calendar is connected.
+ * Generates candidate slots from the inbox's `workHours` JSON
+ * (falling back to Mon–Fri 9am–5pm), then subtracts Google Calendar
+ * busy intervals via `freeBusyForInbox()` when the inbox has OAuth
+ * connected. Timezone-aware via Intl (no deps).
  */
 import { prisma } from "@/lib/prisma";
 import { freeBusyForInbox } from "@/lib/google-calendar";
 
-/** A 15-minute (or inbox-configured) call slot offered to a partner. */
 export interface ScheduleSlot {
-  /** ISO UTC start instant. */
   startUtc: string;
-  /** ISO UTC end instant. */
   endUtc: string;
-  /** Inbox's timeZone the slot was computed in (display hint). */
   inboxTimeZone: string;
-  /** Duration in minutes (matches inbox.callDurationMinutes). */
   durationMinutes: number;
 }
 
-const DEFAULT_DAILY_SLOTS_LOCAL = [9, 11, 14, 16]; // 9am / 11am / 2pm / 4pm local
+type WorkHoursMap = Record<string, [string, string][]>;
 
-/**
- * Compute offered slots for a category. Resolves category → inbox, honors
- * `acceptScheduledCalls`, returns upcoming slots across the next N
- * business days (Mon-Fri). Does NOT touch Google Calendar yet — v1
- * placeholder slots only.
- */
+const DOW_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+const DEFAULT_WORK_HOURS: WorkHoursMap = {
+  mon: [["09:00", "17:00"]],
+  tue: [["09:00", "17:00"]],
+  wed: [["09:00", "17:00"]],
+  thu: [["09:00", "17:00"]],
+  fri: [["09:00", "17:00"]],
+};
+
+const SLOT_INTERVAL_MIN = 30;
+const MAX_SLOTS = 12;
+
+function getLocalDate(
+  utcDate: Date,
+  timeZone: string
+): { year: number; month: number; day: number; dow: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).formatToParts(utcDate);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value || "";
+  const dowMap: Record<string, number> = {
+    Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+  };
+  return {
+    year: parseInt(get("year"), 10),
+    month: parseInt(get("month"), 10),
+    day: parseInt(get("day"), 10),
+    dow: dowMap[get("weekday")] ?? 0,
+  };
+}
+
+function localToUtc(
+  year: number, month: number, day: number,
+  hour: number, minute: number, timeZone: string
+): Date {
+  let guess = new Date(Date.UTC(year, month - 1, day, hour, minute, 0, 0));
+  for (let i = 0; i < 3; i++) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone, hour12: false,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit",
+    }).formatToParts(guess);
+    const get = (t: string) =>
+      parseInt(parts.find((p) => p.type === t)?.value || "0", 10);
+    const actualH = get("hour") === 24 ? 0 : get("hour");
+    const actualM = get("minute");
+    const diffMin = hour * 60 + minute - (actualH * 60 + actualM);
+    if (diffMin === 0) break;
+    guess = new Date(guess.getTime() + diffMin * 60_000);
+  }
+  return guess;
+}
+
+function generateCandidateSlots(
+  tz: string, duration: number, workHours: WorkHoursMap, daysAhead: number
+): ScheduleSlot[] {
+  const now = new Date();
+  const slots: ScheduleSlot[] = [];
+  const seen = new Set<string>();
+
+  for (let d = 0; d <= daysAhead + 8 && slots.length < MAX_SLOTS; d++) {
+    const probe = new Date(now.getTime() + d * 86_400_000);
+    const local = getLocalDate(probe, tz);
+    const dateKey = `${local.year}-${local.month}-${local.day}`;
+    if (seen.has(dateKey)) continue;
+    seen.add(dateKey);
+
+    const windows = workHours[DOW_KEYS[local.dow]];
+    if (!windows || windows.length === 0) continue;
+
+    for (const [startStr, endStr] of windows) {
+      const [sh, sm] = startStr.split(":").map(Number);
+      const [eh, em] = endStr.split(":").map(Number);
+      const wStart = sh * 60 + sm;
+      const wEnd = eh * 60 + em;
+
+      for (let m = wStart; m + duration <= wEnd && slots.length < MAX_SLOTS; m += SLOT_INTERVAL_MIN) {
+        const start = localToUtc(local.year, local.month, local.day, Math.floor(m / 60), m % 60, tz);
+        if (start.getTime() <= now.getTime()) continue;
+        slots.push({
+          startUtc: start.toISOString(),
+          endUtc: new Date(start.getTime() + duration * 60_000).toISOString(),
+          inboxTimeZone: tz,
+          durationMinutes: duration,
+        });
+      }
+    }
+  }
+  return slots;
+}
+
 export async function getOfferedSlots(
   category: string,
   daysAhead = 3
@@ -58,6 +139,7 @@ export async function getOfferedSlots(
         timeZone: true,
         callDurationMinutes: true,
         acceptScheduledCalls: true,
+        workHours: true,
         googleCalendarRefreshToken: true,
       },
     })) ??
@@ -70,6 +152,7 @@ export async function getOfferedSlots(
         timeZone: true,
         callDurationMinutes: true,
         acceptScheduledCalls: true,
+        workHours: true,
         googleCalendarRefreshToken: true,
       },
     }));
@@ -85,79 +168,40 @@ export async function getOfferedSlots(
     };
   }
 
-  // Compute a rough local-time grid across the next N business days.
-  // We interpret the daily slot hours as the inbox's local time by
-  // constructing the Date in UTC after offsetting — good enough for v1
-  // display purposes. Production Calendar integration replaces this.
-  const slots: ScheduleSlot[] = [];
-  const now = new Date();
+  const tz = inbox.timeZone;
   const duration = inbox.callDurationMinutes;
+  const wh: WorkHoursMap =
+    inbox.workHours && typeof inbox.workHours === "object"
+      ? (inbox.workHours as WorkHoursMap)
+      : DEFAULT_WORK_HOURS;
   const clampDays = Math.min(Math.max(1, Math.floor(daysAhead)), 14);
 
-  for (let d = 1; d <= clampDays + 4 && slots.length < 12; d += 1) {
-    const day = new Date(now);
-    day.setUTCDate(day.getUTCDate() + d);
-    const dow = day.getUTCDay(); // 0=Sun, 6=Sat
-    if (dow === 0 || dow === 6) continue; // skip weekends
+  const slots = generateCandidateSlots(tz, duration, wh, clampDays);
 
-    for (const hour of DEFAULT_DAILY_SLOTS_LOCAL) {
-      const start = new Date(
-        Date.UTC(
-          day.getUTCFullYear(),
-          day.getUTCMonth(),
-          day.getUTCDate(),
-          hour,
-          0,
-          0,
-          0
-        )
-      );
-      if (start.getTime() <= now.getTime()) continue;
-      const end = new Date(start.getTime() + duration * 60_000);
-      slots.push({
-        startUtc: start.toISOString(),
-        endUtc: end.toISOString(),
-        inboxTimeZone: inbox.timeZone,
-        durationMinutes: duration,
-      });
-      if (slots.length >= 12) break;
-    }
-  }
-
-  // When the inbox has a Google Calendar connected, subtract busy
-  // intervals from our candidate slot grid so we don't offer times the
-  // admin is already booked. When no token is set, we fall through with
-  // the placeholder grid (Phase 3c.4d behavior).
   if (inbox.googleCalendarRefreshToken && slots.length > 0) {
     const windowStart = slots[0].startUtc;
     const windowEnd = slots[slots.length - 1].endUtc;
-    const busy = await freeBusyForInbox(
-      inbox.googleCalendarRefreshToken,
-      inbox.id,
-      windowStart,
-      windowEnd
-    );
-    if (busy && busy.length > 0) {
-      const isBusy = (slot: ScheduleSlot) => {
-        const slotStart = Date.parse(slot.startUtc);
-        const slotEnd = Date.parse(slot.endUtc);
-        return busy.some((b) => {
-          const bStart = Date.parse(b.startIso);
-          const bEnd = Date.parse(b.endIso);
-          // overlap: slotStart < bEnd && slotEnd > bStart
-          return slotStart < bEnd && slotEnd > bStart;
-        });
-      };
-      const filtered = slots.filter((s) => !isBusy(s));
-      // Only apply if we have enough remaining — if the calendar is
-      // wall-to-wall, don't return zero slots; fall back to the grid
-      // and let the admin decline. (`>= 3` keeps the partner from
-      // seeing an awkward "no times at all" when the real cause is
-      // poor calendar hygiene.)
-      if (filtered.length >= 3) {
-        slots.length = 0;
-        slots.push(...filtered);
+    try {
+      const busy = await freeBusyForInbox(
+        inbox.googleCalendarRefreshToken,
+        inbox.id,
+        windowStart,
+        windowEnd
+      );
+      if (busy && busy.length > 0) {
+        const isBusy = (slot: ScheduleSlot) => {
+          const slotStart = Date.parse(slot.startUtc);
+          const slotEnd = Date.parse(slot.endUtc);
+          return busy.some((b) => {
+            const bStart = Date.parse(b.startIso);
+            const bEnd = Date.parse(b.endIso);
+            return slotStart < bEnd && slotEnd > bStart;
+          });
+        };
+        return { slots: slots.filter((s) => !isBusy(s)), inbox };
       }
+    } catch (e) {
+      console.error("[scheduling] freeBusy failed, returning unfiltered:", e);
     }
   }
 
