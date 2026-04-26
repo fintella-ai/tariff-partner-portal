@@ -74,7 +74,7 @@ export default function AdminApplicationsPage() {
   const [inviteSending, setInviteSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const [approveApp, setApproveApp] = useState<Application | null>(null);
-  const [approveRate, setApproveRate] = useState(0.20);
+  const [approveRate, setApproveRate] = useState<number | "">("");
   const [approveReferrer, setApproveReferrer] = useState("");
   const [approveSending, setApproveSending] = useState(false);
 
@@ -130,7 +130,7 @@ export default function AdminApplicationsPage() {
 
   function startApprove(app: Application) {
     setApproveApp(app);
-    setApproveRate(0.20);
+    setApproveRate("");
     setApproveReferrer(app.uplineCode || "");
   }
 
@@ -338,9 +338,10 @@ export default function AdminApplicationsPage() {
               <label className="text-xs uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">Commission Rate</label>
               <select
                 value={approveRate}
-                onChange={(e) => setApproveRate(parseFloat(e.target.value))}
-                className="w-full theme-input rounded-lg px-3 py-2 text-sm"
+                onChange={(e) => setApproveRate(e.target.value ? parseFloat(e.target.value) : "")}
+                className={`w-full theme-input rounded-lg px-3 py-2 text-sm ${approveRate === "" ? "border-red-500/40" : ""}`}
               >
+                <option value="">— Select rate —</option>
                 <option value={0.10}>10%</option>
                 <option value={0.15}>15%</option>
                 <option value={0.20}>20%</option>
@@ -360,7 +361,7 @@ export default function AdminApplicationsPage() {
           </div>
           <div className="flex gap-2">
             <button
-              disabled={approveSending}
+              disabled={approveSending || approveRate === ""}
               onClick={submitApproval}
               className="px-4 py-2 rounded-lg bg-green-500 text-white text-sm font-semibold hover:bg-green-600 disabled:opacity-50"
             >
