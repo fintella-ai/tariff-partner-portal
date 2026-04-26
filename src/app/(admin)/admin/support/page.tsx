@@ -6,12 +6,14 @@ import LiveChatPanel from "../chat/LiveChatPanel";
 import AdminPresenceBar from "@/components/admin/AdminPresenceBar";
 
 const FeatureRequestsPanel = lazy(() => import("../features/page"));
+const KnowledgeGapsPanel = lazy(() => import("../knowledge-gaps/page"));
 
-type Tab = "tickets" | "livechat" | "features";
+type Tab = "tickets" | "livechat" | "features" | "knowledge-gaps";
 const TABS: { id: Tab; label: string }[] = [
   { id: "tickets",  label: "Support Tickets" },
   { id: "livechat", label: "Live Chat" },
   { id: "features", label: "Feature Requests" },
+  { id: "knowledge-gaps", label: "Knowledge Gaps" },
 ];
 
 function SupportHostInner() {
@@ -45,6 +47,7 @@ function SupportHostInner() {
       {tab === "tickets"  && <SupportTicketsPanel />}
       {tab === "livechat" && <LiveChatPanel />}
       {tab === "features" && <Suspense fallback={<div className="spinner mx-auto mt-8" />}><FeatureRequestsPanel /></Suspense>}
+      {tab === "knowledge-gaps" && <Suspense fallback={<div className="spinner mx-auto mt-8" />}><KnowledgeGapsPanel /></Suspense>}
     </div>
   );
 }

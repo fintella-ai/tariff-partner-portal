@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import LandingEditorPage from "../landing-editor/page";
 import { fmt$ } from "@/lib/format";
 
+const AuditLogPanel = lazy(() => import("../audit-log/page"));
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type Tab = "links" | "errors" | "email" | "webhook" | "customapi" | "apilog" | "commits" | "landing" | "cleanup";
+type Tab = "links" | "errors" | "email" | "webhook" | "customapi" | "apilog" | "auditlog" | "commits" | "landing" | "cleanup";
 
 type Commit = {
   sha: string;
@@ -1604,6 +1606,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "webhook",     label: "Webhook Test",    icon: "🧪" },
   { id: "customapi",   label: "Custom API",      icon: "🛰️" },
   { id: "apilog",      label: "API Log",         icon: "📋" },
+  { id: "auditlog",   label: "Audit Log",       icon: "📜" },
   { id: "landing",     label: "Landing Editor",  icon: "🪄" },
   { id: "commits",     label: "Recent Commits",  icon: "📦" },
   { id: "cleanup",     label: "Data Cleanup",    icon: "🧹" },
@@ -1675,6 +1678,7 @@ export default function DevPage() {
       {tab === "webhook"   && <WebhookTab />}
       {tab === "customapi" && <CustomSenderSection />}
       {tab === "apilog"    && <ApiLogSection />}
+      {tab === "auditlog"  && <Suspense fallback={<div className="spinner mx-auto mt-8" />}><AuditLogPanel /></Suspense>}
       {tab === "landing"   && <LandingEditorPage />}
       {tab === "commits"   && <CommitsTab data={data} />}
       {tab === "cleanup"   && <CleanupTab />}

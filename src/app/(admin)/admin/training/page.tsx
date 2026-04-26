@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { useResizableColumns } from "@/components/ui/ResizableTable";
 import GlossaryAdmin from "@/components/admin/GlossaryAdmin";
 import SlidePlayer from "@/components/ui/SlidePlayer";
 import HeyGenOptionsModal, { type HeyGenOptions } from "@/components/admin/HeyGenOptionsModal";
 
+const FaqCandidatesPanel = lazy(() => import("./faq-candidates/page"));
+
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 
-type ViewTab = "modules" | "progress" | "resources" | "faq" | "glossary";
+type ViewTab = "modules" | "progress" | "resources" | "faq" | "glossary" | "faq-candidates";
 
 type TrainingModule = {
   id: string;
@@ -148,6 +150,7 @@ const VIEW_TABS: { id: ViewTab; label: string }[] = [
   { id: "progress", label: "Progress" },
   { id: "resources", label: "Resources" },
   { id: "faq", label: "FAQ" },
+  { id: "faq-candidates", label: "FAQ Candidates" },
 ];
 
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
@@ -2008,6 +2011,13 @@ export default function AdminTrainingPage() {
 
       {/* ═══ GLOSSARY VIEW (Phase 2b) ═══ */}
       {view === "glossary" && <GlossaryAdmin />}
+
+      {/* ═══ FAQ CANDIDATES VIEW ═══ */}
+      {view === "faq-candidates" && (
+        <Suspense fallback={<div className="spinner mx-auto mt-8" />}>
+          <FaqCandidatesPanel />
+        </Suspense>
+      )}
 
       {/* ═══ AI VIDEO PREVIEW MODAL ═══ */}
       {previewScript && (
