@@ -149,15 +149,10 @@ export default function ChatPanel({
     <div className="flex flex-col flex-1 min-h-0">
       {/* Message area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
-        {/* AI Disclosure — required by CA SB 243, CO AI Act, UT AI Policy Act, WA chatbot law, FTC guidance */}
-        <div className="mb-3 px-3 py-2 rounded-lg bg-[var(--app-card-bg)] border border-[var(--app-border)] text-center">
-          <p className="font-body text-[10px] text-[var(--app-text-muted)] leading-relaxed">
-            You are chatting with an <strong>AI assistant</strong>, not a human.
-            This conversation is recorded and stored.
-            This AI does not provide legal, tax, or financial advice.
-            By continuing, you consent to the recording of this interaction.
-          </p>
-        </div>
+        {/* AI Disclosure — CA SB 243, CO AI Act, UT AI Policy Act, WA, FTC */}
+        <p className="mb-2 -mx-1 font-body text-[9px] text-[var(--app-text-muted)] text-center leading-tight">
+          AI assistant, not a human. Recorded. Not legal/tax/financial advice. Continuing = consent.
+        </p>
 
         {isEmpty ? (
           /* ── Empty state ── */
