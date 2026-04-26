@@ -866,7 +866,7 @@ async function main() {
       id: "wf-welcome-email",
       name: "Welcome Email",
       description: "Send welcome email + SMS when a new partner signs up",
-      triggerKey: "partner.created",
+      trigger: "partner.created",
       enabled: true,
       actions: [
         { type: "email.send", config: { templateKey: "welcome", recipientType: "partner" } },
@@ -877,7 +877,7 @@ async function main() {
       id: "wf-signup-notification",
       name: "Signup Notification to Inviter",
       description: "Notify the upline partner when their recruit signs up",
-      triggerKey: "partner.created",
+      trigger: "partner.created",
       enabled: true,
       actions: [
         { type: "email.send", config: { templateKey: "signup_notification", recipientType: "inviter" } },
@@ -888,7 +888,7 @@ async function main() {
       id: "wf-agreement-ready",
       name: "Agreement Ready Email",
       description: "Send agreement signing link when admin dispatches SignWell",
-      triggerKey: "partner.agreement_sent",
+      trigger: "partner.agreement_sent",
       enabled: true,
       actions: [
         { type: "email.send", config: { templateKey: "agreement_ready", recipientType: "partner" } },
@@ -899,7 +899,7 @@ async function main() {
       id: "wf-agreement-signed",
       name: "Agreement Signed Confirmation",
       description: "Welcome-aboard email when partner signs agreement and is activated",
-      triggerKey: "partner.activated",
+      trigger: "partner.activated",
       enabled: true,
       actions: [
         { type: "email.send", config: { templateKey: "agreement_signed", recipientType: "partner" } },
@@ -910,7 +910,7 @@ async function main() {
       id: "wf-deal-status-update",
       name: "Deal Status Update (Email + SMS)",
       description: "Notify submitting partner via email and SMS when their deal stage changes",
-      triggerKey: "deal.stage_changed",
+      trigger: "deal.stage_changed",
       enabled: true,
       actions: [
         { type: "email.send", config: { templateKey: "deal_status_update", recipientType: "deal_partner" } },
@@ -921,7 +921,7 @@ async function main() {
       id: "wf-commission-paid",
       name: "Commission Payment Notification (Email + SMS)",
       description: "Notify partner via email and SMS when commission is paid via payout batch",
-      triggerKey: "commission.paid",
+      trigger: "commission.paid",
       enabled: true,
       actions: [
         { type: "email.send", config: { templateKey: "commission_payment_notification", recipientType: "partner" } },
@@ -932,7 +932,7 @@ async function main() {
       id: "wf-channel-invite",
       name: "Channel Invite Email",
       description: "Notify partner when added to an announcement channel",
-      triggerKey: "partner.added_to_channel",
+      trigger: "partner.added_to_channel",
       enabled: true,
       actions: [
         { type: "email.send", config: { templateKey: "partner_added_to_channel", recipientType: "partner" } },
@@ -942,7 +942,7 @@ async function main() {
       id: "wf-monthly-newsletter",
       name: "Monthly Newsletter",
       description: "Monthly partner newsletter sent on 1st of each month via cron",
-      triggerKey: "newsletter.monthly",
+      trigger: "newsletter.monthly",
       enabled: true,
       actions: [
         { type: "email.send", config: { templateKey: "monthly_newsletter", recipientType: "all_active_partners" } },
@@ -957,7 +957,7 @@ async function main() {
         id: wf.id,
         name: wf.name,
         description: wf.description,
-        triggerKey: wf.triggerKey,
+        trigger: wf.trigger,
         enabled: wf.enabled,
         actions: wf.actions,
         conditions: [],
