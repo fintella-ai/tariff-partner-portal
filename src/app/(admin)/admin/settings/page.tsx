@@ -1256,7 +1256,7 @@ export default function SettingsPage() {
                     className={inputClass}
                     value={ev.ctaUrl || ""}
                     onChange={(e) => updateEvent(idx, "ctaUrl", e.target.value)}
-                    placeholder="Button URL — e.g. https://meet.jit.si/fintella-live-weekly-w14-xyz12  (leave blank to hide the button)"
+                    placeholder="Button URL — e.g. https://meet.google.com/xxx-xxx-xxx  (leave blank to hide the button)"
                   />
                 </div>
                 <label className="flex items-center gap-2 mt-3 cursor-pointer">

@@ -4,7 +4,6 @@ import {
   createCalendarEvent,
   updateCalendarEvent,
 } from "@/lib/google-calendar";
-import { JITSI_BASE } from "@/lib/jitsi";
 
 /**
  * POST /api/booking/reserve
@@ -17,8 +16,8 @@ import { JITSI_BASE } from "@/lib/jitsi";
  * Side effects:
  *   1. Creates or updates the slot's Google Calendar event, adding the
  *      applicant as a guest (so Google sends them the invite).
- *   2. Derives a Jitsi room URL from the slot id on first booking so
- *      every applicant in the same slot gets the same join link.
+ *   2. Google Meet link is auto-created by the calendar event and
+ *      returned as the join URL.
  *
  * Capacity is enforced atomically inside a Prisma transaction: we re-count
  * confirmed bookings at commit time and reject if seats went full during
@@ -90,12 +89,9 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    // Ensure Jitsi room exists on the slot (first booking creates it).
-    const jitsiRoom = slot.jitsiRoom || `fintella-qual-${slot.id.slice(-8)}`;
-    const jitsiUrl = `${JITSI_BASE}/${jitsiRoom}`;
-
     // Build / update the Google Calendar event. All bookings on the same
     // slot attend the SAME event — we just add attendees as they book.
+    // Google Meet link is auto-created by the calendar API.
     const allAttendeeEmails = Array.from(
       new Set([...slot.bookings.map((b) => b.email), application.email])
     );
@@ -118,17 +114,19 @@ export async function POST(req: NextRequest) {
         .join("\n"),
       startIso: new Date(slot.startsAt).toISOString(),
       endIso: new Date(slot.endsAt).toISOString(),
-      joinUrl: jitsiUrl,
       attendeeEmails: allAttendeeEmails,
     };
 
     let googleEventId = slot.googleEventId ?? null;
+    let meetLink: string | undefined;
     try {
       if (!googleEventId) {
         const evt = await createCalendarEvent(eventInput);
         googleEventId = evt.id;
+        meetLink = evt.meetLink;
       } else {
-        await updateCalendarEvent(googleEventId, eventInput);
+        const evt = await updateCalendarEvent(googleEventId, eventInput);
+        meetLink = evt.meetLink;
       }
     } catch (err) {
       // Never block the reservation on calendar failure — log and move on.
@@ -136,6 +134,8 @@ export async function POST(req: NextRequest) {
       console.error("[api/booking/reserve] calendar sync failed", err);
     }
 
+    // Keep jitsiRoom write for backward compat with existing slots.
+    const jitsiRoom = slot.jitsiRoom || `fintella-qual-${slot.id.slice(-8)}`;
     if (!slot.jitsiRoom || slot.googleEventId !== googleEventId) {
       await prisma.bookingSlot.update({
         where: { id: slot.id },
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
         startsAt: slot.startsAt.toISOString(),
         endsAt: slot.endsAt.toISOString(),
         title: slot.title,
-        joinUrl: jitsiUrl,
+        joinUrl: meetLink || null,
       },
     });
   } catch (err) {

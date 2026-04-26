@@ -246,7 +246,7 @@ export const TRIGGER_VARIABLES: Record<TriggerKey, TriggerVariable[]> = {
     { token: "{conference.hostName}",  description: "Presenter name",                                    example: "John Orlando" },
     { token: "{conference.nextCall}",  description: "When the call starts (ISO timestamp)",              example: "2026-03-26T18:00:00Z" },
     { token: "{conference.nextCallLocal}", description: "Friendly call time (America/New_York)",         example: "Thu, Mar 26 at 2:00 PM ET" },
-    { token: "{conference.joinUrl}",   description: "In-portal join link (Jitsi room or legacy joinUrl)", example: "https://meet.jit.si/fintella-live-weekly-w13" },
+    { token: "{conference.joinUrl}",   description: "Join link (Google Meet or fallback URL)", example: "https://meet.google.com/xxx-xxx-xxx" },
     { token: "{conference.weekNumber}", description: "Week number for labeling",                         example: "13" },
     { token: "{hoursBeforeCall}",      description: "Lead time used for this reminder",                  example: "24" },
     { token: "{partner.firstName}",    description: "Recipient partner's first name",                    example: "Jane" },

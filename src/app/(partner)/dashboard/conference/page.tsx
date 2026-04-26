@@ -25,6 +25,7 @@ interface ConferenceEntry {
   notes: string | null;
   isActive: boolean;
   jitsiRoom?: string | null;
+  meetLink?: string | null;
 }
 
 /* ── ICS helper ────────────────────────────────────────────────────────── */
@@ -42,7 +43,7 @@ function generateICS(entry: ConferenceEntry) {
     `DTEND:${fmt(end)}`,
     `SUMMARY:${entry.title}`,
     `DESCRIPTION:${entry.description || `Weekly ${FIRM_SHORT} partner call`}`,
-    entry.joinUrl ? `URL:${entry.joinUrl}` : "",
+    (entry.meetLink || entry.joinUrl) ? `URL:${entry.meetLink || entry.joinUrl}` : "",
     "END:VEVENT",
     "END:VCALENDAR",
   ].filter(Boolean).join("\r\n");
@@ -74,7 +75,6 @@ export default function ConferencePage() {
   const [activeSchedule, setActiveSchedule] = useState<ConferenceEntry | null>(null);
   const [pastRecordings, setPastRecordings] = useState<ConferenceEntry[]>([]);
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
-  const [jitsiOpen, setJitsiOpen] = useState(false);
   const [videoModal, setVideoModal] = useState<{ isOpen: boolean; url: string; title: string }>({
     isOpen: false, url: "", title: "",
   });
@@ -194,41 +194,20 @@ export default function ConferencePage() {
           {active.hostName && <span className="font-body text-[13px] text-[var(--app-text-secondary)]">👤 {active.hostName}</span>}
         </div>
         <div className={`flex ${device.isMobile ? "flex-col" : ""} gap-3`}>
-          {active.jitsiRoom ? (
-            <button
-              onClick={() => {
-                setJitsiOpen((v) => {
-                  if (!v) markGettingStartedCallJoined();
-                  return !v;
-                });
-              }}
-              className="btn-gold text-[13px] px-6 py-3 flex items-center justify-center gap-2"
-            >
-              📹 {jitsiOpen ? "Hide call" : "Join call here"}
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                if (active.joinUrl) {
-                  markGettingStartedCallJoined();
-                  window.open(active.joinUrl, "_blank");
-                }
-              }}
+          {(active.meetLink || active.joinUrl) ? (
+            <a
+              href={active.meetLink || active.joinUrl || "#"}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => markGettingStartedCallJoined()}
               className="btn-gold text-[13px] px-6 py-3 flex items-center justify-center gap-2"
             >
               📹 Join Call
-            </button>
-          )}
-          {active.jitsiRoom && (
-            <a
-              href={`https://meet.jit.si/${active.jitsiRoom}`}
-              target="_blank"
-              rel="noreferrer"
-              className="font-body text-[12px] text-[var(--app-text-secondary)] border border-[var(--app-border)] rounded-lg px-5 py-3 hover:text-[var(--app-text-secondary)] hover:border-[var(--app-border)] transition-colors text-center"
-              title="Open in a new tab"
-            >
-              Open in new tab
             </a>
+          ) : (
+            <span className="font-body text-[13px] text-[var(--app-text-muted)] px-6 py-3">
+              Call link will be available once synced to calendar
+            </span>
           )}
           <button
             onClick={() => generateICS(active)}
@@ -237,20 +216,6 @@ export default function ConferencePage() {
             Add to Calendar
           </button>
         </div>
-
-        {/* In-portal Jitsi embed — Jitsi allows iframe embedding (unlike
-            Meet/Zoom/SignWell). Partners click "Join call here" and get
-            the video conference right inside their dashboard. */}
-        {jitsiOpen && active.jitsiRoom && (
-          <div className="mt-4 rounded-xl overflow-hidden border border-[var(--app-border)] bg-black" style={{ aspectRatio: "16 / 9" }}>
-            <iframe
-              src={`https://meet.jit.si/${active.jitsiRoom}`}
-              allow="camera; microphone; fullscreen; display-capture; autoplay"
-              className="w-full h-full"
-              title={active.title}
-            />
-          </div>
-        )}
       </div>
       )}
 

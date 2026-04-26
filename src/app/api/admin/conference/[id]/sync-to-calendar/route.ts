@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createCalendarEvent, updateCalendarEvent, googleCalendarConfigured } from "@/lib/google-calendar";
-import { buildJitsiUrl } from "@/lib/jitsi";
+
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +34,7 @@ export async function POST(
   // Google after creation.
   const start = entry.nextCall;
   const end = new Date(start.getTime() + 60 * 60 * 1000);
-  const joinUrl = entry.jitsiRoom ? buildJitsiUrl(entry.jitsiRoom) : entry.joinUrl || "";
+  const joinUrl = entry.meetLink || entry.joinUrl || "";
 
   const input = {
     summary: entry.title,
@@ -54,6 +54,7 @@ export async function POST(
       data: {
         googleCalendarEventId: result.id,
         googleCalendarHtmlLink: result.htmlLink ?? null,
+        meetLink: result.meetLink ?? null,
       },
     });
 

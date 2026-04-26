@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { buildJitsiSlug } from "@/lib/jitsi";
+
 
 /**
  * GET /api/admin/conference
@@ -22,29 +22,6 @@ export async function GET(req: NextRequest) {
     const entries = await prisma.conferenceSchedule.findMany({
       orderBy: { nextCall: "desc" },
     });
-
-    // Backfill `jitsiRoom` for any row that predates the Jitsi-embed PR
-    // (#416). Auto-generating on GET keeps the admin UI usable without
-    // requiring a recreate. One update per stale row, guarded so rows
-    // that already have a slug are untouched.
-    const stale = entries.filter((e) => !e.jitsiRoom);
-    if (stale.length > 0) {
-      await Promise.all(
-        stale.map((e) =>
-          prisma.conferenceSchedule
-            .update({
-              where: { id: e.id },
-              data: { jitsiRoom: buildJitsiSlug({ id: e.id, weekNumber: e.weekNumber }) },
-            })
-            .catch(() => null)
-        )
-      );
-      const refreshed = await prisma.conferenceSchedule.findMany({
-        orderBy: { nextCall: "desc" },
-      });
-      return NextResponse.json({ entries: refreshed });
-    }
-
     return NextResponse.json({ entries });
   } catch {
     return NextResponse.json(
@@ -87,14 +64,7 @@ export async function POST(req: NextRequest) {
         isActive: body.isActive ?? true,
       },
     });
-    // Auto-attach a Jitsi room slug now that we have the row's id. Admin
-    // can override later if they want a specific vanity slug.
-    const jitsiRoom = body.jitsiRoom || buildJitsiSlug({ id: entry.id, weekNumber: entry.weekNumber });
-    const withRoom = await prisma.conferenceSchedule.update({
-      where: { id: entry.id },
-      data: { jitsiRoom },
-    });
-    return NextResponse.json({ entry: withRoom }, { status: 201 });
+    return NextResponse.json({ entry }, { status: 201 });
   } catch {
     return NextResponse.json(
       { error: "Failed to create conference entry" },
