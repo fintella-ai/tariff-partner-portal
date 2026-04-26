@@ -1,13 +1,16 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useState, lazy } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import SupportTicketsPanel from "./SupportTicketsPanel";
 import LiveChatPanel from "../chat/LiveChatPanel";
 
-type Tab = "tickets" | "livechat";
+const FeatureRequestsPanel = lazy(() => import("../features/page"));
+
+type Tab = "tickets" | "livechat" | "features";
 const TABS: { id: Tab; label: string }[] = [
   { id: "tickets",  label: "Support Tickets" },
-  { id: "livechat", label: "Live Chat Support" },
+  { id: "livechat", label: "Live Chat" },
+  { id: "features", label: "Feature Requests" },
 ];
 
 function SupportHostInner() {
@@ -36,6 +39,7 @@ function SupportHostInner() {
       </div>
       {tab === "tickets"  && <SupportTicketsPanel />}
       {tab === "livechat" && <LiveChatPanel />}
+      {tab === "features" && <Suspense fallback={<div className="spinner mx-auto mt-8" />}><FeatureRequestsPanel /></Suspense>}
     </div>
   );
 }

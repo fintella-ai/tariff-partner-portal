@@ -15,6 +15,7 @@
  * to watch). Read-only for all 4 admin roles.
  */
 import { useEffect, useState } from "react";
+import ReportingTabs from "@/components/ui/ReportingTabs";
 
 interface ActivityPayload {
   windowDays: number;
@@ -127,6 +128,7 @@ export default function AiActivityPage() {
 
   return (
     <div className="space-y-6">
+      <ReportingTabs />
       <div>
         <h1 className="font-display text-[22px] font-bold text-[var(--app-text)]">
           AI Activity
