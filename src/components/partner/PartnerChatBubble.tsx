@@ -132,7 +132,7 @@ export default function PartnerChatBubble({
       const res = await fetch("/api/ai/unread-count");
       if (res.ok) {
         const data = await res.json();
-        setUnreadCount(data.total || 0);
+        setUnreadCount(data.ai || 0);
       }
     } catch {}
   }, []);
