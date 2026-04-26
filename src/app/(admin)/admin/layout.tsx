@@ -30,7 +30,7 @@ const ADMIN_NAV_IDS_DEFAULT = [
   "communications", "internalChats", "partnerSupport",
   "training", "conference", "documents",
   "automations", "gettingStartedEditor", "aiActivity",
-  "settings", "billing", "users", "features", "dev",
+  "settings", "users", "features", "dev",
 ];
 
 // Built-in icon overrides — wins over the default emoji, loses to an
