@@ -17,6 +17,7 @@ const TABS = [
   { href: "/admin/payouts", label: "Payouts" },
   { href: "/admin/expenses", label: "Expenses" },
   { href: "/admin/ai-activity", label: "AI Activity" },
+  { href: "/admin/audit-log", label: "Audit Log" },
 ] as const;
 
 export default function ReportingTabs() {
