@@ -20,7 +20,7 @@
     "@sentry/nextjs": "^10.48.0",
     "@simplewebauthn/browser": "^9.0.1",
     "@simplewebauthn/server": "^9.0.3",
-    "@twilio/voice-sdk": "^2.18.1",
+    "@twilio/voice-sdk": "^2.18.2",
     "@types/pg": "^8.20.0",
     "@vercel/analytics": "^1.6.1",
     "@vercel/blob": "^2.3.3",
