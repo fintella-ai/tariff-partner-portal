@@ -149,6 +149,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.role = (user as any).role ?? token.role;
         token.partnerCode = (user as any).partnerCode ?? token.partnerCode;
+        // Audit log: sign-in event (fire-and-forget)
+        import("@/lib/audit-log").then(({ logAudit }) =>
+          logAudit({
+            action: "sign_in",
+            actorEmail: (user.email || token.email || "unknown") as string,
+            actorRole: ((user as any).role || token.role || "unknown") as string,
+            actorId: (user as any).partnerCode || user.id || null,
+            details: { provider: account?.provider || "credentials" },
+          })
+        ).catch(() => {});
+        // Engagement: track portal login for partners
+        if ((user as any).partnerCode) {
+          import("@/lib/engagement").then(({ recordActivity }) =>
+            recordActivity((user as any).partnerCode, "portal_login")
+          ).catch(() => {});
+        }
       }
       // Google sign-ins don't populate those fields — hydrate from the
       // Partner row keyed by email on the first JWT pass.

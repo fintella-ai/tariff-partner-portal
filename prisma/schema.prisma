@@ -70,11 +70,16 @@ model Partner {
   onboardingState       String   @default("{}")
   // PartnerOS AI — Phase 1 persona split (spec §3.6). null = prompt on first AI visit.
   preferredGeneralist   String?  // "finn" | "stella"
+  // Engagement scoring
+  engagementScore       Float    @default(0)
+  engagementTier        String   @default("cold") // hot, active, cooling, cold
+  lastActivityAt        DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
   @@index([email])
   @@index([referredByPartnerCode])
+  @@index([engagementTier])
 }
 
 // ─── PARTNER PROFILE (address, payout info) ──────────────────────────────────
@@ -1651,4 +1656,38 @@ model AiEscalation {
   @@index([conversationId])
   @@index([partnerCode])
   @@index([targetInboxId])
+}
+
+// ─── AUDIT LOG ──────────────────────────────────────────────────────────────
+model AuditLog {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  action      String   // sign_in, sign_out, deal.create, deal.update, deal.delete, partner.update, settings.update, etc.
+  actorEmail  String   // who performed the action
+  actorRole   String   // super_admin, admin, accounting, partner_support, partner
+  actorId     String?  // User.id or Partner.partnerCode
+  targetType  String?  // Deal, Partner, User, PortalSettings, etc.
+  targetId    String?  // the record ID
+  details     String?  // JSON of what changed — { field: { old: x, new: y } }
+  ipAddress   String?
+  userAgent   String?
+
+  @@index([action])
+  @@index([actorEmail])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+// ─── PARTNER ENGAGEMENT ─────────────────────────────────────────────────────
+model PartnerActivity {
+  id          String   @id @default(cuid())
+  partnerCode String
+  action      String   // email_open, email_click, portal_login, deal_submitted, training_completed, call_attended, link_shared, downline_recruited
+  points      Int      @default(0)
+  metadata    String?  // JSON with extra context
+  createdAt   DateTime @default(now())
+
+  @@index([partnerCode])
+  @@index([action])
+  @@index([createdAt])
 }
