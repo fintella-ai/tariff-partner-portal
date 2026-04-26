@@ -266,6 +266,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // indicators stay in sync without a cross-component subscription.
   const [unreadCount, setUnreadCount] = useState(0);
 
+  useEffect(() => {
+    if (!session?.user) return;
+    const isGettingStarted = pathname === "/dashboard/getting-started";
+    fetch("/api/partner/getting-started", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return;
+        const agreementDone = data.steps?.some(
+          (s: any) => s.id === "sign_agreement" && s.completed
+        );
+        if (!agreementDone && !isGettingStarted) {
+          router.replace("/dashboard/getting-started");
+        }
+      })
+      .catch(() => {});
+  }, [session?.user, pathname, router]);
+
   const fetchUnreadNotifications = useCallback(() => {
     fetch("/api/notifications", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
