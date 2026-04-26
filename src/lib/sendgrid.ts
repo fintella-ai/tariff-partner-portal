@@ -930,6 +930,87 @@ This invitation link expires in 7 days.`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Landing page invite — share the public landing/apply page via email.
+// Template key: landing_invite. Falls back to hardcoded copy below.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export async function sendLandingInviteEmail(opts: {
+  toEmail: string;
+  toName: string | null;
+  landingUrl: string;
+  senderName?: string;
+}): Promise<SendEmailResult> {
+  const name = opts.toName || "there";
+  const sender = opts.senderName || "Someone";
+  const vars: Record<string, string> = {
+    firstName: name,
+    landingUrl: opts.landingUrl,
+    portalUrl: PORTAL_URL,
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+    senderName: sender,
+  };
+
+  const tpl = await loadTemplate("landing_invite");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || "Learn More & Apply",
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : opts.landingUrl,
+    });
+    return sendEmail({
+      to: opts.toEmail,
+      toName: opts.toName || undefined,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "landing_invite",
+      partnerCode: null,
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+      replyTo: tpl.replyTo || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
+  const heading = "You've been invited to explore a partnership opportunity";
+  const bodyHtml = `
+    <p>Hi ${escapeHtml(name)},</p>
+    <p>${escapeHtml(sender)} thought you'd be a great fit for the ${escapeHtml(FIRM_NAME)} partner network.</p>
+    <p>As a ${escapeHtml(FIRM_SHORT)} partner, you can earn commissions on every qualified referral you send our way. It only takes a few minutes to learn more and apply.</p>
+    <p>Click the button below to check out the opportunity and get started.</p>`;
+  const bodyText = `Hi ${name},
+
+${sender} thought you'd be a great fit for the ${FIRM_NAME} partner network.
+
+As a ${FIRM_SHORT} partner, you can earn commissions on every qualified referral you send our way. It only takes a few minutes to learn more and apply.
+
+Learn more and apply: ${opts.landingUrl}`;
+
+  const { html, text } = emailShell({
+    preheader: `${sender} thinks you'd be a great fit for the ${FIRM_SHORT} partner network.`,
+    heading,
+    bodyHtml,
+    bodyText,
+    ctaLabel: "Learn More & Apply",
+    ctaUrl: opts.landingUrl,
+  });
+
+  return sendEmail({
+    to: opts.toEmail,
+    toName: opts.toName || undefined,
+    subject: "Explore a partnership opportunity with Fintella",
+    html,
+    text,
+    template: "landing_invite",
+    partnerCode: null,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Channel-invite email — fired from the /api/admin/channels/[id]/members
 // POST endpoint whenever a new partner is added to an AnnouncementChannel.
 // Template key: partner_added_to_channel. Falls back to the hardcoded copy

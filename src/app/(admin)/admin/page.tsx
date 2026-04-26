@@ -614,6 +614,8 @@ export default function AdminWorkspacePage() {
           <QuickLink href="/admin/support" label="+ New Ticket" icon="🎫" />
           <QuickLink href="/admin/communications" label="Send SMS" icon="💬" />
           <QuickLink href="/admin/communications" label="Send Email" icon="📧" />
+          <CopyLinkButton url="https://fintella.partners/landing-v2" label="Copy Landing Link" icon="🔗" />
+          <QuickLink href="/admin/applications" label="Partner Leads" icon="📩" />
           <QuickLink href="/admin/partners" label="+ Invite Partner" icon="👥" />
           {showPayoutsCard && <QuickLink href="/admin/payouts" label="Run Payout Batch" icon="💰" />}
           <QuickLink href="/admin/conference" label="+ Live Weekly" icon="📹" />
@@ -639,5 +641,24 @@ function QuickLink({ href, label, icon }: { href: string; label: string; icon: s
       <span className="text-base" aria-hidden>{icon}</span>
       <span className="font-body text-[12px] text-[var(--app-text-secondary)] truncate">{label}</span>
     </Link>
+  );
+}
+
+function CopyLinkButton({ url, label, icon }: { url: string; label: string; icon: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+      className="flex items-center gap-2 px-3 py-3 rounded-lg border border-[var(--app-border)] hover:border-brand-gold/40 hover:bg-brand-gold/5 transition-colors"
+    >
+      <span className="text-base" aria-hidden>{icon}</span>
+      <span className="font-body text-[12px] text-[var(--app-text-secondary)] truncate">
+        {copied ? "Copied!" : label}
+      </span>
+    </button>
   );
 }

@@ -68,6 +68,11 @@ export default function AdminApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ tone: "ok" | "err"; msg: string } | null>(null);
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [inviteSending, setInviteSending] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const fetchApps = useCallback(async () => {
     setLoading(true);
@@ -172,7 +177,27 @@ export default function AdminApplicationsPage() {
             Leads from the public landing page. Review → qualification call → approve → auto-sends invite.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText("https://fintella.partners/landing-v2");
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm hover:bg-[var(--app-input-bg)] transition"
+          >
+            {copied ? "✓ Copied!" : "🔗 Copy Landing Link"}
+          </button>
+          <button
+            onClick={() => setShowInviteForm((v) => !v)}
+            className={`px-4 py-2 rounded-lg border text-sm transition ${
+              showInviteForm
+                ? "border-[var(--brand-gold)] bg-[var(--brand-gold)]/10 text-[var(--brand-gold)]"
+                : "border-[var(--app-border)] hover:bg-[var(--app-input-bg)]"
+            }`}
+          >
+            ✉️ Email Invite
+          </button>
           <Link
             href="/admin/booking-slots"
             className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm hover:bg-[var(--app-input-bg)] transition"
@@ -187,6 +212,84 @@ export default function AdminApplicationsPage() {
           </button>
         </div>
       </div>
+
+      {showInviteForm && (
+        <div className="card p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm">Email Landing Page Invite</h3>
+            <button
+              onClick={() => { setShowInviteForm(false); setInviteEmail(""); setInviteName(""); }}
+              className="text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text)]"
+            >
+              Cancel
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">
+                Email <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="partner@example.com"
+                className="w-full theme-input rounded-lg px-3 py-2 text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">
+                Name <span className="text-[var(--app-text-muted)]">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={inviteName}
+                onChange={(e) => setInviteName(e.target.value)}
+                placeholder="First Last"
+                className="w-full theme-input rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              disabled={!inviteEmail || inviteSending}
+              onClick={async () => {
+                setInviteSending(true);
+                try {
+                  const res = await fetch("/api/admin/landing-invite", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: inviteEmail, name: inviteName || undefined }),
+                  });
+                  if (res.ok) {
+                    flash("ok", `Landing invite sent to ${inviteEmail}`);
+                    setInviteEmail("");
+                    setInviteName("");
+                    setShowInviteForm(false);
+                  } else {
+                    const data = await res.json().catch(() => ({ error: "Send failed" }));
+                    flash("err", data.error || "Send failed");
+                  }
+                } catch {
+                  flash("err", "Network error — could not send invite");
+                } finally {
+                  setInviteSending(false);
+                }
+              }}
+              className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {inviteSending ? "Sending…" : "Send Landing Invite"}
+            </button>
+            <button
+              onClick={() => { setShowInviteForm(false); setInviteEmail(""); setInviteName(""); }}
+              className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm hover:bg-[var(--app-input-bg)] transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {banner && (
         <div
