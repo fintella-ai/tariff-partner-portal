@@ -1,16 +1,6 @@
 "use client";
 
-/**
- * Reference card for every event site in the codebase that fires an
- * email or SMS directly via the sendgrid.ts / twilio.ts helpers — not
- * through the workflow engine. These fire automatically; they can't be
- * disabled without a code change. The editable copy for each still
- * lives in the matching EmailTemplate / SmsTemplate row (falls back to
- * hardcoded body if the row is missing/disabled).
- *
- * Keep this list in sync with the helpers in src/lib/sendgrid.ts and
- * src/lib/twilio.ts whenever a new call site is added.
- */
+import { useState, useEffect, useCallback } from "react";
 
 interface Trigger {
   key: string;
@@ -93,7 +83,44 @@ const EMAIL_TRIGGERS: Trigger[] = [
   },
 ];
 
+type EmailLogEntry = {
+  id: string;
+  toEmail: string;
+  subject: string;
+  template: string;
+  status: string;
+  errorMessage: string | null;
+  createdAt: string;
+};
+
 export default function HardcodedTriggersDoc() {
+  const [logs, setLogs] = useState<EmailLogEntry[]>([]);
+  const [logTotal, setLogTotal] = useState(0);
+  const [logPage, setLogPage] = useState(0);
+  const [logFilter, setLogFilter] = useState("");
+  const [logStatusFilter, setLogStatusFilter] = useState("");
+  const [logLoading, setLogLoading] = useState(true);
+
+  const fetchLogs = useCallback(async () => {
+    setLogLoading(true);
+    const params = new URLSearchParams();
+    params.set("limit", "20");
+    params.set("offset", String(logPage * 20));
+    if (logFilter) params.set("template", logFilter);
+    if (logStatusFilter) params.set("status", logStatusFilter);
+    try {
+      const res = await fetch(`/api/admin/email-logs?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLogs(data.logs || []);
+        setLogTotal(data.total || 0);
+      }
+    } catch {} finally { setLogLoading(false); }
+  }, [logPage, logFilter, logStatusFilter]);
+
+  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  useEffect(() => { setLogPage(0); }, [logFilter, logStatusFilter]);
+
   return (
     <div>
       <div className="card p-5 sm:p-6 mb-6 border-brand-gold/30 bg-brand-gold/[0.03]">
@@ -126,6 +153,87 @@ export default function HardcodedTriggersDoc() {
             <div className="font-body text-[11px] text-[var(--app-text-muted)] font-mono break-all">{t.callSite}</div>
           </div>
         ))}
+      </div>
+
+      {/* ═══ EXECUTION LOG ═══ */}
+      <div className="card overflow-hidden mt-6">
+        <div className="px-4 py-3 border-b border-[var(--app-border)] flex items-center justify-between flex-wrap gap-2">
+          <div className="font-body text-sm font-semibold">Execution Log</div>
+          <div className="flex gap-2">
+            <select
+              value={logFilter}
+              onChange={(e) => setLogFilter(e.target.value)}
+              className="text-xs font-body bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-md px-2 py-1.5 text-[var(--app-text)]"
+            >
+              <option value="">All templates</option>
+              {EMAIL_TRIGGERS.map((t) => (
+                <option key={t.key} value={t.template}>{t.template}</option>
+              ))}
+            </select>
+            <select
+              value={logStatusFilter}
+              onChange={(e) => setLogStatusFilter(e.target.value)}
+              className="text-xs font-body bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-md px-2 py-1.5 text-[var(--app-text)]"
+            >
+              <option value="">All statuses</option>
+              <option value="sent">Sent</option>
+              <option value="demo">Demo</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+        </div>
+
+        {logLoading ? (
+          <div className="px-4 py-8 text-center font-body text-sm text-[var(--app-text-muted)]">Loading…</div>
+        ) : logs.length === 0 ? (
+          <div className="px-4 py-8 text-center font-body text-sm text-[var(--app-text-muted)]">No logs match this filter.</div>
+        ) : (
+          <>
+            <div className="hidden md:grid grid-cols-[1fr_1.5fr_0.8fr_0.6fr_1fr] gap-3 px-4 py-2 border-b border-[var(--app-border)] bg-[var(--app-card-bg)]">
+              <div className="font-body text-[10px] tracking-[1.5px] uppercase text-[var(--app-text-muted)]">Template</div>
+              <div className="font-body text-[10px] tracking-[1.5px] uppercase text-[var(--app-text-muted)]">Subject</div>
+              <div className="font-body text-[10px] tracking-[1.5px] uppercase text-[var(--app-text-muted)]">To</div>
+              <div className="font-body text-[10px] tracking-[1.5px] uppercase text-[var(--app-text-muted)]">Status</div>
+              <div className="font-body text-[10px] tracking-[1.5px] uppercase text-[var(--app-text-muted)]">Sent At</div>
+            </div>
+            {logs.map((l) => (
+              <div key={l.id} className="md:grid md:grid-cols-[1fr_1.5fr_0.8fr_0.6fr_1fr] md:gap-3 px-4 py-3 border-b border-[var(--app-border)] last:border-b-0 hover:bg-[var(--app-card-bg)] transition-colors">
+                <div className="font-mono text-[12px] text-brand-gold truncate">{l.template}</div>
+                <div className="font-body text-[12px] text-[var(--app-text-secondary)] truncate">{l.subject}</div>
+                <div className="font-body text-[12px] text-[var(--app-text-muted)] truncate">{l.toEmail}</div>
+                <div>
+                  <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${
+                    l.status === "sent" ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                    l.status === "failed" ? "bg-red-500/10 text-red-400 border border-red-500/20" :
+                    "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                  }`}>{l.status}</span>
+                  {l.errorMessage && <div className="font-body text-[10px] text-red-400 mt-0.5 truncate" title={l.errorMessage}>{l.errorMessage}</div>}
+                </div>
+                <div className="font-body text-[11px] text-[var(--app-text-muted)]">
+                  {new Date(l.createdAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {logTotal > 20 && (
+          <div className="flex items-center justify-center gap-3 px-4 py-3 border-t border-[var(--app-border)]">
+            <button
+              onClick={() => setLogPage((p) => Math.max(0, p - 1))}
+              disabled={logPage === 0}
+              className="font-body text-[11px] px-3 py-1.5 rounded-md border border-[var(--app-border)] disabled:opacity-40"
+            >Previous</button>
+            <span className="font-body text-[11px] text-[var(--app-text-muted)]">
+              Page {logPage + 1} of {Math.ceil(logTotal / 20)}
+            </span>
+            <button
+              onClick={() => setLogPage((p) => p + 1)}
+              disabled={(logPage + 1) * 20 >= logTotal}
+              className="font-body text-[11px] px-3 py-1.5 rounded-md border border-[var(--app-border)] disabled:opacity-40"
+            >Next</button>
+          </div>
+        )}
       </div>
     </div>
   );
