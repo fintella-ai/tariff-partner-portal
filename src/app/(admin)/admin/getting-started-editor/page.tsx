@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import HeyGenOptionsModal, { type HeyGenOptions } from "@/components/admin/HeyGenOptionsModal";
 
 /**
  * Getting Started Builder (2026-04-24 expansion).
@@ -73,6 +74,7 @@ export default function GettingStartedEditorPage() {
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState<{ tone: "ok" | "err"; msg: string } | null>(null);
   const [generatingStepId, setGeneratingStepId] = useState<string | null>(null);
+  const [heygenModalStep, setHeygenModalStep] = useState<{ id: string; title: string; description: string } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -219,14 +221,13 @@ export default function GettingStartedEditorPage() {
     }
   }
 
-  const handleGenerateHeyGen = async (stepId: string, title: string, description: string) => {
-    if (!confirm(`Generate a HeyGen avatar video for "${title}"? This takes 2-5 minutes and uses your HeyGen credits.`)) return;
+  const handleGenerateHeyGen = async (stepId: string, title: string, description: string, opts: HeyGenOptions) => {
     setGeneratingStepId(stepId);
     try {
       const res = await fetch("/api/admin/getting-started/generate-heygen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stepId, title, description }),
+        body: JSON.stringify({ stepId, title, description, avatarId: opts.avatarId, mode: opts.mode }),
       });
       const data = await res.json();
       if (data.success && data.videoUrl) {
@@ -368,7 +369,7 @@ export default function GettingStartedEditorPage() {
                         updateOverride(item.id, { hidden: !hidden })
                       }
                       generatingStepId={generatingStepId}
-                      onGenerateHeyGen={handleGenerateHeyGen}
+                      onOpenHeyGenModal={(step) => setHeygenModalStep(step)}
                     />
                   );
                 }
@@ -400,6 +401,18 @@ export default function GettingStartedEditorPage() {
           {saving ? "Saving…" : "Save all changes"}
         </button>
       </div>
+
+      {heygenModalStep && (
+        <HeyGenOptionsModal
+          title={heygenModalStep.title}
+          onCancel={() => setHeygenModalStep(null)}
+          onConfirm={(opts) => {
+            const step = heygenModalStep;
+            setHeygenModalStep(null);
+            handleGenerateHeyGen(step.id, step.title, step.description, opts);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -418,7 +431,7 @@ function BuiltInStepCard({
   onClear,
   onToggleHidden,
   generatingStepId,
-  onGenerateHeyGen,
+  onOpenHeyGenModal,
 }: {
   index: number;
   total: number;
@@ -431,7 +444,7 @@ function BuiltInStepCard({
   onClear: (field: keyof StepOverride) => void;
   onToggleHidden: () => void;
   generatingStepId: string | null;
-  onGenerateHeyGen: (stepId: string, title: string, description: string) => void;
+  onOpenHeyGenModal: (step: { id: string; title: string; description: string }) => void;
 }) {
   return (
     <div
@@ -536,11 +549,11 @@ function BuiltInStepCard({
           <button
             type="button"
             onClick={() =>
-              onGenerateHeyGen(
-                defaults.id,
-                override.title || defaults.title,
-                override.description || defaults.description
-              )
+              onOpenHeyGenModal({
+                id: defaults.id,
+                title: override.title || defaults.title,
+                description: override.description || defaults.description,
+              })
             }
             disabled={generatingStepId !== null}
             className="font-body text-[11px] px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-colors disabled:opacity-40 flex items-center gap-1.5"

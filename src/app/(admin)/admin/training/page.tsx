@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useResizableColumns } from "@/components/ui/ResizableTable";
 import GlossaryAdmin from "@/components/admin/GlossaryAdmin";
 import SlidePlayer from "@/components/ui/SlidePlayer";
+import HeyGenOptionsModal, { type HeyGenOptions } from "@/components/admin/HeyGenOptionsModal";
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 
@@ -207,6 +208,7 @@ export default function AdminTrainingPage() {
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
   const [generatingHeyGenId, setGeneratingHeyGenId] = useState<string | null>(null);
+  const [heygenModalModule, setHeygenModalModule] = useState<TrainingModule | null>(null);
 
   // Max file size before we refuse to embed — base64 bloats ~33% and
   // Vercel serverless caps request bodies around 4.5MB. Anything bigger
@@ -662,14 +664,13 @@ export default function AdminTrainingPage() {
   };
 
   /** Generate a real HeyGen avatar video for a module */
-  const handleGenerateHeyGen = async (mod: TrainingModule) => {
-    if (!confirm(`Generate a HeyGen avatar video for "${mod.title}"? This takes 2-5 minutes and uses your HeyGen credits.`)) return;
+  const handleGenerateHeyGen = async (mod: TrainingModule, opts: HeyGenOptions) => {
     setGeneratingHeyGenId(mod.id);
     try {
       const res = await fetch(`/api/admin/training/modules/${mod.id}/generate-heygen`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ avatarId: opts.avatarId, mode: opts.mode }),
       });
       const data = await res.json();
       if (data.success && data.videoUrl) {
@@ -1089,7 +1090,7 @@ export default function AdminTrainingPage() {
                           </button>
                         )}
                         <button
-                          onClick={() => handleGenerateHeyGen(mod)}
+                          onClick={() => setHeygenModalModule(mod)}
                           disabled={generatingHeyGenId === mod.id}
                           className="text-xs text-emerald-400/70 hover:text-emerald-400 transition disabled:opacity-50"
                         >
@@ -1199,7 +1200,7 @@ export default function AdminTrainingPage() {
                     </button>
                   )}
                   <button
-                    onClick={() => handleGenerateHeyGen(mod)}
+                    onClick={() => setHeygenModalModule(mod)}
                     disabled={generatingHeyGenId === mod.id}
                     className="text-xs text-emerald-400/70 hover:text-emerald-400 transition disabled:opacity-50"
                   >
@@ -2041,6 +2042,18 @@ export default function AdminTrainingPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {heygenModalModule && (
+        <HeyGenOptionsModal
+          title={heygenModalModule.title}
+          onCancel={() => setHeygenModalModule(null)}
+          onConfirm={(opts) => {
+            const mod = heygenModalModule;
+            setHeygenModalModule(null);
+            handleGenerateHeyGen(mod, opts);
+          }}
+        />
       )}
     </div>
   );
