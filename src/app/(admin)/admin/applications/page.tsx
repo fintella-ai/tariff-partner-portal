@@ -43,7 +43,7 @@ type Application = {
   bookings: BookingWithSlot[];
 };
 
-type TabId = "all" | "new" | "meeting_booked" | "no_show" | "approved" | "rejected";
+type TabId = "all" | "new" | "meeting_booked" | "no_show" | "approved" | "rejected" | "leads";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "all", label: "All" },
@@ -52,6 +52,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "no_show", label: "No Show" },
   { id: "approved", label: "Approved" },
   { id: "rejected", label: "Rejected" },
+  { id: "leads", label: "Lead List" },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -81,6 +82,14 @@ export default function AdminApplicationsPage() {
   const [approveSending, setApproveSending] = useState(false);
   const [partnerList, setPartnerList] = useState<Array<{ partnerCode: string; firstName: string; lastName: string }>>([]);
 
+  // Lead list state
+  type Lead = { id: string; firstName: string; lastName: string; email: string; phone: string | null; commissionRate: number; tier: string; referredByCode: string | null; notes: string | null; status: string; inviteId: string | null; createdAt: string };
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [leadForm, setLeadForm] = useState({ firstName: "", lastName: "", email: "", phone: "", commissionRate: 0.25, tier: "l1", referredByCode: "", notes: "" });
+  const [leadSaving, setLeadSaving] = useState(false);
+  const [invitingLeadId, setInvitingLeadId] = useState<string | null>(null);
+
   const fetchApps = useCallback(async () => {
     setLoading(true);
     try {
@@ -96,6 +105,64 @@ export default function AdminApplicationsPage() {
   useEffect(() => {
     fetchApps();
   }, [fetchApps]);
+
+  const fetchLeads = useCallback(async () => {
+    setLeadsLoading(true);
+    try {
+      const res = await fetch("/api/admin/leads");
+      if (res.ok) { const data = await res.json(); setLeads(data.leads ?? []); }
+    } finally { setLeadsLoading(false); }
+  }, []);
+
+  useEffect(() => { if (tab === "leads") fetchLeads(); }, [tab, fetchLeads]);
+
+  async function addLead() {
+    if (!leadForm.firstName.trim() || !leadForm.lastName.trim() || !leadForm.email.trim()) return;
+    setLeadSaving(true);
+    try {
+      const res = await fetch("/api/admin/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(leadForm),
+      });
+      if (res.ok) {
+        setLeadForm({ firstName: "", lastName: "", email: "", phone: "", commissionRate: 0.25, tier: "l1", referredByCode: "", notes: "" });
+        fetchLeads();
+        flash("ok", "Lead added to prospect list");
+      } else {
+        const { error } = await res.json().catch(() => ({ error: "Failed" }));
+        flash("err", error);
+      }
+    } finally { setLeadSaving(false); }
+  }
+
+  async function inviteLead(leadId: string) {
+    setInvitingLeadId(leadId);
+    try {
+      const res = await fetch(`/api/admin/leads/${leadId}/invite`, { method: "POST" });
+      if (res.ok) {
+        flash("ok", "Invite sent!");
+        fetchLeads();
+      } else {
+        const { error } = await res.json().catch(() => ({ error: "Failed to send invite" }));
+        flash("err", error);
+      }
+    } finally { setInvitingLeadId(null); }
+  }
+
+  async function deleteLead(leadId: string) {
+    const res = await fetch(`/api/admin/leads/${leadId}`, { method: "DELETE" });
+    if (res.ok) { flash("ok", "Lead removed"); fetchLeads(); }
+  }
+
+  async function skipLead(leadId: string) {
+    const res = await fetch(`/api/admin/leads/${leadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "skipped" }),
+    });
+    if (res.ok) fetchLeads();
+  }
 
   function flash(tone: "ok" | "err", msg: string) {
     setBanner({ tone, msg });
@@ -445,7 +512,150 @@ export default function AdminApplicationsPage() {
         })}
       </div>
 
-      {loading ? (
+      {tab === "leads" ? (
+        <div className="space-y-4">
+          {/* Add Lead Form */}
+          <div className="card p-5">
+            <h3 className="font-body font-semibold text-sm mb-3">Add to Prospect List</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">First Name *</label>
+                <input value={leadForm.firstName} onChange={(e) => setLeadForm((f) => ({ ...f, firstName: e.target.value }))} className="w-full theme-input rounded-lg px-3 py-2 text-sm" placeholder="Jane" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">Last Name *</label>
+                <input value={leadForm.lastName} onChange={(e) => setLeadForm((f) => ({ ...f, lastName: e.target.value }))} className="w-full theme-input rounded-lg px-3 py-2 text-sm" placeholder="Doe" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">Email *</label>
+                <input type="email" value={leadForm.email} onChange={(e) => setLeadForm((f) => ({ ...f, email: e.target.value }))} className="w-full theme-input rounded-lg px-3 py-2 text-sm" placeholder="jane@example.com" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">Phone</label>
+                <input value={leadForm.phone} onChange={(e) => setLeadForm((f) => ({ ...f, phone: e.target.value }))} className="w-full theme-input rounded-lg px-3 py-2 text-sm" placeholder="(555) 123-4567" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">Rate</label>
+                <select value={leadForm.commissionRate} onChange={(e) => setLeadForm((f) => ({ ...f, commissionRate: parseFloat(e.target.value) }))} className="w-full theme-input rounded-lg px-3 py-2 text-sm">
+                  <option value={0.10}>10%</option>
+                  <option value={0.15}>15%</option>
+                  <option value={0.20}>20%</option>
+                  <option value={0.25}>25%</option>
+                  <option value={0.30}>30%</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">Level</label>
+                <select value={leadForm.tier} onChange={(e) => setLeadForm((f) => ({ ...f, tier: e.target.value }))} className="w-full theme-input rounded-lg px-3 py-2 text-sm">
+                  <option value="l1">L1 — House Account</option>
+                  <option value="l2">L2</option>
+                  <option value="l3">L3</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">Referred By (partner code)</label>
+                <input value={leadForm.referredByCode} onChange={(e) => setLeadForm((f) => ({ ...f, referredByCode: e.target.value }))} className="w-full theme-input rounded-lg px-3 py-2 text-sm" placeholder="Optional — leave blank for house accounts" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">Notes</label>
+                <input value={leadForm.notes} onChange={(e) => setLeadForm((f) => ({ ...f, notes: e.target.value }))} className="w-full theme-input rounded-lg px-3 py-2 text-sm" placeholder="Optional notes" />
+              </div>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button onClick={addLead} disabled={leadSaving || !leadForm.firstName.trim() || !leadForm.lastName.trim() || !leadForm.email.trim()} className="px-5 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90 disabled:opacity-50">
+                {leadSaving ? "Saving…" : "+ Add to List"}
+              </button>
+            </div>
+          </div>
+
+          {/* Lead Table */}
+          {leadsLoading ? (
+            <div className="text-center text-[var(--app-text-muted)] py-12">Loading leads…</div>
+          ) : leads.length === 0 ? (
+            <div className="card p-12 text-center">
+              <div className="text-5xl mb-3">📋</div>
+              <h3 className="text-lg font-semibold mb-1">No prospects yet</h3>
+              <p className="text-sm text-[var(--app-text-muted)]">Add potential partners above. When you&apos;re ready, click &quot;Send Invite&quot; to bring them in.</p>
+            </div>
+          ) : (
+            <div className="card overflow-x-auto">
+              <div className="grid grid-cols-[2fr_1fr_0.6fr_0.6fr_0.8fr_auto] gap-3 px-5 py-3 border-b border-[var(--app-border)] items-center">
+                {["Name / Email", "Phone", "Rate", "Level", "Status", ""].map((h) => (
+                  <div key={h} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider">{h}</div>
+                ))}
+              </div>
+              {leads.map((lead) => {
+                const isInviting = invitingLeadId === lead.id;
+                return (
+                  <div key={lead.id} className="grid grid-cols-[2fr_1fr_0.6fr_0.6fr_0.8fr_auto] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center">
+                    <div>
+                      <div className="font-body text-[13px] text-[var(--app-text)] font-medium">{lead.firstName} {lead.lastName}</div>
+                      <div className="font-body text-[11px] text-[var(--app-text-muted)]">{lead.email}</div>
+                      {lead.notes && <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-0.5 truncate">{lead.notes}</div>}
+                    </div>
+                    <div className="font-body text-[12px] text-[var(--app-text-secondary)]">{lead.phone || "—"}</div>
+                    <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{Math.round(lead.commissionRate * 100)}%</div>
+                    <div className="font-body text-[12px] text-[var(--app-text-secondary)] uppercase">{lead.tier}</div>
+                    <div>
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase border ${
+                        lead.status === "prospect" ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                        : lead.status === "invited" ? "bg-green-500/10 text-green-400 border-green-500/20"
+                        : lead.status === "signed_up" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                      }`}>
+                        {lead.status === "signed_up" ? "signed up" : lead.status}
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {lead.status === "prospect" && (
+                        <>
+                          <button
+                            onClick={() => inviteLead(lead.id)}
+                            disabled={isInviting}
+                            className="font-body text-[11px] px-3 min-h-[32px] rounded-lg border text-brand-gold border-brand-gold/30 hover:bg-brand-gold/10 disabled:opacity-50 transition-colors whitespace-nowrap"
+                          >
+                            {isInviting ? "Sending…" : "Send Invite"}
+                          </button>
+                          <button
+                            onClick={() => skipLead(lead.id)}
+                            className="font-body text-[11px] px-2 min-h-[32px] rounded-lg border border-[var(--app-border)] text-[var(--app-text-muted)] hover:bg-[var(--app-input-bg)] transition-colors"
+                            title="Skip this lead"
+                          >
+                            Skip
+                          </button>
+                          <button
+                            onClick={() => deleteLead(lead.id)}
+                            className="font-body text-[11px] px-2 min-h-[32px] rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors"
+                            title="Remove lead"
+                          >
+                            ✕
+                          </button>
+                        </>
+                      )}
+                      {lead.status === "invited" && (
+                        <span className="font-body text-[11px] text-green-400">✓ Invited</span>
+                      )}
+                      {lead.status === "skipped" && (
+                        <button
+                          onClick={() => {
+                            fetch(`/api/admin/leads/${lead.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "prospect" }) })
+                              .then(() => fetchLeads());
+                          }}
+                          className="font-body text-[11px] px-3 min-h-[32px] rounded-lg border border-[var(--app-border)] text-[var(--app-text-muted)] hover:bg-[var(--app-input-bg)] transition-colors"
+                        >
+                          Restore
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : loading ? (
         <div className="text-center text-[var(--app-text-muted)] py-12">Loading applications…</div>
       ) : applications.length === 0 ? (
         <div className="card p-12 text-center">

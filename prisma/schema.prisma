@@ -1541,6 +1541,29 @@ model PartnerApplication {
   @@index([createdAt])
 }
 
+// ─── PARTNER LEAD LIST ──────────────────────────────────────────────────
+// Admin-managed prospecting list. Stores potential partners to invite
+// later. No automation until the admin clicks "Send Invite" which
+// creates a RecruitmentInvite and fires the L1 invite email.
+model PartnerLead {
+  id               String   @id @default(cuid())
+  firstName        String
+  lastName         String
+  email            String
+  phone            String?
+  commissionRate   Float    @default(0.25)
+  tier             String   @default("l1")
+  referredByCode   String?
+  notes            String?
+  status           String   @default("prospect") // prospect, invited, signed_up, skipped
+  inviteId         String?  // RecruitmentInvite.id once invited
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
+}
+
 // Admin-defined time windows when John (or whoever) is available for
 // qualification calls. Each slot has a capacity (1-5 seats) so one 30-min
 // group call can screen multiple applicants.
