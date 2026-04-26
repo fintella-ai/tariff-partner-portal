@@ -118,14 +118,14 @@ function NavButton({
     <button
       onClick={onClick}
       title={collapsed ? (hasBadge ? `${label} — ${badgeCount} unread` : label) : undefined}
-      className={`relative flex items-center ${collapsed ? "justify-center" : "gap-3"} w-full text-left ${collapsed ? "px-2" : "px-4"} py-3 rounded-lg font-body text-[13px] transition-all min-h-[44px] ${
+      className={`relative flex items-center ${collapsed ? "justify-center" : "gap-3"} w-full text-left ${collapsed ? "px-2" : "px-3"} py-2.5 rounded-xl font-body text-[13px] transition-all duration-200 min-h-[44px] ${
         hasBadge ? "animate-pulse" : ""
       } ${
         isActive
-          ? "bg-brand-gold/10 text-[var(--app-gold-text)]"
+          ? "bg-brand-gold/8 text-brand-gold border-l-2 border-brand-gold"
           : hasBadge
-            ? "bg-red-500/10 text-[var(--app-text)] ring-1 ring-red-500/30"
-            : "theme-text-secondary hover:bg-brand-gold/5"
+            ? "bg-red-500/8 text-[var(--app-text)] ring-1 ring-red-500/20"
+            : "text-[var(--app-text-secondary)] hover:text-[var(--app-text)] hover:bg-[var(--app-hover)]"
       }`}
     >
       <span className="relative inline-flex">
@@ -569,7 +569,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex flex-1" style={{ paddingBottom: device.isMobile ? 120 : 60 }}>
       {/* ── DESKTOP SIDEBAR ── */}
       {device.isDesktop && (
-        <div className={`${sidebarCollapsed ? "w-[68px]" : "w-[250px]"} theme-sidebar border-r p-4 flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto transition-all duration-200`}>
+        <div className={`${sidebarCollapsed ? "w-[68px]" : "w-[240px]"} flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto transition-all duration-300 p-3`} style={{ background: "var(--app-sidebar-bg)", borderRight: "1px solid var(--app-border)" }}>
           {renderSidebar(sidebarCollapsed)}
         </div>
       )}
@@ -653,7 +653,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           margin contract. Full-bleed children below use
           `-mx-4 sm:-mx-10 lg:-mx-24` to match. */}
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:px-10 sm:py-6 lg:px-24 lg:py-9"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8"
         style={{ paddingTop: device.isTablet ? 72 : undefined }}
       >
         {/* ── STICKY TOP CTA BAR ──

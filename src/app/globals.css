@@ -1,13 +1,8 @@
-/* Google Fonts — @import must come before @tailwind directives because
-   `@tailwind base` expands into thousands of rules during PostCSS processing,
-   and per CSS spec `@import` must precede all non-@charset/@layer rules.
-   Turbopack enforces this strictly; webpack did not.
-
-   Portal-wide type is Inter (2026-04-24 refactor). `font-display` and
-   `font-body` Tailwind classes still exist for continuity, but both map
-   to the same Inter family — the distinction is now weight-driven
-   (display = semibold/bold, body = regular/medium). */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* ── Font Imports ───────────────────────────────────────────────────────
+   DM Serif Display for premium serif headlines (h1/h2).
+   Inter for body, UI, and subheadings.
+   Both via Google Fonts — @import must precede @tailwind directives. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -22,133 +17,141 @@
 }
 
 /* ── Theme Variables ─────────────────────────────────────────────────── */
+
+/* Light mode */
 :root {
-  /* Light mode (default) — high contrast.
-     `--app-text-muted` darkened from #4b5563 → #374151 (2026-04-24) so
-     small subheadings / table column labels read more distinctly against
-     light backgrounds. */
-  --app-bg: #e4e6ed;
-  --app-bg-secondary: #f8f9fb;
-  /* Page header strip — sits above the full-bleed divider. One shade
-     darker than --app-bg so the welcome block reads as a distinct band. */
-  --app-header-bg: #cfd3dd;
-  --app-text: #0f172a;
-  --app-text-secondary: #1f2937;
-  --app-text-muted: #374151;
-  --app-text-faint: #6b7280;
-  --app-border: #c0c4cc;
-  --app-border-subtle: #d4d8e0;
-  --app-card-bg: #ffffff;
-  /* Solid opaque surface for floating popovers / dropdown menus — cards use
-     a semi-transparent bg in dark mode that makes suggestion lists bleed
-     through to the form behind them. Popovers always want opacity. */
-  --app-popover-bg: #ffffff;
-  --app-card-border: #c0c4cc;
-  --app-input-bg: #f1f3f6;
-  --app-input-border: #7c8290;
-  --app-input-text: #0f172a;
-  --app-input-placeholder: #4b5563;
-  --app-sidebar-bg: #f0f1f5;
-  --app-sidebar-border: rgba(160, 130, 50, 0.3);
-  --app-hover: rgba(0, 0, 0, 0.06);
-  --app-overlay: rgba(0, 0, 0, 0.5);
-  --app-gold: #9a7820;
-  --app-gold-text: #725a15;
-  --app-code-bg: #e0e3ea;
-  --app-scrollbar: rgba(160, 130, 50, 0.5);
-  --brand-gold: #b08c30;
-  --brand-gold-muted: rgba(160, 130, 50, 0.18);
-  --app-gold-overlay: rgba(176, 140, 48, 0.06);
-  --app-gold-overlay-border: rgba(176, 140, 48, 0.15);
-  --app-gold-overlay-subtle: rgba(176, 140, 48, 0.04);
-  --app-gold-overlay-border-subtle: rgba(176, 140, 48, 0.12);
-  --app-error-glow: rgba(239, 68, 68, 0.35);
-  --app-dropdown-bg: #f1f3f6;
+  --app-bg:              #f8f9fc;
+  --app-bg-secondary:    #ffffff;
+  --app-bg-elevated:     #ffffff;
+  --app-header-bg:       #f0f1f5;
+  --app-text:            #0f172a;
+  --app-text-secondary:  #475569;
+  --app-text-muted:      #64748b;
+  --app-text-faint:      #94a3b8;
+  --app-border:          rgba(0, 0, 0, 0.08);
+  --app-border-subtle:   rgba(0, 0, 0, 0.05);
+  --app-card-bg:         #ffffff;
+  --app-card-border:     rgba(0, 0, 0, 0.06);
+  --app-popover-bg:      #ffffff;
+  --app-input-bg:        #f1f5f9;
+  --app-input-border:    #cbd5e1;
+  --app-input-text:      #0f172a;
+  --app-input-placeholder: #94a3b8;
+  --app-sidebar-bg:      #ffffff;
+  --app-sidebar-border:  rgba(0, 0, 0, 0.06);
+  --app-hover:           rgba(0, 0, 0, 0.04);
+  --app-overlay:         rgba(0, 0, 0, 0.5);
+  --app-code-bg:         #f1f5f9;
+  --app-scrollbar:       rgba(0, 0, 0, 0.15);
+
+  --app-gold:            #9a7820;
+  --app-gold-text:       #725a15;
+  --brand-gold:          #b08c30;
+  --brand-gold-muted:    rgba(160, 130, 50, 0.12);
+  --app-gold-overlay:    rgba(176, 140, 48, 0.06);
+  --app-gold-overlay-border: rgba(176, 140, 48, 0.12);
+  --app-gold-overlay-subtle: rgba(176, 140, 48, 0.03);
+  --app-gold-overlay-border-subtle: rgba(176, 140, 48, 0.08);
+
+  --accent-blue:         #3b5ce4;
+  --accent-blue-light:   #5b7af7;
+  --accent-blue-glow:    rgba(59, 92, 228, 0.15);
+  --accent-purple:       #7c3aed;
+  --accent-gradient:     linear-gradient(135deg, #3b5ce4, #7c3aed);
+
+  --app-error-glow:      rgba(239, 68, 68, 0.25);
+  --app-dropdown-bg:     #ffffff;
   --app-button-gold-text: #0f172a;
 }
 
-/* Dark theme — [data-theme="dark"] is set by ThemeProvider (JS, before first paint).
-   The media query block is a fallback for SSR / JS-off scenarios so there's no flash. */
+/* Dark mode — the primary experience */
 [data-theme="dark"] {
-  /* Panels (page background) — pushed slightly darker so cards/forms
-     pop with more contrast against the body. */
-  --app-bg: #080d1c;
-  --app-bg-secondary: #0d1425;
-  /* Page header strip — one shade darker than --app-bg for the
-     welcome band above the full-bleed divider. */
-  --app-header-bg: #050811;
-  --app-text: rgba(255, 255, 255, 0.96);
-  --app-text-secondary: rgba(255, 255, 255, 0.82);
-  /* Muted text — bumped from 0.55 → 0.72 so small labels and hints
-     read cleanly against the darker page background. */
-  --app-text-muted: rgba(255, 255, 255, 0.72);
-  --app-text-faint: rgba(255, 255, 255, 0.48);
-  --app-border: rgba(255, 255, 255, 0.22);
-  --app-border-subtle: rgba(255, 255, 255, 0.12);
-  /* Module / card surfaces — significantly more opaque than before
-     (was 0.04 alpha) so tables, forms, popups stand apart from the
-     panel background and read as solid. */
-  --app-card-bg: rgba(255, 255, 255, 0.10);
-  --app-card-border: rgba(255, 255, 255, 0.22);
-  --app-popover-bg: #1d263b;
-  --app-input-bg: rgba(255, 255, 255, 0.14);
-  --app-input-border: rgba(255, 255, 255, 0.30);
-  --app-input-text: #ffffff;
-  --app-input-placeholder: rgba(255, 255, 255, 0.48);
-  --app-sidebar-bg: #000000;
-  --app-sidebar-border: rgba(196, 160, 80, 0.24);
-  --app-hover: rgba(255, 255, 255, 0.10);
-  --app-overlay: rgba(0, 0, 0, 0.78);
-  --app-gold: #d4ad55;
-  --app-gold-text: #d4ad55;
-  --app-code-bg: rgba(255, 255, 255, 0.14);
-  --app-scrollbar: rgba(196, 160, 80, 0.4);
-  --brand-gold: #c4a050;
-  --brand-gold-muted: rgba(196, 160, 80, 0.18);
-  --app-gold-overlay: rgba(196, 160, 80, 0.06);
-  --app-gold-overlay-border: rgba(196, 160, 80, 0.15);
-  --app-gold-overlay-subtle: rgba(196, 160, 80, 0.04);
-  --app-gold-overlay-border-subtle: rgba(196, 160, 80, 0.12);
-  --app-error-glow: rgba(239, 68, 68, 0.35);
-  --app-dropdown-bg: #1a1a2e;
+  --app-bg:              #060a14;
+  --app-bg-secondary:    #0c1220;
+  --app-bg-elevated:     #111827;
+  --app-header-bg:       #050810;
+  --app-text:            rgba(255, 255, 255, 0.95);
+  --app-text-secondary:  rgba(255, 255, 255, 0.70);
+  --app-text-muted:      rgba(255, 255, 255, 0.45);
+  --app-text-faint:      rgba(255, 255, 255, 0.30);
+  --app-border:          rgba(255, 255, 255, 0.08);
+  --app-border-subtle:   rgba(255, 255, 255, 0.04);
+  --app-card-bg:         rgba(255, 255, 255, 0.03);
+  --app-card-border:     rgba(255, 255, 255, 0.06);
+  --app-popover-bg:      #1a2235;
+  --app-input-bg:        rgba(255, 255, 255, 0.06);
+  --app-input-border:    rgba(255, 255, 255, 0.12);
+  --app-input-text:      #ffffff;
+  --app-input-placeholder: rgba(255, 255, 255, 0.35);
+  --app-sidebar-bg:      #030712;
+  --app-sidebar-border:  rgba(255, 255, 255, 0.06);
+  --app-hover:           rgba(255, 255, 255, 0.04);
+  --app-overlay:         rgba(0, 0, 0, 0.80);
+  --app-code-bg:         rgba(255, 255, 255, 0.06);
+  --app-scrollbar:       rgba(255, 255, 255, 0.12);
+
+  --app-gold:            #d4ad55;
+  --app-gold-text:       #d4ad55;
+  --brand-gold:          #c4a050;
+  --brand-gold-muted:    rgba(196, 160, 80, 0.12);
+  --app-gold-overlay:    rgba(196, 160, 80, 0.06);
+  --app-gold-overlay-border: rgba(196, 160, 80, 0.12);
+  --app-gold-overlay-subtle: rgba(196, 160, 80, 0.03);
+  --app-gold-overlay-border-subtle: rgba(196, 160, 80, 0.06);
+
+  --accent-blue:         #4f6ef7;
+  --accent-blue-light:   #6b8aff;
+  --accent-blue-glow:    rgba(79, 110, 247, 0.20);
+  --accent-purple:       #8b5cf6;
+  --accent-gradient:     linear-gradient(135deg, #4f6ef7, #8b5cf6);
+
+  --app-error-glow:      rgba(239, 68, 68, 0.30);
+  --app-dropdown-bg:     #1a2235;
   --app-button-gold-text: #000000;
   color-scheme: dark;
 }
 
-/* Fallback for SSR / JS-off (no data-theme set yet) — kept in sync
-   with [data-theme="dark"] above. */
+/* SSR / JS-off dark fallback */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --app-bg: #080d1c;
-    --app-bg-secondary: #0d1425;
-    --app-header-bg: #050811;
-    --app-text: rgba(255, 255, 255, 0.96);
-    --app-text-secondary: rgba(255, 255, 255, 0.82);
-    --app-text-muted: rgba(255, 255, 255, 0.72);
-    --app-text-faint: rgba(255, 255, 255, 0.48);
-    --app-border: rgba(255, 255, 255, 0.22);
-    --app-border-subtle: rgba(255, 255, 255, 0.12);
-    --app-card-bg: rgba(255, 255, 255, 0.10);
-    --app-card-border: rgba(255, 255, 255, 0.22);
-    --app-popover-bg: #1d263b;
-    --app-input-bg: rgba(255, 255, 255, 0.14);
-    --app-input-border: rgba(255, 255, 255, 0.30);
-    --app-input-text: #ffffff;
-    --app-input-placeholder: rgba(255, 255, 255, 0.48);
-    --app-sidebar-bg: #000000;
-    --app-sidebar-border: rgba(196, 160, 80, 0.24);
-    --app-hover: rgba(255, 255, 255, 0.10);
-    --app-overlay: rgba(0, 0, 0, 0.78);
-    --app-gold: #d4ad55;
-    --app-gold-text: #d4ad55;
-    --app-code-bg: rgba(255, 255, 255, 0.14);
-    --app-scrollbar: rgba(196, 160, 80, 0.4);
-    --app-gold-overlay: rgba(196, 160, 80, 0.06);
-    --app-gold-overlay-border: rgba(196, 160, 80, 0.15);
-    --app-gold-overlay-subtle: rgba(196, 160, 80, 0.04);
-    --app-gold-overlay-border-subtle: rgba(196, 160, 80, 0.12);
-    --app-error-glow: rgba(239, 68, 68, 0.35);
-    --app-dropdown-bg: #1a1a2e;
+    --app-bg:              #060a14;
+    --app-bg-secondary:    #0c1220;
+    --app-bg-elevated:     #111827;
+    --app-header-bg:       #050810;
+    --app-text:            rgba(255, 255, 255, 0.95);
+    --app-text-secondary:  rgba(255, 255, 255, 0.70);
+    --app-text-muted:      rgba(255, 255, 255, 0.45);
+    --app-text-faint:      rgba(255, 255, 255, 0.30);
+    --app-border:          rgba(255, 255, 255, 0.08);
+    --app-border-subtle:   rgba(255, 255, 255, 0.04);
+    --app-card-bg:         rgba(255, 255, 255, 0.03);
+    --app-card-border:     rgba(255, 255, 255, 0.06);
+    --app-popover-bg:      #1a2235;
+    --app-input-bg:        rgba(255, 255, 255, 0.06);
+    --app-input-border:    rgba(255, 255, 255, 0.12);
+    --app-input-text:      #ffffff;
+    --app-input-placeholder: rgba(255, 255, 255, 0.35);
+    --app-sidebar-bg:      #030712;
+    --app-sidebar-border:  rgba(255, 255, 255, 0.06);
+    --app-hover:           rgba(255, 255, 255, 0.04);
+    --app-overlay:         rgba(0, 0, 0, 0.80);
+    --app-code-bg:         rgba(255, 255, 255, 0.06);
+    --app-scrollbar:       rgba(255, 255, 255, 0.12);
+    --app-gold:            #d4ad55;
+    --app-gold-text:       #d4ad55;
+    --brand-gold:          #c4a050;
+    --brand-gold-muted:    rgba(196, 160, 80, 0.12);
+    --app-gold-overlay:    rgba(196, 160, 80, 0.06);
+    --app-gold-overlay-border: rgba(196, 160, 80, 0.12);
+    --app-gold-overlay-subtle: rgba(196, 160, 80, 0.03);
+    --app-gold-overlay-border-subtle: rgba(196, 160, 80, 0.06);
+    --accent-blue:         #4f6ef7;
+    --accent-blue-light:   #6b8aff;
+    --accent-blue-glow:    rgba(79, 110, 247, 0.20);
+    --accent-purple:       #8b5cf6;
+    --accent-gradient:     linear-gradient(135deg, #4f6ef7, #8b5cf6);
+    --app-error-glow:      rgba(239, 68, 68, 0.30);
+    --app-dropdown-bg:     #1a2235;
     --app-button-gold-text: #000000;
     color-scheme: dark;
   }
@@ -158,30 +161,141 @@
   color-scheme: light;
 }
 
+/* ── Base Layer ──────────────────────────────────────────────────────── */
 @layer base {
   body {
     background: var(--app-bg);
     color: var(--app-text);
     font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     font-weight: 400;
-    font-feature-settings: "cv11", "ss01";   /* Inter character variants — flatter 1, single-story g */
+    font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
   }
 
-  /* Focus ring — visible only for keyboard navigation, skipped for mouse
-     clicks. Uniform across buttons / links / inputs so keyboard users get
-     a consistent affordance. */
   :focus-visible {
-    outline: 2px solid var(--brand-gold, #c4a050);
+    outline: 2px solid var(--accent-blue, #4f6ef7);
     outline-offset: 2px;
     border-radius: 4px;
   }
+
+  h1, h2 {
+    font-family: "DM Serif Display", Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
 }
 
+/* ── Component Layer ─────────────────────────────────────────────────── */
 @layer components {
+
+  /* ── Cards ── */
+  .card {
+    background: var(--app-card-bg);
+    border: 1px solid var(--app-card-border);
+    @apply rounded-2xl overflow-hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-hover:hover {
+    border-color: var(--app-border);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  [data-theme="dark"] .card-hover:hover,
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .card-hover:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }}
+
+  .card-glow {
+    position: relative;
+    overflow: hidden;
+  }
+  .card-glow::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 15%;
+    right: 15%;
+    height: 2px;
+    background: var(--accent-gradient);
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.3s ease, left 0.3s ease, right 0.3s ease;
+  }
+  .card-glow:hover::after {
+    opacity: 1;
+    left: 5%;
+    right: 5%;
+  }
+
+  .stat-card {
+    @apply p-5 rounded-2xl transition-all duration-300;
+    border: 1px solid var(--app-card-border);
+    background: var(--app-card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .stat-card:hover {
+    border-color: rgba(196, 160, 80, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(196, 160, 80, 0.08);
+  }
+
+  /* ── Buttons ── */
+  .btn-gold {
+    @apply font-body font-semibold text-sm tracking-wider uppercase px-6 py-3.5 rounded-xl cursor-pointer border-none;
+    background: linear-gradient(135deg, var(--brand-gold), #e8c060);
+    color: var(--app-button-gold-text);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-gold:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(196, 160, 80, 0.30);
+  }
+  .btn-gold:active {
+    transform: scale(0.98) translateY(0);
+  }
+  .btn-gold:disabled {
+    @apply opacity-50 cursor-not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-blue {
+    @apply font-body font-semibold text-sm tracking-wider px-6 py-3.5 rounded-xl cursor-pointer;
+    background: var(--accent-gradient);
+    color: #ffffff;
+    border: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-blue:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px var(--accent-blue-glow);
+  }
+  .btn-blue:active {
+    transform: scale(0.98) translateY(0);
+  }
+
+  .btn-outline {
+    @apply font-body font-medium text-sm px-6 py-3.5 rounded-xl cursor-pointer;
+    background: transparent;
+    border: 1px solid var(--app-border);
+    color: var(--app-text-secondary);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-outline:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    background: var(--accent-blue-glow);
+  }
+
+  /* ── Gold gradient text ── */
   .gold-gradient {
     background: linear-gradient(90deg, #c4a050, #f0d070, #c4a050);
     background-size: 200% auto;
@@ -191,38 +305,7 @@
     animation: shimmer 4s linear infinite;
   }
 
-  .btn-gold {
-    @apply bg-gradient-to-br from-brand-gold to-[#e8c060] font-body font-bold text-sm tracking-wider uppercase px-8 py-4 rounded-md cursor-pointer transition-all duration-300 border-none;
-    color: #080d1c;
-  }
-  .btn-gold:hover {
-    @apply -translate-y-0.5;
-    box-shadow: 0 8px 28px rgba(196, 160, 80, 0.35);
-  }
-  .btn-gold:active {
-    @apply scale-[0.98];
-  }
-  .btn-gold:disabled {
-    @apply opacity-50 cursor-not-allowed translate-y-0;
-  }
-
-  .stat-card {
-    @apply p-5 rounded-xl transition-all duration-300;
-    border: 1px solid rgba(196, 160, 80, 0.18);
-    background: rgba(196, 160, 80, 0.04);
-  }
-  .stat-card:hover {
-    border-color: rgba(196, 160, 80, 0.4);
-    background: rgba(196, 160, 80, 0.08);
-  }
-
-  .card {
-    background: var(--app-card-bg);
-    border: 1px solid var(--app-card-border);
-    @apply rounded-xl overflow-hidden;
-  }
-
-  /* Theme-aware text classes */
+  /* ── Theme utility classes ── */
   .theme-text { color: var(--app-text); }
   .theme-text-secondary { color: var(--app-text-secondary); }
   .theme-text-muted { color: var(--app-text-muted); }
@@ -237,18 +320,14 @@
     border-color: var(--app-input-border);
     color: var(--app-input-text);
   }
-  .theme-input::placeholder {
-    color: var(--app-input-placeholder);
-  }
+  .theme-input::placeholder { color: var(--app-input-placeholder); }
   .theme-hover:hover { background: var(--app-hover); }
   .theme-sidebar {
     background: var(--app-sidebar-bg);
     border-color: var(--app-sidebar-border);
   }
 
-  /* Safe-area padding utilities — apply to fixed-position elements that
-     need to respect iPhone notch / Dynamic Island / home indicator and
-     Android gesture bar. Gracefully no-ops on devices without insets. */
+  /* ── Safe-area utilities ── */
   .pt-safe { padding-top: var(--safe-top); }
   .pb-safe { padding-bottom: var(--safe-bottom); }
   .pl-safe { padding-left: var(--safe-left); }
@@ -259,62 +338,30 @@
   .bottom-safe { bottom: var(--safe-bottom); }
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   Subheading upgrade (2026-04-24 theme refactor)
-   Small uppercase labels across the portal use the Tailwind arbitrary
-   classes `text-[10px]` / `text-[11px]` combined with `uppercase`. The
-   rule below targets that exact combo and bumps size + weight so tiny
-   labels (column headers, form sublabels, section tags) read cleanly
-   without requiring an edit to every call site. Uses escaped brackets
-   because Tailwind compiles class names like `text-[11px]` literally.
-   ──────────────────────────────────────────────────────────────────── */
+/* ── Typography refinements ──────────────────────────────────────────── */
+
 .text-\[10px\].uppercase,
 .text-\[11px\].uppercase {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
 }
 
-/* Mid-size subheadings — nudged heavier for visual hierarchy. */
-h2, h3, h4 { font-weight: 600; }
-.font-body.text-\[15px\],
-.font-body.text-\[14px\],
-.font-body.text-\[13px\] {
-  font-weight: 500;
-}
-.font-body.text-\[15px\].font-semibold,
-.font-body.text-\[14px\].font-semibold,
-.font-body.text-\[13px\].font-semibold {
-  font-weight: 700;
+.font-display {
+  font-family: "DM Serif Display", Georgia, "Times New Roman", serif !important;
+  font-weight: 400;
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   Table header alignment (2026-04-24)
-   Center every column header by default; first column stays left-aligned
-   because it's almost always a name/identifier that the eye should read
-   from the left edge. Scoped to portal pages so we don't accidentally
-   touch the /docs/* public pages. Tables that explicitly set `text-left`
-   or `text-right` on a <th> still win via later selector specificity.
-   ──────────────────────────────────────────────────────────────────── */
-/* Explicit `text-left` / `text-center` / `text-right` classes win over
-   these defaults — the `:not([class*="text-"])` scope lets per-table
-   overrides stay authoritative (fixes e.g. the "When" column on the
-   Phone tab which explicitly sets `text-center` on the first <th>). */
+h3, h4 { font-weight: 600; }
+
+/* ── Table header alignment ──────────────────────────────────────────── */
 table thead th:not([class*="text-"]) { text-align: center; }
 table thead th:first-child:not([class*="text-"]) { text-align: left; }
 
-/* ─────────────────────────────────────────────────────────────────────
-   Slight weight reduction (2026-04-25)
-   The portal felt visually heavy after the Inter switch. Drop each
-   heavy weight class down by one step globally, but restore the
-   original weights inside:
-     - navigation sidebars (`.theme-sidebar`) so nav items stay bold
-     - tables so column data stays legible
-   Default body weight (400) is unchanged.
-   ──────────────────────────────────────────────────────────────────── */
+/* ── Weight reduction for lighter feel ───────────────────────────────── */
 .font-medium   { font-weight: 450; }
-.font-semibold { font-weight: 500; }
-.font-bold     { font-weight: 600; }
+.font-semibold { font-weight: 550; }
+.font-bold     { font-weight: 650; }
 
 .theme-sidebar .font-medium,
 table .font-medium   { font-weight: 500; }
@@ -323,20 +370,19 @@ table .font-semibold { font-weight: 600; }
 .theme-sidebar .font-bold,
 table .font-bold     { font-weight: 700; }
 
-/* ── Prevent PWA pull-to-refresh bounce on iOS (standalone mode only) ── */
+/* ── Prevent PWA pull-to-refresh bounce ──────────────────────────────── */
 @media (display-mode: standalone) {
-  html, body {
-    overscroll-behavior-y: none;
-  }
+  html, body { overscroll-behavior-y: none; }
 }
 
+/* ── Animations ──────────────────────────────────────────────────────── */
 @keyframes shimmer {
   0% { background-position: -200% center; }
   100% { background-position: 200% center; }
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -349,42 +395,58 @@ table .font-bold     { font-weight: 700; }
   to { transform: rotate(360deg); }
 }
 
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--accent-blue-glow); }
+  50% { box-shadow: 0 0 20px var(--accent-blue-glow); }
+}
+
 .animate-fade-up {
-  animation: fadeUp 0.6s ease forwards;
+  animation: fadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .animate-fade-up-delay {
-  animation: fadeUp 0.6s 0.08s ease both;
+  animation: fadeUp 0.5s 0.08s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-/* ── Select option visibility fix ───────────────────────────────────────── */
-/* Native <option> popups in browsers can't read CSS variables, so we        */
-/* hardcode solid colours that match the theme for both modes.               */
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* ── Select option visibility fix ────────────────────────────────────── */
 select option {
-  background-color: #f8f9fa;
-  color: #1a1a2e;
+  background-color: #f8f9fc;
+  color: #0f172a;
 }
 [data-theme="dark"] select option {
-  background-color: #0d1836;
+  background-color: #1a2235;
   color: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) select option {
-    background-color: #0d1836;
+    background-color: #1a2235;
     color: #ffffff;
   }
 }
 
-/* Scrollbar */
+/* ── Scrollbar ───────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-thumb { background: var(--app-scrollbar); border-radius: 2px; }
+::-webkit-scrollbar-thumb {
+  background: var(--app-scrollbar);
+  border-radius: 2px;
+}
 
-/* Spinner */
+/* ── Spinner ─────────────────────────────────────────────────────────── */
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(196, 160, 80, 0.2);
-  border-top-color: #c4a050;
+  border: 2px solid var(--app-border);
+  border-top-color: var(--accent-blue);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+
+/* ── Prose for training content ──────────────────────────────────────── */
+.prose-training h2 {
+  font-family: "DM Serif Display", Georgia, serif;
+  font-weight: 400;
 }
