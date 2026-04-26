@@ -105,6 +105,89 @@ export async function GET(req: NextRequest) {
     results.anthropic = { status: "error", message: "Could not query AI messages" };
   }
 
+  // ── Google Workspace (License Manager API) ─────────────────────────
+  // Uses the global Google Calendar OAuth token (which now includes
+  // apps.licensing scope). Queries the admin's own license to detect
+  // the plan, then lists all users on that SKU for the seat count.
+  // Published pricing is hardcoded since Google has no billing API for
+  // direct subscribers.
+  const WORKSPACE_SKUS: Record<string, { plan: string; monthlyPerSeat: number }> = {
+    "1010020027": { plan: "Business Starter", monthlyPerSeat: 7.20 },
+    "1010020028": { plan: "Business Standard", monthlyPerSeat: 14.40 },
+    "1010020025": { plan: "Business Plus", monthlyPerSeat: 21.60 },
+    "1010020029": { plan: "Enterprise Standard", monthlyPerSeat: 23.00 },
+    "1010020030": { plan: "Enterprise Plus", monthlyPerSeat: 35.00 },
+    "1010060003": { plan: "Enterprise Essentials", monthlyPerSeat: 11.50 },
+    "Google-Apps-For-Business": { plan: "Business (legacy)", monthlyPerSeat: 12.00 },
+  };
+  const LICENSING_BASE = "https://licensing.googleapis.com/apps/licensing/v1";
+  try {
+    const { prisma: p } = await import("@/lib/prisma");
+    const settings = await p.portalSettings.findUnique({ where: { id: "global" } });
+    const refreshToken = settings?.googleCalendarRefreshToken;
+    if (!refreshToken) {
+      results.googleWorkspace = { status: "not_configured", note: "Connect Google Calendar (includes Workspace scope)" };
+    } else {
+      const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID || "";
+      const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET || "";
+      const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          refresh_token: refreshToken,
+          grant_type: "refresh_token",
+        }),
+      });
+      if (!tokenRes.ok) throw new Error("Token refresh failed");
+      const { access_token } = (await tokenRes.json()) as { access_token: string };
+
+      const connectedEmail = settings?.googleCalendarConnectedEmail || "";
+      let detectedSku: string | null = null;
+      let detectedPlan = "Unknown";
+      let seatCount = 0;
+      let monthlyPerSeat = 0;
+
+      if (connectedEmail) {
+        const licRes = await fetch(
+          `${LICENSING_BASE}/product/Google-Apps/users/${encodeURIComponent(connectedEmail)}`,
+          { headers: { Authorization: `Bearer ${access_token}` } }
+        );
+        if (licRes.ok) {
+          const lic = (await licRes.json()) as { skuId?: string; skuName?: string };
+          detectedSku = lic.skuId || null;
+        }
+      }
+
+      if (detectedSku && WORKSPACE_SKUS[detectedSku]) {
+        detectedPlan = WORKSPACE_SKUS[detectedSku].plan;
+        monthlyPerSeat = WORKSPACE_SKUS[detectedSku].monthlyPerSeat;
+
+        const listRes = await fetch(
+          `${LICENSING_BASE}/product/Google-Apps/sku/${detectedSku}/users?maxResults=1000`,
+          { headers: { Authorization: `Bearer ${access_token}` } }
+        );
+        if (listRes.ok) {
+          const list = (await listRes.json()) as { items?: any[] };
+          seatCount = list.items?.length || 0;
+        }
+      }
+
+      results.googleWorkspace = {
+        plan: detectedPlan,
+        skuId: detectedSku,
+        seats: seatCount,
+        monthlyPerSeat,
+        estimatedMonthly: Math.round(seatCount * monthlyPerSeat * 100) / 100,
+        status: detectedSku ? "ok" : "scope_missing",
+        note: detectedSku ? undefined : "Re-connect Google Calendar to grant Workspace licensing scope",
+      };
+    }
+  } catch (e: any) {
+    results.googleWorkspace = { status: "error", message: e.message };
+  }
+
   // ── Vercel Usage ──────────────────────────────────────────────────────
   // Would need VERCEL_TOKEN — skip if not set
   results.vercel = { status: "not_configured", note: "Set VERCEL_TOKEN for real usage data" };

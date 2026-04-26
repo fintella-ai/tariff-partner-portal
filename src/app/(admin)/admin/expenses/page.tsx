@@ -45,7 +45,7 @@ const CATEGORIES: Category[] = [
       { name: "Twilio SMS", plan: "Pending", monthlyCost: 0, status: "pending", note: "Waiting on A2P 10DLC approval" },
       { name: "Twilio Voice", plan: "Usage-based", monthlyCost: 5, status: "active", startDate: "2026-04-20" },
       { name: "Sentry", plan: "Team", monthlyCost: 29, status: "active", note: "Error monitoring", startDate: "2026-04-26" },
-      { name: "Google OAuth", plan: "Free", monthlyCost: 0, status: "active" },
+      { name: "Google Workspace", plan: "Business Starter", monthlyCost: 7.20, status: "active", note: "Calendar, Meet, Drive, Gmail", startDate: "2026-04-01" },
     ],
   },
   {
@@ -186,6 +186,25 @@ export default function ExpensesPage() {
                 <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">Sentry (30 days)</div>
                 <div className="font-display text-lg font-bold text-orange-400">{liveUsage.sentry.totalErrors30d?.toLocaleString()}</div>
                 <div className="font-body text-[11px] theme-text-muted mt-1">errors tracked</div>
+              </div>
+            )}
+            {liveUsage.googleWorkspace?.status === "ok" && (
+              <div className="rounded-xl border border-[var(--app-border)] p-4">
+                <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">Google Workspace</div>
+                <div className="font-display text-lg font-bold text-blue-400">
+                  {liveUsage.googleWorkspace.seats} seat{liveUsage.googleWorkspace.seats === 1 ? "" : "s"}
+                </div>
+                <div className="font-body text-[11px] theme-text-muted mt-1">
+                  {liveUsage.googleWorkspace.plan} · ${liveUsage.googleWorkspace.monthlyPerSeat}/seat/mo · ~${liveUsage.googleWorkspace.estimatedMonthly}/mo
+                </div>
+              </div>
+            )}
+            {liveUsage.googleWorkspace?.status === "scope_missing" && (
+              <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+                <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">Google Workspace</div>
+                <div className="font-body text-[11px] text-yellow-400">
+                  Re-connect Google Calendar in Settings → Integrations to enable Workspace billing data.
+                </div>
               </div>
             )}
             {liveUsage.anthropic?.status === "ok" && (
