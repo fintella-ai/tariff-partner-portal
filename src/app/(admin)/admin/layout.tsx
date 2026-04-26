@@ -28,8 +28,9 @@ const ADMIN_NAV_IDS_DEFAULT = [
   "home",
   "partners", "applications", "deals", "reporting",
   "communications", "internalChats", "partnerSupport",
-  "training", "conference", "documents",
+  "training", "faqCandidates", "conference", "documents",
   "automations", "gettingStartedEditor",
+  "knowledgeGaps", "auditLog",
   "settings", "users", "dev",
 ];
 
@@ -84,6 +85,9 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   users:        { id: "users", href: "/admin/users", icon: "🔐", label: "Admin Users" },
   dev:          { id: "dev", href: "/admin/dev", icon: "🛠️", label: "Development" },
   features:     { id: "features", href: "/admin/features", icon: "💡", label: "Feature Requests" },
+  knowledgeGaps: { id: "knowledgeGaps", href: "/admin/knowledge-gaps", icon: "🧠", label: "Knowledge Gaps" },
+  faqCandidates: { id: "faqCandidates", href: "/admin/training/faq-candidates", icon: "💬", label: "FAQ Candidates" },
+  auditLog:      { id: "auditLog", href: "/admin/audit-log", icon: "📜", label: "Audit Log" },
 };
 
 function CollapseIcon({ collapsed }: { collapsed: boolean }) {
