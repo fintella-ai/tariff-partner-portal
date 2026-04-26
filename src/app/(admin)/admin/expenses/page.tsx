@@ -83,6 +83,7 @@ function monthsSince(startDate: string): number {
 export default function ExpensesPage() {
   const { data: session, status } = useSession();
   const [aiUsage, setAiUsage] = useState<{ totalMessages: number; totalTokens: number; todayMessages: number } | null>(null);
+  const [liveUsage, setLiveUsage] = useState<Record<string, any> | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/ai-activity")
@@ -90,6 +91,10 @@ export default function ExpensesPage() {
       .then((d) => {
         if (d) setAiUsage({ totalMessages: d.totalMessages || 0, totalTokens: d.totalTokens || 0, todayMessages: d.todayMessages || 0 });
       })
+      .catch(() => {});
+    fetch("/api/admin/billing/usage")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.usage) setLiveUsage(d.usage); })
       .catch(() => {});
   }, []);
 
@@ -152,6 +157,42 @@ export default function ExpensesPage() {
           </div>
         )}
       </div>
+
+      {/* Live usage from APIs */}
+      {liveUsage && (
+        <div className="card p-5 mb-6">
+          <div className="font-body font-semibold text-sm mb-4">Live Service Usage (This Month)</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {liveUsage.twilio?.status === "ok" && (
+              <div className="rounded-xl border border-[var(--app-border)] p-4">
+                <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">Twilio</div>
+                <div className="font-display text-lg font-bold text-blue-400">${liveUsage.twilio.thisMonth?.toFixed(2)}</div>
+                <div className="font-body text-[11px] theme-text-muted mt-1">
+                  {liveUsage.twilio.calls} calls · {liveUsage.twilio.sms} SMS
+                </div>
+              </div>
+            )}
+            {liveUsage.sendgrid?.status === "ok" && (
+              <div className="rounded-xl border border-[var(--app-border)] p-4">
+                <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">SendGrid (30 days)</div>
+                <div className="font-display text-lg font-bold text-green-400">{liveUsage.sendgrid.last30Days?.sent?.toLocaleString()}</div>
+                <div className="font-body text-[11px] theme-text-muted mt-1">
+                  {liveUsage.sendgrid.last30Days?.delivered?.toLocaleString()} delivered
+                </div>
+              </div>
+            )}
+            {liveUsage.anthropic?.status === "ok" && (
+              <div className="rounded-xl border border-[var(--app-border)] p-4">
+                <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">Anthropic AI</div>
+                <div className="font-display text-lg font-bold text-purple-400">~${liveUsage.anthropic.estimatedCost?.toFixed(2)}</div>
+                <div className="font-body text-[11px] theme-text-muted mt-1">
+                  {liveUsage.anthropic.thisMonthMessages} messages this month · {liveUsage.anthropic.totalMessages} total
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Category breakdowns */}
       {CATEGORIES.map((cat) => {
