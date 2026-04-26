@@ -281,32 +281,34 @@ export async function POST(req: NextRequest) {
     const partnerName = `${firstName.trim()} ${lastName.trim()}`;
     const ratePercent = Math.round(invite.commissionRate * 100);
 
-    // L2/L3 partners: agreement flow depends on the top-of-chain L1's
-    // payoutDownlineEnabled flag. If Enabled, we auto-dispatch Fintella's
-    // SignWell above (inside the POST handler block). If Disabled (default),
-    // no auto-send — L1 is expected to upload a signed PDF via the admin
-    // agreement surface, same as historical behavior. Spec §5.
+    // All tiers get the same signing flow: Fintella auto-dispatches the
+    // SignWell agreement at signup and returns the signing URL. The
+    // partner signs directly — no upline involvement needed.
+    let agreementAutoSent = false;
+    let embeddedSigningUrl: string | null = null;
     if (partner.tier !== "l1") {
-      const topL1 = await resolveTopL1ForNewPartner(partner);
-      if (topL1?.payoutDownlineEnabled) {
-        try {
-          await sendFintellaAgreementForPartnerAtSignup({
-            partnerCode: partner.partnerCode,
-            firstName: partner.firstName,
-            lastName: partner.lastName,
-            email: partner.email,
-            phone: partner.phone,
-            commissionRate: partner.commissionRate,
-            tier: partner.tier,
-          });
-        } catch (err) {
-          // Don't fail signup if SignWell hiccups. Partner row exists; admin
-          // can retry from existing admin agreement surface. Log for ops.
-          console.error("[signup] Enabled-mode SignWell auto-dispatch failed", {
-            partnerCode: partner.partnerCode,
-            error: err instanceof Error ? err.message : String(err),
-          });
-        }
+      try {
+        await sendFintellaAgreementForPartnerAtSignup({
+          partnerCode: partner.partnerCode,
+          firstName: partner.firstName,
+          lastName: partner.lastName,
+          email: partner.email,
+          phone: partner.phone,
+          commissionRate: partner.commissionRate,
+          tier: partner.tier,
+        });
+        agreementAutoSent = true;
+        const ag = await prisma.partnershipAgreement.findFirst({
+          where: { partnerCode: partner.partnerCode },
+          orderBy: { version: "desc" },
+          select: { embeddedSigningUrl: true },
+        });
+        embeddedSigningUrl = ag?.embeddedSigningUrl || null;
+      } catch (err) {
+        console.error("[signup] SignWell auto-dispatch failed", {
+          partnerCode: partner.partnerCode,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
 
@@ -317,7 +319,9 @@ export async function POST(req: NextRequest) {
         recipientId: invite.inviterCode!, // non-null guard: checked above
         type: "deal_update",
         title: "New Partner Signed Up!",
-        message: `${partnerName} has signed up as your ${invite.targetTier.toUpperCase()} partner at ${ratePercent}% commission. Please upload their signed partnership agreement from your Downline page.`,
+        message: agreementAutoSent
+          ? `${partnerName} has signed up as your ${invite.targetTier.toUpperCase()} partner at ${ratePercent}% commission. Their partnership agreement has been sent automatically.`
+          : `${partnerName} has signed up as your ${invite.targetTier.toUpperCase()} partner at ${ratePercent}% commission. Please upload their signed partnership agreement from your Downline page.`,
         link: "/dashboard/downline",
       },
     }).catch(() => {});
@@ -438,7 +442,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       partnerCode,
-      message: `Account created! Your upline partner will submit your partnership agreement. Once approved, you can log in and start submitting deals.`,
+      agreementAutoSent,
+      embeddedSigningUrl,
+      message: agreementAutoSent
+        ? "Account created! Your partnership agreement has been sent — sign it now to activate your account."
+        : "Account created! Your upline partner will submit your partnership agreement. Once approved, you can log in and start submitting deals.",
     }, { status: 201 });
   } catch (err: any) {
     console.error("[Signup] Error:", err);

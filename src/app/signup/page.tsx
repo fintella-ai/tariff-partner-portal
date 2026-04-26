@@ -28,7 +28,7 @@ function SignupContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ partnerCode: string; message: string } | null>(null);
+  const [success, setSuccess] = useState<{ partnerCode: string; message: string; agreementAutoSent?: boolean; embeddedSigningUrl?: string | null } | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -113,7 +113,7 @@ function SignupContent() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Signup failed"); return; }
-      setSuccess({ partnerCode: data.partnerCode, message: data.message });
+      setSuccess({ partnerCode: data.partnerCode, message: data.message, agreementAutoSent: data.agreementAutoSent, embeddedSigningUrl: data.embeddedSigningUrl });
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -316,11 +316,31 @@ function SignupContent() {
               <div className="font-mono text-lg font-bold text-brand-gold tracking-[2px]">{success.partnerCode}</div>
             </div>
 
-            <div className="p-3.5 mb-5 rounded-lg bg-yellow-500/[0.06] border border-yellow-500/20">
-              <p className="font-body text-[12px] text-yellow-400/80 leading-relaxed">
-                Your upline partner will submit your signed partnership agreement. Once reviewed and approved by our team, your account will be activated and you can begin submitting client referrals.
-              </p>
-            </div>
+            {success.agreementAutoSent ? (
+              <>
+                <p className="font-body text-[13px] theme-text-secondary mb-1 leading-relaxed">
+                  Your partnership agreement has been sent. Sign it now to activate your account.
+                </p>
+                <p className="font-body text-[11px] theme-text-muted mb-5">
+                  A copy has also been sent to your email if you prefer to sign later.
+                </p>
+                {success.embeddedSigningUrl && (
+                  <button
+                    onClick={() => window.open(success.embeddedSigningUrl!, "_blank")}
+                    className="btn-gold inline-flex items-center gap-2 px-6 py-3 text-[13px] mb-3"
+                  >
+                    <span>✍️</span>
+                    <span>Sign Agreement Now</span>
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="p-3.5 mb-5 rounded-lg bg-yellow-500/[0.06] border border-yellow-500/20">
+                <p className="font-body text-[12px] text-yellow-400/80 leading-relaxed">
+                  Your upline partner will submit your signed partnership agreement. Once reviewed and approved by our team, your account will be activated and you can begin submitting client referrals.
+                </p>
+              </div>
+            )}
 
             <a href="/login" className="btn-gold inline-block px-8 py-3 text-[13px]">
               Log In to Your Portal
