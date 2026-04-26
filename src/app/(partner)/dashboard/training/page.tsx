@@ -314,8 +314,18 @@ export default function TrainingPage() {
   /*  Derived values                                                            */
   /* -------------------------------------------------------------------------- */
 
+  const CATEGORY_ALIASES: Record<string, string[]> = {
+    "onboarding": ["onboarding"],
+    "sales": ["sales"],
+    "product knowledge": ["product", "product knowledge"],
+    "tools": ["tools"],
+  };
   const filteredModules =
-    activeCategory === "All" ? modules : modules.filter((m) => m.category === activeCategory);
+    activeCategory === "All" ? modules : modules.filter((m) => {
+      const cat = (m.category || "").toLowerCase();
+      const aliases = CATEGORY_ALIASES[activeCategory.toLowerCase()] || [activeCategory.toLowerCase()];
+      return aliases.includes(cat);
+    });
 
   const completedCount = modules.filter((m) => m.completed).length;
   const progress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
