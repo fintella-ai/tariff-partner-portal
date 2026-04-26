@@ -110,7 +110,27 @@ export async function GET(req: NextRequest) {
   results.vercel = { status: "not_configured", note: "Set VERCEL_TOKEN for real usage data" };
 
   // ── Sentry Usage ──────────────────────────────────────────────────────
-  results.sentry = { status: "not_configured", note: "Set SENTRY_AUTH_TOKEN for real usage data" };
+  const sentryToken = process.env.SENTRY_AUTH_TOKEN;
+  const sentryOrg = process.env.SENTRY_ORG || "fintella";
+  if (sentryToken) {
+    try {
+      const res = await fetch(
+        `https://sentry.io/api/0/organizations/${sentryOrg}/stats_v2/?field=sum(quantity)&category=error&interval=1d&statsPeriod=30d`,
+        { headers: { Authorization: `Bearer ${sentryToken}` } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const totalErrors = (data.groups?.[0]?.totals?.["sum(quantity)"] || 0);
+        results.sentry = { totalErrors30d: totalErrors, status: "ok" };
+      } else {
+        results.sentry = { status: "error", code: res.status };
+      }
+    } catch (e: any) {
+      results.sentry = { status: "error", message: e.message };
+    }
+  } else {
+    results.sentry = { status: "not_configured" };
+  }
 
   return NextResponse.json({ usage: results, fetchedAt: new Date().toISOString() });
 }

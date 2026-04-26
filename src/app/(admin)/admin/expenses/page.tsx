@@ -181,6 +181,13 @@ export default function ExpensesPage() {
                 </div>
               </div>
             )}
+            {liveUsage.sentry?.status === "ok" && (
+              <div className="rounded-xl border border-[var(--app-border)] p-4">
+                <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">Sentry (30 days)</div>
+                <div className="font-display text-lg font-bold text-orange-400">{liveUsage.sentry.totalErrors30d?.toLocaleString()}</div>
+                <div className="font-body text-[11px] theme-text-muted mt-1">errors tracked</div>
+              </div>
+            )}
             {liveUsage.anthropic?.status === "ok" && (
               <div className="rounded-xl border border-[var(--app-border)] p-4">
                 <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">Anthropic AI</div>
