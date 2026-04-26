@@ -307,10 +307,10 @@ export default function PartnerChatBubble({
           <Image
             src={currentPersona.avatarSrc}
             alt={currentPersona.displayName}
-            width={36}
-            height={36}
+            width={48}
+            height={48}
             className="rounded-full"
-            style={{ width: 36, height: 36 }}
+            style={{ width: 48, height: 48 }}
           />
         ) : (
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--app-text-secondary)" }}>
@@ -435,23 +435,23 @@ export default function PartnerChatBubble({
         }}
       >
         {/* Header */}
-        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[var(--app-border)]">
-          <Image
-            src={currentPersona.avatarSrc}
-            alt={currentPersona.displayName}
-            width={28}
-            height={28}
-            className="rounded-full flex-shrink-0"
-            style={{ width: 28, height: 28 }}
-          />
-          <span
-            className="font-body text-[13px] font-semibold"
-            style={{ color: currentPersona.accentHex }}
-          >
-            {currentPersona.displayName}
-          </span>
-          <div className="flex-1" />
-          <PersonaSwitcherRow active={persona} onSwitch={setPersona} size={22} />
+        <div className="flex flex-col border-b border-[var(--app-border)]">
+          <div className="flex items-center gap-2 px-3 py-2.5">
+            <Image
+              src={currentPersona.avatarSrc}
+              alt={currentPersona.displayName}
+              width={40}
+              height={40}
+              className="rounded-full flex-shrink-0"
+              style={{ width: 40, height: 40 }}
+            />
+            <span
+              className="font-body text-[13px] font-semibold"
+              style={{ color: currentPersona.accentHex }}
+            >
+              {currentPersona.displayName}
+            </span>
+            <div className="flex-1" />
 
           {/* New conversation */}
           <button
@@ -488,6 +488,10 @@ export default function PartnerChatBubble({
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+          </div>
+          <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-[var(--app-bg-secondary)]">
+            <PersonaSwitcherRow active={persona} onSwitch={setPersona} size={24} />
+          </div>
         </div>
 
         {/* Chat body */}
