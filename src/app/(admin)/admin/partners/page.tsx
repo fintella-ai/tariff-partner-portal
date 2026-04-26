@@ -213,6 +213,7 @@ export default function AdminPartnersPage() {
   const [bulkResending, setBulkResending] = useState(false);
   const [bulkResult, setBulkResult] = useState<{ succeeded: number; failed: number } | null>(null);
   const [resendFeedback, setResendFeedback] = useState<Record<string, "ok" | "error">>({});
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
   const ALLOWED_L1_RATES = [0.10, 0.15, 0.20, 0.25];
 
@@ -978,7 +979,7 @@ export default function AdminPartnersPage() {
           {/* Invited — Desktop Table */}
           <div className="card hidden sm:block overflow-x-auto">
             {/* Header */}
-            <div className="grid grid-cols-[auto_2fr_0.6fr_0.7fr_0.9fr_0.9fr_auto] gap-3 px-5 py-3 border-b border-[var(--app-border)] items-center">
+            <div className="grid grid-cols-[auto_2fr_0.6fr_0.7fr_auto_0.9fr_0.9fr_auto] gap-3 px-5 py-3 border-b border-[var(--app-border)] items-center">
               <input
                 type="checkbox"
                 checked={allSelected}
@@ -993,7 +994,7 @@ export default function AdminPartnersPage() {
                 className="w-4 h-4 rounded cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 accent-[#c4a050]"
                 title={allSelected ? "Deselect all" : "Select all"}
               />
-              {["Invitee", "Rate", "Status", "Sent", "Expires", ""].map((h) => (
+              {["Invitee", "Rate", "Status", "Link", "Sent", "Expires", ""].map((h) => (
                 <div key={h} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider">{h}</div>
               ))}
             </div>
@@ -1003,10 +1004,12 @@ export default function AdminPartnersPage() {
               const isResendable = inv.status !== "used";
               const isResending = resendingId === inv.id;
               const feedback = resendFeedback[inv.id];
+              const inviteUrl = `${window.location.origin}/getstarted?token=${inv.token}`;
+              const isCopied = copiedInviteId === inv.id;
               return (
                 <div
                   key={inv.id}
-                  className="grid grid-cols-[auto_2fr_0.6fr_0.7fr_0.9fr_0.9fr_auto] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center"
+                  className="grid grid-cols-[auto_2fr_0.6fr_0.7fr_auto_0.9fr_0.9fr_auto] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center"
                 >
                   <input
                     type="checkbox"
@@ -1024,6 +1027,23 @@ export default function AdminPartnersPage() {
                     <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase ${inviteStatusBadge[inv.status] || inviteStatusBadge.expired}`}>
                       {inv.status}
                     </span>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(inviteUrl);
+                        setCopiedInviteId(inv.id);
+                        setTimeout(() => setCopiedInviteId((prev) => prev === inv.id ? null : prev), 2000);
+                      }}
+                      className={`font-body text-[11px] px-2.5 min-h-[28px] rounded-lg border transition-colors whitespace-nowrap ${
+                        isCopied
+                          ? "text-green-400 border-green-500/20 bg-green-500/10"
+                          : "text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+                      }`}
+                      title={inviteUrl}
+                    >
+                      {isCopied ? "Copied ✓" : "Copy Link"}
+                    </button>
                   </div>
                   <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(inv.createdAt)}</div>
                   <div className="font-body text-[12px] text-[var(--app-text-muted)]">{fmtDate(inv.expiresAt)}</div>
@@ -1065,6 +1085,8 @@ export default function AdminPartnersPage() {
               const isResendable = inv.status !== "used";
               const isResending = resendingId === inv.id;
               const feedback = resendFeedback[inv.id];
+              const inviteUrl = `${window.location.origin}/getstarted?token=${inv.token}`;
+              const isCopied = copiedInviteId === inv.id;
               return (
                 <div key={inv.id} className="card p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -1079,6 +1101,23 @@ export default function AdminPartnersPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="font-body text-[11px] text-[var(--app-text-muted)]">Rate: {Math.round(inv.commissionRate * 100)}%</div>
                     <div className="font-body text-[11px] text-[var(--app-text-muted)]">Expires {fmtDate(inv.expiresAt)}</div>
+                  </div>
+                  {/* Mobile: copy link */}
+                  <div className="mb-3">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(inviteUrl);
+                        setCopiedInviteId(inv.id);
+                        setTimeout(() => setCopiedInviteId((prev) => prev === inv.id ? null : prev), 2000);
+                      }}
+                      className={`w-full font-body text-[11px] px-3 min-h-[36px] rounded-lg border transition-colors ${
+                        isCopied
+                          ? "text-green-400 border-green-500/20 bg-green-500/10"
+                          : "text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+                      }`}
+                    >
+                      {isCopied ? "Link Copied ✓" : "Copy Invite Link"}
+                    </button>
                   </div>
                   {/* Mobile: select + resend row */}
                   <div className="flex items-center justify-between pt-3 border-t border-[var(--app-border)]">
