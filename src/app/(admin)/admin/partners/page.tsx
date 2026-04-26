@@ -29,6 +29,8 @@ type Partner = {
   onboardingPercent: number;
   onboardingStalled: boolean;
   onboardingDaysSinceSignup: number;
+  engagementScore: number;
+  engagementTier: string;
 };
 
 type Invite = {
@@ -125,9 +127,9 @@ export default function AdminPartnersPage() {
   // array length after toggling.
   const { columnWidths: partnerCols, getResizeHandler: partnerResize } = useResizableColumns(
     bulkOn
-      ? [36, 180, 70, 120, 140, 180, 90, 110, 80, 120, 110]
-      : [180, 70, 120, 140, 180, 90, 110, 80, 120, 110],
-    { storageKey: bulkOn ? "partners-v6-bulk" : "partners-v6" }
+      ? [36, 180, 70, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80]
+      : [180, 70, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80],
+    { storageKey: bulkOn ? "partners-v7-bulk" : "partners-v7" }
   );
   const partnerGridCols = partnerCols.map((w) => `${w}px`).join(" ");
 
@@ -182,8 +184,11 @@ export default function AdminPartnersPage() {
   const [inviteResult, setInviteResult] = useState<{ signupUrl: string } | null>(null);
   const [inviteSending, setInviteSending] = useState(false);
 
+  // Engagement tier filter
+  const [engagementTierFilter, setEngagementTierFilter] = useState<"" | "hot" | "active" | "cooling" | "cold">("");
+
   // Sort state
-  type SortCol = "name" | "code" | "status" | "joined";
+  type SortCol = "name" | "code" | "status" | "joined" | "score";
   const [sortCol, setSortCol] = useState<SortCol>("joined");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -487,12 +492,21 @@ export default function AdminPartnersPage() {
     if (levelFilter === "l4plus") return partnerDepth(p) >= 3;
     return (p.tier || "l1") === levelFilter;
   })
+   .filter((p) => {
+    if (!engagementTierFilter) return true;
+    return (p.engagementTier || "cold") === engagementTierFilter;
+  })
    .slice().sort((a, b) => {
     // Priority bump: any row needing review jumps to the top.
     const aReview = needsReview(a) ? 0 : 1;
     const bReview = needsReview(b) ? 0 : 1;
     if (aReview !== bReview) return aReview - bReview;
 
+    if (sortCol === "score") {
+      const sa = a.engagementScore ?? 0;
+      const sb = b.engagementScore ?? 0;
+      return sortDir === "asc" ? sa - sb : sb - sa;
+    }
     let va: string, vb: string;
     if (sortCol === "name") { va = `${a.firstName} ${a.lastName}`.toLowerCase(); vb = `${b.firstName} ${b.lastName}`.toLowerCase(); }
     else if (sortCol === "code") { va = a.partnerCode; vb = b.partnerCode; }
@@ -899,14 +913,27 @@ export default function AdminPartnersPage() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="mb-4">
+      {/* Search + Engagement Tier Filter */}
+      <div className="mb-4 flex flex-col sm:flex-row gap-2">
         <input
-          className={inputClass}
+          className={`${inputClass} flex-1`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={activeTab === "invited" ? "Search by name or email..." : "Search by name, email, or partner code..."}
         />
+        {activeTab !== "invited" && (
+          <select
+            value={engagementTierFilter}
+            onChange={(e) => setEngagementTierFilter(e.target.value as "" | "hot" | "active" | "cooling" | "cold")}
+            className="text-sm rounded-lg px-3 py-1.5 bg-[var(--app-input-bg)] border border-[var(--app-input-border)] text-[var(--app-text)] font-body outline-none focus:border-brand-gold/40 transition-colors min-h-[44px] sm:min-h-0 sm:w-44"
+          >
+            <option value="">All Tiers</option>
+            <option value="hot">🔥 Hot</option>
+            <option value="active">Active</option>
+            <option value="cooling">Cooling</option>
+            <option value="cold">Cold</option>
+          </select>
+        )}
       </div>
 
       {loading ? (
@@ -1256,6 +1283,8 @@ export default function AdminPartnersPage() {
                 { label: "W9", col: null },
                 { label: "Onboarding", col: null },
                 { label: "Joined", col: "joined" as SortCol },
+                { label: "Score", col: "score" as SortCol },
+                { label: "Tier", col: null },
               ]) : ([
                 { label: "Partner", col: "name" as SortCol },
                 { label: "Level", col: null },
@@ -1267,6 +1296,8 @@ export default function AdminPartnersPage() {
                 { label: "W9", col: null },
                 { label: "Onboarding", col: null },
                 { label: "Joined", col: "joined" as SortCol },
+                { label: "Score", col: "score" as SortCol },
+                { label: "Tier", col: null },
               ])).map((h, i) => (
                 h.label === "__select" ? (
                   <div key="__select" className="flex items-center justify-center relative">
@@ -1357,6 +1388,24 @@ export default function AdminPartnersPage() {
                     <OnboardingProgressCell partner={p} />
                   </div>
                   <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">{fmtDate(p.signupDate)}</div>
+                  <div className="font-body text-[12px] tabular-nums text-center text-[var(--app-text-secondary)]">{p.engagementScore ?? 0}</div>
+                  <div className="text-center">
+                    {(() => {
+                      const et = p.engagementTier || "cold";
+                      const etBadge: Record<string, string> = {
+                        hot: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                        active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                        cooling: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+                        cold: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500",
+                      };
+                      const etLabel: Record<string, string> = { hot: "🔥 Hot", active: "Active", cooling: "Cooling", cold: "Cold" };
+                      return (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${etBadge[et] || etBadge.cold}`}>
+                          {etLabel[et] || "Cold"}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
               );
             })}
@@ -1415,6 +1464,26 @@ export default function AdminPartnersPage() {
                       <OnboardingProgressCell partner={p} />
                     </div>
                   </div>
+                </div>
+                {/* Engagement tier badge — mobile */}
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[var(--app-border)]">
+                  <span className="font-body text-[9px] text-[var(--app-text-muted)] uppercase">Engagement:</span>
+                  {(() => {
+                    const et = p.engagementTier || "cold";
+                    const etBadge: Record<string, string> = {
+                      hot: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                      active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                      cooling: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+                      cold: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500",
+                    };
+                    const etLabel: Record<string, string> = { hot: "🔥 Hot", active: "Active", cooling: "Cooling", cold: "Cold" };
+                    return (
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${etBadge[et] || etBadge.cold}`}>
+                        {etLabel[et] || "Cold"}
+                      </span>
+                    );
+                  })()}
+                  <span className="font-body text-[10px] text-[var(--app-text-muted)] tabular-nums ml-1">Score: {p.engagementScore ?? 0}</span>
                 </div>
               </div>
             ))}
