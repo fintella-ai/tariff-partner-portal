@@ -16,10 +16,17 @@ import Link from "next/link";
  *   - connected    → iframe at the admin-configured calendar
  */
 
+interface CalendarEntry {
+  id: string;
+  summary: string;
+  primary?: boolean;
+}
+
 interface Status {
   connected: boolean;
   calendarId: string;
   connectedEmail: string | null;
+  allCalendars?: CalendarEntry[];
 }
 
 function localTimeZone(): string {
@@ -44,6 +51,7 @@ export default function CalendarEmbed() {
           connected: !!data.connected,
           calendarId: data.calendarId || "primary",
           connectedEmail: data.connectedEmail || null,
+          allCalendars: data.allCalendars || [],
         });
       })
       .catch(() => setStatus(null))
@@ -51,9 +59,14 @@ export default function CalendarEmbed() {
   }, []);
 
   const tz = localTimeZone();
-  const src = status
-    ? `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(status.calendarId)}&ctz=${encodeURIComponent(tz)}&mode=${view}&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&showTz=0`
-    : "";
+  const src = (() => {
+    if (!status) return "";
+    const calIds = status.allCalendars?.length
+      ? status.allCalendars.map((c) => c.id)
+      : [status.calendarId];
+    const srcParams = calIds.map((id) => `src=${encodeURIComponent(id)}`).join("&");
+    return `https://calendar.google.com/calendar/embed?${srcParams}&ctz=${encodeURIComponent(tz)}&mode=${view}&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=1&showTz=0`;
+  })();
 
   return (
     <div className="card">

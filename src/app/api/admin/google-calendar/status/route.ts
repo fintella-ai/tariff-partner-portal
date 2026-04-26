@@ -29,9 +29,15 @@ export async function GET() {
   const connected = !!settings?.googleCalendarRefreshToken;
 
   let calendars: Array<{ id: string; summary: string; primary?: boolean }> = [];
+  let allCalendars: Array<{ id: string; summary: string; primary?: boolean }> = [];
   if (connected) {
     try {
-      calendars = await listCalendars();
+      const [writable, readable] = await Promise.all([
+        listCalendars("writer"),
+        listCalendars("reader"),
+      ]);
+      calendars = writable;
+      allCalendars = readable;
     } catch {
       // network flake / token revoked — leave empty and let the UI fall
       // back to the hand-entered calendar id.
@@ -44,6 +50,7 @@ export async function GET() {
     connectedAt: settings?.googleCalendarConnectedAt || null,
     calendarId: settings?.googleCalendarCalendarId || "primary",
     calendars,
+    allCalendars,
     oauthClientConfigured: !!(
       process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET
     ),

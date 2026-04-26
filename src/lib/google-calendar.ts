@@ -278,11 +278,13 @@ export async function deleteCalendarEvent(eventId: string): Promise<{ deleted: b
   return { deleted: true, demo: false };
 }
 
-export async function listCalendars(): Promise<Array<{ id: string; summary: string; primary?: boolean }>> {
+export async function listCalendars(
+  minAccessRole: "reader" | "writer" | "owner" | "freeBusyReader" = "writer"
+): Promise<Array<{ id: string; summary: string; primary?: boolean }>> {
   const token = await getAccessToken();
   if (!token) return [];
 
-  const res = await fetch(`${CAL_BASE}/users/me/calendarList?minAccessRole=writer&maxResults=50`, {
+  const res = await fetch(`${CAL_BASE}/users/me/calendarList?minAccessRole=${minAccessRole}&maxResults=100`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`google-calendar: list calendars failed (${res.status}): ${await res.text()}`);
