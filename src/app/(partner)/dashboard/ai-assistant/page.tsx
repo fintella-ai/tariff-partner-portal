@@ -427,6 +427,16 @@ export default function AiAssistantPage() {
         {/* ── CHAT AREA ── */}
         <div className="flex-1 flex flex-col bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-xl overflow-hidden min-w-0">
           <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+            {/* AI Disclosure — CA SB 243, CO AI Act, UT AI Policy Act, WA chatbot law, FTC */}
+            <div className="mb-4 px-4 py-2.5 rounded-lg bg-[var(--app-input-bg)] border border-[var(--app-border)] text-center">
+              <p className="font-body text-[11px] text-[var(--app-text-muted)] leading-relaxed">
+                You are chatting with an <strong>AI assistant</strong>, not a human.
+                This conversation is recorded and stored.
+                This AI does not provide legal, tax, or financial advice.
+                By continuing, you consent to the recording of this interaction.
+              </p>
+            </div>
+
             {showEmptyState ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-4">
                 <div className="text-5xl mb-3">🤖</div>

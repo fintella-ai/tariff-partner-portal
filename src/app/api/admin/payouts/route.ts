@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendCommissionPaidEmail } from "@/lib/sendgrid";
 import { createTransfer } from "@/lib/stripe";
 import { resolveCommissionStatus } from "@/lib/commission";
+import { logAudit } from "@/lib/audit-log";
 
 /**
  * GET /api/admin/payouts
@@ -371,6 +372,18 @@ export async function POST(req: NextRequest) {
         data: { batchId: batch.id },
       });
 
+      logAudit({
+        action: "payout.batch_create",
+        actorEmail: session.user.email || "unknown",
+        actorRole: (session.user as any).role || "unknown",
+        actorId: session.user.id,
+        targetType: "payout_batch",
+        targetId: batch.id,
+        details: { totalAmount, partnerCount: partnerCodes.length, commissionCount: dueCommissions.length },
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+        userAgent: req.headers.get("user-agent") || undefined,
+      }).catch(() => {});
+
       return NextResponse.json({ batch });
     }
 
@@ -379,6 +392,17 @@ export async function POST(req: NextRequest) {
         where: { id: body.batchId },
         data: { status: "approved" },
       });
+      logAudit({
+        action: "payout.batch_process",
+        actorEmail: session.user.email || "unknown",
+        actorRole: (session.user as any).role || "unknown",
+        actorId: session.user.id,
+        targetType: "payout_batch",
+        targetId: batch.id,
+        details: { subAction: "approve_batch", batchId: batch.id },
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+        userAgent: req.headers.get("user-agent") || undefined,
+      }).catch(() => {});
       return NextResponse.json({ batch });
     }
 
@@ -489,6 +513,18 @@ export async function POST(req: NextRequest) {
       import("@/lib/workflow-engine").then(({ fireWorkflowTrigger }) =>
         fireWorkflowTrigger("commission.paid", { batch, entries: toProcess })
       ).catch(() => {});
+
+      logAudit({
+        action: "payout.batch_process",
+        actorEmail: session.user.email || "unknown",
+        actorRole: (session.user as any).role || "unknown",
+        actorId: session.user.id,
+        targetType: "payout_batch",
+        targetId: batch.id,
+        details: { subAction: "process_batch", batchId: batch.id, commissionCount: toProcess.length, totalAmount: toProcess.reduce((s, c) => s + c.amount, 0) },
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+        userAgent: req.headers.get("user-agent") || undefined,
+      }).catch(() => {});
 
       return NextResponse.json({ batch });
     }

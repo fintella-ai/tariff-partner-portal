@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MAX_COMMISSION_RATE, getAllowedDownlineRates } from "@/lib/constants";
 import crypto from "crypto";
+import { recordActivity } from "@/lib/engagement";
 
 function generateToken(): string {
   return crypto.randomBytes(9).toString("base64url"); // 12 chars, URL-safe
@@ -109,6 +110,8 @@ export async function POST(req: NextRequest) {
         status: "active",
       },
     });
+
+    recordActivity(partnerCode, "link_shared", { linkId: invite.id }).catch(() => {});
 
     return NextResponse.json({
       invite,

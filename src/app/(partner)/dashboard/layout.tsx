@@ -12,6 +12,7 @@ import { useTheme } from "@/components/layout/ThemeProvider";
 import { EditLayoutProvider } from "@/components/admin/EditLayoutContext";
 import EditLayoutButton from "@/components/admin/EditLayoutButton";
 import EditableText from "@/components/ui/EditableText";
+import PartnerChatBubble from "@/components/partner/PartnerChatBubble";
 
 // ─── NAV STRUCTURE ───────────────────────────────────────────────────────────
 // Main nav items (top section of sidebar)
@@ -256,6 +257,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [isSudo, setIsSudo] = useState(false);
+  // AI chat bubble state — driven by /api/ai/chat config + portal settings
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [liveChatSettingEnabled, setLiveChatSettingEnabled] = useState(false);
   // Shared unread-notification count — drives the hamburger menu blink +
   // count badge in the header AND the sidebar Notifications row. Polls
   // `/api/notifications` on the same 30s cadence as the bell so the two
@@ -310,6 +314,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         } catch {}
         try { setNavLabels(JSON.parse(settings.navLabels || "{}")); } catch {}
         try { setNavIcons(JSON.parse(settings.navIcons || "{}")); } catch {}
+        // liveChatEnabled is a boolean on PortalSettings
+        if (settings.liveChatEnabled !== undefined) setLiveChatSettingEnabled(!!settings.liveChatEnabled);
       })
       .catch(() => {});
   }, []);
@@ -328,6 +334,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [fetchSettings]);
+
+  // AI config: check if PartnerOS AI is enabled
+  useEffect(() => {
+    fetch("/api/ai/chat")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => setAiEnabled(!!data.enabled))
+      .catch(() => setAiEnabled(false));
+  }, []);
 
   // Chat: fetch session & poll for new messages
   const fetchChat = useCallback(() => {
@@ -858,90 +872,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </footer>
       </div>
 
-      {/* ── LIVE CHAT BUTTON ──
-          Bottom-right corner, above the mobile nav bar on mobile. */}
-      {chatEnabled && (
-      <button
-        onClick={() => setChatOpen(!chatOpen)}
-        className="fixed z-[950] bg-gradient-to-br from-brand-gold to-[var(--brand-gold)] text-brand-dark rounded-full shadow-lg shadow-brand-gold/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-        style={device.isMobile
-          ? { bottom: "calc(88px + env(safe-area-inset-bottom, 0px))", right: "1rem", width: "3rem", height: "3rem", fontSize: "1.25rem" }
-          : { bottom: "1.5rem", right: "1.5rem", width: "3.5rem", height: "3.5rem", fontSize: "1.5rem" }
-        }
-        title="Chat with support"
-      >
-        {chatOpen ? "✕" : "💬"}
-      </button>
-      )}
-
-      {/* ── CHAT PANEL ── */}
-      {chatOpen && chatEnabled && (
-        <div
-          className={`fixed z-[951] bg-[var(--app-bg-secondary)] border border-brand-gold/20 shadow-2xl shadow-black/40 flex flex-col ${
-            device.isMobile
-              ? "inset-0 rounded-none pt-safe pb-safe pl-safe pr-safe"
-              : "bottom-24 right-6 w-[380px] h-[520px] max-w-[calc(100vw-3rem)] max-h-[calc(100vh-8rem)] rounded-2xl"
-          }`}
-        >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--app-border)]">
-            <div>
-              <div className="font-body text-sm font-semibold text-[var(--app-text)]">Live Support</div>
-              <div className="font-body text-[11px] text-green-400">Online</div>
-            </div>
-            <button
-              onClick={() => setChatOpen(false)}
-              className="text-[var(--app-text-muted)] hover:text-[var(--app-text)] text-lg w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[var(--app-input-bg)] transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
-            {chatMessages.length === 0 && (
-              <div className="bg-brand-gold/10 border border-brand-gold/15 rounded-xl rounded-tl-sm px-4 py-3 max-w-[85%]">
-                <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed">
-                  Hi! How can we help you today? Send a message and our support team will respond.
-                </div>
-              </div>
-            )}
-            {chatMessages.map((msg: any) => (
-              <div key={msg.id} className={`flex ${msg.senderType === "partner" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] rounded-xl px-4 py-3 ${
-                  msg.senderType === "partner"
-                    ? "bg-brand-gold/15 border border-brand-gold/20 rounded-br-sm"
-                    : "bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-bl-sm"
-                }`}>
-                  {msg.senderType === "admin" && (
-                    <div className="font-body text-[10px] font-semibold text-brand-gold mb-1">{msg.senderName || "Support"}</div>
-                  )}
-                  <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed whitespace-pre-wrap">{msg.content}</div>
-                  <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-1.5">
-                    {new Date(msg.createdAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="p-4 border-t border-[var(--app-border)]">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Type your message..."
-                className="flex-1 bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-[var(--app-text)] font-body text-[13px] outline-none focus:border-brand-gold/30 transition-colors placeholder:text-[var(--app-text-muted)]"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
-              />
-              <button
-                onClick={sendChatMessage}
-                disabled={!chatInput.trim() || chatSending}
-                className="bg-brand-gold/20 text-brand-gold border border-brand-gold/30 rounded-xl px-4 font-body text-sm font-semibold hover:bg-brand-gold/30 transition-colors disabled:opacity-50"
-              >
-                {chatSending ? "..." : "Send"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── AI CHAT BUBBLE ──
+          Replaces the old live-chat FAB + panel. The AI widget includes
+          "Talk to a person" which covers the live-chat use case. */}
+      <PartnerChatBubble
+        preferredPersona="finn"
+        liveChatEnabled={liveChatSettingEnabled}
+        aiEnabled={aiEnabled}
+      />
       </div>
       {/* Level 3 Edit Layout — floating toggle, star super admin only. */}
       <EditLayoutButton />

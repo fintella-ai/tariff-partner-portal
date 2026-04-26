@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { recordActivity } from "@/lib/engagement";
 
 /**
  * POST /api/training/progress
@@ -66,6 +67,8 @@ export async function POST(req: NextRequest) {
       import("@/lib/getting-started").then(({ updateOnboardingState }) =>
         updateOnboardingState(partnerCode, "mark_training_completed")
       ).catch(() => {});
+
+      recordActivity(partnerCode, "training_completed", { moduleId }).catch(() => {});
     }
 
     return NextResponse.json(progress);

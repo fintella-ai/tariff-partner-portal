@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordActivity } from "@/lib/engagement";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -98,6 +99,17 @@ export async function POST(req: NextRequest) {
       template: matched?.template ?? null,
       partnerCode: matched?.partnerCode ?? null,
     });
+
+    // Fire engagement points for partner-linked email events.
+    // Fire-and-forget — never block the webhook response.
+    if (matched?.partnerCode) {
+      if (evt.event === "open") {
+        recordActivity(matched.partnerCode, "email_open", { messageId: providerMessageId }).catch(() => {});
+      } else if (evt.event === "click") {
+        recordActivity(matched.partnerCode, "email_click", { url: evt.url ?? null, messageId: providerMessageId }).catch(() => {});
+      }
+    }
+
     accepted++;
   }
 

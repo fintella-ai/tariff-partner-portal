@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail, emailShell } from "@/lib/sendgrid";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
 import crypto from "crypto";
+import { logAudit } from "@/lib/audit-log";
 
 const ADMIN_ROLES = ["super_admin", "admin"];
 
@@ -154,6 +155,18 @@ This activation link expires in ${expiryDays} days.`;
       rejectionReason: null,
     },
   });
+
+  logAudit({
+    action: "application.approve",
+    actorEmail: session.user.email || "unknown",
+    actorRole: (session.user as any).role || "unknown",
+    actorId: session.user.id,
+    targetType: "partner_application",
+    targetId: params.id,
+    details: { inviteId: invite.id, uplineCode, commissionRate, targetTier },
+    ipAddress: req.headers.get("x-forwarded-for") || undefined,
+    userAgent: req.headers.get("user-agent") || undefined,
+  }).catch(() => {});
 
   return NextResponse.json({
     success: true,

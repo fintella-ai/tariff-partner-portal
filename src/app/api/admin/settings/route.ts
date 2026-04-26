@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit-log";
 
 /**
  * GET /api/admin/settings
@@ -143,6 +144,18 @@ export async function PUT(req: NextRequest) {
       update: data,
       create: { id: "global", ...data },
     });
+
+    logAudit({
+      action: "settings.update",
+      actorEmail: session.user.email || "unknown",
+      actorRole: (session.user as any).role || "unknown",
+      actorId: session.user.id,
+      targetType: "portal_settings",
+      targetId: "global",
+      details: { updatedFields: Object.keys(data) },
+      ipAddress: req.headers.get("x-forwarded-for") || undefined,
+      userAgent: req.headers.get("user-agent") || undefined,
+    }).catch(() => {});
 
     return NextResponse.json({ settings });
   } catch (err: any) {

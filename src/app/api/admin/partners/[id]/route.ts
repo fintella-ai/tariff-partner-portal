@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hashSync } from "bcryptjs";
+import { logAudit } from "@/lib/audit-log";
 
 /**
  * GET /api/admin/partners/[id]
@@ -260,6 +261,18 @@ export async function PUT(
         update: profileFields,
       });
     }
+
+    logAudit({
+      action: "partner.update",
+      actorEmail: session.user.email || "unknown",
+      actorRole: (session.user as any).role || "unknown",
+      actorId: session.user.id,
+      targetType: "partner",
+      targetId: partner.id,
+      details: { updatedFields: Object.keys(data), partnerCode: partner.partnerCode },
+      ipAddress: req.headers.get("x-forwarded-for") || undefined,
+      userAgent: req.headers.get("user-agent") || undefined,
+    }).catch(() => {});
 
     return NextResponse.json({ partner });
   } catch {

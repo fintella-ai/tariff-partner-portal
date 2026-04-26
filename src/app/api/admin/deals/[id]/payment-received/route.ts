@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { computeDealCommissions } from "@/lib/commission";
 import { resolveDealFinancials } from "@/lib/dealCalc";
+import { logAudit } from "@/lib/audit-log";
 
 /**
  * POST /api/admin/deals/[id]/payment-received
@@ -250,6 +251,18 @@ export async function POST(
         };
       });
     }
+
+    logAudit({
+      action: "deal.payment_received",
+      actorEmail: session.user.email || "unknown",
+      actorRole: (session.user as any).role || "unknown",
+      actorId: session.user.id,
+      targetType: "deal",
+      targetId: params.id,
+      details: { ledgerCount: result.ledgerCount, totalCommission: result.totalCommission, mode: result.mode },
+      ipAddress: req.headers.get("x-forwarded-for") || undefined,
+      userAgent: req.headers.get("user-agent") || undefined,
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,

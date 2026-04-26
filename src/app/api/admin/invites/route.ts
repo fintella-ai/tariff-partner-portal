@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendL1InviteEmail } from "@/lib/sendgrid";
 import { ALLOWED_L1_RATES } from "@/lib/constants";
 import crypto from "crypto";
+import { logAudit } from "@/lib/audit-log";
 
 const PORTAL_URL =
   process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://fintella.partners";
@@ -103,6 +104,18 @@ export async function POST(req: NextRequest) {
     // request completes. Email failure is still non-fatal — errors are swallowed
     // and written to EmailLog by sendL1InviteEmail internally.
     await sendL1InviteEmail({ toEmail: email, toName: invitedName, signupUrl }).catch(() => {});
+
+    logAudit({
+      action: "invite.create",
+      actorEmail: session.user.email || "unknown",
+      actorRole: (session.user as any).role || "unknown",
+      actorId: session.user.id,
+      targetType: "recruitment_invite",
+      targetId: invite.id,
+      details: { invitedEmail: email, commissionRate, targetTier: "l1" },
+      ipAddress: req.headers.get("x-forwarded-for") || undefined,
+      userAgent: req.headers.get("user-agent") || undefined,
+    }).catch(() => {});
 
     return NextResponse.json({ invite, signupUrl }, { status: 201 });
   } catch {

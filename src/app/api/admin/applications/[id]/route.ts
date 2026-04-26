@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit-log";
 
 const ADMIN_ROLES = ["super_admin", "admin", "partner_support"];
 const ALLOWED_STATUSES = ["new", "contacted", "qualified", "approved", "rejected"];
@@ -55,6 +56,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     where: { id: params.id },
     data,
   });
+
+  logAudit({
+    action: "application.update",
+    actorEmail: session.user.email || "unknown",
+    actorRole: (session.user as any).role || "unknown",
+    actorId: session.user.id,
+    targetType: "partner_application",
+    targetId: params.id,
+    details: { updatedFields: Object.keys(data) },
+    ipAddress: req.headers.get("x-forwarded-for") || undefined,
+    userAgent: req.headers.get("user-agent") || undefined,
+  }).catch(() => {});
 
   return NextResponse.json({ application });
 }

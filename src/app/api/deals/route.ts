@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getL1CommissionRateSnapshot } from "@/lib/commission";
+import { recordActivity } from "@/lib/engagement";
 
 /**
  * GET /api/deals
@@ -111,6 +112,8 @@ export async function POST(req: NextRequest) {
         notes: body.notes || null,
       },
     });
+
+    recordActivity(partnerCode, "deal_submitted", { dealId: deal.id }).catch(() => {});
 
     return NextResponse.json({ deal }, { status: 201 });
   } catch {

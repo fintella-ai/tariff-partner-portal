@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/format";
+import { recordActivity } from "@/lib/engagement";
 import {
   sendWelcomeEmail,
   sendInviterSignupNotificationEmail,
@@ -272,6 +273,10 @@ export async function POST(req: NextRequest) {
       where: { token },
       data: { status: "used", usedByPartnerCode: partnerCode },
     });
+
+    // Credit the upline partner for successfully recruiting a new partner.
+    // Fire-and-forget — engagement scoring must never block signup.
+    recordActivity(invite.inviterCode!, "downline_recruited", { newPartnerCode: partnerCode }).catch(() => {});
 
     const partnerName = `${firstName.trim()} ${lastName.trim()}`;
     const ratePercent = Math.round(invite.commissionRate * 100);

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hashSync } from "bcryptjs";
 import { isStarSuperAdminEmail } from "@/lib/starSuperAdmin";
+import { logAudit } from "@/lib/audit-log";
 
 /**
  * GET /api/admin/users
@@ -90,6 +91,18 @@ export async function POST(req: NextRequest) {
         select: { id: true, email: true, name: true, role: true, createdAt: true },
       });
 
+      logAudit({
+        action: "admin.create",
+        actorEmail: session.user.email || "unknown",
+        actorRole: (session.user as any).role || "unknown",
+        actorId: session.user.id,
+        targetType: "admin_user",
+        targetId: user.id,
+        details: { email: user.email, role: user.role },
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+        userAgent: req.headers.get("user-agent") || undefined,
+      }).catch(() => {});
+
       return NextResponse.json({ user }, { status: 201 });
     }
 
@@ -119,6 +132,19 @@ export async function POST(req: NextRequest) {
         data,
         select: { id: true, email: true, name: true, role: true, createdAt: true },
       });
+
+      logAudit({
+        action: "admin.update",
+        actorEmail: session.user.email || "unknown",
+        actorRole: (session.user as any).role || "unknown",
+        actorId: session.user.id,
+        targetType: "admin_user",
+        targetId: user.id,
+        details: { subAction: "update_profile", updatedFields: Object.keys(data) },
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+        userAgent: req.headers.get("user-agent") || undefined,
+      }).catch(() => {});
+
       return NextResponse.json({ user });
     }
 
@@ -148,6 +174,18 @@ export async function POST(req: NextRequest) {
         data: { role: userRole },
         select: { id: true, email: true, name: true, role: true, createdAt: true },
       });
+
+      logAudit({
+        action: "admin.update",
+        actorEmail: session.user.email || "unknown",
+        actorRole: (session.user as any).role || "unknown",
+        actorId: session.user.id,
+        targetType: "admin_user",
+        targetId: user.id,
+        details: { subAction: "update_role", newRole: userRole },
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+        userAgent: req.headers.get("user-agent") || undefined,
+      }).catch(() => {});
 
       return NextResponse.json({ user });
     }

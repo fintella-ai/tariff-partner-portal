@@ -200,12 +200,13 @@ model SupportTicket {
 }
 
 model TicketMessage {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   ticketId   String
-  authorType String   // "partner" or "admin"
-  authorId   String   // partnerCode or admin userId
+  authorType String    // "partner" or "admin"
+  authorId   String    // partnerCode or admin userId
   content    String
-  createdAt  DateTime @default(now())
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
 
   ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
@@ -951,21 +952,22 @@ model AiConversation {
 }
 
 model AiMessage {
-  id                  String   @id @default(cuid())
+  id                  String    @id @default(cuid())
   conversationId      String
-  role                String   // "user" | "assistant"
-  content             String   // message text
-  inputTokens         Int?     // for cost tracking
+  role                String    // "user" | "assistant"
+  content             String    // message text
+  inputTokens         Int?      // for cost tracking
   outputTokens        Int?
-  cachedTokens        Int?     // DEPRECATED: prompt cache hit tokens (mirrors cacheReadTokens for rows written before the split). Retained so historical rows still render.
-  cacheReadTokens     Int?     // tokens served from an existing prompt cache block (cheap — $0.30/MTok on Sonnet 4.6)
-  cacheCreationTokens Int?     // tokens written into a new cache block as part of this request (expensive — $3.75/MTok on Sonnet 4.6, ~12x cache read)
+  cachedTokens        Int?      // DEPRECATED: prompt cache hit tokens (mirrors cacheReadTokens for rows written before the split). Retained so historical rows still render.
+  cacheReadTokens     Int?      // tokens served from an existing prompt cache block (cheap — $0.30/MTok on Sonnet 4.6)
+  cacheCreationTokens Int?      // tokens written into a new cache block as part of this request (expensive — $3.75/MTok on Sonnet 4.6, ~12x cache read)
   // PartnerOS AI Phase 17b persona system (spec §8.1)
-  speakerPersona      String?  // "finn" | "stella" | "tara" | "ollie"; null for user messages
-  handoffMetadata     Json?    // { from, to, reason, summary, triggeredBy } — populated when a specialist handoff fires (Phase 2+)
-  attachments         Json?    // [{ url, mimeType, width, height }] — populated for bug-triage screenshots (Phase 3)
-  toolCalls           Json?    // [{ name, input, output, isError? }] — populated when a persona with tools (e.g. Ollie) called one or more DB lookups while producing this reply (Phase 3b)
-  createdAt           DateTime @default(now())
+  speakerPersona      String?   // "finn" | "stella" | "tara" | "ollie"; null for user messages
+  handoffMetadata     Json?     // { from, to, reason, summary, triggeredBy } — populated when a specialist handoff fires (Phase 2+)
+  attachments         Json?     // [{ url, mimeType, width, height }] — populated for bug-triage screenshots (Phase 3)
+  toolCalls           Json?     // [{ name, input, output, isError? }] — populated when a persona with tools (e.g. Ollie) called one or more DB lookups while producing this reply (Phase 3b)
+  readAt              DateTime?
+  createdAt           DateTime  @default(now())
   conversation        AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])

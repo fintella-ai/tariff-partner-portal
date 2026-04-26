@@ -19,6 +19,7 @@ import {
 } from "./ai-personas";
 import {
   OLLIE_TOOLS,
+  SHARED_TOOLS,
   executeOllieTool,
   type ToolCallResult,
 } from "./ai-ollie-tools";
@@ -432,17 +433,17 @@ In the meantime, you can:
   }
 
   // Tool surface per persona:
-  // - Generalists (Finn, Stella): just hand_off.
-  // - Product specialist (Tara): none (Phase 2 leaves her tool-less).
-  // - Support specialist (Ollie): the 4 live DB lookup tools (Phase 3b). No
-  //   hand_off — control returns to the generalist only via explicit user
-  //   action today; Phase 3e will add hand_back.
+  // - Generalists (Finn, Stella): hand_off + shared tools (lookups, tickets, scheduling).
+  // - Product specialist (Tara): shared tools only (no hand_off, no Ollie-exclusive).
+  // - Support specialist (Ollie): SHARED_TOOLS + OLLIE_EXCLUSIVE_TOOLS (no hand_off).
   const tools: Anthropic.Messages.Tool[] | undefined =
     persona.role === "generalist"
-      ? [HAND_OFF_TOOL]
+      ? [HAND_OFF_TOOL, ...SHARED_TOOLS]
       : resolvedPersona === "ollie"
         ? OLLIE_TOOLS
-        : undefined;
+        : persona.role === "product_specialist"
+          ? SHARED_TOOLS
+          : undefined;
 
   // Convert history to Anthropic message format
   const messages: Anthropic.Messages.MessageParam[] = history.map((m) => ({
@@ -472,100 +473,78 @@ In the meantime, you can:
     cacheCreationTokens +=
       (response.usage as any).cache_creation_input_tokens || 0;
 
-    // Ollie tool-use loop. While the model keeps calling DB tools, execute
-    // them, feed results back, ask again. Generalists with hand_off fall
-    // through to the legacy single-shot branch because hand_off flips control
-    // to a different persona rather than continuing this conversation.
-    if (resolvedPersona === "ollie") {
-      let round = 0;
-      while (response.stop_reason === "tool_use" && round < MAX_TOOL_ROUNDS) {
-        round += 1;
-        const toolUses = response.content.filter(
-          (b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use"
-        );
-        if (toolUses.length === 0) break;
-
-        // Execute each tool the model requested and build tool_result blocks.
-        const toolResults: Anthropic.Messages.ToolResultBlockParam[] = [];
-        for (const tu of toolUses) {
-          const exec = await executeOllieTool(tu.name, tu.input, {
-            userId: opts?.userId ?? "",
-            userType: opts?.userType ?? "admin",
-            conversationId: opts?.conversationId,
-          });
-          toolCallTrace.push({
-            name: tu.name,
-            input: tu.input,
-            output: exec.output,
-            ...(exec.isError ? { isError: true } : {}),
-          });
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: tu.id,
-            content: JSON.stringify(exec.output),
-            ...(exec.isError ? { is_error: true } : {}),
-          });
-        }
-
-        // Append assistant turn (tool calls) + user turn (tool results) and
-        // re-invoke.
-        messages.push({ role: "assistant", content: response.content });
-        messages.push({ role: "user", content: toolResults });
-
-        response = await client.messages.create({
-          model: ANTHROPIC_MODEL,
-          max_tokens: MAX_OUTPUT_TOKENS,
-          system: systemBlocks,
-          messages,
-          ...(tools ? { tools } : {}),
-        });
-        inputTokens += response.usage.input_tokens || 0;
-        outputTokens += response.usage.output_tokens || 0;
-        cacheReadTokens +=
-          (response.usage as any).cache_read_input_tokens || 0;
-        cacheCreationTokens +=
-          (response.usage as any).cache_creation_input_tokens || 0;
-      }
-
-      const textBlock = response.content.find(
-        (b): b is Anthropic.Messages.TextBlock => b.type === "text"
-      );
-      const content =
-        textBlock?.text ??
-        (toolCallTrace.length > 0
-          ? "(Looked up your data but couldn't compose a reply. Please try rephrasing.)"
-          : "I don't have a response right now — please try again.");
-
-      return {
-        content,
-        inputTokens,
-        outputTokens,
-        cacheReadTokens,
-        cacheCreationTokens,
-        mocked: false,
-        toolCalls: toolCallTrace.length > 0 ? toolCallTrace : undefined,
-      };
-    }
-
-    // Non-Ollie path: detect hand_off tool call (generalists only), else
-    // return the text reply directly.
-    const toolUseBlock = response.content.find(
-      (b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use"
-    );
+    // Unified tool-use loop. Any persona with tools (Finn, Stella, Tara, Ollie)
+    // may trigger tool calls. hand_off calls break out to the handoff path;
+    // all other tool calls are executed and re-invoked in-loop.
     let handOff: GenerateResult["handOff"];
-    if (toolUseBlock && toolUseBlock.name === "hand_off") {
-      const input = toolUseBlock.input as {
-        to?: string;
-        reason?: string;
-        summary?: string;
-      };
-      if (input.to === "tara" || input.to === "ollie") {
-        handOff = {
-          to: input.to,
-          reason: input.reason ?? "",
-          summary: input.summary ?? "",
+    let round = 0;
+    while (response.stop_reason === "tool_use" && round < MAX_TOOL_ROUNDS) {
+      round += 1;
+      const toolUses = response.content.filter(
+        (b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use"
+      );
+      if (toolUses.length === 0) break;
+
+      // If any tool_use block is hand_off, break out to the handoff path
+      // instead of executing it — hand_off flips control to a different
+      // persona rather than continuing this conversation.
+      const handOffCall = toolUses.find((tu) => tu.name === "hand_off");
+      if (handOffCall) {
+        const input = handOffCall.input as {
+          to?: string;
+          reason?: string;
+          summary?: string;
         };
+        if (input.to === "tara" || input.to === "ollie") {
+          handOff = {
+            to: input.to,
+            reason: input.reason ?? "",
+            summary: input.summary ?? "",
+          };
+        }
+        break; // exit the tool loop — handOff is handled below
       }
+
+      // Execute each tool the model requested and build tool_result blocks.
+      const toolResults: Anthropic.Messages.ToolResultBlockParam[] = [];
+      for (const tu of toolUses) {
+        const exec = await executeOllieTool(tu.name, tu.input, {
+          userId: opts?.userId ?? "",
+          userType: opts?.userType ?? "admin",
+          conversationId: opts?.conversationId,
+        });
+        toolCallTrace.push({
+          name: tu.name,
+          input: tu.input,
+          output: exec.output,
+          ...(exec.isError ? { isError: true } : {}),
+        });
+        toolResults.push({
+          type: "tool_result",
+          tool_use_id: tu.id,
+          content: JSON.stringify(exec.output),
+          ...(exec.isError ? { is_error: true } : {}),
+        });
+      }
+
+      // Append assistant turn (tool calls) + user turn (tool results) and
+      // re-invoke.
+      messages.push({ role: "assistant", content: response.content });
+      messages.push({ role: "user", content: toolResults });
+
+      response = await client.messages.create({
+        model: ANTHROPIC_MODEL,
+        max_tokens: MAX_OUTPUT_TOKENS,
+        system: systemBlocks,
+        messages,
+        ...(tools ? { tools } : {}),
+      });
+      inputTokens += response.usage.input_tokens || 0;
+      outputTokens += response.usage.output_tokens || 0;
+      cacheReadTokens +=
+        (response.usage as any).cache_read_input_tokens || 0;
+      cacheCreationTokens +=
+        (response.usage as any).cache_creation_input_tokens || 0;
     }
 
     const textBlock = response.content.find(
@@ -575,7 +554,9 @@ In the meantime, you can:
       textBlock?.text ??
       (handOff
         ? `(handing you off to ${handOff.to} for that one)`
-        : "I don't have a response right now — please try again.");
+        : toolCallTrace.length > 0
+          ? "(Looked up your data but couldn't compose a reply. Please try rephrasing.)"
+          : "I don't have a response right now — please try again.");
 
     return {
       content,
@@ -584,7 +565,8 @@ In the meantime, you can:
       cacheReadTokens,
       cacheCreationTokens,
       mocked: false,
-      handOff,
+      ...(handOff ? { handOff } : {}),
+      ...(toolCallTrace.length > 0 ? { toolCalls: toolCallTrace } : {}),
     };
   } catch (err: any) {
     console.error("[ai] generateResponse error:", err?.message || err);

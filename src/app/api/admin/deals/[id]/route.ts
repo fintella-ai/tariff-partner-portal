@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAudit, diffFields } from "@/lib/audit-log";
 
 /**
  * GET /api/admin/deals/[id]
@@ -131,10 +132,23 @@ export async function PUT(
       data.partnerCode = newCode;
     }
 
+    const before = await prisma.deal.findUnique({ where: { id: params.id } });
     const deal = await prisma.deal.update({
       where: { id: params.id },
       data,
     });
+
+    logAudit({
+      action: "deal.update",
+      actorEmail: session.user.email || "unknown",
+      actorRole: (session.user as any).role || "unknown",
+      actorId: session.user.id,
+      targetType: "deal",
+      targetId: deal.id,
+      details: before ? (diffFields(before as any, deal as any, Object.keys(data)) ?? { updated: Object.keys(data) }) : { updated: Object.keys(data) },
+      ipAddress: req.headers.get("x-forwarded-for") || undefined,
+      userAgent: req.headers.get("user-agent") || undefined,
+    }).catch(() => {});
 
     return NextResponse.json({ deal });
   } catch {
@@ -200,6 +214,18 @@ export async function DELETE(
         threads: threadDel.count,
       };
     });
+
+    logAudit({
+      action: "deal.delete",
+      actorEmail: session.user.email || "unknown",
+      actorRole: (session.user as any).role || "unknown",
+      actorId: session.user.id,
+      targetType: "deal",
+      targetId: params.id,
+      details: { cleaned: result },
+      ipAddress: req.headers.get("x-forwarded-for") || undefined,
+      userAgent: req.headers.get("user-agent") || undefined,
+    }).catch(() => {});
 
     return NextResponse.json({ success: true, cleaned: result });
   } catch {
