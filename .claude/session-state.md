@@ -47,7 +47,7 @@
 | #562 | Dependabot group (2 patches) | OPEN | Safe to merge |
 | #291 | @sentry/nextjs minor | OPEN | Safe to merge |
 | #287 | postcss patch | OPEN | Safe to merge |
-| #357 | Multi-file attachments | DRAFT | Awaits MinIO — DO NOT merge |
+| #357 | Multi-file attachments | CLOSED | CLOSED — superseded by Vercel Blob attachments |
 | #322 | Session checkpoint | OPEN | Stale — can close |
 | #290 | @anthropic-ai/sdk breaking | OPEN | Needs review |
 | #289 | typescript 5→6 MAJOR | OPEN | Needs dedicated session |
@@ -58,7 +58,7 @@
 1. **HeyGen integration** — install skills + CLI for AI avatar video. Needs: API key, avatar identity, script, destination
 2. **Landing page visual builder** (🎯 PRIORITY) — brainstorm first, admin drag-and-drop builder
 3. **Merge safe PRs** — #520, #287, #291, #562
-4. **MinIO VPS** → unblocks PR #357
+4. **MinIO VPS** — CANCELLED — replaced by Vercel Blob (PR #644)
 5. **Desktop hamburger PR** — held branch
 
 ## 🧠 Context for resuming

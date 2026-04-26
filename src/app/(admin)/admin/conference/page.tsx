@@ -655,16 +655,6 @@ export default function AdminConferencePage() {
                 >
                   📹 Join
                 </a>
-              ) : entry.jitsiRoom ? (
-                <a
-                  href={`https://meet.jit.si/${entry.jitsiRoom}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 font-body text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded px-2 py-1 hover:bg-[var(--app-card-bg)] transition-colors whitespace-nowrap"
-                  title={`https://meet.jit.si/${entry.jitsiRoom}`}
-                >
-                  ↗ Jitsi
-                </a>
               ) : (
                 <span className="font-body text-[12px] text-[var(--app-text-muted)]">—</span>
               )}
@@ -749,15 +739,6 @@ export default function AdminConferencePage() {
                   className="font-body text-[11px] text-brand-gold border border-brand-gold/30 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors"
                 >
                   📹 Join
-                </a>
-              ) : entry.jitsiRoom ? (
-                <a
-                  href={`https://meet.jit.si/${entry.jitsiRoom}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-body text-[11px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded-lg px-3 py-1.5 hover:bg-[var(--app-card-bg)] transition-colors"
-                >
-                  ↗ Jitsi
                 </a>
               ) : null}
               <button

@@ -31,8 +31,8 @@ const GUIDE_STEPS: GuideStep[] = [
       "If you don't see the signing link, check your email or ask your upline partner.",
       "Your commission rate is set at the time of invitation and reflected in the agreement.",
     ],
-    whereToFind: "Documents tab in your dashboard",
-    whereToFindHref: "/dashboard/reporting?tab=documents",
+    whereToFind: "Documents page in your dashboard",
+    whereToFindHref: "/dashboard/documents",
   },
   {
     id: "complete_profile",

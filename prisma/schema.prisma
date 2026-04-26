@@ -1549,7 +1549,7 @@ model BookingSlot {
   startsAt      DateTime
   endsAt        DateTime
   capacity      Int      @default(1)  // 1-5 seats
-  location      String   @default("jitsi") // jitsi, zoom, phone, other
+  location      String   @default("google_meet") // google_meet, zoom, phone, other
   title         String   @default("Partner Qualification Call")
   notes         String?
   status        String   @default("open") // open, closed, canceled
