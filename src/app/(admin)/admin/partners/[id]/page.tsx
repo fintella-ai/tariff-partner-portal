@@ -178,6 +178,7 @@ export default function PartnerDetailPage() {
   // fetched partner row; sent in the PUT payload when they change.
   const [tier, setTier] = useState<"l1" | "l2" | "l3">("l1");
   const [commissionRate, setCommissionRate] = useState<number>(0.25);
+  const [commissionEditMode, setCommissionEditMode] = useState(false);
 
   const fetchPartner = useCallback(async () => {
     try {
@@ -1118,10 +1119,9 @@ export default function PartnerDetailPage() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          {/* Tier — editable for super admins (Save commits) */}
           <div className="p-4 rounded-lg bg-brand-gold/[0.06] border border-brand-gold/20">
             <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Partner Tier</div>
-            {isSuperAdmin ? (
+            {isSuperAdmin && commissionEditMode ? (
               <select
                 value={tier}
                 onChange={(e) => setTier(e.target.value as "l1" | "l2" | "l3")}
@@ -1132,14 +1132,13 @@ export default function PartnerDetailPage() {
                 <option value="l3">L3</option>
               </select>
             ) : (
-              <div className="font-display text-xl font-bold text-brand-gold">{(partner.tier || "l1").toUpperCase()}</div>
+              <div className="font-display text-xl font-bold text-brand-gold">{(tier || "l1").toUpperCase()}</div>
             )}
           </div>
 
-          {/* Commission rate — editable for super admins */}
           <div className="p-4 rounded-lg" style={{ background: "var(--app-card-bg)", border: "1px solid var(--app-border)" }}>
             <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-1">Commission Rate</div>
-            {isSuperAdmin ? (
+            {isSuperAdmin && commissionEditMode ? (
               <div className="flex items-center gap-1">
                 <input
                   type="number"
@@ -1157,7 +1156,7 @@ export default function PartnerDetailPage() {
               </div>
             ) : (
               <div className="font-display text-xl font-bold text-brand-gold">
-                {partner.commissionRate ? `${Math.round(partner.commissionRate * 100)}%` : "25%"}
+                {commissionRate ? `${Math.round(commissionRate * 100)}%` : "25%"}
               </div>
             )}
             <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-0.5">of firm fee on direct deals</div>
@@ -1170,6 +1169,21 @@ export default function PartnerDetailPage() {
               Partner.l3Enabled column stays in the DB for rollback
               safety but is inert. */}
         </div>
+
+        {isSuperAdmin && (
+          <div className="mb-4">
+            <button
+              onClick={() => setCommissionEditMode((v) => !v)}
+              className={`font-body text-[12px] px-4 py-2 rounded-lg border transition-colors ${
+                commissionEditMode
+                  ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                  : "border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:border-brand-gold/40"
+              }`}
+            >
+              {commissionEditMode ? "🔒 Lock Editing" : "✏️ Edit Commission Structure"}
+            </button>
+          </div>
+        )}
 
         <div className="p-3 rounded-lg bg-brand-gold/[0.04] border border-brand-gold/10">
           <p className="font-body text-[11px] text-[var(--app-text-muted)] leading-relaxed">

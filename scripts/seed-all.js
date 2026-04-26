@@ -1224,6 +1224,17 @@ async function main() {
   }
   console.log("✓ Glossary terms: " + glossaryCreated + " created, " + (GLOSSARY_TERMS.length - glossaryCreated) + " already existed");
 
+  // ── Ensure all partners have payoutDownlineEnabled=true ────────────
+  var payoutFixed = await prisma.partner.updateMany({
+    where: { payoutDownlineEnabled: false },
+    data: { payoutDownlineEnabled: true },
+  });
+  if (payoutFixed.count > 0) {
+    console.log("✓ Enabled payoutDownlineEnabled for " + payoutFixed.count + " partner(s)");
+  } else {
+    console.log("✓ All partners already have payoutDownlineEnabled=true");
+  }
+
   console.log("\n✅ All seed data complete.");
 }
 
