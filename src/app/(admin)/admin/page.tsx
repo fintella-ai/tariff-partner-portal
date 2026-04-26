@@ -54,11 +54,9 @@ const INITIAL_STATS: Stats = {
   featureRequests: 0,
 };
 
-// Sections that the admin can reorder. `quickLinks` sits at the bottom
-// and isn't reorderable (it's a permanent "what to do next" footer).
-type SectionId = "stats" | "attention" | "activity" | "calendar";
-const DEFAULT_SECTION_ORDER: SectionId[] = ["stats", "attention", "activity", "calendar"];
-const LAYOUT_KEY = "fintella.admin.workspace.layout.v1";
+type SectionId = "stats" | "quicklinks" | "tasks_calendar" | "activity";
+const DEFAULT_SECTION_ORDER: SectionId[] = ["stats", "quicklinks", "tasks_calendar", "activity"];
+const LAYOUT_KEY = "fintella.admin.workspace.layout.v2";
 
 function readLayout(): SectionId[] {
   if (typeof window === "undefined") return DEFAULT_SECTION_ORDER;
@@ -424,21 +422,56 @@ export default function AdminWorkspacePage() {
         </div>
       </section>
     ),
-    attention: () => (
+    quicklinks: () => (
       <section
-        key="attention"
+        key="quicklinks"
         draggable={editMode}
-        onDragStart={(e) => onSectionDragStart(e, "attention")}
+        onDragStart={(e) => onSectionDragStart(e, "quicklinks")}
         onDragOver={onSectionDragOver}
-        onDrop={(e) => onSectionDrop(e, "attention")}
+        onDrop={(e) => onSectionDrop(e, "quicklinks")}
         className={`mb-6 ${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move" : ""}`}
       >
         {editMode && (
           <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">
-            ⋮⋮ Needs Attention — drag to reorder
+            ⋮⋮ Quick Links — drag to reorder
           </div>
         )}
-        {renderAttentionFeed()}
+        <div className="card p-4 sm:p-5">
+          <div className="font-body font-semibold text-sm mb-3">Quick Links</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <QuickLink href="/admin/support" label="+ New Ticket" icon="🎫" />
+            <QuickLink href="/admin/communications" label="Send SMS" icon="💬" />
+            <QuickLink href="/admin/communications" label="Send Email" icon="📧" />
+            <CopyLinkButton url="https://fintella.partners" label="Copy Landing Link" icon="🔗" />
+            <QuickLink href="/admin/applications" label="Partner Leads" icon="📩" />
+            <QuickLink href="/admin/partners" label="+ Invite Partner" icon="👥" />
+            {showPayoutsCard && <QuickLink href="/admin/payouts" label="Run Payout Batch" icon="💰" />}
+            <QuickLink href="/admin/conference" label="+ Live Weekly" icon="📹" />
+            <QuickLink href="https://app.heygen.com" label="HeyGen Studio" icon="🎬" />
+            <QuickLink href="https://admin.google.com" label="Google Admin" icon="🏢" />
+            <QuickLink href="https://console.cloud.google.com" label="Google Cloud" icon="☁️" />
+          </div>
+        </div>
+      </section>
+    ),
+    tasks_calendar: () => (
+      <section
+        key="tasks_calendar"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "tasks_calendar")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "tasks_calendar")}
+        className={`mb-6 ${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move" : ""}`}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">
+            ⋮⋮ Tasks + Calendar — drag to reorder
+          </div>
+        )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>{renderAttentionFeed()}</div>
+          <div><CalendarEmbed /></div>
+        </div>
       </section>
     ),
     activity: () => (
@@ -456,23 +489,6 @@ export default function AdminWorkspacePage() {
           </div>
         )}
         <ActivityTimeline refreshKey={lastRefreshed?.getTime() || 0} />
-      </section>
-    ),
-    calendar: () => (
-      <section
-        key="calendar"
-        draggable={editMode}
-        onDragStart={(e) => onSectionDragStart(e, "calendar")}
-        onDragOver={onSectionDragOver}
-        onDrop={(e) => onSectionDrop(e, "calendar")}
-        className={`mb-6 ${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move" : ""}`}
-      >
-        {editMode && (
-          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">
-            ⋮⋮ Calendar — drag to reorder
-          </div>
-        )}
-        <CalendarEmbed />
       </section>
     ),
   };
@@ -604,26 +620,8 @@ export default function AdminWorkspacePage() {
         </button>
       </div>
 
-      {/* Render the 3 reorderable sections in the admin's chosen order */}
+      {/* Render reorderable sections in the admin's chosen order */}
       {sectionOrder.map((id) => sectionRenderers[id]())}
-
-      {/* ═══ QUICK LINKS — pinned to the bottom, not reorderable ═══ */}
-      <div className="card p-4 sm:p-5">
-        <div className="font-body font-semibold text-sm mb-3">Quick Links</div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          <QuickLink href="/admin/support" label="+ New Ticket" icon="🎫" />
-          <QuickLink href="/admin/communications" label="Send SMS" icon="💬" />
-          <QuickLink href="/admin/communications" label="Send Email" icon="📧" />
-          <CopyLinkButton url="https://fintella.partners" label="Copy Landing Link" icon="🔗" />
-          <QuickLink href="/admin/applications" label="Partner Leads" icon="📩" />
-          <QuickLink href="/admin/partners" label="+ Invite Partner" icon="👥" />
-          {showPayoutsCard && <QuickLink href="/admin/payouts" label="Run Payout Batch" icon="💰" />}
-          <QuickLink href="/admin/conference" label="+ Live Weekly" icon="📹" />
-          <QuickLink href="https://app.heygen.com" label="HeyGen Studio" icon="🎬" />
-          <QuickLink href="https://admin.google.com" label="Google Admin" icon="🏢" />
-          <QuickLink href="https://console.cloud.google.com" label="Google Cloud" icon="☁️" />
-        </div>
-      </div>
 
       {/* Right-rail partner context drawer */}
       <PartnerContextDrawer
