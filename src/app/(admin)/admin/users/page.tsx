@@ -13,6 +13,28 @@ type AdminUser = {
   createdAt: string;
 };
 
+type InboxInfo = {
+  id: string;
+  role: string;
+  displayName: string;
+  workHours: Record<string, [string, string][]> | null;
+  timeZone: string;
+  googleCalendarConnectedAt: string | null;
+  acceptScheduledCalls: boolean;
+};
+
+const DOW = [
+  { key: "mon", label: "Monday" },
+  { key: "tue", label: "Tuesday" },
+  { key: "wed", label: "Wednesday" },
+  { key: "thu", label: "Thursday" },
+  { key: "fri", label: "Friday" },
+  { key: "sat", label: "Saturday" },
+  { key: "sun", label: "Sunday" },
+];
+const DEFAULT_START = "09:00";
+const DEFAULT_END = "17:00";
+
 const BASE_ROLES: { value: string; label: string }[] = [
   { value: "admin", label: "Admin" },
   { value: "accounting", label: "Accounting" },
@@ -82,6 +104,8 @@ export default function AdminUsersPage() {
   const [editPasswordVisible, setEditPasswordVisible] = useState(false);
   const [editCopyFeedback, setEditCopyFeedback] = useState<"idle" | "copied">("idle");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editInboxes, setEditInboxes] = useState<InboxInfo[]>([]);
+  const [editWorkHours, setEditWorkHours] = useState<Record<string, { enabled: boolean; start: string; end: string }>>({});
 
   const fetchUsers = useCallback(() => {
     fetch("/api/admin/users")
@@ -112,6 +136,31 @@ export default function AdminUsersPage() {
     setEditPassword("");
     setEditPasswordVisible(false);
     setEditCopyFeedback("idle");
+    setEditInboxes([]);
+    setEditWorkHours({});
+    fetch("/api/admin/inboxes")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data?.inboxes) return;
+        const assigned = (data.inboxes as any[]).filter((i: any) =>
+          Array.isArray(i.assignedAdminIds) && i.assignedAdminIds.includes(u.id)
+        );
+        setEditInboxes(assigned);
+        if (assigned.length > 0) {
+          const wh = assigned[0].workHours as Record<string, [string, string][]> | null;
+          const hours: Record<string, { enabled: boolean; start: string; end: string }> = {};
+          for (const d of DOW) {
+            const slots = wh?.[d.key];
+            if (slots && slots.length > 0) {
+              hours[d.key] = { enabled: true, start: slots[0][0], end: slots[0][1] };
+            } else {
+              hours[d.key] = { enabled: d.key !== "sat" && d.key !== "sun", start: DEFAULT_START, end: DEFAULT_END };
+            }
+          }
+          setEditWorkHours(hours);
+        }
+      })
+      .catch(() => {});
   }
 
   function closeEdit() {
@@ -168,8 +217,19 @@ export default function AdminUsersPage() {
         });
         if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || "Failed to reset password"); setSavingEdit(false); return; }
       }
-      if (!profileChanged && !roleChanged && !passwordChanged) {
-        alert("Nothing changed.");
+      if (editInboxes.length > 0 && Object.keys(editWorkHours).length > 0) {
+        const wh: Record<string, [string, string][]> = {};
+        for (const d of DOW) {
+          const h = editWorkHours[d.key];
+          if (h?.enabled) wh[d.key] = [[h.start, h.end]];
+        }
+        for (const inbox of editInboxes) {
+          await fetch("/api/admin/inboxes", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: inbox.id, workHours: wh }),
+          }).catch(() => {});
+        }
       }
       fetchUsers();
       closeEdit();
@@ -472,6 +532,59 @@ export default function AdminUsersPage() {
                 )}
               </div>
             </div>
+            {editInboxes.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-[var(--app-border)]">
+                <div className="font-body text-[11px] tracking-[1px] uppercase text-[var(--app-text-secondary)] mb-3">
+                  Working Hours / Availability
+                </div>
+                <div className="font-body text-[10px] theme-text-muted mb-3">
+                  Connected calendar{editInboxes.length > 1 ? "s" : ""}: {editInboxes.map((i) => i.displayName).join(", ")}
+                  {editInboxes.some((i) => i.googleCalendarConnectedAt) && (
+                    <span className="text-green-400 ml-1">● Calendar synced</span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {DOW.map((d) => {
+                    const h = editWorkHours[d.key] || { enabled: false, start: DEFAULT_START, end: DEFAULT_END };
+                    return (
+                      <div key={d.key} className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 w-24 shrink-0 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={h.enabled}
+                            onChange={(e) => setEditWorkHours((prev) => ({ ...prev, [d.key]: { ...h, enabled: e.target.checked } }))}
+                            className="w-4 h-4 rounded accent-[#c4a050]"
+                          />
+                          <span className={`font-body text-[12px] ${h.enabled ? "text-[var(--app-text)]" : "text-[var(--app-text-muted)] line-through"}`}>
+                            {d.label.slice(0, 3)}
+                          </span>
+                        </label>
+                        {h.enabled ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="time"
+                              value={h.start}
+                              onChange={(e) => setEditWorkHours((prev) => ({ ...prev, [d.key]: { ...h, start: e.target.value } }))}
+                              className="bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-md px-2 py-1.5 text-[12px] font-body text-[var(--app-text)]"
+                            />
+                            <span className="font-body text-[11px] theme-text-muted">to</span>
+                            <input
+                              type="time"
+                              value={h.end}
+                              onChange={(e) => setEditWorkHours((prev) => ({ ...prev, [d.key]: { ...h, end: e.target.value } }))}
+                              className="bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-md px-2 py-1.5 text-[12px] font-body text-[var(--app-text)]"
+                            />
+                          </div>
+                        ) : (
+                          <span className="font-body text-[11px] theme-text-muted">Off</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 mt-6">
               <button onClick={closeEdit} className="font-body text-[12px] px-4 py-2 theme-text-secondary hover:text-[var(--app-text)] transition">Cancel</button>
               <button onClick={saveEdit} disabled={savingEdit} className="btn-gold text-[12px] px-4 py-2 disabled:opacity-50">
