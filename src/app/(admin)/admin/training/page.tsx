@@ -673,7 +673,7 @@ export default function AdminTrainingPage() {
       const res = await fetch(`/api/admin/training/modules/${mod.id}/generate-heygen`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatarId: opts.avatarId, mode: opts.mode }),
+        body: JSON.stringify({ avatarId: opts.avatarId, voiceId: opts.voiceId, mode: opts.mode }),
       });
       const data = await res.json();
       if (data.success && data.videoUrl) {
