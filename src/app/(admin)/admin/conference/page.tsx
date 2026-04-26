@@ -515,37 +515,33 @@ export default function AdminConferencePage() {
                 placeholder="13"
               />
             </div>
-            {/* Join URL */}
+            {/* Google Meet info */}
+            <div className="sm:col-span-2 rounded-lg bg-green-500/[0.06] border border-green-500/20 px-4 py-3">
+              <div className="font-body text-[12px] text-green-400 font-semibold mb-1">Google Meet — Auto-Created</div>
+              <div className="font-body text-[11px] text-[var(--app-text-muted)]">
+                A Google Meet link is automatically generated when you click <strong>Sync to Calendar</strong> after creating this entry. No need to paste a URL — it's handled for you.
+              </div>
+            </div>
+            {/* Recording URL */}
             <div>
-              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Join URL (Zoom/Meet)</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Recording URL <span className="normal-case tracking-normal">(auto-imported from Drive, or paste manually)</span></label>
               <input
                 type="text"
-                value={formJoinUrl}
-                onChange={(e) => setFormJoinUrl(e.target.value)}
+                value={formRecordingUrl}
+                onChange={(e) => setFormRecordingUrl(e.target.value)}
                 className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
-                placeholder="https://zoom.us/j/..."
+                placeholder="Auto-imported from Google Drive, or paste URL"
               />
             </div>
             {/* Embed URL */}
             <div>
-              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Embed URL (YouTube/Vimeo)</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Embed URL <span className="normal-case tracking-normal">(YouTube/Vimeo for in-portal playback)</span></label>
               <input
                 type="text"
                 value={formEmbedUrl}
                 onChange={(e) => setFormEmbedUrl(e.target.value)}
                 className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
                 placeholder="https://www.youtube.com/embed/..."
-              />
-            </div>
-            {/* Recording URL */}
-            <div>
-              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Recording URL (External)</label>
-              <input
-                type="text"
-                value={formRecordingUrl}
-                onChange={(e) => setFormRecordingUrl(e.target.value)}
-                className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors"
-                placeholder="https://zoom.us/rec/share/..."
               />
             </div>
             {/* Schedule */}
