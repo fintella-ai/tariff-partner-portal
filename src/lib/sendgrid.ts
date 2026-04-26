@@ -1241,3 +1241,80 @@ If you didn't request this, you can safely ignore this email — your password w
     template: "password_reset",
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// No-show rebooking — sent when an application is marked as no_show.
+// Template key: no_show_rebooking. Falls back to hardcoded copy below.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export async function sendNoShowRebookingEmail(opts: {
+  toEmail: string;
+  toName: string | null;
+  rebookUrl: string;
+}): Promise<SendEmailResult> {
+  const name = opts.toName || "there";
+  const vars: Record<string, string> = {
+    firstName: name,
+    rebookUrl: opts.rebookUrl,
+    portalUrl: PORTAL_URL,
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+  };
+
+  const tpl = await loadTemplate("no_show_rebooking");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || "Reschedule Now",
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : opts.rebookUrl,
+    });
+    return sendEmail({
+      to: opts.toEmail,
+      toName: opts.toName || undefined,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "no_show_rebooking",
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+      replyTo: tpl.replyTo || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
+  const heading = "We missed you — let's reschedule";
+  const bodyHtml = `
+    <p>Hi ${escapeHtml(name)},</p>
+    <p>It looks like we weren't able to connect for your scheduled qualification call. No worries — we'd love to find another time that works for you.</p>
+    <p>Click the button below to pick a new time slot. It only takes a moment, and we're excited to walk you through the partner opportunity.</p>
+    <p style="font-size:12px;color:#888;">If you're no longer interested, you can simply ignore this email.</p>`;
+  const bodyText = `Hi ${name},
+
+It looks like we weren't able to connect for your scheduled qualification call. No worries — we'd love to find another time that works for you.
+
+Use the link below to pick a new time slot:
+${opts.rebookUrl}
+
+If you're no longer interested, you can simply ignore this email.`;
+
+  const { html, text } = emailShell({
+    preheader: `We missed your call — reschedule in one click.`,
+    heading,
+    bodyHtml,
+    bodyText,
+    ctaLabel: "Reschedule Now",
+    ctaUrl: opts.rebookUrl,
+  });
+
+  return sendEmail({
+    to: opts.toEmail,
+    toName: opts.toName || undefined,
+    subject: `We missed you — let's reschedule your ${FIRM_SHORT} call`,
+    html,
+    text,
+    template: "no_show_rebooking",
+  });
+}
