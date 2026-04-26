@@ -526,7 +526,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <NotificationBell draggable />
             </div>
           </div>
-          <div className="flex justify-center mt-2">
+          <div className="flex justify-end">
             <AdminPresenceBar />
           </div>
         </div>
