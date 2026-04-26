@@ -65,7 +65,7 @@ export const PERSONAS: Record<"finn" | "stella" | "tara" | "ollie", Persona> = {
     id: "stella",
     displayName: "Stella",
     role: "generalist",
-    avatarSrc: "/ai-avatars/stella.svg",
+    avatarSrc: "/ai-avatars/stella.png",
     accentHex: "#d8a5a5",
     tagline: "Warm, coaching. Walks you through it.",
     longDescription:
