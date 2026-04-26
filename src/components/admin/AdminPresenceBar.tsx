@@ -57,8 +57,8 @@ export default function AdminPresenceBar({ compact = false }: { compact?: boolea
   if (sorted.length === 0) return null;
 
   return (
-    <div className={`flex items-center gap-1 ${compact ? "px-1 py-1" : "px-2 py-1.5"}`}>
-      <span className="font-body text-[10px] text-[var(--app-text-muted)] mr-1">
+    <div className={`flex items-center gap-1 sm:gap-2 ${compact ? "px-1 py-1" : "px-2 py-1.5"}`}>
+      <span className="font-body text-[10px] sm:text-[13px] text-[var(--app-text-muted)] mr-1">
         Team:
       </span>
       {sorted.map((a) => {
@@ -71,7 +71,7 @@ export default function AdminPresenceBar({ compact = false }: { compact?: boolea
         return (
           <div key={a.id} className="relative" title={tooltip}>
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center font-body text-[10px] font-bold ${
+              className={`w-6 h-6 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-body text-[10px] sm:text-[16px] font-bold ${
                 a.online
                   ? "bg-green-500/20 text-green-400 border border-green-500/30"
                   : "bg-gray-500/10 text-gray-500 border border-gray-500/20"
@@ -81,18 +81,18 @@ export default function AdminPresenceBar({ compact = false }: { compact?: boolea
             </div>
             {/* Online/offline indicator dot */}
             <div
-              className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[var(--app-bg)] ${
+              className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 sm:w-3.5 sm:h-3.5 rounded-full border border-[var(--app-bg)] sm:border-2 ${
                 a.online ? "bg-green-500" : "bg-gray-500"
               }`}
             />
             {/* Live Chat availability — blue dot top-right */}
             {a.availableForChat && a.online && (
-              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500 border border-[var(--app-bg)]" />
+              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 sm:w-3.5 sm:h-3.5 rounded-full bg-blue-500 border border-[var(--app-bg)] sm:border-2" />
             )}
           </div>
         );
       })}
-      <span className="font-body text-[10px] text-[var(--app-text-muted)] ml-1">
+      <span className="font-body text-[10px] sm:text-[13px] text-[var(--app-text-muted)] ml-1">
         {online.length}/{sorted.length} online
       </span>
     </div>
