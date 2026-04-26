@@ -274,7 +274,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .then((data) => {
         if (!data) return;
         const agreementDone = data.steps?.some(
-          (s: any) => s.id === "sign_agreement" && s.completed
+          (s: any) => s.id === "sign_agreement" && s.done
         );
         if (!agreementDone) {
           router.replace("/dashboard/getting-started");
