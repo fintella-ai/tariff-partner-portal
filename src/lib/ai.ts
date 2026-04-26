@@ -558,6 +558,38 @@ In the meantime, you can:
           ? "(Looked up your data but couldn't compose a reply. Please try rephrasing.)"
           : "I don't have a response right now — please try again.");
 
+    // ── GAP DETECTION (Tara / product_specialist) ──
+    // When Tara's response contains phrases indicating she lacks knowledge,
+    // log a gap row so admins can identify training content holes.
+    if (resolvedPersona === "tara" && opts?.conversationId && opts?.userId) {
+      const GAP_INDICATORS = [
+        "i don't have that information",
+        "i don't have enough information",
+        "not covered in my knowledge base",
+        "i'm not sure about that",
+        "i don't have specific details",
+        "beyond what i currently know",
+        "i don't have access to that",
+        "not in my training materials",
+      ];
+      const lower = content.toLowerCase();
+      const isGap = GAP_INDICATORS.some((indicator) => lower.includes(indicator));
+      if (isGap) {
+        const lastUserMsg = history.filter((m) => m.role === "user").pop();
+        prisma.aiKnowledgeGap
+          .create({
+            data: {
+              conversationId: opts.conversationId,
+              messageId: "",
+              partnerCode: opts.userId,
+              question: lastUserMsg?.content.slice(0, 500) || "Unknown question",
+              taraResponse: content.slice(0, 500),
+            },
+          })
+          .catch(() => {}); // fire-and-forget — never block the response
+      }
+    }
+
     return {
       content,
       inputTokens,
