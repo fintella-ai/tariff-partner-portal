@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import PartnerLink from "@/components/ui/PartnerLink";
 import { linkifyDealMentions, type LinkifyDeal } from "@/lib/linkifyDeals";
+import AdminPresenceBar from "@/components/admin/AdminPresenceBar";
 
 type ChatSession = {
   id: string;
@@ -224,7 +225,12 @@ export default function LiveChatPanel() {
         </button>
       </div>
 
-      <div className="flex gap-4" style={{ height: "calc(100vh - 220px)", minHeight: 400 }}>
+      {/* Team presence — who else is online to help */}
+      <div className="mb-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-card-bg)]">
+        <AdminPresenceBar />
+      </div>
+
+      <div className="flex gap-4" style={{ height: "calc(100vh - 280px)", minHeight: 400 }}>
         {/* ── SESSION LIST (left panel — hidden on mobile when a session is selected) ── */}
         <div className={`${selectedId ? "hidden md:flex" : "flex"} w-full md:w-[320px] shrink-0 card flex-col overflow-hidden`}>
           {/* Filter tabs */}

@@ -15,6 +15,7 @@ import { reconcileNavOrder } from "@/lib/reconcileNavOrder";
 import { isStarSuperAdminEmail } from "@/lib/starSuperAdmin";
 import { EditLayoutProvider } from "@/components/admin/EditLayoutContext";
 import EditLayoutButton from "@/components/admin/EditLayoutButton";
+import AdminPresenceBar from "@/components/admin/AdminPresenceBar";
 
 type NavLeaf = { id: string; href: string; icon: string; label: string };
 type NavGroup = { id: string; icon: string; label: string; children: NavLeaf[] };
@@ -361,6 +362,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       })}
 
       <div className="flex-1" />
+
+      {/* Team presence — who's online right now */}
+      {!collapsed && <AdminPresenceBar />}
+      {collapsed && <AdminPresenceBar compact />}
 
       {/* Collapse toggle (desktop only) */}
       {device.isDesktop && (
