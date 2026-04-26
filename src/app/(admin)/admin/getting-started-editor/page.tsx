@@ -72,6 +72,7 @@ export default function GettingStartedEditorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState<{ tone: "ok" | "err"; msg: string } | null>(null);
+  const [generatingStepId, setGeneratingStepId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -218,6 +219,32 @@ export default function GettingStartedEditorPage() {
     }
   }
 
+  const handleGenerateHeyGen = async (stepId: string, title: string, description: string) => {
+    if (!confirm(`Generate a HeyGen avatar video for "${title}"? This takes 2-5 minutes and uses your HeyGen credits.`)) return;
+    setGeneratingStepId(stepId);
+    try {
+      const res = await fetch("/api/admin/getting-started/generate-heygen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stepId, title, description }),
+      });
+      const data = await res.json();
+      if (data.success && data.videoUrl) {
+        setOverrides((prev) => ({
+          ...prev,
+          [stepId]: { ...(prev[stepId] || {}), videoUrl: data.videoUrl },
+        }));
+        flash("ok", `Video ready for "${title}"! Save to apply.`);
+      } else {
+        flash("err", data.error || "Video generation failed.");
+      }
+    } catch {
+      flash("err", "Failed to generate HeyGen video.");
+    } finally {
+      setGeneratingStepId(null);
+    }
+  };
+
   // Build the merged step list in display order.
   const displaySteps = order.map((id) => {
     const builtIn = BUILT_IN_DEFAULTS.find((s) => s.id === id);
@@ -340,6 +367,8 @@ export default function GettingStartedEditorPage() {
                       onToggleHidden={() =>
                         updateOverride(item.id, { hidden: !hidden })
                       }
+                      generatingStepId={generatingStepId}
+                      onGenerateHeyGen={handleGenerateHeyGen}
                     />
                   );
                 }
@@ -388,6 +417,8 @@ function BuiltInStepCard({
   onChange,
   onClear,
   onToggleHidden,
+  generatingStepId,
+  onGenerateHeyGen,
 }: {
   index: number;
   total: number;
@@ -399,6 +430,8 @@ function BuiltInStepCard({
   onChange: (patch: Partial<StepOverride>) => void;
   onClear: (field: keyof StepOverride) => void;
   onToggleHidden: () => void;
+  generatingStepId: string | null;
+  onGenerateHeyGen: (stepId: string, title: string, description: string) => void;
 }) {
   return (
     <div
@@ -499,6 +532,37 @@ function BuiltInStepCard({
           onChange={(v) => (v ? onChange({ videoUrl: v }) : onClear("videoUrl"))}
           mono
         />
+        <div className="flex items-center gap-3 mt-2">
+          <button
+            type="button"
+            onClick={() =>
+              onGenerateHeyGen(
+                defaults.id,
+                override.title || defaults.title,
+                override.description || defaults.description
+              )
+            }
+            disabled={generatingStepId !== null}
+            className="font-body text-[11px] px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-colors disabled:opacity-40 flex items-center gap-1.5"
+          >
+            {generatingStepId === defaults.id ? (
+              <>Generating...</>
+            ) : (
+              <>Generate HeyGen Video</>
+            )}
+          </button>
+          {override.videoUrl && (
+            <a
+              href={override.videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-body text-[10px] text-brand-gold hover:underline truncate max-w-xs"
+            >
+              {override.videoUrl.slice(0, 60)}
+              {override.videoUrl.length > 60 ? "..." : ""}
+            </a>
+          )}
+        </div>
         {override.videoUrl && (
           <div className="mt-2 rounded-lg overflow-hidden border border-[var(--app-border)]" style={{ aspectRatio: "16/9", maxHeight: 200 }}>
             <iframe src={override.videoUrl.replace("watch?v=", "embed/").replace("youtu.be/", "youtube.com/embed/")} className="w-full h-full" allowFullScreen title="Step video preview" />
