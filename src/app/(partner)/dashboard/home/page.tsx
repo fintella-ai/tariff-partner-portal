@@ -84,6 +84,7 @@ interface LiveWeeklyCall {
   nextCall: string | null;
   hostName: string | null;
   jitsiRoom: string | null;
+  meetLink: string | null;
   joinUrl: string | null;
 }
 
@@ -215,6 +216,7 @@ export default function HomePage() {
             nextCall: a.nextCall ?? null,
             hostName: a.hostName ?? null,
             jitsiRoom: a.jitsiRoom ?? null,
+            meetLink: a.meetLink ?? null,
             joinUrl: a.joinUrl ?? null,
           });
         }
@@ -363,12 +365,11 @@ export default function HomePage() {
               </div>
             )}
             {(() => {
-              // Prefer the in-portal Jitsi room when one is configured;
-              // fall back to an external Zoom/Meet joinUrl; otherwise
-              // deep-link to the conference page which has its own
-              // Jitsi embed + external-link fallback.
-              const href = liveWeeklyCall.jitsiRoom
-                ? `https://meet.jit.si/${liveWeeklyCall.jitsiRoom}`
+              // Prefer a Google Meet link when one is configured;
+              // fall back to an external joinUrl; otherwise
+              // deep-link to the conference page.
+              const href = liveWeeklyCall.meetLink
+                ? liveWeeklyCall.meetLink
                 : (liveWeeklyCall.joinUrl || "/dashboard/conference");
               const external = href.startsWith("http");
               return (

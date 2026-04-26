@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fireWorkflowTrigger } from "@/lib/workflow-engine";
-import { buildJitsiUrl } from "@/lib/jitsi";
+
 
 export const dynamic = "force-dynamic";
 
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
       const fired = Array.isArray(conf.firedReminderWorkflows) ? (conf.firedReminderWorkflows as string[]) : [];
       if (fired.includes(wf.id)) continue;
 
-      const joinUrl = conf.jitsiRoom ? buildJitsiUrl(conf.jitsiRoom) : conf.joinUrl || "";
+      const joinUrl = conf.meetLink || conf.joinUrl || "";
       const conferencePayload = {
         id: conf.id,
         title: conf.title,

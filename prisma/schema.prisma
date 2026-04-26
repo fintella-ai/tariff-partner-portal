@@ -520,6 +520,7 @@ model ConferenceSchedule {
   // admin pushes the row to the configured shared Google Calendar.
   googleCalendarEventId  String?
   googleCalendarHtmlLink String?
+  meetLink               String?   // Google Meet URL auto-created on calendar sync
   // ── Reminder automation dedup ──
   // Array of Workflow IDs for trigger=conference.call_reminder that
   // have already fired for this row. Reset automatically when the row

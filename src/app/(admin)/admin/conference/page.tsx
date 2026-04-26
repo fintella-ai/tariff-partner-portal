@@ -22,6 +22,7 @@ type ConferenceEntry = {
   createdAt: string;
   updatedAt: string;
   jitsiRoom?: string | null;
+  meetLink?: string | null;
   googleCalendarEventId?: string | null;
   googleCalendarHtmlLink?: string | null;
 };
@@ -376,7 +377,7 @@ export default function AdminConferencePage() {
           <strong>Recording URL</strong> (or <strong>Embed URL</strong> for in-portal playback),
           fill in <strong>Duration</strong> and <strong>Notes</strong>, then flip <strong>Active</strong> off
           to move it to Past Recordings.{" "}
-          <span className="text-[var(--app-text-muted)]">(Auto-recording is a future upgrade — paid Jitsi JaaS can webhook the recording URL straight back here.)</span>
+          <span className="text-[var(--app-text-muted)]">(Auto-recording is a future upgrade.)</span>
         </div>
       </div>
 
@@ -567,12 +568,11 @@ export default function AdminConferencePage() {
                 placeholder="52 min"
               />
             </div>
-            {/* Jitsi Room Slug — partners join this room in-portal via iframe.
-                Leave blank on create and the server auto-generates a unique
-                slug from the id + week number. Admin can edit after create
-                to use a vanity slug (e.g. "fintella-weekly-301-update"). */}
+            {/* Room Slug (legacy Jitsi) — kept for backward compat.
+                Google Meet links are now auto-created when you click
+                "Sync to Calendar". */}
             <div className="sm:col-span-2">
-              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Jitsi Room Slug</label>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Room Slug (legacy)</label>
               <input
                 type="text"
                 value={formJitsiRoom}
@@ -580,16 +580,9 @@ export default function AdminConferencePage() {
                 className="w-full bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 font-body text-[13px] text-[var(--app-text)] focus:border-brand-gold/40 focus:outline-none transition-colors font-mono"
                 placeholder={editingItem ? "Leave blank to keep existing" : "Leave blank to auto-generate (recommended)"}
               />
-              {formJitsiRoom && (
-                <div className="mt-1.5 font-body text-[11px] text-[var(--app-text-muted)]">
-                  Partners join in-portal. Full URL: <span className="font-mono text-[var(--app-text-secondary)]">https://meet.jit.si/{formJitsiRoom}</span>
-                </div>
-              )}
-              {!formJitsiRoom && !editingItem && (
-                <div className="mt-1.5 font-body text-[11px] text-[var(--app-text-muted)]">
-                  A unique Jitsi slug is generated automatically from the week number when you save.
-                </div>
-              )}
+              <div className="mt-1.5 font-body text-[11px] text-[var(--app-text-muted)]">
+                Google Meet links are auto-created when you click <strong>Sync to Calendar</strong>. This slug is kept for backward compatibility only.
+              </div>
             </div>
             {/* Notes */}
             <div className="sm:col-span-2">
@@ -644,25 +637,25 @@ export default function AdminConferencePage() {
             <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{entry.weekNumber || "—"}</div>
             <div className="font-body text-[13px] text-[var(--app-text)] truncate">{entry.title}</div>
             <div>
-              {entry.jitsiRoom ? (
+              {(entry.meetLink || entry.joinUrl) ? (
+                <a
+                  href={entry.meetLink || entry.joinUrl!}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 font-body text-[10px] text-brand-gold border border-brand-gold/30 rounded px-2 py-1 hover:bg-brand-gold/10 transition-colors whitespace-nowrap"
+                  title={entry.meetLink || entry.joinUrl!}
+                >
+                  📹 Join
+                </a>
+              ) : entry.jitsiRoom ? (
                 <a
                   href={`https://meet.jit.si/${entry.jitsiRoom}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 font-body text-[10px] text-brand-gold border border-brand-gold/30 rounded px-2 py-1 hover:bg-brand-gold/10 transition-colors whitespace-nowrap"
+                  className="inline-flex items-center gap-1 font-body text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded px-2 py-1 hover:bg-[var(--app-card-bg)] transition-colors whitespace-nowrap"
                   title={`https://meet.jit.si/${entry.jitsiRoom}`}
                 >
-                  📹 Join
-                </a>
-              ) : entry.joinUrl ? (
-                <a
-                  href={entry.joinUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 font-body text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded px-2 py-1 hover:bg-[var(--app-card-bg)] transition-colors whitespace-nowrap"
-                  title={entry.joinUrl}
-                >
-                  ↗ Open
+                  ↗ Jitsi
                 </a>
               ) : (
                 <span className="font-body text-[12px] text-[var(--app-text-muted)]">—</span>
@@ -740,23 +733,23 @@ export default function AdminConferencePage() {
               <span>Notes: {entry.notes ? "✓" : "—"}</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {entry.jitsiRoom ? (
+              {(entry.meetLink || entry.joinUrl) ? (
                 <a
-                  href={`https://meet.jit.si/${entry.jitsiRoom}`}
+                  href={entry.meetLink || entry.joinUrl!}
                   target="_blank"
                   rel="noreferrer"
                   className="font-body text-[11px] text-brand-gold border border-brand-gold/30 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors"
                 >
                   📹 Join
                 </a>
-              ) : entry.joinUrl ? (
+              ) : entry.jitsiRoom ? (
                 <a
-                  href={entry.joinUrl}
+                  href={`https://meet.jit.si/${entry.jitsiRoom}`}
                   target="_blank"
                   rel="noreferrer"
                   className="font-body text-[11px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded-lg px-3 py-1.5 hover:bg-[var(--app-card-bg)] transition-colors"
                 >
-                  ↗ Open
+                  ↗ Jitsi
                 </a>
               ) : null}
               <button

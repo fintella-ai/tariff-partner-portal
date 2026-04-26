@@ -199,7 +199,7 @@ export default function AdminBookingSlotsPage() {
               onChange={(e) => setForm({ ...form, location: e.target.value })}
               className="w-full theme-input rounded-lg px-3 py-2"
             >
-              <option value="jitsi">Jitsi (auto-generated)</option>
+              <option value="jitsi">Google Meet (auto)</option>
               <option value="zoom">Zoom (manual link)</option>
               <option value="phone">Phone</option>
               <option value="other">Other</option>
@@ -276,7 +276,7 @@ function SlotRow({
             {fmtDateTime(slot.startsAt)} — {fmtDateTime(slot.endsAt)}
           </div>
           <div className="text-xs text-[var(--app-text-muted)] mt-1">
-            {slot.location}{slot.jitsiRoom ? ` · ${slot.jitsiRoom}` : ""}
+            {slot.location === "jitsi" ? "Google Meet" : slot.location}{slot.jitsiRoom ? ` · ${slot.jitsiRoom}` : ""}
           </div>
           {slot.notes && (
             <div className="text-xs text-[var(--app-text-muted)] mt-1 italic">{slot.notes}</div>

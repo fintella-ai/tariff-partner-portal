@@ -191,9 +191,15 @@ export async function createCalendarEvent(input: CalendarEventInput): Promise<Ca
     end: { dateTime: input.endIso, timeZone: "UTC" },
     attendees: (input.attendeeEmails || []).map((email) => ({ email })),
     reminders: { useDefault: true },
+    conferenceData: {
+      createRequest: {
+        requestId: `fintella-global-${Date.now()}`,
+        conferenceSolutionKey: { type: "hangoutsMeet" },
+      },
+    },
   };
 
-  const res = await fetch(`${CAL_BASE}/calendars/${calendarId}/events`, {
+  const res = await fetch(`${CAL_BASE}/calendars/${calendarId}/events?conferenceDataVersion=1`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -202,8 +208,16 @@ export async function createCalendarEvent(input: CalendarEventInput): Promise<Ca
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`google-calendar: create event failed (${res.status}): ${await res.text()}`);
-  const data = (await res.json()) as { id: string; htmlLink?: string };
-  return { id: data.id, htmlLink: data.htmlLink, demo: false };
+  const data = (await res.json()) as {
+    id: string;
+    htmlLink?: string;
+    hangoutLink?: string;
+    conferenceData?: { entryPoints?: Array<{ uri?: string; entryPointType?: string }> };
+  };
+  const meetLink = data.hangoutLink
+    || data.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri
+    || undefined;
+  return { id: data.id, htmlLink: data.htmlLink, meetLink, demo: false };
 }
 
 export async function updateCalendarEvent(
@@ -223,16 +237,30 @@ export async function updateCalendarEvent(
     start: { dateTime: input.startIso, timeZone: "UTC" },
     end: { dateTime: input.endIso, timeZone: "UTC" },
     attendees: (input.attendeeEmails || []).map((email) => ({ email })),
+    conferenceData: {
+      createRequest: {
+        requestId: `fintella-global-${Date.now()}`,
+        conferenceSolutionKey: { type: "hangoutsMeet" },
+      },
+    },
   };
 
-  const res = await fetch(`${CAL_BASE}/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, {
+  const res = await fetch(`${CAL_BASE}/calendars/${calendarId}/events/${encodeURIComponent(eventId)}?conferenceDataVersion=1`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`google-calendar: update event failed (${res.status}): ${await res.text()}`);
-  const data = (await res.json()) as { id: string; htmlLink?: string };
-  return { id: data.id, htmlLink: data.htmlLink, demo: false };
+  const data = (await res.json()) as {
+    id: string;
+    htmlLink?: string;
+    hangoutLink?: string;
+    conferenceData?: { entryPoints?: Array<{ uri?: string; entryPointType?: string }> };
+  };
+  const meetLink = data.hangoutLink
+    || data.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri
+    || undefined;
+  return { id: data.id, htmlLink: data.htmlLink, meetLink, demo: false };
 }
 
 export async function deleteCalendarEvent(eventId: string): Promise<{ deleted: boolean; demo: boolean }> {
