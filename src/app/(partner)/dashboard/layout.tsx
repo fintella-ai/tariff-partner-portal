@@ -268,7 +268,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!session?.user) return;
-    const isGettingStarted = pathname === "/dashboard/getting-started";
+    if (pathname !== "/dashboard/home") return;
     fetch("/api/partner/getting-started", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -276,7 +276,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const agreementDone = data.steps?.some(
           (s: any) => s.id === "sign_agreement" && s.completed
         );
-        if (!agreementDone && !isGettingStarted) {
+        if (!agreementDone) {
           router.replace("/dashboard/getting-started");
         }
       })
