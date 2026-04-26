@@ -837,28 +837,113 @@ async function main() {
   console.log("✓ " + smsTemplates.length + " SMS templates seeded (all disabled pending A2P)");
 
   // ── Cleanup: legacy shadow email workflows (2026-04-24) ────────────────
-  //
-  // Earlier we seeded 5 "Default — ..." workflows that mirrored hardcoded
-  // sendXxxEmail calls. Enabling any of them would DOUBLE-SEND because the
-  // hardcoded path was never removed. Since they shipped `enabled: false`
-  // they never fired — but they cluttered the workflow list and invited
-  // admin misfires. Delete them. Admins who want workflow-driven versions
-  // can always recreate from scratch. Transactional sends continue firing
-  // from the hardcoded helpers (which already consult EmailTemplate for
-  // editable copy).
-  const SHADOW_WORKFLOW_IDS = [
-    "default-email-welcome",
-    "default-email-agreement-ready",
-    "default-email-agreement-signed",
-    "default-email-deal-status-update",
-    "default-email-commission-paid",
+  // ── Workflow-driven email sends ──────────────────────────────────────
+  // These replace the hardcoded sendXxxEmail() calls. Each workflow fires
+  // from an existing trigger point and sends via the email.send action
+  // using the matching EmailTemplate. Idempotent upsert by ID.
+  const WORKFLOWS = [
+    {
+      id: "wf-welcome-email",
+      name: "Welcome Email",
+      description: "Send welcome email + SMS when a new partner signs up",
+      triggerKey: "partner.created",
+      enabled: true,
+      actions: [
+        { type: "email.send", config: { templateKey: "welcome", recipientType: "partner" } },
+        { type: "sms.send", config: { templateKey: "welcome", recipientType: "partner" } },
+      ],
+    },
+    {
+      id: "wf-signup-notification",
+      name: "Signup Notification to Inviter",
+      description: "Notify the upline partner when their recruit signs up",
+      triggerKey: "partner.created",
+      enabled: true,
+      actions: [
+        { type: "email.send", config: { templateKey: "signup_notification", recipientType: "inviter" } },
+        { type: "sms.send", config: { templateKey: "signup_notification", recipientType: "inviter" } },
+      ],
+    },
+    {
+      id: "wf-agreement-ready",
+      name: "Agreement Ready Email",
+      description: "Send agreement signing link when admin dispatches SignWell",
+      triggerKey: "partner.agreement_sent",
+      enabled: true,
+      actions: [
+        { type: "email.send", config: { templateKey: "agreement_ready", recipientType: "partner" } },
+        { type: "sms.send", config: { templateKey: "agreement_ready", recipientType: "partner" } },
+      ],
+    },
+    {
+      id: "wf-agreement-signed",
+      name: "Agreement Signed Confirmation",
+      description: "Welcome-aboard email when partner signs agreement and is activated",
+      triggerKey: "partner.activated",
+      enabled: true,
+      actions: [
+        { type: "email.send", config: { templateKey: "agreement_signed", recipientType: "partner" } },
+        { type: "notification.create", config: { type: "partner_activated", recipientType: "partner" } },
+      ],
+    },
+    {
+      id: "wf-deal-status-update",
+      name: "Deal Status Update Email",
+      description: "Notify submitting partner when their deal stage changes",
+      triggerKey: "deal.stage_changed",
+      enabled: true,
+      actions: [
+        { type: "email.send", config: { templateKey: "deal_status_update", recipientType: "deal_partner" } },
+      ],
+    },
+    {
+      id: "wf-commission-paid",
+      name: "Commission Payment Notification",
+      description: "Notify partner when commission is paid via payout batch",
+      triggerKey: "commission.paid",
+      enabled: true,
+      actions: [
+        { type: "email.send", config: { templateKey: "commission_payment_notification", recipientType: "partner" } },
+      ],
+    },
+    {
+      id: "wf-channel-invite",
+      name: "Channel Invite Email",
+      description: "Notify partner when added to an announcement channel",
+      triggerKey: "partner.added_to_channel",
+      enabled: true,
+      actions: [
+        { type: "email.send", config: { templateKey: "partner_added_to_channel", recipientType: "partner" } },
+      ],
+    },
+    {
+      id: "wf-monthly-newsletter",
+      name: "Monthly Newsletter",
+      description: "Monthly partner newsletter sent on 1st of each month via cron",
+      triggerKey: "newsletter.monthly",
+      enabled: true,
+      actions: [
+        { type: "email.send", config: { templateKey: "monthly_newsletter", recipientType: "all_active_partners" } },
+      ],
+    },
   ];
-  const shadowDelete = await prisma.workflow.deleteMany({
-    where: { id: { in: SHADOW_WORKFLOW_IDS } },
-  });
-  if (shadowDelete.count > 0) {
-    console.log("✓ Removed " + shadowDelete.count + " legacy shadow email workflows");
+  for (var wf of WORKFLOWS) {
+    await prisma.workflow.upsert({
+      where: { id: wf.id },
+      update: {},
+      create: {
+        id: wf.id,
+        name: wf.name,
+        description: wf.description,
+        triggerKey: wf.triggerKey,
+        enabled: wf.enabled,
+        actions: wf.actions,
+        conditions: [],
+        triggerConfig: {},
+      },
+    });
   }
+  console.log("✓ Workflows seeded: " + WORKFLOWS.length + " (all enabled)");
 
   // ── Training Modules ─────────────────────────────────────────────────
   // Core onboarding + product training. Idempotent upsert by ID so admin

@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendMonthlyNewsletterToAllPartners } from "@/lib/sendgrid";
+import { prisma } from "@/lib/prisma";
+import { fireWorkflowTrigger } from "@/lib/workflow-engine";
 
 /**
  * GET /api/cron/monthly-newsletter
  *
- * Vercel Cron target. Fires on the 1st of each month at 14:00 UTC
- * (configured in vercel.json "crons"). Iterates every active partner
- * and sends one email using the `monthly_newsletter` EmailTemplate row,
- * so super admins can edit the body from /admin/communications Templates.
- *
- * Auth: Vercel Cron pings arrive with a CRON_SECRET header. If the
- * env var is set we require a match. If it's unset (dev/demo), we
- * allow anyone — same pattern as the rest of our env-gated features.
+ * Vercel Cron target. Fires on the 1st of each month at 14:00 UTC.
+ * Now workflow-driven: fires the `newsletter.monthly` trigger for each
+ * active partner. The workflow engine handles email sending via the
+ * email.send action + monthly_newsletter EmailTemplate.
  */
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -22,6 +19,30 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const result = await sendMonthlyNewsletterToAllPartners();
-  return NextResponse.json({ ok: true, ...result, firedAt: new Date().toISOString() });
+  const now = new Date();
+  const month = now.toLocaleString("en-US", { month: "long" });
+  const year = now.getFullYear();
+
+  const partners = await prisma.partner.findMany({
+    where: { status: "active" },
+    select: { partnerCode: true, firstName: true, lastName: true, email: true },
+  });
+
+  let fired = 0;
+  for (const partner of partners) {
+    await fireWorkflowTrigger("newsletter.monthly", {
+      partner,
+      month,
+      year,
+      portalUrl: process.env.NEXTAUTH_URL || "https://fintella.partners",
+    });
+    fired++;
+  }
+
+  return NextResponse.json({
+    ok: true,
+    fired,
+    totalPartners: partners.length,
+    firedAt: now.toISOString(),
+  });
 }

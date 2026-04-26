@@ -33,6 +33,7 @@ export const TRIGGER_KEYS = [
   "sms.opt_out",
   "email.sent",
   "email.failed",
+  "newsletter.monthly",
 ] as const;
 
 export type TriggerKey = (typeof TRIGGER_KEYS)[number];
@@ -58,6 +59,7 @@ export const TRIGGER_LABELS: Record<TriggerKey, string> = {
   "sms.opt_out":                "Partner Replied STOP",
   "email.sent":                 "Email Sent (outbound)",
   "email.failed":               "Email Failed / Skipped",
+  "newsletter.monthly":         "Monthly Newsletter (cron)",
 };
 
 // ─── Action types ─────────────────────────────────────────────────────────────
@@ -102,6 +104,7 @@ export const TRIGGER_DESCRIPTIONS: Record<TriggerKey, string> = {
   "sms.opt_out":                "Fires when a partner replies STOP and their smsOptIn flag flips false.",
   "email.sent":                 "Fires after any outbound email is accepted by SendGrid (status=sent). Does NOT fire for demo-mode or failed sends. Use to chain follow-ups (e.g. notify admin when the welcome email reaches a new partner).",
   "email.failed":               "Fires when an outbound email either errors out or is skipped by the demo gate. Payload includes the error reason — handy for admin notifications when transactional mail can't leave.",
+  "newsletter.monthly":         "Fires on the 1st of each month via Vercel cron. One trigger per active partner. Payload includes partner info + month/year. Actions can send email, SMS, or notifications.",
 };
 
 export const ACTION_DESCRIPTIONS: Record<ActionType, string> = {
@@ -296,6 +299,15 @@ export const TRIGGER_VARIABLES: Record<TriggerKey, TriggerVariable[]> = {
     { token: "{partner.partnerCode}", description: "Partner who replied STOP",        example: "PTNJD8K3F" },
     { token: "{partner.firstName}",   description: "First name",                      example: "Jane" },
     { token: "{partner.mobilePhone}", description: "Partner's mobile in E.164",       example: "+14105551234" },
+  ],
+  "newsletter.monthly": [
+    { token: "{partner.partnerCode}", description: "Partner code",                    example: "PTNJD8K3F" },
+    { token: "{partner.firstName}",   description: "First name",                      example: "Jane" },
+    { token: "{partner.lastName}",    description: "Last name",                       example: "Smith" },
+    { token: "{partner.email}",       description: "Partner email",                   example: "jane@firm.com" },
+    { token: "{month}",              description: "Current month name",               example: "April" },
+    { token: "{year}",               description: "Current year",                     example: "2026" },
+    { token: "{portalUrl}",          description: "Portal base URL",                  example: "https://fintella.partners" },
   ],
 };
 
