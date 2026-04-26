@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 interface GuideStep {
   id: string;
@@ -10,6 +11,7 @@ interface GuideStep {
   details: string[];
   tips?: string[];
   whereToFind: string;
+  whereToFindHref: string;
 }
 
 const GUIDE_STEPS: GuideStep[] = [
@@ -30,6 +32,7 @@ const GUIDE_STEPS: GuideStep[] = [
       "Your commission rate is set at the time of invitation and reflected in the agreement.",
     ],
     whereToFind: "Documents tab in your dashboard",
+    whereToFindHref: "/dashboard/reporting?tab=documents",
   },
   {
     id: "complete_profile",
@@ -48,6 +51,7 @@ const GUIDE_STEPS: GuideStep[] = [
       "You can update your information anytime, but changes to your legal name may require a new agreement.",
     ],
     whereToFind: "Settings → Address tab",
+    whereToFindHref: "/dashboard/settings?tab=address",
   },
   {
     id: "add_payout",
@@ -68,6 +72,7 @@ const GUIDE_STEPS: GuideStep[] = [
       "You can change your payout method at any time without affecting pending commissions.",
     ],
     whereToFind: "Settings → Payout Information tab",
+    whereToFindHref: "/dashboard/settings?tab=payout",
   },
   {
     id: "watch_video",
@@ -85,6 +90,7 @@ const GUIDE_STEPS: GuideStep[] = [
       "Share the video with any downline partners you recruit — it's the fastest way to get them up to speed.",
     ],
     whereToFind: "Home page (top of dashboard)",
+    whereToFindHref: "/dashboard/home",
   },
   {
     id: "join_call",
@@ -104,6 +110,7 @@ const GUIDE_STEPS: GuideStep[] = [
       "Add the call to your calendar directly from the Conference page.",
     ],
     whereToFind: "Conference page in your dashboard sidebar",
+    whereToFindHref: "/dashboard/conference",
   },
   {
     id: "complete_training",
@@ -123,6 +130,7 @@ const GUIDE_STEPS: GuideStep[] = [
       "The FAQ section answers the most common questions partners and clients ask.",
     ],
     whereToFind: "Partner Training page in your dashboard sidebar",
+    whereToFindHref: "/dashboard/training",
   },
   {
     id: "share_link",
@@ -142,6 +150,7 @@ const GUIDE_STEPS: GuideStep[] = [
       "You can create different invite links for downline partners with different commission rates — but your client referral link is always the same.",
     ],
     whereToFind: "Referral Links page in your dashboard sidebar",
+    whereToFindHref: "/dashboard/referral-links",
   },
   {
     id: "submit_client",
@@ -163,6 +172,7 @@ const GUIDE_STEPS: GuideStep[] = [
       "Check the Reporting tab regularly to see where your deals stand and when commissions are due.",
     ],
     whereToFind: "Submit Client page in your dashboard sidebar",
+    whereToFindHref: "/dashboard/submit-client",
   },
   {
     id: "invite_downline",
@@ -184,6 +194,7 @@ const GUIDE_STEPS: GuideStep[] = [
       "Help your recruits complete their own Getting Started checklist — the faster they're active, the sooner you both earn.",
     ],
     whereToFind: "Referral Links page → Downline section",
+    whereToFindHref: "/dashboard/referral-links",
   },
 ];
 
@@ -278,9 +289,12 @@ export function GettingStartedGuide() {
                       <span className="font-body text-[11px] uppercase tracking-[1px] text-[var(--app-text-muted)]">
                         Where to find it:
                       </span>
-                      <span className="font-body text-[12px] sm:text-[13px] font-medium text-[var(--app-text)]">
-                        {step.whereToFind}
-                      </span>
+                      <Link
+                        href={step.whereToFindHref}
+                        className="font-body text-[12px] sm:text-[13px] font-medium text-brand-gold hover:text-brand-gold/80 underline underline-offset-2 transition-colors"
+                      >
+                        {step.whereToFind} →
+                      </Link>
                     </div>
                   </div>
                 </div>
