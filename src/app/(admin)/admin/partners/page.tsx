@@ -118,18 +118,18 @@ export default function AdminPartnersPage() {
   // column-width hook below can key off it.
   const [showBulk, setShowBulk] = useState(false);
   const bulkOn = canBulkAct && showBulk;
-  // 10 columns when bulk-select is on: [select] + Partner, Level, Code,
-  // Phone, Email, Status, Agreement, W9, Joined.
-  //  9 columns without:            Partner, Level, Code, Phone, Email,
-  //                                Status, Agreement, W9, Joined.
+  // 11 columns when bulk-select is on: [select] + Partner, Level, Referred By,
+  // Code, Phone, Email, Status, Agreement, W9, Joined, Score, Tier.
+  // 10 columns without: Partner, Level, Referred By, Code, Phone, Email,
+  //                      Status, Agreement, W9, Joined, Score, Tier.
   // Storage key flips with `bulkOn` so the width map for 10-col vs 9-col
   // modes stays distinct and the layout never lands on a mismatched
   // array length after toggling.
   const { columnWidths: partnerCols, getResizeHandler: partnerResize } = useResizableColumns(
     bulkOn
-      ? [36, 180, 70, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80]
-      : [180, 70, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80],
-    { storageKey: bulkOn ? "partners-v7-bulk" : "partners-v7" }
+      ? [36, 180, 70, 130, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80]
+      : [180, 70, 130, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80],
+    { storageKey: bulkOn ? "partners-v8-bulk" : "partners-v8" }
   );
   const partnerGridCols = partnerCols.map((w) => `${w}px`).join(" ");
 
@@ -1275,6 +1275,7 @@ export default function AdminPartnersPage() {
                 { label: "__select", col: null },
                 { label: "Partner", col: "name" as SortCol },
                 { label: "Level", col: null },
+                { label: "Referred By", col: null },
                 { label: "Code", col: "code" as SortCol },
                 { label: "Phone", col: null },
                 { label: "Email", col: null },
@@ -1288,6 +1289,7 @@ export default function AdminPartnersPage() {
               ]) : ([
                 { label: "Partner", col: "name" as SortCol },
                 { label: "Level", col: null },
+                { label: "Referred By", col: null },
                 { label: "Code", col: "code" as SortCol },
                 { label: "Phone", col: null },
                 { label: "Email", col: null },
@@ -1349,6 +1351,22 @@ export default function AdminPartnersPage() {
                   <div className="font-body text-[13px] text-[var(--app-text)] font-medium truncate text-left">{p.firstName} {p.lastName}</div>
                   <div className="text-center">
                     <LevelTag tier={p.tier} />
+                  </div>
+                  <div className="font-body text-[12px] text-center truncate">
+                    {(() => {
+                      if (!p.referredByPartnerCode) return <span className="text-[var(--app-text-muted)]">—</span>;
+                      const upline = partnersByCode[p.referredByPartnerCode];
+                      if (!upline) return <span className="text-[var(--app-text-muted)]">{p.referredByPartnerCode}</span>;
+                      return (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); router.push(`/admin/partners/${upline.id}`); }}
+                          className="text-brand-gold hover:underline truncate"
+                          title={`${upline.firstName} ${upline.lastName} (${upline.partnerCode})`}
+                        >
+                          {upline.firstName} {upline.lastName}
+                        </button>
+                      );
+                    })()}
                   </div>
                   <div className="font-mono text-[12px] text-[var(--app-text-secondary)] text-center">{p.partnerCode}</div>
                   <div className="font-mono text-[12px] truncate text-center">
