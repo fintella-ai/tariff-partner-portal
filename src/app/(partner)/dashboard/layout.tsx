@@ -692,8 +692,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div
           className={`sticky top-0 z-40 -mx-4 sm:-mx-10 lg:-mx-24 px-4 sm:px-10 lg:px-24 py-3 mb-5 bg-[var(--app-bg)]/85 backdrop-blur-md border-b border-[var(--app-border)] ${device.isMobile ? "hidden" : ""}`}
         >
-          <div className="flex items-center justify-between gap-2 sm:gap-3">
-            {/* Left: Submit Client + Referral Links */}
+          <div className="relative flex items-center justify-center gap-2 sm:gap-3">
+            {/* Center: Submit Client + Referral Links */}
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => navigate("/dashboard/submit-client")}
@@ -716,8 +716,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 👥 Referral Links
               </button>
             </div>
-            {/* Right: Support + NotificationBell (moved out of floating fixed corner) */}
-            <div className="flex items-center gap-2">
+            {/* Right: Support + NotificationBell */}
+            <div className="absolute right-4 sm:right-8 lg:right-12 flex items-center gap-2">
               <a
                 href="/dashboard/support"
                 className="relative font-body text-sm border rounded-lg px-3 py-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 backdrop-blur-sm bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-300"
