@@ -359,10 +359,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <div className="flex-1" />
 
-      {/* Team presence — who's online right now */}
-      {!collapsed && <AdminPresenceBar />}
-      {collapsed && <AdminPresenceBar compact />}
-
       {/* Collapse toggle (desktop only) */}
       {device.isDesktop && (
         <button
@@ -529,6 +525,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </a>
               <NotificationBell draggable />
             </div>
+          </div>
+          <div className="flex justify-center mt-2">
+            <AdminPresenceBar />
           </div>
         </div>
         {children}

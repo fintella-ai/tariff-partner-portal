@@ -3,8 +3,6 @@ import { Suspense, useState, lazy } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import SupportTicketsPanel from "./SupportTicketsPanel";
 import LiveChatPanel from "../chat/LiveChatPanel";
-import AdminPresenceBar from "@/components/admin/AdminPresenceBar";
-
 const FeatureRequestsPanel = lazy(() => import("../features/page"));
 const KnowledgeGapsPanel = lazy(() => import("../knowledge-gaps/page"));
 
@@ -32,10 +30,6 @@ function SupportHostInner() {
 
   return (
     <div>
-      {/* Team presence — who else is available for support */}
-      <div className="mb-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-card-bg)]">
-        <AdminPresenceBar />
-      </div>
       <div className="flex gap-2 mb-6 overflow-x-auto">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => onSelect(t.id)}
