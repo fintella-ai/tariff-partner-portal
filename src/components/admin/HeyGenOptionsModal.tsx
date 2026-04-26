@@ -3,16 +3,13 @@
 import { useState } from "react";
 
 const AVATARS = [
-  { id: "b0ba68d56d5442218d36fb3b0d147174", label: "Finn 1" },
-  { id: "a3ef369298a240ceacf9ecfdc9541c28", label: "Finn 2" },
-  { id: "aa2dd1a105af49e1badbf2897b48bc1d", label: "Finn 3" },
-  { id: "4034585d952f41f8be2a233e67bdc49f", label: "Stella 1" },
-  { id: "841df1a7215b47668a170e906ec33869", label: "Stella 2" },
-  { id: "11541cbc1f14401287542b69788c577a", label: "Stella 3" },
-  { id: "49b8df134d7d4e68b2c72888aa70a4eb", label: "Stella 4" },
-  { id: "e5bbc883bef84935a353cecdec0fb997", label: "Avatar 1" },
-  { id: "83e7064aac6e4899853d3d04cb5794cc", label: "Avatar 2" },
-  { id: "0396d7a22e7b4e58807fc047a58c4ab3", label: "Avatar 3" },
+  { id: "b0ba68d56d5442218d36fb3b0d147174", label: "Finn 1", voiceId: "tVgPKoOCpWKacRjAv4kz" },
+  { id: "a3ef369298a240ceacf9ecfdc9541c28", label: "Finn 2", voiceId: "tVgPKoOCpWKacRjAv4kz" },
+  { id: "aa2dd1a105af49e1badbf2897b48bc1d", label: "Finn 3", voiceId: "tVgPKoOCpWKacRjAv4kz" },
+  { id: "4034585d952f41f8be2a233e67bdc49f", label: "Stella 1", voiceId: "71ab24286a02428f8b6bea5e52a802f2" },
+  { id: "841df1a7215b47668a170e906ec33869", label: "Stella 2", voiceId: "71ab24286a02428f8b6bea5e52a802f2" },
+  { id: "11541cbc1f14401287542b69788c577a", label: "Stella 3", voiceId: "71ab24286a02428f8b6bea5e52a802f2" },
+  { id: "49b8df134d7d4e68b2c72888aa70a4eb", label: "Stella 4", voiceId: "71ab24286a02428f8b6bea5e52a802f2" },
 ];
 
 export type VideoMode = "avatar" | "slides";
@@ -20,6 +17,7 @@ export type VideoMode = "avatar" | "slides";
 export interface HeyGenOptions {
   mode: VideoMode;
   avatarId?: string;
+  voiceId?: string;
 }
 
 interface Props {
@@ -120,7 +118,14 @@ export default function HeyGenOptionsModal({ title, onConfirm, onCancel }: Props
           </button>
           <button
             type="button"
-            onClick={() => onConfirm({ mode, avatarId: mode === "avatar" ? avatarId : undefined })}
+            onClick={() => {
+              const selected = AVATARS.find((a) => a.id === avatarId);
+              onConfirm({
+                mode,
+                avatarId: mode === "avatar" ? avatarId : undefined,
+                voiceId: mode === "avatar" ? selected?.voiceId : undefined,
+              });
+            }}
             className="flex-1 font-body text-[12px] px-3 py-2 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30 transition-colors font-medium"
           >
             Generate

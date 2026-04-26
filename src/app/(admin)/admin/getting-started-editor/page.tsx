@@ -227,7 +227,7 @@ export default function GettingStartedEditorPage() {
       const res = await fetch("/api/admin/getting-started/generate-heygen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stepId, title, description, avatarId: opts.avatarId, mode: opts.mode }),
+        body: JSON.stringify({ stepId, title, description, avatarId: opts.avatarId, voiceId: opts.voiceId, mode: opts.mode }),
       });
       const data = await res.json();
       if (data.success && data.videoUrl) {

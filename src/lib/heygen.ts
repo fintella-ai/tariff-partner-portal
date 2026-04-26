@@ -11,9 +11,8 @@
 const HEYGEN_API_KEY = process.env.HEYGEN_API_KEY || "";
 const HEYGEN_BASE = "https://api.heygen.com";
 
-// Default avatar + voice — admin can override via PortalSettings later
-const DEFAULT_AVATAR_ID = process.env.HEYGEN_AVATAR_ID || "e5bbc883bef84935a353cecdec0fb997";
-const DEFAULT_VOICE_ID = process.env.HEYGEN_VOICE_ID || "2d5b0e6cf36f460aa7fc47e3eee4ba54";
+const DEFAULT_AVATAR_ID = process.env.HEYGEN_AVATAR_ID || "b0ba68d56d5442218d36fb3b0d147174";
+const DEFAULT_VOICE_ID = process.env.HEYGEN_VOICE_ID || "tVgPKoOCpWKacRjAv4kz";
 
 function headers() {
   return {
