@@ -167,6 +167,7 @@ export interface CalendarEventInput {
 export interface CalendarEventResult {
   id: string;
   htmlLink?: string;
+  meetLink?: string;
   demo: boolean;
 }
 
@@ -376,7 +377,7 @@ export async function createEventOnInboxCalendar(
   const token = await getAccessTokenForInbox(refreshToken, inboxId);
   if (!token) return null;
 
-  const body = {
+  const body: Record<string, unknown> = {
     summary: input.summary,
     description: input.description
       ? `${input.description}${input.joinUrl ? `\n\nJoin here: ${input.joinUrl}` : ""}`
@@ -386,9 +387,15 @@ export async function createEventOnInboxCalendar(
     end: { dateTime: input.endIso, timeZone: "UTC" },
     attendees: (input.attendeeEmails || []).map((email) => ({ email })),
     reminders: { useDefault: true },
+    conferenceData: {
+      createRequest: {
+        requestId: `fintella-${inboxId}-${Date.now()}`,
+        conferenceSolutionKey: { type: "hangoutsMeet" },
+      },
+    },
   };
 
-  const res = await fetch(`${CAL_BASE}/calendars/primary/events`, {
+  const res = await fetch(`${CAL_BASE}/calendars/primary/events?conferenceDataVersion=1`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -402,8 +409,16 @@ export async function createEventOnInboxCalendar(
     );
     return null;
   }
-  const data = (await res.json()) as { id: string; htmlLink?: string };
-  return { id: data.id, htmlLink: data.htmlLink, demo: false };
+  const data = (await res.json()) as {
+    id: string;
+    htmlLink?: string;
+    hangoutLink?: string;
+    conferenceData?: { entryPoints?: Array<{ uri?: string; entryPointType?: string }> };
+  };
+  const meetLink = data.hangoutLink
+    || data.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri
+    || undefined;
+  return { id: data.id, htmlLink: data.htmlLink, meetLink, demo: false };
 }
 
 export function invalidateCachedAccessToken(): void {

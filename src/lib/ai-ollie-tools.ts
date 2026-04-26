@@ -1256,6 +1256,7 @@ async function bookSlot(
             calendarEventStatus,
             calendarEventId: calendarEvent?.id ?? null,
             calendarEventLink: calendarEvent?.htmlLink ?? null,
+            meetLink: calendarEvent?.meetLink ?? null,
           },
         },
         select: { id: true, createdAt: true },
@@ -1323,7 +1324,8 @@ async function bookSlot(
     calendarEventStatus,
     calendarEventId: calendarEvent?.id ?? null,
     calendarEventLink: calendarEvent?.htmlLink ?? null,
-    note: `Slot booked — ${recipientEmails.length} admin${recipientEmails.length === 1 ? "" : "s"} notified. ${calendarNote}`,
+    meetLink: calendarEvent?.meetLink ?? null,
+    note: `Slot booked — ${recipientEmails.length} admin${recipientEmails.length === 1 ? "" : "s"} notified. ${calendarNote}${calendarEvent?.meetLink ? ` Google Meet link: ${calendarEvent.meetLink}` : ""}`,
   });
 }
 
