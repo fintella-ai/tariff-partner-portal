@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/sendgrid";
+import { checkAuthRateLimit } from "@/lib/auth-rate-limit";
 
 const TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -19,6 +20,15 @@ const PORTAL_URL =
  * The token email is sent in the background for real matches only.
  */
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const limit = checkAuthRateLimit(ip);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { message: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((limit.retryAfterMs || 60000) / 1000)) } }
+    );
+  }
+
   let email: string;
   try {
     const body = await req.json();

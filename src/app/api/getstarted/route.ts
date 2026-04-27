@@ -4,6 +4,7 @@ import { normalizePhone } from "@/lib/format";
 import { sendForSigning, buildPartnerTemplateFields } from "@/lib/signwell";
 import { hashSync } from "bcryptjs";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
+import { checkAuthRateLimit } from "@/lib/auth-rate-limit";
 
 function generatePartnerCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -47,6 +48,15 @@ export async function GET(req: NextRequest) {
  * Creates partner + sends 25% SignWell agreement.
  */
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const limit = checkAuthRateLimit(ip);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((limit.retryAfterMs || 60000) / 1000)) } }
+    );
+  }
+
   try {
     const body = await req.json();
     const { token, firstName, lastName, email, phone, mobilePhone, companyName, password, emailOptIn, smsOptIn } = body;
