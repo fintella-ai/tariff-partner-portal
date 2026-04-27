@@ -1318,3 +1318,85 @@ If you're no longer interested, you can simply ignore this email.`;
     template: "no_show_rebooking",
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Agreement reminder — nudges partners who haven't signed yet.
+// Template key: agreement_reminder. Falls back to hardcoded copy below.
+// Called by /api/cron/reminders when partner.agreement_reminder workflow fires.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export async function sendAgreementReminderEmail(opts: {
+  toEmail: string;
+  toName: string | null;
+  signingUrl: string;
+  daysSinceSent: number;
+}): Promise<SendEmailResult> {
+  const name = opts.toName || "there";
+  const vars: Record<string, string> = {
+    firstName: name,
+    signingUrl: opts.signingUrl,
+    daysSinceSent: String(opts.daysSinceSent),
+    portalUrl: PORTAL_URL,
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+  };
+
+  const tpl = await loadTemplate("agreement_reminder");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || "Sign Agreement",
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : opts.signingUrl,
+    });
+    return sendEmail({
+      to: opts.toEmail,
+      toName: opts.toName || undefined,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "agreement_reminder",
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+      replyTo: tpl.replyTo || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
+  const heading = "Your partnership agreement is waiting";
+  const bodyHtml = `
+    <p>Hi ${escapeHtml(name)},</p>
+    <p>We sent your ${escapeHtml(FIRM_SHORT)} partnership agreement ${opts.daysSinceSent} day${opts.daysSinceSent === 1 ? "" : "s"} ago and haven't received your signature yet.</p>
+    <p>Signing takes less than two minutes and unlocks your partner portal — including your referral links, commission tracking, and training resources.</p>
+    <p>Click the button below to review and sign your agreement now.</p>
+    <p style="font-size:12px;color:#888;">If you have questions, reply to this email or use the live chat in your portal.</p>`;
+  const bodyText = `Hi ${name},
+
+We sent your ${FIRM_SHORT} partnership agreement ${opts.daysSinceSent} day${opts.daysSinceSent === 1 ? "" : "s"} ago and haven't received your signature yet.
+
+Signing takes less than two minutes and unlocks your partner portal.
+
+Sign now: ${opts.signingUrl}
+
+If you have questions, reply to this email or use the live chat in your portal.`;
+
+  const { html, text } = emailShell({
+    preheader: `Your ${FIRM_SHORT} agreement is waiting for your signature.`,
+    heading,
+    bodyHtml,
+    bodyText,
+    ctaLabel: "Sign Agreement",
+    ctaUrl: opts.signingUrl,
+  });
+
+  return sendEmail({
+    to: opts.toEmail,
+    toName: opts.toName || undefined,
+    subject: `Reminder: Your ${FIRM_SHORT} partnership agreement is waiting`,
+    html,
+    text,
+    template: "agreement_reminder",
+  });
+}

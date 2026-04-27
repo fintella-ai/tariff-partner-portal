@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { checkAuthRateLimit } from "@/lib/auth-rate-limit";
 
 /**
  * GET /api/auth/reset-password?token=XXX
@@ -26,6 +27,15 @@ export async function GET(req: NextRequest) {
  * (Partner or User). Deletes the token after use.
  */
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const limit = checkAuthRateLimit(ip);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((limit.retryAfterMs || 60000) / 1000)) } }
+    );
+  }
+
   let token: string;
   let password: string;
   try {
