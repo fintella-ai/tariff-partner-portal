@@ -35,6 +35,10 @@ export default function MyLeadsPage() {
   const [loading, setLoading] = useState(true);
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [showForm, setShowForm] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ imported: number; errors: number } | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -96,13 +100,74 @@ export default function MyLeadsPage() {
             Track your prospects from first contact to firm submission. Your personal sales pipeline.
           </p>
         </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90"
-        >
-          + New Lead
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowBulk((v) => !v)}
+            className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-[var(--app-text-secondary)] text-sm hover:bg-[var(--app-input-bg)] transition"
+          >
+            📋 Bulk Import
+          </button>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90"
+          >
+            + New Lead
+          </button>
+        </div>
       </div>
+
+      {/* Bulk Import */}
+      {showBulk && (
+        <div className="card p-5 mb-6">
+          <h3 className="font-body font-semibold text-sm mb-2">Bulk Import Leads</h3>
+          <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-3">
+            Paste your client list — one per line. Format: <code className="text-[var(--app-text-secondary)]">Company Name, Contact Name, Email, Phone</code> (phone optional)
+          </p>
+          <textarea
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            className="w-full theme-input rounded-lg px-3 py-2 text-sm min-h-[120px] resize-y font-mono"
+            placeholder={"Acme Imports, Jane Smith, jane@acme.com, 555-123-4567\nGlobal Trade Co, Bob Jones, bob@globaltrade.com\nPacific Freight, Sarah Lee, sarah@pacfreight.com, 555-987-6543"}
+          />
+          {bulkResult && (
+            <div className={`mt-2 p-2 rounded-lg text-sm ${bulkResult.errors > 0 ? "bg-yellow-500/10 text-yellow-400" : "bg-green-500/10 text-green-400"}`}>
+              Imported {bulkResult.imported} leads{bulkResult.errors > 0 ? `, ${bulkResult.errors} skipped (missing required fields)` : ""}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 mt-3">
+            <button onClick={() => { setShowBulk(false); setBulkText(""); setBulkResult(null); }} className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-muted)]">Cancel</button>
+            <button
+              disabled={bulkImporting || !bulkText.trim()}
+              onClick={async () => {
+                setBulkImporting(true);
+                setBulkResult(null);
+                const lines = bulkText.trim().split("\n").filter(Boolean);
+                let imported = 0;
+                let errors = 0;
+                for (const line of lines) {
+                  const parts = line.split(",").map((s) => s.trim());
+                  const [companyName, contactName, contactEmail, contactPhone] = parts;
+                  if (!companyName || !contactName) { errors++; continue; }
+                  try {
+                    const res = await fetch("/api/partner/prospects", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ companyName, contactName, contactEmail, contactPhone, source: "other" }),
+                    });
+                    if (res.ok) imported++; else errors++;
+                  } catch { errors++; }
+                }
+                setBulkResult({ imported, errors });
+                setBulkImporting(false);
+                if (imported > 0) fetchProspects();
+              }}
+              className="px-5 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+            >
+              {bulkImporting ? "Importing..." : `Import ${bulkText.trim().split("\n").filter(Boolean).length} Leads`}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Pipeline Stats */}
       <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-6">
