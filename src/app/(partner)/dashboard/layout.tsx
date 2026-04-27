@@ -42,6 +42,7 @@ const MAIN_NAV: Array<{
   { id: "downline", href: "/dashboard/downline", icon: "👥", label: "Downline", shortLabel: "Team", parentId: "reporting" },
   { id: "commissions", href: "/dashboard/commissions", icon: "💲", label: "Commissions", shortLabel: "Earn", parentId: "reporting" },
   { id: "my-leads", href: "/dashboard/my-leads", icon: "🎯", label: "My Leads", shortLabel: "Leads" },
+  { id: "earnings-calculator", href: "/dashboard/earnings-calculator", icon: "🧮", label: "Earnings Calculator", shortLabel: "Calc" },
   { id: "referral-links", href: "/dashboard/referral-links", icon: "🔗", label: "Referral Links", shortLabel: "Links" },
   {
     id: "communications",
