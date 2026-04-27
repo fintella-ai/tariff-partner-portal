@@ -86,9 +86,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
 
-    // Check email not already registered
+    // Check email not already registered — if pending, return their existing signing URL
     const existing = await prisma.partner.findFirst({ where: { email } });
-    if (existing) return NextResponse.json({ error: "This email is already registered as a partner" }, { status: 400 });
+    if (existing) {
+      if (existing.status === "pending") {
+        const agreement = await prisma.partnershipAgreement.findFirst({
+          where: { partnerCode: existing.partnerCode },
+          orderBy: { version: "desc" },
+          select: { embeddedSigningUrl: true, status: true },
+        });
+        return NextResponse.json({
+          success: true,
+          partnerCode: existing.partnerCode,
+          embeddedSigningUrl: agreement?.embeddedSigningUrl || null,
+          message: "Your account already exists. Please sign your partnership agreement to activate.",
+          alreadyExists: true,
+        }, { status: 200 });
+      }
+      return NextResponse.json({ error: "This email is already registered as a partner. Please log in instead." }, { status: 400 });
+    }
 
     // Generate unique partner code
     let partnerCode = generatePartnerCode();
