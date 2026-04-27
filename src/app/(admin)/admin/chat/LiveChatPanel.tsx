@@ -239,11 +239,11 @@ export default function LiveChatPanel() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`font-body text-[11px] px-3 py-1.5 rounded-full transition capitalize ${
+                className={`font-body text-[11px] px-3 py-1.5 rounded-full transition ${
                   filter === f ? "bg-brand-gold/20 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
                 }`}
               >
-                {f} {f === "active" && totalUnread > 0 ? `(${totalUnread})` : ""}
+                {f === "closed" ? "Resolved" : f === "active" ? "Active" : "All"} {f === "active" && totalUnread > 0 ? `(${totalUnread})` : ""}
               </button>
             ))}
           </div>
@@ -314,14 +314,14 @@ export default function LiveChatPanel() {
                 </div>
                 <div className="flex gap-2">
                   {detail.status === "active" && (
-                    <button onClick={handleClose} className="font-body text-[11px] text-[var(--app-text-muted)] border border-[var(--app-border)] rounded-lg px-3 py-1.5 hover:text-red-400 hover:border-red-400/30 transition-colors">
-                      Close Chat
+                    <button onClick={handleClose} className="font-body text-[11px] text-green-400 border border-green-500/30 rounded-lg px-3 py-1.5 hover:bg-green-500/10 transition-colors">
+                      ✓ Resolve
                     </button>
                   )}
                   <span className={`inline-block rounded-full px-2.5 py-1 font-body text-[10px] font-semibold tracking-wider uppercase ${
                     detail.status === "active" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]"
                   }`}>
-                    {detail.status}
+                    {detail.status === "closed" ? "Resolved" : detail.status}
                   </span>
                 </div>
               </div>

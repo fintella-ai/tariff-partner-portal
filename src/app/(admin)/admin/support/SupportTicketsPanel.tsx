@@ -227,11 +227,6 @@ export default function SupportTicketsPanel() {
               Mark Resolved
             </button>
           )}
-          {detail.status !== "closed" && (
-            <button onClick={() => updateStatus("closed")} className="font-body text-xs px-3 py-1.5 rounded-lg bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text)] transition">
-              Close Ticket
-            </button>
-          )}
           {detail.status === "resolved" && (
             <button onClick={() => updateStatus("open")} className="font-body text-xs px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition">
               Reopen
@@ -262,7 +257,7 @@ export default function SupportTicketsPanel() {
         </div>
 
         {/* Reply */}
-        {detail.status !== "closed" && (
+        {detail.status !== "resolved" && (
           <div className="card p-4">
             <textarea
               className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-4 py-3 text-[var(--app-text)] font-body text-sm outline-none focus:border-brand-gold/40 transition-colors placeholder:text-[var(--app-text-muted)] min-h-[100px] resize-y mb-3"
