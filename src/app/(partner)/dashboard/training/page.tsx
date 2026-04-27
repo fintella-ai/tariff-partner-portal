@@ -59,7 +59,7 @@ interface GlossaryEntry {
 /* -------------------------------------------------------------------------- */
 
 /** Top-level section tabs. */
-type Section = "modules" | "resources" | "faq" | "glossary";
+type Section = "modules" | "resources" | "faq" | "glossary" | "rebuttals";
 
 /** Module category filter options. */
 const MODULE_CATEGORIES = ["All", "Onboarding", "Sales", "Product Knowledge", "Tools"];
@@ -159,6 +159,15 @@ export default function TrainingPage() {
   const [glossary, setGlossary] = useState<GlossaryEntry[]>([]);
   const [glossarySearch, setGlossarySearch] = useState("");
 
+  /* ---- Rebuttals state ---- */
+  type RebuttalItem = { id: string; objection: string; approvedResponse: string | null; category: string; usageCount: number };
+  type MyRebuttal = { id: string; objection: string; suggestedResponse: string | null; status: string; createdAt: string };
+  const [approvedRebuttals, setApprovedRebuttals] = useState<RebuttalItem[]>([]);
+  const [myRebuttals, setMyRebuttals] = useState<MyRebuttal[]>([]);
+  const [rebuttalForm, setRebuttalForm] = useState({ objection: "", suggestedResponse: "", category: "general" });
+  const [rebuttalSaving, setRebuttalSaving] = useState(false);
+  const [rebuttalSearch, setRebuttalSearch] = useState("");
+
   /* ---- Video modal state ---- */
   const [videoModal, setVideoModal] = useState<{ isOpen: boolean; url: string; title: string }>({
     isOpen: false,
@@ -182,11 +191,12 @@ export default function TrainingPage() {
 
     async function fetchData() {
       try {
-        const [modulesRes, resourcesRes, faqRes, glossaryRes] = await Promise.allSettled([
+        const [modulesRes, resourcesRes, faqRes, glossaryRes, rebuttalsRes] = await Promise.allSettled([
           fetch("/api/training/modules"),
           fetch("/api/training/resources"),
           fetch("/api/training/faq"),
           fetch("/api/training/glossary"),
+          fetch("/api/partner/rebuttals"),
         ]);
 
         if (cancelled) return;
@@ -221,6 +231,13 @@ export default function TrainingPage() {
           setGlossary(data.entries ?? []);
         } else {
           setGlossary([]);
+        }
+
+        // Rebuttals
+        if (rebuttalsRes.status === "fulfilled" && rebuttalsRes.value.ok) {
+          const data = await rebuttalsRes.value.json();
+          setApprovedRebuttals(data.rebuttals ?? []);
+          setMyRebuttals(data.mySubmissions ?? []);
         }
       } catch {
         // Complete failure — use all demo data
@@ -371,6 +388,7 @@ export default function TrainingPage() {
           { key: "resources" as Section, label: "Resources" },
           { key: "faq" as Section, label: "FAQ" },
           { key: "glossary" as Section, label: "Glossary" },
+          { key: "rebuttals" as Section, label: "Rebuttals" },
         ]).map((tab) => (
           <button
             key={tab.key}
@@ -792,6 +810,146 @@ export default function TrainingPage() {
               </div>
             );
           })()}
+        </>
+      )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/*  Rebuttals                                                          */}
+      {/* ------------------------------------------------------------------ */}
+      {!loading && activeSection === "rebuttals" && (
+        <>
+          {/* Submit Rebuttal Form */}
+          <div className="bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-xl p-5 mb-6">
+            <h3 className="font-display text-base font-bold text-[var(--app-text)] mb-3">Submit an Objection</h3>
+            <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-4">
+              Encountered a new objection from a prospect? Submit it here and our team will craft an approved response. Once approved, all partners and AI assistants can use it.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">What did the prospect say? *</label>
+                <textarea
+                  value={rebuttalForm.objection}
+                  onChange={(e) => setRebuttalForm((f) => ({ ...f, objection: e.target.value }))}
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-4 py-3 font-body text-sm text-[var(--app-text)] outline-none focus:border-brand-gold/40 min-h-[60px] resize-y"
+                  placeholder={`e.g. "We don't import from China so IEEPA doesn't affect us"`}
+                />
+              </div>
+              <div>
+                <label className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">Your suggested response (optional)</label>
+                <textarea
+                  value={rebuttalForm.suggestedResponse}
+                  onChange={(e) => setRebuttalForm((f) => ({ ...f, suggestedResponse: e.target.value }))}
+                  className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-4 py-3 font-body text-sm text-[var(--app-text)] outline-none focus:border-brand-gold/40 min-h-[60px] resize-y"
+                  placeholder="How did you respond, or how would you suggest responding?"
+                />
+              </div>
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <label className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1 block">Category</label>
+                  <select
+                    value={rebuttalForm.category}
+                    onChange={(e) => setRebuttalForm((f) => ({ ...f, category: e.target.value }))}
+                    className="w-full bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2 font-body text-sm text-[var(--app-text)]"
+                  >
+                    <option value="eligibility">Eligibility</option>
+                    <option value="pricing">Pricing / Cost</option>
+                    <option value="trust">Trust / Legitimacy</option>
+                    <option value="competition">Competition</option>
+                    <option value="timing">Timing</option>
+                    <option value="general">General</option>
+                  </select>
+                </div>
+                <button
+                  onClick={async () => {
+                    if (!rebuttalForm.objection.trim()) return;
+                    setRebuttalSaving(true);
+                    try {
+                      const res = await fetch("/api/partner/rebuttals", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(rebuttalForm),
+                      });
+                      if (res.ok) {
+                        setRebuttalForm({ objection: "", suggestedResponse: "", category: "general" });
+                        const data = await fetch("/api/partner/rebuttals").then((r) => r.json());
+                        setApprovedRebuttals(data.rebuttals ?? []);
+                        setMyRebuttals(data.mySubmissions ?? []);
+                      }
+                    } finally { setRebuttalSaving(false); }
+                  }}
+                  disabled={rebuttalSaving || !rebuttalForm.objection.trim()}
+                  className="px-5 py-2.5 rounded-lg bg-brand-gold/20 text-brand-gold border border-brand-gold/30 font-body text-sm font-semibold hover:bg-brand-gold/30 transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  {rebuttalSaving ? "Submitting…" : "Submit Objection"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* My Submissions */}
+          {myRebuttals.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-display text-sm font-bold text-[var(--app-text)] mb-3">Your Submissions ({myRebuttals.length})</h3>
+              <div className="space-y-2">
+                {myRebuttals.map((r) => (
+                  <div key={r.id} className="bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg px-4 py-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase border ${
+                        r.status === "approved" ? "bg-green-500/10 text-green-400 border-green-500/20"
+                        : r.status === "rejected" ? "bg-red-500/10 text-red-400 border-red-500/20"
+                        : "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
+                      }`}>{r.status}</span>
+                    </div>
+                    <div className="font-body text-[13px] text-[var(--app-text)]">&ldquo;{r.objection}&rdquo;</div>
+                    {r.suggestedResponse && (
+                      <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-1">Your suggestion: {r.suggestedResponse}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Approved Rebuttals Library */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display text-sm font-bold text-[var(--app-text)]">Approved Rebuttals ({approvedRebuttals.length})</h3>
+              <input
+                type="search"
+                value={rebuttalSearch}
+                onChange={(e) => setRebuttalSearch(e.target.value)}
+                placeholder="Search objections…"
+                className="bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2 font-body text-[12px] text-[var(--app-text)] outline-none focus:border-brand-gold/40 w-64"
+              />
+            </div>
+            {approvedRebuttals.length === 0 ? (
+              <div className="bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-xl p-8 text-center">
+                <div className="text-3xl mb-2">🛡️</div>
+                <div className="font-display text-base font-bold text-[var(--app-text)] mb-1">Rebuttal library is building</div>
+                <div className="font-body text-[12px] text-[var(--app-text-muted)]">
+                  Submit objections you encounter and the team will craft approved responses. Ask Tara for help with any objection in the meantime.
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {approvedRebuttals
+                  .filter((r) => !rebuttalSearch.trim() || r.objection.toLowerCase().includes(rebuttalSearch.toLowerCase()) || r.approvedResponse?.toLowerCase().includes(rebuttalSearch.toLowerCase()))
+                  .map((r) => (
+                    <div key={r.id} className="bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-xl p-5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="inline-block rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase border bg-brand-gold/10 text-brand-gold border-brand-gold/20 capitalize">{r.category}</span>
+                        {r.usageCount > 0 && <span className="font-body text-[10px] theme-text-faint">Used {r.usageCount}×</span>}
+                      </div>
+                      <div className="font-body text-[13px] text-red-400 mb-2">&ldquo;{r.objection}&rdquo;</div>
+                      <div className="font-body text-[13px] text-[var(--app-text-secondary)] bg-green-500/5 border border-green-500/10 rounded-lg p-3">
+                        <div className="font-body text-[10px] uppercase tracking-wider text-green-400 mb-1 font-semibold">Approved Response</div>
+                        {r.approvedResponse}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
         </>
       )}
 

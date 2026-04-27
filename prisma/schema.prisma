@@ -1561,6 +1561,27 @@ model DevIdea {
   @@index([priority])
 }
 
+// ─── REBUTTALS ──────────────────────────────────────────────────────────
+// Partner-submitted objections from the field. Admin reviews and approves
+// → approved rebuttals are auto-ingested into Tara's knowledge base.
+model Rebuttal {
+  id               String   @id @default(cuid())
+  objection        String   // what the prospect said
+  suggestedResponse String? // partner's suggested response
+  approvedResponse String?  // admin-edited final response
+  category         String   @default("general") // eligibility, pricing, trust, competition, timing, general
+  submittedBy      String   // partnerCode
+  submittedByName  String?
+  status           String   @default("pending") // pending, approved, rejected
+  adminNotes       String?
+  usageCount       Int      @default(0) // how many times Tara cited this
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([status])
+  @@index([category])
+}
+
 // ─── PARTNER LEAD LIST ──────────────────────────────────────────────────
 // Admin-managed prospecting list. Stores potential partners to invite
 // later. No automation until the admin clicks "Send Invite" which

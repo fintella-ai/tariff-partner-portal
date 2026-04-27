@@ -19,7 +19,7 @@ import { getKnowledgeVersion } from "./ai-knowledge-version";
 export async function buildProductSpecialistPrompt(): Promise<Anthropic.Messages.TextBlockParam> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  const [version, modules, resources, faqs, glossary, meetingRecordings, callRecordings] = await Promise.all([
+  const [version, modules, resources, faqs, glossary, meetingRecordings, callRecordings, rebuttals] = await Promise.all([
     getKnowledgeVersion(),
     prisma.trainingModule.findMany({
       where: { published: true },
@@ -70,6 +70,11 @@ export async function buildProductSpecialistPrompt(): Promise<Anthropic.Messages
       select: { recordingTranscript: true, createdAt: true },
       orderBy: { createdAt: "desc" },
       take: 20,
+    }),
+    prisma.rebuttal.findMany({
+      where: { status: "approved" },
+      orderBy: [{ category: "asc" }, { usageCount: "desc" }],
+      select: { objection: true, approvedResponse: true, category: true },
     }),
   ]);
 
@@ -135,6 +140,17 @@ export async function buildProductSpecialistPrompt(): Promise<Anthropic.Messages
           )
           .join("\n\n")
       : "(no recent call recordings transcribed)",
+    "",
+    "# Objection Rebuttals (partner-submitted, admin-approved)",
+    "When a partner asks how to handle a specific objection from a prospect, check this section first. Cite the rebuttal and adapt it to the conversation context.",
+    rebuttals.length
+      ? rebuttals
+          .map(
+            (r) =>
+              `### Objection [${r.category}]: "${r.objection}"\n\n**Response:** ${r.approvedResponse}`
+          )
+          .join("\n\n")
+      : "(no approved rebuttals yet — encourage partners to submit objections they encounter)",
   ].join("\n\n");
 
   return {
