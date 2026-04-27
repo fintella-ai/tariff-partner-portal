@@ -79,8 +79,11 @@ export async function POST(req: NextRequest) {
     if (!firstName || !lastName || !email || !password) {
       return NextResponse.json({ error: "First name, last name, email, and password are required" }, { status: 400 });
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Please enter a valid email address" }, { status: 400 });
+    }
+    if (password.length < 8) {
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
 
     // Check email not already registered
@@ -128,41 +131,55 @@ export async function POST(req: NextRequest) {
     const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
     const templateId = settings?.agreementTemplate25 || undefined;
 
-    // Send partnership agreement via SignWell
+    // Send partnership agreement via SignWell — if this fails, roll back
+    // the partner + invite so they can retry instead of being stuck pending.
     const partnerName = `${firstName.trim()} ${lastName.trim()}`;
-    const templateFields = buildPartnerTemplateFields({
-      partnerCode,
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      fullName: partnerName,
-      email: email.trim(),
-      phone: phone?.trim(),
-      companyName: companyName?.trim(),
-      commissionRate: invite.commissionRate,
-    });
-    // SignWell templates define 2 placeholders: the Partner + a Fintella
-    // cosigner. Mirror the admin send flow — if PortalSettings has the
-    // firm signer configured, append them as the cosigner. Without this,
-    // SignWell 422s with "missing_placeholder_names: fintella".
-    const recipients: Array<{ id: string; email: string; name: string; role: string }> = [
-      { id: partnerCode, email: email.trim(), name: partnerName, role: "Partner" },
-    ];
-    if (settings?.fintellaSignerEmail && settings?.fintellaSignerName) {
-      recipients.push({
-        id: "fintella_cosigner",
-        email: settings.fintellaSignerEmail,
-        name: settings.fintellaSignerName,
-        role: settings.fintellaSignerPlaceholder || "Fintella",
+    let documentId: string | null | undefined = null;
+    let embeddedSigningUrl: string | null | undefined = null;
+    let cosignerSigningUrl: string | null | undefined = null;
+    try {
+      const templateFields = buildPartnerTemplateFields({
+        partnerCode,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        fullName: partnerName,
+        email: email.trim(),
+        phone: phone?.trim(),
+        companyName: companyName?.trim(),
+        commissionRate: invite.commissionRate,
       });
+      const recipients: Array<{ id: string; email: string; name: string; role: string }> = [
+        { id: partnerCode, email: email.trim(), name: partnerName, role: "Partner" },
+      ];
+      if (settings?.fintellaSignerEmail && settings?.fintellaSignerName) {
+        recipients.push({
+          id: "fintella_cosigner",
+          email: settings.fintellaSignerEmail,
+          name: settings.fintellaSignerName,
+          role: settings.fintellaSignerPlaceholder || "Fintella",
+        });
+      }
+      const result = await sendForSigning({
+        name: `${FIRM_SHORT} Partnership Agreement — ${partnerName} (25%)`,
+        subject: `${FIRM_SHORT} Partnership Agreement`,
+        message: `Hi ${partnerName}, please review and sign your ${FIRM_NAME} partnership agreement.`,
+        recipients,
+        templateId,
+        templateFields,
+      });
+      documentId = result.documentId;
+      embeddedSigningUrl = result.embeddedSigningUrl;
+      cosignerSigningUrl = result.cosignerSigningUrl;
+    } catch (signErr: any) {
+      console.error("[GetStarted] SignWell failed, rolling back partner:", signErr?.message);
+      await prisma.partner.delete({ where: { partnerCode } }).catch(() => {});
+      await prisma.partnerProfile.deleteMany({ where: { partnerCode } }).catch(() => {});
+      await prisma.recruitmentInvite.update({
+        where: { id: invite.id },
+        data: { status: "active", usedByPartnerCode: null },
+      }).catch(() => {});
+      return NextResponse.json({ error: "Failed to send partnership agreement. Please try again." }, { status: 500 });
     }
-    const { documentId, embeddedSigningUrl, cosignerSigningUrl } = await sendForSigning({
-      name: `${FIRM_SHORT} Partnership Agreement — ${partnerName} (25%)`,
-      subject: `${FIRM_SHORT} Partnership Agreement`,
-      message: `Hi ${partnerName}, please review and sign your ${FIRM_NAME} partnership agreement.`,
-      recipients,
-      templateId,
-      templateFields,
-    });
 
     await prisma.partnershipAgreement.create({
       data: {
