@@ -102,7 +102,7 @@ export function calcWaterfallCommissions(
   } else if (submitter.tier === "l2") {
     // L2 deal — L2 earns their rate, L1 earns the override slice
     const l2Rate = submitter.commissionRate;
-    const l1Override = l1Rate - l2Rate;
+    const l1Override = Math.max(0, l1Rate - l2Rate);
 
     result.l2Rate = l2Rate;
     result.l2Amount = firmFeeAmount * l2Rate;
@@ -114,8 +114,8 @@ export function calcWaterfallCommissions(
     const l3Rate = submitter.commissionRate;
     const l2Node = chain.find((n) => n.tier === "l2");
     const l2Rate = l2Node?.commissionRate || 0;
-    const l2Override = l2Rate - l3Rate;
-    const l1Override = l1Rate - l2Rate;
+    const l2Override = Math.max(0, l2Rate - l3Rate);
+    const l1Override = Math.max(0, l1Rate - l2Rate);
 
     result.l3Rate = l3Rate;
     result.l3Amount = firmFeeAmount * l3Rate;
@@ -135,7 +135,7 @@ export function calcWaterfallCommissions(
  * @param l2Rate - the L2's assigned commission rate
  */
 export function calcL1Override(l2Rate: number, l1Rate = MAX_COMMISSION_RATE): number {
-  return l1Rate - l2Rate;
+  return Math.max(0, l1Rate - l2Rate);
 }
 
 // ─── Sliding-window waterfall (Option B, Phase 0) ─────────────────────────

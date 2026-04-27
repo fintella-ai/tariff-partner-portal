@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendAgreementSignedEmail } from "@/lib/sendgrid";
 import { sendAgreementSignedSms } from "@/lib/twilio";
 import { getCompletedPdfUrl } from "@/lib/signwell";
+import crypto from "crypto";
 
 // SignWell sends webhooks when documents are signed, viewed, etc.
 // Webhook events: document_completed, document_viewed, document_expired
@@ -10,11 +11,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Verify webhook secret if configured
+    // Verify webhook secret if configured (timing-safe comparison)
     const webhookSecret = process.env.SIGNWELL_WEBHOOK_SECRET;
     if (webhookSecret) {
-      const signature = req.headers.get("x-signwell-signature");
-      if (signature !== webhookSecret) {
+      const signature = req.headers.get("x-signwell-signature") || "";
+      try {
+        if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(webhookSecret))) {
+          return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+        }
+      } catch {
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     }
@@ -118,6 +123,11 @@ export async function POST(req: NextRequest) {
             status: true,
           },
         }).catch(() => null);
+
+        if (!partner || partner.partnerCode !== agreement.partnerCode) {
+          console.error(`[signwell] document ${docId} partner mismatch — agreement.partnerCode=${agreement.partnerCode}`);
+          return NextResponse.json({ received: true, warning: "partner mismatch" });
+        }
 
         // Activate the partner if they were pending. This is the
         // CLAUDE.md-documented "SignWell webhook marks agreement as
