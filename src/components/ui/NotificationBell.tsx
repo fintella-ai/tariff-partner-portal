@@ -207,7 +207,7 @@ export default function NotificationBell({ draggable = false }: { draggable?: bo
               {unreadCount > 0 && (
                 <button
                   onClick={markAllRead}
-                  className="font-body text-[10px] text-brand-gold hover:text-brand-gold/80 transition-colors"
+                  className="font-body text-[10px] text-brand-gold hover:text-brand-gold/80 transition-colors min-h-[44px] flex items-center"
                 >
                   Mark all read
                 </button>
@@ -222,7 +222,7 @@ export default function NotificationBell({ draggable = false }: { draggable?: bo
                   <button
                     key={t}
                     onClick={() => setTab(t)}
-                    className={`font-body text-[11px] px-3 py-1.5 rounded-t-md transition-colors ${
+                    className={`font-body text-[11px] px-3 py-1.5 rounded-t-md transition-colors min-h-[44px] ${
                       active
                         ? "bg-[var(--app-card-bg)] text-[var(--app-text)] font-semibold border border-b-0 border-[var(--app-border)] -mb-px"
                         : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"

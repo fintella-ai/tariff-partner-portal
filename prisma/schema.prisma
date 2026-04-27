@@ -131,6 +131,8 @@ model Document {
   required    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([partnerCode])
 }
 
 // ─── RECRUITMENT INVITES ─────────────────────────────────────────────────────
@@ -278,6 +280,8 @@ model PayoutBatch {
   updatedAt     DateTime @updatedAt
 
   commissions CommissionLedger[]
+
+  @@index([status])
 }
 
 // ─── TRAINING MODULES ────────────────────────────────────────────────────────
@@ -1063,6 +1067,7 @@ model EmailLog {
 
   @@index([partnerCode])
   @@index([createdAt])
+  @@index([status])
 }
 
 // ─── EMAIL EVENT (SendGrid Event Webhook) ───────────────────────────────────
@@ -1180,6 +1185,7 @@ model SmsLog {
   @@index([partnerCode])
   @@index([createdAt])
   @@index([direction])
+  @@index([status])
 }
 
 // ─── STRIPE CONNECT (Phase 16) ──────────────────────────────────────────────
@@ -1230,6 +1236,7 @@ model CallLog {
   @@index([partnerCode])
   @@index([createdAt])
   @@index([providerCallSid])
+  @@index([status])
 }
 
 // ─── WEBHOOK / API REQUEST LOG (Dev tools) ───────────────────────────────────

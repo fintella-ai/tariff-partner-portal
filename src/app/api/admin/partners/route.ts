@@ -35,9 +35,10 @@ export async function GET(req: NextRequest) {
           ],
         },
         orderBy: { createdAt: "desc" },
+        take: 200,
       });
     } else {
-      partners = await prisma.partner.findMany({ orderBy: { createdAt: "desc" } });
+      partners = await prisma.partner.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
     }
 
     // Fetch agreement, W9, profile, stripe, deal counts, downline counts in parallel.

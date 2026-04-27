@@ -754,6 +754,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           margin contract. Full-bleed children below use
           `-mx-4 sm:-mx-10 lg:-mx-24` to match. */}
       <div
+        id="main-content"
         className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8"
         style={{ paddingTop: device.isTablet ? 72 : undefined }}
       >

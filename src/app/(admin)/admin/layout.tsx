@@ -474,6 +474,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content */}
       <div
+        id="main-content"
         className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8"
         style={{
           paddingTop: !device.isDesktop ? "calc(env(safe-area-inset-top, 44px) + 5.5rem)" : undefined,

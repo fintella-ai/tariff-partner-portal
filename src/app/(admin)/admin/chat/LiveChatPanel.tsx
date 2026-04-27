@@ -113,7 +113,7 @@ export default function LiveChatPanel() {
 
   useEffect(() => {
     fetchSessions();
-    const interval = setInterval(fetchSessions, 5000); // poll every 5s
+    const interval = setInterval(fetchSessions, 30000); // poll every 30s (scale-readiness)
     return () => clearInterval(interval);
   }, [fetchSessions]);
 
@@ -127,7 +127,7 @@ export default function LiveChatPanel() {
           if (data.session) setDetail({ ...data.session, partnerDeals: data.partnerDeals || [] });
         })
         .catch(() => {});
-    }, 3000);
+    }, 15000); // 15s (scale-readiness)
     return () => clearInterval(interval);
   }, [selectedId]);
 

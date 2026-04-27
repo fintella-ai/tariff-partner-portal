@@ -166,7 +166,7 @@ export default function VideoModal({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="text-[var(--app-text-secondary)] hover:text-[var(--app-text)] transition-colors cursor-pointer p-1"
+            className="text-[var(--app-text-secondary)] hover:text-[var(--app-text)] transition-colors cursor-pointer p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Close video modal"
           >
             <svg

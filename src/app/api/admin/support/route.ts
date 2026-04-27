@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
       where,
       include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } },
       orderBy: { updatedAt: "desc" },
+      take: 200,
     });
 
     // Get partner names

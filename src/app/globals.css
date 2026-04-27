@@ -71,9 +71,9 @@
   --app-bg-elevated:     #111827;
   --app-header-bg:       #050810;
   --app-text:            rgba(255, 255, 255, 0.95);
-  --app-text-secondary:  rgba(255, 255, 255, 0.70);
-  --app-text-muted:      rgba(255, 255, 255, 0.45);
-  --app-text-faint:      rgba(255, 255, 255, 0.30);
+  --app-text-secondary:  rgba(255, 255, 255, 0.78);
+  --app-text-muted:      rgba(255, 255, 255, 0.62);
+  --app-text-faint:      rgba(255, 255, 255, 0.40);
   --app-border:          rgba(255, 255, 255, 0.08);
   --app-border-subtle:   rgba(255, 255, 255, 0.04);
   --app-card-bg:         rgba(255, 255, 255, 0.03);
@@ -119,9 +119,9 @@
     --app-bg-elevated:     #111827;
     --app-header-bg:       #050810;
     --app-text:            rgba(255, 255, 255, 0.95);
-    --app-text-secondary:  rgba(255, 255, 255, 0.70);
-    --app-text-muted:      rgba(255, 255, 255, 0.45);
-    --app-text-faint:      rgba(255, 255, 255, 0.30);
+    --app-text-secondary:  rgba(255, 255, 255, 0.78);
+    --app-text-muted:      rgba(255, 255, 255, 0.62);
+    --app-text-faint:      rgba(255, 255, 255, 0.40);
     --app-border:          rgba(255, 255, 255, 0.08);
     --app-border-subtle:   rgba(255, 255, 255, 0.04);
     --app-card-bg:         rgba(255, 255, 255, 0.03);
@@ -449,4 +449,14 @@ select option {
 .prose-training h2 {
   font-family: "DM Serif Display", Georgia, serif;
   font-weight: 400;
+}
+
+/* Reduced motion preference — disable animations for users who request it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
