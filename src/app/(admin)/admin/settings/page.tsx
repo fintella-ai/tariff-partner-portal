@@ -242,6 +242,7 @@ export default function SettingsPage() {
   const [liveChatEnabled, setLiveChatEnabled] = useState(false);
   const [callRecordingEnabled, setCallRecordingEnabled] = useState(false);
   const [homeEmbedVideoUrl, setHomeEmbedVideoUrl] = useState("");
+  const [webinarVideoUrl, setWebinarVideoUrl] = useState("");
   // Partner home modules that are hidden. Admin can toggle on/off
   // without deleting content — content stays in the DB, just not
   // rendered when the module id is in this set.
@@ -378,6 +379,7 @@ export default function SettingsPage() {
       if (settings.liveChatEnabled !== undefined) setLiveChatEnabled(settings.liveChatEnabled);
       if (settings.callRecordingEnabled !== undefined) setCallRecordingEnabled(settings.callRecordingEnabled);
       setHomeEmbedVideoUrl(settings.homeEmbedVideoUrl || "");
+      setWebinarVideoUrl(settings.webinarVideoUrl || "");
       try {
         const hidden = JSON.parse(settings.homeHiddenModules || "[]");
         if (Array.isArray(hidden)) setHiddenModules(new Set(hidden.filter((x: unknown) => typeof x === "string")));
@@ -484,6 +486,7 @@ export default function SettingsPage() {
         liveChatEnabled,
         callRecordingEnabled,
         homeEmbedVideoUrl: homeEmbedVideoUrl.trim() || null,
+        webinarVideoUrl: webinarVideoUrl.trim() || null,
         homeHiddenModules: JSON.stringify(Array.from(hiddenModules)),
         homeModuleOrder: JSON.stringify(moduleOrder),
         homeModuleLayout: JSON.stringify(moduleLayout),
@@ -1074,6 +1077,17 @@ export default function SettingsPage() {
             <p className="font-body text-[11px] text-[var(--app-text-faint)] mt-2">
               Tip: YouTube share → Embed → copy the <code className="text-brand-gold/80">src</code> URL. Vimeo/Loom give an embed URL directly.
             </p>
+
+            <label className={`${labelClass} mt-6`}>Webinar Video URL</label>
+            <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-3">
+              Video for the evergreen webinar at <a href="/webinar" target="_blank" className="text-brand-gold hover:underline">/webinar</a>. YouTube embed, Loom, or MP4. Leave blank to show a placeholder.
+            </p>
+            <input
+              className={inputClass}
+              value={webinarVideoUrl}
+              onChange={(e) => setWebinarVideoUrl(e.target.value)}
+              placeholder="https://www.youtube.com/embed/... or https://www.loom.com/embed/..."
+            />
           </div>
 
           {/* Module Layout & Order — drag handles to reorder, toggle to show/hide,
