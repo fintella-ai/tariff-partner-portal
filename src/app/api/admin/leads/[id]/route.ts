@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (typeof body.tier === "string" && ["l1", "l2", "l3"].includes(body.tier)) data.tier = body.tier;
   if (typeof body.referredByCode === "string") data.referredByCode = body.referredByCode.trim() || null;
   if (typeof body.notes === "string") data.notes = body.notes.trim() || null;
-  if (typeof body.status === "string" && ["prospect", "invited", "signed_up", "skipped"].includes(body.status)) data.status = body.status;
+  if (typeof body.status === "string" && ["prospect", "contacted", "needs_review", "invited", "signed_up", "skipped", "lost", "converted"].includes(body.status)) data.status = body.status;
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
