@@ -30,6 +30,8 @@ type Partner = {
   l3Enabled: boolean;
   payoutDownlineEnabled: boolean;
   notes: string | null;
+  ccEmail: string | null;
+  corporatePartner: boolean;
   signupDate: string;
 };
 

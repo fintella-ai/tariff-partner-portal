@@ -64,6 +64,9 @@ export default function GmailTabImpl() {
   const [composeSending, setComposeSending] = useState(false);
   const [composeError, setComposeError] = useState<string | null>(null);
 
+  // Read state filter
+  const [readFilter, setReadFilter] = useState<"all" | "unread" | "read" | "sent">("all");
+
   const searchRef = useRef<HTMLInputElement>(null);
 
   const loadMessages = useCallback(async (pageToken?: string) => {
@@ -72,6 +75,9 @@ export default function GmailTabImpl() {
     try {
       const params = new URLSearchParams({ alias, maxResults: "30" });
       if (search) params.set("q", search);
+      if (readFilter === "unread") params.set("q", [(search || ""), "is:unread"].filter(Boolean).join(" "));
+      else if (readFilter === "read") params.set("q", [(search || ""), "-is:unread"].filter(Boolean).join(" "));
+      else if (readFilter === "sent") params.set("q", [(search || ""), "in:sent"].filter(Boolean).join(" "));
       if (pageToken) params.set("pageToken", pageToken);
 
       const res = await fetch(`/api/admin/gmail?${params}`);
@@ -92,7 +98,7 @@ export default function GmailTabImpl() {
     } finally {
       setLoading(false);
     }
-  }, [alias, search]);
+  }, [alias, search, readFilter]);
 
   const loadCounts = useCallback(async () => {
     try {
@@ -215,6 +221,23 @@ export default function GmailTabImpl() {
             {a.email && (
               <div className="text-[10px] opacity-60 font-mono leading-tight mt-0.5">{a.email}</div>
             )}
+          </button>
+        ))}
+      </div>
+
+      {/* Read state filter */}
+      <div className="flex gap-2 mb-4 overflow-x-auto">
+        {(["all", "unread", "read", "sent"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setReadFilter(f)}
+            className={`font-body text-sm px-4 py-1.5 rounded-full whitespace-nowrap transition ${
+              readFilter === f
+                ? "bg-brand-gold/20 text-brand-gold"
+                : "bg-[var(--app-input-bg)] text-[var(--app-text-secondary)] hover:text-[var(--app-text)]"
+            }`}
+          >
+            {f === "all" ? "All" : f === "unread" ? "Unread" : f === "read" ? "Read" : "Sent"}
           </button>
         ))}
       </div>
