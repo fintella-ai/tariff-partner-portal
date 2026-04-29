@@ -106,6 +106,35 @@ export async function GET(
             ...(cosignerUrl ? { cosignerSigningUrl: cosignerUrl } : {}),
           },
         });
+
+        // Create admin notification + task when partner signed (catches missed webhooks)
+        if (newStatus === "partner_signed" && agreement.status !== "partner_signed") {
+          const partnerRow = await prisma.partner.findUnique({
+            where: { partnerCode: params.partnerCode },
+            select: { id: true, firstName: true, lastName: true },
+          });
+          const link = partnerRow
+            ? `/admin/partners/${partnerRow.id}?tab=documents`
+            : `/admin/partners?search=${encodeURIComponent(params.partnerCode)}`;
+          const partnerName = partnerRow ? `${partnerRow.firstName} ${partnerRow.lastName}` : params.partnerCode;
+
+          const admins = await prisma.user.findMany({
+            where: { role: { in: ["super_admin", "admin"] } },
+            select: { email: true },
+          });
+          for (const admin of admins) {
+            await prisma.notification.create({
+              data: {
+                recipientType: "admin",
+                recipientId: admin.email,
+                type: "document_request",
+                title: "Agreement Ready for Co-sign",
+                message: `${partnerName} has signed their partnership agreement. Co-sign to complete.`,
+                link,
+              },
+            }).catch(() => {});
+          }
+        }
       }
 
       return NextResponse.json({
