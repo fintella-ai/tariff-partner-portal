@@ -641,7 +641,13 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "consultationDate",
       "consult_date",
       "meeting_date",
-      "meetingDate"
+      "meetingDate",
+      "meeting_booked_date",
+      "meetingBookedDate",
+      "appointment_date",
+      "appointmentDate",
+      "call_date",
+      "callDate"
     );
     const consultBookedTime = get(
       "consult_booked_time",
@@ -650,7 +656,13 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "consultationTime",
       "consult_time",
       "meeting_time",
-      "meetingTime"
+      "meetingTime",
+      "meeting_booked_time",
+      "meetingBookedTime",
+      "appointment_time",
+      "appointmentTime",
+      "call_time",
+      "callTime"
     );
 
     // Build deal name
@@ -1072,9 +1084,9 @@ async function patchHandler(req: NextRequest): Promise<Response> {
     if (closedLostReason) data.closedLostReason = closedLostReason;
 
     // Consultation scheduling (create or reschedule)
-    const consultDate = pickStr("consult_booked_date", "consultBookedDate", "consultation_date", "consultationDate", "consult_date", "meeting_date", "meetingDate");
+    const consultDate = pickStr("consult_booked_date", "consultBookedDate", "consultation_date", "consultationDate", "consult_date", "meeting_date", "meetingDate", "meeting_booked_date", "meetingBookedDate", "appointment_date", "appointmentDate", "call_date", "callDate");
     if (consultDate) data.consultBookedDate = consultDate;
-    const consultTime = pickStr("consult_booked_time", "consultBookedTime", "consultation_time", "consultationTime", "consult_time", "meeting_time", "meetingTime");
+    const consultTime = pickStr("consult_booked_time", "consultBookedTime", "consultation_time", "consultationTime", "consult_time", "meeting_time", "meetingTime", "meeting_booked_time", "meetingBookedTime", "appointment_time", "appointmentTime", "call_time", "callTime");
     if (consultTime) data.consultBookedTime = consultTime;
 
     // Close date (if stage is closedwon or disqualified). Uses the internal

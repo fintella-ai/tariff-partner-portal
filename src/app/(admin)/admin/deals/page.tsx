@@ -817,15 +817,15 @@ export default function AdminDealsPage() {
                     );
                   })()}
 
-                  {/* Consultation Date/Time */}
+                  {/* Meeting Booked Date/Time */}
                   {(deal.consultBookedDate || deal.consultBookedTime) && (
                     <div className="mb-3 p-2.5 rounded-lg flex items-center gap-4" style={{ background: "var(--app-gold-overlay)", border: "1px solid var(--app-gold-overlay-border)" }}>
                       <div>
-                        <div className="font-body text-[10px] text-yellow-500/80 uppercase tracking-wider">Consultation Date</div>
+                        <div className="font-body text-[10px] text-yellow-500/80 uppercase tracking-wider">Meeting Booked Date</div>
                         <div className="font-body text-[13px] text-[var(--app-text)] mt-0.5">{deal.consultBookedDate || "—"}</div>
                       </div>
                       <div>
-                        <div className="font-body text-[10px] text-yellow-500/80 uppercase tracking-wider">Consultation Time</div>
+                        <div className="font-body text-[10px] text-yellow-500/80 uppercase tracking-wider">Meeting Booked Time</div>
                         <div className="font-body text-[13px] text-[var(--app-text)] mt-0.5">{deal.consultBookedTime || "—"}</div>
                       </div>
                     </div>
