@@ -214,8 +214,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       partnerCode,
-      embeddedSigningUrl: embeddedSigningUrl || null,
-      message: `Account created! Please sign your partnership agreement to activate your account.`,
+      embeddedSigningUrl: null,
+      redirectToLogin: true,
+      message: `Account created! Please log in to review and sign your partnership agreement.`,
     }, { status: 201 });
   } catch (err: any) {
     console.error("[GetStarted] Error:", err);
