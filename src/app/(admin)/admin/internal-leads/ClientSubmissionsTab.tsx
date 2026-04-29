@@ -29,6 +29,8 @@ interface Stats {
   unlinked: number;
   byStage: Record<string, number>;
   byPartner: Record<string, number>;
+  bySource: Record<string, number>;
+  funnel: { submitted: number; qualified: number; disqualified: number; engaged: number; inProcess: number; won: number };
 }
 
 const STAGE_COLORS: Record<string, string> = {
@@ -92,14 +94,78 @@ export default function ClientSubmissionsTab() {
         </div>
       )}
 
-      {/* Stage breakdown */}
-      {stats && Object.keys(stats.byStage).length > 0 && (
-        <div className="flex gap-2 mb-4 overflow-x-auto">
-          {Object.entries(stats.byStage).map(([stage, count]) => (
-            <div key={stage} className={`px-3 py-1.5 rounded-full font-body text-[11px] border whitespace-nowrap ${STAGE_COLORS[stage] || STAGE_COLORS.pending}`}>
-              {stage.replace(/_/g, " ")} <span className="font-semibold ml-1">{count}</span>
+      {/* Conversion Funnel */}
+      {stats && stats.funnel && (
+        <div className="card p-5 mb-6">
+          <div className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider mb-3">Conversion Funnel</div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {([
+              { label: "Submitted", value: stats.funnel.submitted, color: "text-blue-400" },
+              { label: "Qualified", value: stats.funnel.qualified, color: "text-emerald-400" },
+              { label: "Disqualified", value: stats.funnel.disqualified, color: "text-red-400" },
+              { label: "Client Engaged", value: stats.funnel.engaged, color: "text-green-400" },
+              { label: "In Process", value: stats.funnel.inProcess, color: "text-purple-400" },
+              { label: "Won", value: stats.funnel.won, color: "text-brand-gold" },
+            ] as const).map((s) => (
+              <div key={s.label} className="text-center">
+                <div className={`font-display text-xl ${s.color}`}>{s.value}</div>
+                <div className="font-body text-[9px] text-[var(--app-text-muted)] uppercase tracking-wider mt-0.5">{s.label}</div>
+                {stats.funnel.submitted > 0 && s.label !== "Submitted" && s.label !== "Disqualified" && (
+                  <div className="font-body text-[9px] text-[var(--app-text-faint)] mt-0.5">
+                    {Math.round((s.value / stats.funnel.submitted) * 100)}% rate
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Stage + Source breakdown side by side */}
+      {stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {/* By Stage */}
+          {Object.keys(stats.byStage).length > 0 && (
+            <div className="card p-4">
+              <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-3">By Deal Stage</div>
+              <div className="space-y-2">
+                {Object.entries(stats.byStage).sort(([,a], [,b]) => b - a).map(([stage, count]) => (
+                  <div key={stage} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase border ${STAGE_COLORS[stage] || STAGE_COLORS.pending}`}>
+                        {stage.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 rounded-full bg-[var(--app-input-bg)] overflow-hidden">
+                        <div className="h-full rounded-full bg-brand-gold/60" style={{ width: `${(count / stats.total) * 100}%` }} />
+                      </div>
+                      <span className="font-body text-[12px] text-[var(--app-text-secondary)] w-8 text-right">{count}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
+          {/* By Partner / Source */}
+          {Object.keys(stats.byPartner).length > 0 && (
+            <div className="card p-4">
+              <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider mb-3">By Partner Source</div>
+              <div className="space-y-2">
+                {Object.entries(stats.byPartner).sort(([,a], [,b]) => b - a).map(([partner, count]) => (
+                  <div key={partner} className="flex items-center justify-between">
+                    <span className="font-body text-[12px] text-[var(--app-text-secondary)] font-mono">{partner === "direct" ? "Direct (no partner)" : partner}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 rounded-full bg-[var(--app-input-bg)] overflow-hidden">
+                        <div className="h-full rounded-full bg-brand-gold/60" style={{ width: `${(count / stats.total) * 100}%` }} />
+                      </div>
+                      <span className="font-body text-[12px] text-[var(--app-text-secondary)] w-8 text-right">{count}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
