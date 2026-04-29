@@ -1355,9 +1355,9 @@ export default function PartnerDetailPage() {
                   className="font-body text-[11px] bg-[var(--app-input-bg)] border border-brand-gold/20 text-brand-gold/80 rounded-lg px-2 py-1.5 outline-none focus:border-brand-gold/40"
                 >
                   <option value={0.25} className="bg-[var(--app-bg)]">25% L1</option>
-                  <option value={0.20} className="bg-[var(--app-bg)]">20% L2/L3</option>
-                  <option value={0.15} className="bg-[var(--app-bg)]">15% L2/L3</option>
-                  <option value={0.10} className="bg-[var(--app-bg)]">10% L2/L3</option>
+                  <option value={0.20} className="bg-[var(--app-bg)]">20% L1</option>
+                  <option value={0.15} className="bg-[var(--app-bg)]">15% L1</option>
+                  <option value={0.10} className="bg-[var(--app-bg)]">10% L1</option>
                   <option value="__custom__" className="bg-[var(--app-bg)]">Custom…</option>
                 </select>
               )}
