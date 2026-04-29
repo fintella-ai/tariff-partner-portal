@@ -755,6 +755,46 @@ export default function PartnerDetailPage() {
           )}
         </div>
 
+        {/* Client Submission Link */}
+        <div className="mb-4 pb-4" style={{ borderBottom: "1px solid var(--app-border)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-body text-[12px] text-[var(--app-text-secondary)]">Client Submission Link</div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={partner.corporatePartner || false}
+                onChange={async (e) => {
+                  const val = e.target.checked;
+                  await fetch(`/api/admin/partners/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ corporatePartner: val }),
+                  });
+                  fetchPartner();
+                }}
+                className="accent-[var(--brand-gold)]"
+              />
+              <span className="font-body text-[11px] text-[var(--app-text-muted)]">Corporate Referral Partner</span>
+            </label>
+          </div>
+          {(() => {
+            const base = "https://referral.frostlawaz.com/l/ANNEXATIONPR/";
+            const link = partner.corporatePartner
+              ? `${base}?ep=${partner.partnerCode}`
+              : `${base}?utm_content=${partner.partnerCode}`;
+            return (
+              <div
+                onClick={() => { navigator.clipboard.writeText(link); setSaved(true); setTimeout(() => setSaved(false), 2000); }}
+                className="font-mono text-[12px] text-brand-gold bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-3 py-2.5 cursor-pointer hover:bg-brand-gold/10 transition-colors break-all"
+                title="Click to copy"
+              >
+                {link}
+              </div>
+            );
+          })()}
+          <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">Click to copy. {partner.corporatePartner ? "Uses ?ep= for corporate enterprise tracking." : "Uses ?utm_content= for standard partner tracking."}</p>
+        </div>
+
         {/* Code History */}
         {codeHistory.length > 0 && (
           <div className="mb-4 pb-4" style={{ borderBottom: "1px solid var(--app-border)" }}>
