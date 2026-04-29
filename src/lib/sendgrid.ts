@@ -29,6 +29,17 @@ const PORTAL_URL =
   process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "https://fintella.partners";
 const BRAND_GOLD = "#c4a050";
 
+async function getPartnerCcEmails(partnerCode: string | null | undefined): Promise<string[]> {
+  if (!partnerCode) return [];
+  try {
+    const partner = await prisma.partner.findUnique({
+      where: { partnerCode },
+      select: { ccEmail: true },
+    });
+    return partner?.ccEmail ? [partner.ccEmail] : [];
+  } catch { return []; }
+}
+
 export function isSendGridConfigured(): boolean {
   return !!SENDGRID_API_KEY;
 }
@@ -62,6 +73,8 @@ export interface SendEmailInput {
    * EmailTemplate rows that have a per-template `fromName` override set.
    */
   fromName?: string;
+  /** Optional CC addresses (e.g. partner's secondary email). */
+  cc?: string[];
 }
 
 export interface SendEmailResult {
@@ -113,13 +126,17 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 
   // ── Real send via SendGrid v3 API ─────────────────────────────────────────
   try {
+    const personalization: Record<string, any> = {
+      to: [{ email: input.to, name: input.toName || undefined }],
+      subject: input.subject,
+    };
+    if (input.cc?.length) {
+      personalization.cc = input.cc
+        .filter((e) => e && e !== input.to)
+        .map((e) => ({ email: e }));
+    }
     const payload = {
-      personalizations: [
-        {
-          to: [{ email: input.to, name: input.toName || undefined }],
-          subject: input.subject,
-        },
-      ],
+      personalizations: [personalization],
       from: { email: effectiveFromEmail, name: effectiveFromName },
       reply_to: input.replyTo
         ? { email: input.replyTo }
@@ -434,6 +451,7 @@ function partnerDisplayName(p: PartnerEmailContext): string {
 export async function sendWelcomeEmail(
   partner: PartnerEmailContext
 ): Promise<SendEmailResult> {
+  const cc = await getPartnerCcEmails(partner.partnerCode);
   const name = partnerDisplayName(partner);
   const vars: Record<string, string> = {
     firstName: partner.firstName || name,
@@ -465,6 +483,7 @@ export async function sendWelcomeEmail(
       replyTo: tpl.replyTo || undefined,
       fromEmail: tpl.fromEmail || undefined,
       fromName: tpl.fromName || undefined,
+      cc,
     });
   }
 
@@ -498,6 +517,7 @@ If you have any questions, just reply to this email.`;
     text,
     template: "welcome",
     partnerCode: partner.partnerCode,
+    cc,
   });
 }
 
@@ -756,6 +776,7 @@ export async function sendDealStatusUpdateEmail(opts: {
   dealName: string;
   newStage: string;
 }): Promise<SendEmailResult> {
+  const cc = await getPartnerCcEmails(opts.partnerCode);
   const firstName = opts.partnerName.split(" ")[0] || opts.partnerName;
   const vars: Record<string, string> = {
     firstName,
@@ -795,6 +816,7 @@ export async function sendDealStatusUpdateEmail(opts: {
     replyTo: tpl.replyTo || undefined,
     fromEmail: tpl.fromEmail || undefined,
     fromName: tpl.fromName || undefined,
+    cc,
   });
 }
 
@@ -810,6 +832,7 @@ export async function sendCommissionPaidEmail(opts: {
   amount: number;
   dealName: string;
 }): Promise<SendEmailResult> {
+  const cc = await getPartnerCcEmails(opts.partnerCode);
   const firstName = opts.partnerName.split(" ")[0] || opts.partnerName;
   const vars: Record<string, string> = {
     firstName,
@@ -844,6 +867,7 @@ export async function sendCommissionPaidEmail(opts: {
     replyTo: tpl.replyTo || undefined,
     fromEmail: tpl.fromEmail || undefined,
     fromName: tpl.fromName || undefined,
+    cc,
   });
 }
 
@@ -1119,7 +1143,7 @@ export async function sendMonthlyNewsletterToAllPartners(): Promise<{
 
   const activePartners = await prisma.partner.findMany({
     where: { status: "active" },
-    select: { partnerCode: true, firstName: true, lastName: true, email: true },
+    select: { partnerCode: true, firstName: true, lastName: true, email: true, ccEmail: true },
   });
 
   const now = new Date();
@@ -1160,6 +1184,7 @@ export async function sendMonthlyNewsletterToAllPartners(): Promise<{
       replyTo: tpl.replyTo || undefined,
       fromEmail: tpl.fromEmail || undefined,
       fromName: tpl.fromName || undefined,
+      cc: p.ccEmail ? [p.ccEmail] : undefined,
     });
     if (result.status === "sent" || result.status === "demo") sent++;
     else failed++;

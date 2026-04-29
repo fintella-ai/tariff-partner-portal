@@ -133,6 +133,7 @@ export default function PartnerDetailPage() {
   const [companyName, setCompanyName] = useState("");
   const [title, setTitle] = useState("");
   const [email, setEmail] = useState("");
+  const [ccEmail, setCcEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [mobileCountry, setMobileCountry] = useState("US");
   const [mobileNumber, setMobileNumber] = useState("");
@@ -212,6 +213,7 @@ export default function PartnerDetailPage() {
       setCompanyName(p.companyName || "");
       setTitle((p as any).title || "");
       setEmail(p.email);
+      setCcEmail(p.ccEmail || "");
       setPhone(p.phone || "");
       const parsedMobile = parseMobilePhone(p.mobilePhone || "");
       setMobileCountry(parsedMobile.countryCode);
@@ -301,7 +303,7 @@ export default function PartnerDetailPage() {
     setSaving(true);
     try {
       const body: Record<string, any> = {
-        firstName, lastName, email,
+        firstName, lastName, email, ccEmail: ccEmail || null,
         companyName: companyName || null,
         title: title || null,
         phone: phone || null,
@@ -903,6 +905,10 @@ export default function PartnerDetailPage() {
             <input className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
           </div>
           <div>
+            <label className={labelClass}>CC Email</label>
+            <input className={inputClass} value={ccEmail} onChange={(e) => setCcEmail(e.target.value)} type="email" placeholder="Secondary email — CC'd on all comms" />
+          </div>
+          <div>
             <label className={labelClass}>Phone</label>
             <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-0000" />
           </div>
@@ -1430,6 +1436,25 @@ export default function PartnerDetailPage() {
               >
                 {sendingAgreement ? "Sending..." : "Send Agreement"}
               </button>
+              {agreement && ["pending", "viewed", "partner_signed"].includes(agreement.status) && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(`/api/admin/agreement/${partner.partnerCode}?action=remind`);
+                      const data = await res.json();
+                      if (res.ok) {
+                        alert(`Reminder sent (${data.emailStatus}). ${data.signingUrl ? "Signing link included." : "No signing URL available."}`);
+                      } else {
+                        alert(data.error || "Remind failed");
+                      }
+                    } catch { alert("Network error"); }
+                  }}
+                  className="font-body text-[11px] text-amber-400/70 border border-amber-400/20 rounded-lg px-3 py-1.5 hover:bg-amber-400/10 transition-colors"
+                  title="Resend agreement reminder email + SMS without creating a new agreement"
+                >
+                  📧 Resend Reminder
+                </button>
+              )}
               <button
                 onClick={async () => {
                   try {

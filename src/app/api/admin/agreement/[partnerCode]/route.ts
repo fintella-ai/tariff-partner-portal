@@ -10,8 +10,9 @@ import {
   getCompletedDocumentFields,
   mapSignWellFieldsToPayoutData,
 } from "@/lib/signwell";
-import { sendAgreementReadyEmail } from "@/lib/sendgrid";
+import { sendAgreementReadyEmail, sendAgreementReminderEmail } from "@/lib/sendgrid";
 import { sendAgreementReadySms } from "@/lib/twilio";
+import { getEmbeddedSigningUrl } from "@/lib/signwell";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
 
 /**
@@ -144,6 +145,57 @@ export async function GET(
         cosignerUrl,
         signwellStatus: doc.status,
         recipients: recipients.map((r: any) => ({ name: r.name, email: r.email, status: r.status })),
+      });
+    }
+
+    // Resend agreement reminder: re-fire the agreement email/SMS without creating a new agreement
+    if (action === "remind") {
+      const agreement = await prisma.partnershipAgreement.findFirst({
+        where: { partnerCode: params.partnerCode, status: { in: ["pending", "viewed", "partner_signed"] } },
+        orderBy: { version: "desc" },
+      });
+      if (!agreement) {
+        return NextResponse.json({ error: "No active agreement to remind about" }, { status: 404 });
+      }
+
+      const partner = await prisma.partner.findUnique({
+        where: { partnerCode: params.partnerCode },
+        select: { email: true, firstName: true, lastName: true, mobilePhone: true, smsOptIn: true, partnerCode: true },
+      });
+      if (!partner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
+
+      // Get the signing URL — either from the stored agreement or re-fetch from SignWell
+      let signingUrl = agreement.embeddedSigningUrl || "";
+      if (!signingUrl && agreement.signwellDocumentId) {
+        signingUrl = await getEmbeddedSigningUrl(agreement.signwellDocumentId, partner.email).catch(() => null) || "";
+      }
+
+      const daysSinceSent = agreement.sentDate
+        ? Math.floor((Date.now() - new Date(agreement.sentDate).getTime()) / 86400000)
+        : 0;
+
+      const emailResult = await sendAgreementReminderEmail({
+        toEmail: partner.email,
+        toName: `${partner.firstName} ${partner.lastName}`,
+        signingUrl,
+        daysSinceSent,
+      }).catch(() => null);
+
+      // Also resend SMS
+      const { sendAgreementReadySms: smsReminder } = await import("@/lib/twilio");
+      smsReminder({
+        partnerCode: partner.partnerCode,
+        mobilePhone: partner.mobilePhone,
+        smsOptIn: partner.smsOptIn,
+        firstName: partner.firstName,
+        lastName: partner.lastName,
+      }).catch(() => {});
+
+      return NextResponse.json({
+        ok: true,
+        emailStatus: emailResult?.status || "skipped",
+        signingUrl: signingUrl || null,
+        daysSinceSent,
       });
     }
 

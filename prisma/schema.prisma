@@ -33,6 +33,7 @@ model Partner {
   id                    String   @id @default(cuid())
   partnerCode           String   @unique
   email                 String
+  ccEmail               String?  // secondary email CC'd on all outbound comms
   passwordHash          String?  // bcrypt hash, null = legacy (uses partnerCode to log in)
   firstName             String
   lastName              String

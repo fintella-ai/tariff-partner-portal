@@ -155,6 +155,7 @@ export async function PUT(
     if (body.firstName !== undefined) data.firstName = body.firstName;
     if (body.lastName !== undefined) data.lastName = body.lastName;
     if (body.email !== undefined) data.email = body.email;
+    if (body.ccEmail !== undefined) data.ccEmail = body.ccEmail || null;
     if (body.phone !== undefined) data.phone = body.phone || null;
     if (body.companyName !== undefined) data.companyName = body.companyName || null;
     if (body.title !== undefined) data.title = body.title || null;
