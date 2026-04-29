@@ -7,11 +7,11 @@ type Lead = {
   id: string; firstName: string; lastName: string; email: string; phone: string | null;
   commissionRate: number; tier: string; referredByCode: string | null; notes: string | null;
   status: string; inviteId: string | null; scheduledSendAt: string | null; emailSentAt: string | null;
-  createdAt: string; updatedAt: string;
+  unsubscribedAt: string | null; createdAt: string; updatedAt: string;
 };
 
 type LeadTab = "all" | "referral" | "broker";
-type SubTab = "all" | "scheduled" | "good_email" | "good_sms" | "good_phone" | "not_validated" | "bad_email" | "bad_phone";
+type SubTab = "all" | "scheduled" | "good_email" | "good_sms" | "good_phone" | "not_validated" | "bad_email" | "bad_phone" | "unsubscribed";
 type Stage = "all" | "new" | "scheduled" | "contacted" | "needs_review" | "submitted" | "converted" | "lost";
 
 const LEAD_TABS: { id: LeadTab; label: string }[] = [
@@ -29,6 +29,7 @@ const BROKER_SUB_TABS: { id: SubTab; label: string }[] = [
   { id: "not_validated", label: "Unverified" },
   { id: "bad_email", label: "Bad/No Email" },
   { id: "bad_phone", label: "Bad/No Phone" },
+  { id: "unsubscribed", label: "Unsubscribed" },
 ];
 
 const REFERRAL_SUB_TABS: { id: SubTab; label: string }[] = [
@@ -341,12 +342,13 @@ export default function InternalLeadsPage() {
 
   function applySubFilter(list: Lead[]): Lead[] {
     if (subTab === "scheduled") return list.filter(isScheduled);
-    if (subTab === "good_email") return list.filter((l) => hasGoodEmail(l) && !isScheduled(l));
-    if (subTab === "good_sms") return list.filter(hasGoodSms);
+    if (subTab === "good_email") return list.filter((l) => hasGoodEmail(l) && !isScheduled(l) && !l.unsubscribedAt);
+    if (subTab === "good_sms") return list.filter((l) => hasGoodSms(l) && !l.unsubscribedAt);
     if (subTab === "good_phone") return list.filter(hasGoodCalling);
     if (subTab === "not_validated") return list.filter(isNotValidated);
     if (subTab === "bad_email") return list.filter(hasBadEmail);
     if (subTab === "bad_phone") return list.filter(hasBadPhone);
+    if (subTab === "unsubscribed") return list.filter((l) => !!l.unsubscribedAt);
     return list;
   }
 
@@ -550,7 +552,9 @@ export default function InternalLeadsPage() {
               : st.id === "good_phone" ? parentLeads.filter(hasGoodCalling).length
               : st.id === "not_validated" ? parentLeads.filter(isNotValidated).length
               : st.id === "bad_email" ? parentLeads.filter(hasBadEmail).length
-              : parentLeads.filter(hasBadPhone).length;
+              : st.id === "bad_phone" ? parentLeads.filter(hasBadPhone).length
+              : st.id === "unsubscribed" ? parentLeads.filter((l) => !!l.unsubscribedAt).length
+              : 0;
             return (
               <button
                 key={st.id}
@@ -823,6 +827,19 @@ export default function InternalLeadsPage() {
                             title="Send partner invite"
                           >
                             Invite
+                          </button>
+                        )}
+                        {!lead.unsubscribedAt && (
+                          <button
+                            onClick={async () => {
+                              await fetch("/api/unsubscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: lead.email }) });
+                              fetchLeads();
+                              flash("ok", "Unsubscribed");
+                            }}
+                            className="text-[10px] px-2 py-1 rounded-lg border border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10 transition"
+                            title="Unsubscribe"
+                          >
+                            🚫
                           </button>
                         )}
                         <button

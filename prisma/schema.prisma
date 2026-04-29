@@ -1622,6 +1622,7 @@ model PartnerLead {
   inviteId         String?  // RecruitmentInvite.id once invited
   scheduledSendAt  DateTime? // when the recruitment email should be sent (timezone-optimized)
   emailSentAt      DateTime? // when the recruitment email was actually sent
+  unsubscribedAt   DateTime? // when the lead opted out of emails
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
