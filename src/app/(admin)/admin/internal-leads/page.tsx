@@ -137,6 +137,8 @@ export default function InternalLeadsPage() {
     finally { setSendingEmailId(null); }
   }
 
+  const BATCH_SIZE = 50;
+
   async function bulkSendBrokerEmails() {
     const emailable = filtered.filter((l) =>
       !l.email.includes("@import.placeholder") &&
@@ -145,11 +147,18 @@ export default function InternalLeadsPage() {
       (l.notes || "").includes("Email Verdict: Valid")
     );
     if (emailable.length === 0) { flash("err", "No new broker leads with verified emails. Run 'Validate Emails' first."); return; }
-    if (!confirm(`Send recruitment email to ${emailable.length} verified brokers? This will move them all to "Contacted".`)) return;
+
+    const batch = emailable.slice(0, BATCH_SIZE);
+    const remaining = emailable.length - batch.length;
+    const msg = remaining > 0
+      ? `Send ${batch.length} emails now? (${remaining} more will be available next batch — protect your domain reputation by spreading sends over multiple days.)`
+      : `Send recruitment email to ${batch.length} verified brokers? This will move them to "Contacted".`;
+
+    if (!confirm(msg)) return;
     setBulkEmailing(true);
     let sent = 0;
     let failed = 0;
-    for (const lead of emailable) {
+    for (const lead of batch) {
       try {
         const res = await fetch("/api/admin/leads/send-broker-email", {
           method: "POST",
@@ -161,7 +170,7 @@ export default function InternalLeadsPage() {
       } catch { failed++; }
     }
     fetchLeads();
-    flash("ok", `Bulk email: ${sent} sent, ${failed} failed`);
+    flash("ok", `Batch sent: ${sent} emails${remaining > 0 ? ` — ${remaining} remaining for next batch` : ""}`);
     setBulkEmailing(false);
   }
 
@@ -232,18 +241,21 @@ export default function InternalLeadsPage() {
     }
   }
 
-  function hasBadEmail(l: Lead): boolean {
-    return l.email.includes("@import.placeholder") || (l.notes || "").includes("Email Verdict: Invalid") || (l.notes || "").includes("Email Verdict: Risky");
+  function hasNoEmail(l: Lead): boolean {
+    return l.email.includes("@import.placeholder");
   }
-  function hasBadPhone(l: Lead): boolean {
-    return !l.phone || (l.notes || "").includes("Phone Type: unknown");
+  function hasFailedEmail(l: Lead): boolean {
+    return (l.notes || "").includes("Email Verdict: Invalid") || (l.notes || "").includes("Email Verdict: Risky");
+  }
+  function hasFailedPhone(l: Lead): boolean {
+    return (l.notes || "").includes("Phone Type: unknown");
   }
 
   const typeFiltered = leads.filter((l) => {
-    if (leadTab === "broker") return isBrokerLead(l) && !hasBadEmail(l) && !hasBadPhone(l);
+    if (leadTab === "broker") return isBrokerLead(l);
     if (leadTab === "referral") return isReferralLead(l);
-    if (leadTab === "bad_email") return hasBadEmail(l);
-    if (leadTab === "bad_phone") return !l.phone || hasBadPhone(l);
+    if (leadTab === "bad_email") return hasNoEmail(l) || hasFailedEmail(l);
+    if (leadTab === "bad_phone") return !l.phone || hasFailedPhone(l);
     return true;
   });
 
@@ -332,7 +344,7 @@ export default function InternalLeadsPage() {
             disabled={bulkEmailing}
             className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition disabled:opacity-50"
           >
-            {bulkEmailing ? "Sending..." : "📧 Email All New"}
+            {bulkEmailing ? "Sending..." : `📧 Email Next ${BATCH_SIZE}`}
           </button>
           <button
             onClick={() => { setImportOpen(true); setImportData([]); setImportResult(null); }}
@@ -378,10 +390,10 @@ export default function InternalLeadsPage() {
             {t.label}
             <span className="ml-1.5 text-[10px] text-[var(--app-text-faint)]">
               ({leads.filter((l) => {
-                if (t.id === "broker") return isBrokerLead(l) && !hasBadEmail(l) && !hasBadPhone(l);
+                if (t.id === "broker") return isBrokerLead(l);
                 if (t.id === "referral") return isReferralLead(l);
-                if (t.id === "bad_email") return hasBadEmail(l);
-                if (t.id === "bad_phone") return !l.phone || hasBadPhone(l);
+                if (t.id === "bad_email") return hasNoEmail(l) || hasFailedEmail(l);
+                if (t.id === "bad_phone") return !l.phone || hasFailedPhone(l);
                 return true;
               }).length})
             </span>
