@@ -84,6 +84,7 @@ export async function PUT(
     if (body.l3CommissionAmount !== undefined) data.l3CommissionAmount = parseFloat(body.l3CommissionAmount) || 0;
     if (body.l3CommissionStatus !== undefined) data.l3CommissionStatus = body.l3CommissionStatus;
     if (body.notes !== undefined) data.notes = body.notes || null;
+    if (body.affiliateNotes !== undefined) data.affiliateNotes = body.affiliateNotes || null;
     if (body.closeDate !== undefined) data.closeDate = body.closeDate ? new Date(body.closeDate) : null;
 
     // EP Level 1 — only super_admin may change this. Reject the whole

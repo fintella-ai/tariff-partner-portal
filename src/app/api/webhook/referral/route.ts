@@ -412,7 +412,7 @@ async function postHandler(req: NextRequest): Promise<Response> {
     const get = makeFieldResolver(body, req.nextUrl.searchParams);
 
     // Partner tracking (from utm_content query param passed through form)
-    const partnerCode = get(
+    let partnerCode = get(
       "utm_content",
       "utmcontent",
       "utm_Content",
@@ -425,6 +425,26 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "partner",
       "ref"
     );
+
+    // If the value looks like a name rather than a code, try to resolve it.
+    // Partner codes are uppercase alphanumeric (e.g. PTNS4XDMN); if the value
+    // contains a space or lowercase letters, it's likely a partner name.
+    if (partnerCode && /[a-z ]/.test(partnerCode)) {
+      const nameParts = partnerCode.trim().split(/\s+/);
+      const matchByName = await prisma.partner.findFirst({
+        where: nameParts.length >= 2
+          ? { firstName: { equals: nameParts[0], mode: "insensitive" }, lastName: { equals: nameParts.slice(1).join(" "), mode: "insensitive" } }
+          : { OR: [
+              { firstName: { equals: partnerCode.trim(), mode: "insensitive" } },
+              { lastName: { equals: partnerCode.trim(), mode: "insensitive" } },
+              { companyName: { equals: partnerCode.trim(), mode: "insensitive" } },
+            ] },
+        select: { partnerCode: true },
+      }).catch(() => null);
+      if (matchByName) {
+        partnerCode = matchByName.partnerCode;
+      }
+    }
 
     // Enterprise Partner tracking — `ep` (URL query or body) carries the EA's
     // own internal L1 code when the referring partner is reselling under their

@@ -122,6 +122,7 @@ export default function AdminDealsPage() {
   const [editL2Status, setEditL2Status] = useState("");
   const [editL3Status, setEditL3Status] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [editAffiliateNotes, setEditAffiliateNotes] = useState("");
   const [dealNotes, setDealNotes] = useState<Record<string, any[]>>({});
   const [dealNoteFiles, setDealNoteFiles] = useState<Record<string, File[]>>({});
   const [dealNotePosting, setDealNotePosting] = useState<Record<string, boolean>>({});
@@ -299,6 +300,7 @@ export default function AdminDealsPage() {
       setEditL2Status(deal.l2CommissionStatus);
       setEditL3Status(deal.l3CommissionStatus);
       setEditNotes(deal.notes || "");
+      setEditAffiliateNotes(deal.affiliateNotes || "");
       setEditRefund(deal.estimatedRefundAmount ? String(deal.estimatedRefundAmount) : "");
       setEditActualRefund(deal.actualRefundAmount != null ? String(deal.actualRefundAmount) : "");
       setEditFirmFeeRatePct(
@@ -377,6 +379,7 @@ export default function AdminDealsPage() {
           l2CommissionStatus: editL2Status,
           l3CommissionStatus: editL3Status,
           notes: editNotes,
+          affiliateNotes: editAffiliateNotes,
           estimatedRefundAmount: refundParsed ?? 0,
           actualRefundAmount: actualRefundParsed,
           firmFeeRate: feeRateDecimal,
@@ -855,12 +858,16 @@ export default function AdminDealsPage() {
                       </div>
                     ))}
                   </div>
-                  {deal.affiliateNotes && (
-                    <div className="mt-3">
-                      <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Affiliate Notes</div>
-                      <div className="font-body text-[12px] text-[var(--app-text-secondary)] mt-1 bg-[var(--app-card-bg)] border border-[var(--app-border)] rounded-lg p-3 whitespace-pre-line">{deal.affiliateNotes}</div>
-                    </div>
-                  )}
+                  <div className="mt-3">
+                    <label className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Affiliate Notes</label>
+                    <textarea
+                      className={`${inputClass} w-full`}
+                      rows={3}
+                      value={editAffiliateNotes}
+                      onChange={(e) => setEditAffiliateNotes(e.target.value)}
+                      placeholder="Notes from the referring partner..."
+                    />
+                  </div>
                   <div className="mt-3" ref={expandedId === deal.id ? partnerWrapRef : undefined}>
                     <label className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">
                       Partner
@@ -1392,12 +1399,16 @@ export default function AdminDealsPage() {
                       </div>
                     ))}
                   </div>
-                  {deal.affiliateNotes && (
-                    <div className="mt-2">
-                      <div className="font-body text-[9px] text-[var(--app-text-faint)] uppercase">Affiliate Notes</div>
-                      <div className="font-body text-[11px] text-[var(--app-text-secondary)] mt-0.5 whitespace-pre-line">{deal.affiliateNotes}</div>
-                    </div>
-                  )}
+                  <div className="mt-2">
+                    <div className="font-body text-[9px] text-[var(--app-text-faint)] uppercase mb-1">Affiliate Notes</div>
+                    <textarea
+                      className={`${inputClass} w-full !py-1.5 !text-[11px]`}
+                      rows={2}
+                      value={editAffiliateNotes}
+                      onChange={(e) => setEditAffiliateNotes(e.target.value)}
+                      placeholder="Notes from the referring partner..."
+                    />
+                  </div>
                 </div>
                 {/* Edit controls */}
                 <div className="grid grid-cols-2 gap-3 mb-3">
