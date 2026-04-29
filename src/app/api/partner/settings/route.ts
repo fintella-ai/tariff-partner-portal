@@ -48,6 +48,7 @@ export async function GET() {
       zip: profile?.zip || "",
       // Payout / Banking
       payoutMethod: profile?.payoutMethod || "",
+      accountEntity: profile?.accountEntity || "",
       bankName: profile?.bankName || "",
       accountType: profile?.accountType || "",
       routingNumber: profile?.routingNumber || "",
@@ -58,6 +59,10 @@ export async function GET() {
       bankCity: profile?.bankCity || "",
       bankState: profile?.bankState || "",
       bankZip: profile?.bankZip || "",
+      checkPayeeName: profile?.checkPayeeName || "",
+      wireMemo: profile?.wireMemo || "",
+      payoutLockedAt: profile?.payoutLockedAt || null,
+      payoutLockedBy: profile?.payoutLockedBy || null,
     });
   } catch {
     return NextResponse.json(
@@ -96,13 +101,36 @@ export async function PATCH(req: NextRequest) {
       preferredGeneralist,
     } = body;
 
-    // Fetch current partner to detect name/company changes
+    // Fetch current partner + profile to detect name/company changes and payout lock
     const currentPartner = await prisma.partner.findUnique({
       where: { partnerCode },
     });
 
     if (!currentPartner) {
       return NextResponse.json({ error: "Partner not found" }, { status: 404 });
+    }
+
+    const currentProfile = await prisma.partnerProfile.findUnique({
+      where: { partnerCode },
+      select: { payoutLockedAt: true },
+    });
+
+    const payoutLocked = !!currentProfile?.payoutLockedAt;
+    const payoutFields = ["payoutMethod", "accountEntity", "bankName", "accountType", "routingNumber", "accountNumber", "beneficiaryName", "bankStreet", "bankStreet2", "bankCity", "bankState", "bankZip", "checkPayeeName", "wireMemo"];
+    const attemptingPayoutEdit = payoutFields.some((f) => body[f] !== undefined);
+    if (payoutLocked && attemptingPayoutEdit) {
+      return NextResponse.json({
+        error: "Payout information is locked from your signed agreement. Please submit a support ticket to request changes.",
+        payoutLocked: true,
+      }, { status: 403 });
+    }
+
+    const tinLocked = payoutLocked && currentPartner.tin;
+    if (tinLocked && tin !== undefined && tin !== currentPartner.tin) {
+      return NextResponse.json({
+        error: "Tax ID is locked from your signed agreement. Please submit a support ticket to request changes.",
+        payoutLocked: true,
+      }, { status: 403 });
     }
 
     const nameChanged =

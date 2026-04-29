@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendAgreementSignedEmail } from "@/lib/sendgrid";
 import { sendAgreementSignedSms } from "@/lib/twilio";
-import { getCompletedPdfUrl } from "@/lib/signwell";
+import { getCompletedPdfUrl, getCompletedDocumentFields } from "@/lib/signwell";
 import crypto from "crypto";
 
 // SignWell sends webhooks when documents are signed, viewed, etc.
@@ -150,6 +150,70 @@ export async function POST(req: NextRequest) {
             fireWorkflowTrigger("partner.activated", { partner })
           ).catch(() => {});
         }
+
+        // Extract payout fields from completed document and lock profile
+        getCompletedDocumentFields(docId).then(async (fields) => {
+          if (!fields || Object.keys(fields).length === 0) return;
+          const profileData: Record<string, any> = {};
+          if (fields.partner_tin || fields.partner_ssn) {
+            await prisma.partner.update({
+              where: { partnerCode: agreement.partnerCode },
+              data: {
+                ...(fields.partner_tin && { tin: fields.partner_tin }),
+                ...(fields.partner_ssn && { ssn: fields.partner_ssn }),
+              },
+            }).catch(() => {});
+          }
+          // Determine payout method from checkbox api_ids or text field
+          if (fields.partner_payout_wire === "true" || fields.partner_payout_wire === "on") {
+            profileData.payoutMethod = "wire";
+          } else if (fields.partner_payout_ach === "true" || fields.partner_payout_ach === "on") {
+            profileData.payoutMethod = "ach";
+          } else if (fields.partner_payout_check === "true" || fields.partner_payout_check === "on") {
+            profileData.payoutMethod = "check";
+          } else if (fields.partner_payout_method) {
+            profileData.payoutMethod = fields.partner_payout_method.toLowerCase();
+          }
+          // Bank details — accept from Wire OR ACH section (whichever was filled)
+          profileData.bankName = fields.partner_bank_name || fields.partner_ach_bank_name || null;
+          profileData.bankAddress = fields.partner_bank_address || null;
+          profileData.routingNumber = fields.partner_routing_number || fields.partner_ach_routing_number || null;
+          profileData.accountNumber = fields.partner_account_number || fields.partner_ach_account_number || null;
+          profileData.beneficiaryName = fields.partner_beneficiary_name || fields.partner_ach_account_holder || null;
+          profileData.wireMemo = fields.partner_wire_memo || null;
+          profileData.checkPayeeName = fields.partner_check_payee || null;
+          profileData.checkStreet = fields.partner_check_street || null;
+          profileData.checkStreet2 = fields.partner_check_street2 || null;
+          profileData.checkCity = fields.partner_check_city || null;
+          profileData.checkState = fields.partner_check_state || null;
+          profileData.checkZip = fields.partner_check_zip || null;
+          // Account entity = dropdown (Business / Personal), account type = checkboxes (Checking / Savings)
+          const entity = (fields.partner_account_entity || "").toLowerCase().trim();
+          if (entity) profileData.accountEntity = entity;
+          const isBusiness = entity === "business";
+          const isChecking = fields.partner_account_checking === "true" || fields.partner_account_checking === "on";
+          const isSavings = fields.partner_account_savings === "true" || fields.partner_account_savings === "on";
+          if (isChecking) {
+            profileData.accountType = isBusiness ? "business_checking" : "checking";
+          } else if (isSavings) {
+            profileData.accountType = isBusiness ? "business_savings" : "savings";
+          } else if (fields.partner_account_type) {
+            profileData.accountType = fields.partner_account_type.toLowerCase();
+          }
+          // Clean out null values so we don't overwrite existing data with null
+          for (const key of Object.keys(profileData)) {
+            if (profileData[key] === null) delete profileData[key];
+          }
+          if (Object.keys(profileData).length > 0) {
+            profileData.payoutLockedAt = new Date();
+            profileData.payoutLockedBy = "agreement";
+            await prisma.partnerProfile.upsert({
+              where: { partnerCode: agreement.partnerCode },
+              update: profileData,
+              create: { partnerCode: agreement.partnerCode, ...profileData },
+            }).catch((err) => console.error("[signwell] payout profile save failed:", err));
+          }
+        }).catch(() => {});
 
         // Phase 15a + 15b — fire transactional "account active" email + SMS.
         // Best-effort; webhook should still 200 even if SendGrid/Twilio is down.

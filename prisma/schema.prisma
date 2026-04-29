@@ -41,6 +41,7 @@ model Partner {
   phone                 String?
   mobilePhone           String?  // international SMS format (+1...)
   tin                   String?  // TIN in ##-####### format
+  ssn                   String?  // SSN in ###-##-#### format (if no TIN)
   status                String   @default("active") // active, pending, inactive, blocked
   referredByPartnerCode String?  // who recruited them
   // Commission tier system
@@ -96,8 +97,9 @@ model PartnerProfile {
   phone           String?
   // Payout info (banking for domestic wire)
   payoutMethod    String?  // "wire", "ach", "check"
+  accountEntity   String?  // "business", "personal"
   bankName        String?
-  accountType     String?  // "checking", "savings"
+  accountType     String?  // "checking", "savings", "business_checking", "business_savings"
   routingNumber   String?
   accountNumber   String?
   beneficiaryName String?  // name on the account
@@ -108,6 +110,16 @@ model PartnerProfile {
   bankState       String?
   bankZip         String?
   paypalEmail     String?
+  checkPayeeName  String?  // payee name for certified check
+  checkStreet     String?  // mailing address line 1 for check
+  checkStreet2    String?  // mailing address line 2 for check
+  checkCity       String?
+  checkState      String?
+  checkZip        String?
+  wireMemo        String?  // reference/memo for wire transfers
+  // Payout lock — set when agreement is signed, prevents partner self-edit
+  payoutLockedAt  DateTime?
+  payoutLockedBy  String?  // "agreement" or admin email who locked it
   // Status
   isBlocked       Boolean  @default(false)
   blockReason     String?

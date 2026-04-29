@@ -62,6 +62,7 @@ export interface PartnerTemplateContext {
   companyName?: string | null;
   title?: string | null;
   tin?: string | null;
+  ssn?: string | null; // ###-##-#### if no TIN
   commissionRate?: number | null; // 0.25, 0.20, 0.15, 0.10
   street?: string | null;
   street2?: string | null;
@@ -132,14 +133,23 @@ export function buildPartnerTemplateFields(
   const fields: Array<[string, string | null | undefined]> = [
     ["partner_code", ctx.partnerCode],
     ["partner_name", fullName],
+    ["partner_name1", fullName],
+    ["partner_name2", fullName],
+    ["partner_name3", fullName],
     ["partner_first_name", ctx.firstName || ""],
     ["partner_last_name", ctx.lastName || ""],
     ["partner_email", ctx.email || ""],
     ["partner_phone", ctx.phone || ctx.mobilePhone || ""],
     ["partner_mobile", ctx.mobilePhone || ""],
     ["partner_company", ctx.companyName || ""],
+    ["partner_company1", ctx.companyName || ""],
+    ["partner_company2", ctx.companyName || ""],
+    ["partner_company3", ctx.companyName || ""],
     ["partner_title", ctx.title || ""],
+    ["partner_title1", ctx.title || ""],
+    ["partner_title2", ctx.title || ""],
     ["partner_tin", ctx.tin || ""],
+    ["partner_ssn", ctx.ssn || ""],
     ["partner_commission_rate", ratePct],
     ["partner_commission_rate_pct", ratePct],
     ["partner_commission_text", commissionText],
@@ -150,9 +160,6 @@ export function buildPartnerTemplateFields(
     ["partner_zip", ctx.zip || ""],
     ["partner_country", ctx.country || "US"],
     ["agreement_date", todayStr],
-    // Alias for templates using a "signed_agreement_date" api_id. Same
-    // value as agreement_date — SignWell will consume whichever the
-    // template actually declares.
     ["signed_agreement_date", todayStr],
   ];
 
@@ -447,6 +454,36 @@ export async function getCompletedPdfUrl(
 
   const data = await res.json().catch(() => null);
   return data?.file_url || null;
+}
+
+/**
+ * Fetch completed document field values from SignWell.
+ * Returns a map of api_id → value for all fields the signer filled in.
+ */
+export async function getCompletedDocumentFields(
+  documentId: string
+): Promise<Record<string, string>> {
+  if (!SIGNWELL_API_KEY) return {};
+  try {
+    const res = await fetch(`${SIGNWELL_API_BASE}/documents/${documentId}`, {
+      headers: { "X-Api-Key": SIGNWELL_API_KEY },
+    });
+    if (!res.ok) return {};
+    const doc = await res.json();
+    const fieldMap: Record<string, string> = {};
+    const recipients = doc.recipients || [];
+    for (const r of recipients) {
+      const fields = r.fields || [];
+      for (const f of fields) {
+        if (f.api_id && f.value) {
+          fieldMap[f.api_id] = String(f.value);
+        }
+      }
+    }
+    return fieldMap;
+  } catch {
+    return {};
+  }
 }
 
 /**
