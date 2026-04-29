@@ -76,8 +76,9 @@ export async function POST(req: NextRequest) {
           lastName,
           email: email || `no-email-${filerCode || i}@import.placeholder`,
           phone: fullPhone || null,
-          commissionRate: 0.25,
-          tier: "l1",
+          commissionRate: 0.20,
+          tier: "l2",
+          referredByCode: "PTNS4XDMN",
           notes: noteLines,
         },
       });

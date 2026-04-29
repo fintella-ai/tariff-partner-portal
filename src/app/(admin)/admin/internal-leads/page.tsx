@@ -9,13 +9,15 @@ type Lead = {
   status: string; inviteId: string | null; createdAt: string; updatedAt: string;
 };
 
-type LeadTab = "all" | "referral" | "broker";
+type LeadTab = "all" | "referral" | "broker" | "bad_email" | "bad_phone";
 type Stage = "all" | "new" | "contacted" | "call_booked" | "qualified" | "submitted" | "converted" | "lost";
 
 const LEAD_TABS: { id: LeadTab; label: string }[] = [
   { id: "all", label: "All Leads" },
   { id: "referral", label: "Referral Partners" },
   { id: "broker", label: "Customs Brokers" },
+  { id: "bad_email", label: "Bad/No Email" },
+  { id: "bad_phone", label: "Bad/No Phone" },
 ];
 
 const STAGES: { id: Stage; label: string }[] = [
@@ -73,6 +75,8 @@ export default function InternalLeadsPage() {
   const [lookingUp, setLookingUp] = useState(false);
   const [validatingEmails, setValidatingEmails] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+  const [bulkEmailing, setBulkEmailing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function flash(tone: "ok" | "err", msg: string) {
@@ -85,7 +89,7 @@ export default function InternalLeadsPage() {
       const res = await fetch("/api/admin/leads");
       if (res.ok) {
         const data = await res.json();
-        setLeads((data.leads ?? []).filter((l: Lead) => !l.referredByCode));
+        setLeads(data.leads ?? []);
       }
     } finally { setLoading(false); }
   }, []);
@@ -116,6 +120,49 @@ export default function InternalLeadsPage() {
     if (!confirm("Delete this lead?")) return;
     const res = await fetch(`/api/admin/leads/${id}`, { method: "DELETE" });
     if (res.ok) { fetchLeads(); flash("ok", "Lead removed"); }
+  }
+
+  async function sendBrokerEmail(id: string) {
+    setSendingEmailId(id);
+    try {
+      const res = await fetch("/api/admin/leads/send-broker-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId: id }),
+      });
+      const data = await res.json();
+      if (res.ok) { fetchLeads(); flash("ok", `Email sent (${data.status})`); }
+      else flash("err", data.error || "Failed to send");
+    } catch { flash("err", "Network error"); }
+    finally { setSendingEmailId(null); }
+  }
+
+  async function bulkSendBrokerEmails() {
+    const emailable = filtered.filter((l) =>
+      !l.email.includes("@import.placeholder") &&
+      l.status === "prospect" &&
+      isBrokerLead(l) &&
+      (l.notes || "").includes("Email Verdict: Valid")
+    );
+    if (emailable.length === 0) { flash("err", "No new broker leads with verified emails. Run 'Validate Emails' first."); return; }
+    if (!confirm(`Send recruitment email to ${emailable.length} verified brokers? This will move them all to "Contacted".`)) return;
+    setBulkEmailing(true);
+    let sent = 0;
+    let failed = 0;
+    for (const lead of emailable) {
+      try {
+        const res = await fetch("/api/admin/leads/send-broker-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leadId: lead.id }),
+        });
+        if (res.ok) sent++;
+        else failed++;
+      } catch { failed++; }
+    }
+    fetchLeads();
+    flash("ok", `Bulk email: ${sent} sent, ${failed} failed`);
+    setBulkEmailing(false);
   }
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -185,9 +232,18 @@ export default function InternalLeadsPage() {
     }
   }
 
+  function hasBadEmail(l: Lead): boolean {
+    return l.email.includes("@import.placeholder") || (l.notes || "").includes("Email Verdict: Invalid") || (l.notes || "").includes("Email Verdict: Risky");
+  }
+  function hasBadPhone(l: Lead): boolean {
+    return !l.phone || (l.notes || "").includes("Phone Type: unknown");
+  }
+
   const typeFiltered = leads.filter((l) => {
-    if (leadTab === "broker") return isBrokerLead(l);
+    if (leadTab === "broker") return isBrokerLead(l) && !hasBadEmail(l) && !hasBadPhone(l);
     if (leadTab === "referral") return isReferralLead(l);
+    if (leadTab === "bad_email") return hasBadEmail(l);
+    if (leadTab === "bad_phone") return !l.phone || hasBadPhone(l);
     return true;
   });
 
@@ -272,6 +328,13 @@ export default function InternalLeadsPage() {
             {validatingEmails ? "Validating..." : "✉️ Validate Emails"}
           </button>
           <button
+            onClick={bulkSendBrokerEmails}
+            disabled={bulkEmailing}
+            className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition disabled:opacity-50"
+          >
+            {bulkEmailing ? "Sending..." : "📧 Email All New"}
+          </button>
+          <button
             onClick={() => { setImportOpen(true); setImportData([]); setImportResult(null); }}
             className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition"
           >
@@ -314,7 +377,13 @@ export default function InternalLeadsPage() {
           >
             {t.label}
             <span className="ml-1.5 text-[10px] text-[var(--app-text-faint)]">
-              ({leads.filter((l) => t.id === "all" ? true : t.id === "broker" ? isBrokerLead(l) : isReferralLead(l)).length})
+              ({leads.filter((l) => {
+                if (t.id === "broker") return isBrokerLead(l) && !hasBadEmail(l) && !hasBadPhone(l);
+                if (t.id === "referral") return isReferralLead(l);
+                if (t.id === "bad_email") return hasBadEmail(l);
+                if (t.id === "bad_phone") return !l.phone || hasBadPhone(l);
+                return true;
+              }).length})
             </span>
           </button>
         ))}
@@ -377,13 +446,15 @@ export default function InternalLeadsPage() {
         <div className="text-center py-12 font-body text-sm text-[var(--app-text-muted)]">Loading leads...</div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center">
-          <div className="text-5xl mb-3">{leadTab === "broker" ? "🚢" : "📊"}</div>
+          <div className="text-5xl mb-3">{leadTab === "broker" ? "🚢" : leadTab === "bad_email" ? "✉️" : leadTab === "bad_phone" ? "📞" : "📊"}</div>
           <h3 className="text-lg font-semibold mb-1">
-            {leadTab === "broker" ? "No customs broker leads yet" : leadTab === "referral" ? "No referral partner leads yet" : "No internal leads yet"}
+            {leadTab === "broker" ? "No customs broker leads yet" : leadTab === "referral" ? "No referral partner leads yet" : leadTab === "bad_email" ? "No leads with bad/missing emails" : leadTab === "bad_phone" ? "No leads with bad/missing phones" : "No internal leads yet"}
           </h3>
           <p className="text-sm text-[var(--app-text-muted)]">
             {leadTab === "broker"
               ? "Import the CBP broker listing CSV to start building your customs broker pipeline."
+              : leadTab === "bad_email" ? "Leads with invalid, risky, or missing emails will appear here after validation."
+              : leadTab === "bad_phone" ? "Leads with no phone number or unknown phone types will appear here."
               : "Leads from /recover and direct outreach will appear here."
             }
           </p>
@@ -396,7 +467,114 @@ export default function InternalLeadsPage() {
             </button>
           )}
         </div>
+      ) : (leadTab === "broker" || leadTab === "bad_email" || leadTab === "bad_phone") ? (
+        /* ── BROKER TABLE VIEW ── */
+        <div className="overflow-x-auto border border-[var(--app-border)] rounded-xl">
+          <table className="w-full text-[12px]">
+            <thead className="bg-[var(--app-input-bg)] sticky top-0 z-10">
+              <tr>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Filer Code</th>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Broker Name</th>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Location</th>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Phone</th>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Type</th>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Email</th>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Email Status</th>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Lead Status</th>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((lead) => {
+                const notes = lead.notes || "";
+                const filerMatch = notes.match(/Filer Code: (\w+)/);
+                const locationMatch = notes.match(/Location: (.+)/);
+                const phoneType = notes.includes("Phone Type: mobile") ? "mobile" : notes.includes("Phone Type: landline") ? "landline" : notes.includes("Phone Type: voip") ? "voip" : null;
+                const emailVerdict = notes.includes("Email Verdict: Valid") ? "Valid" : notes.includes("Email Verdict: Risky") ? "Risky" : notes.includes("Email Verdict: Invalid") ? "Invalid" : null;
+                const realEmail = !lead.email.includes("@import.placeholder") ? lead.email : "";
+
+                return (
+                  <tr key={lead.id} className="border-t border-[var(--app-border)] hover:bg-[var(--app-input-bg)] transition">
+                    <td className="px-3 py-2.5 font-mono text-blue-400 whitespace-nowrap">{filerMatch?.[1] || "—"}</td>
+                    <td className="px-3 py-2.5 font-semibold whitespace-nowrap">{lead.firstName} {lead.lastName}</td>
+                    <td className="px-3 py-2.5 text-[var(--app-text-muted)] whitespace-nowrap">{locationMatch?.[1] || "—"}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">{lead.phone || "—"}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      {phoneType ? (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
+                          phoneType === "mobile" ? "bg-green-500/15 text-green-400" :
+                          phoneType === "landline" ? "bg-gray-500/15 text-gray-400" :
+                          "bg-blue-500/15 text-blue-400"
+                        }`}>
+                          {phoneType === "mobile" ? "📱 Mobile" : phoneType === "landline" ? "☎️ Land" : "🌐 VoIP"}
+                        </span>
+                      ) : <span className="text-[var(--app-text-faint)]">—</span>}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">{realEmail || <span className="text-[var(--app-text-faint)]">—</span>}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      {emailVerdict ? (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
+                          emailVerdict === "Valid" ? "bg-green-500/15 text-green-400" :
+                          emailVerdict === "Risky" ? "bg-yellow-500/15 text-yellow-400" :
+                          "bg-red-500/15 text-red-400"
+                        }`}>
+                          {emailVerdict === "Valid" ? "✅ Valid" : emailVerdict === "Risky" ? "⚠️ Risky" : "❌ Invalid"}
+                        </span>
+                      ) : <span className="text-[var(--app-text-faint)]">—</span>}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <select
+                        value={lead.status}
+                        onChange={(e) => updateLead(lead.id, { status: e.target.value })}
+                        className={`text-[10px] px-2 py-1 rounded-full font-semibold uppercase border appearance-none cursor-pointer ${STAGE_BADGES[lead.status] || STAGE_BADGES.new}`}
+                      >
+                        <option value="prospect">New</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="call_booked">Call Booked</option>
+                        <option value="qualified">Qualified</option>
+                        <option value="invited">Invited</option>
+                        <option value="signed_up">Converted</option>
+                        <option value="skipped">Lost</option>
+                      </select>
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <div className="flex gap-1">
+                        {realEmail && lead.status === "prospect" && (lead.notes || "").includes("Email Verdict: Valid") && (
+                          <button
+                            onClick={() => sendBrokerEmail(lead.id)}
+                            disabled={sendingEmailId === lead.id}
+                            className="text-[10px] px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition disabled:opacity-50"
+                            title="Send recruitment email"
+                          >
+                            {sendingEmailId === lead.id ? "..." : "Email"}
+                          </button>
+                        )}
+                        {lead.status !== "invited" && lead.status !== "signed_up" && (
+                          <button
+                            onClick={() => sendInvite(lead.id)}
+                            className="text-[10px] px-2 py-1 rounded-lg bg-brand-gold/20 text-brand-gold border border-brand-gold/30 hover:bg-brand-gold/30 transition"
+                            title="Send partner invite"
+                          >
+                            Invite
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteLead(lead.id)}
+                          className="text-[10px] px-2 py-1 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition"
+                          title="Delete lead"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       ) : (
+        /* ── CARD VIEW (Referral Partners / All) ── */
         <div className="space-y-2">
           {filtered.map((lead) => {
             const isExpanded = expandedId === lead.id;
@@ -421,34 +599,10 @@ export default function InternalLeadsPage() {
                       </div>
                       <div className="min-w-0">
                         <div className="font-semibold text-sm truncate">{lead.firstName} {lead.lastName}</div>
-                        <div className="text-[12px] text-[var(--app-text-muted)] truncate flex items-center gap-1">
-                          <span>{lead.email.includes("@import.placeholder") ? "" : lead.email}</span>
-                          {lead.phone && <span>{lead.email.includes("@import.placeholder") ? "" : " · "}{lead.phone}</span>}
-                          {lead.phone && (
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
-                              (lead.notes || "").includes("Phone Type: mobile") ? "bg-green-500/15 text-green-400" :
-                              (lead.notes || "").includes("Phone Type: landline") ? "bg-gray-500/15 text-gray-400" :
-                              (lead.notes || "").includes("Phone Type: voip") ? "bg-blue-500/15 text-blue-400" :
-                              "bg-white/5 text-[var(--app-text-faint)]"
-                            }`}>
-                              {(lead.notes || "").includes("Phone Type: mobile") ? "📱 Mobile" :
-                               (lead.notes || "").includes("Phone Type: landline") ? "☎️ Landline" :
-                               (lead.notes || "").includes("Phone Type: voip") ? "🌐 VoIP" : ""}
-                            </span>
-                          )}
-                          {!lead.email.includes("@import.placeholder") && (lead.notes || "").includes("Email Verdict:") && (
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
-                              (lead.notes || "").includes("Email Verdict: Valid") ? "bg-green-500/15 text-green-400" :
-                              (lead.notes || "").includes("Email Verdict: Risky") ? "bg-yellow-500/15 text-yellow-400" :
-                              (lead.notes || "").includes("Email Verdict: Invalid") ? "bg-red-500/15 text-red-400" :
-                              "bg-white/5 text-[var(--app-text-faint)]"
-                            }`}>
-                              {(lead.notes || "").includes("Email Verdict: Valid") ? "✅ Valid" :
-                               (lead.notes || "").includes("Email Verdict: Risky") ? "⚠️ Risky" :
-                               (lead.notes || "").includes("Email Verdict: Invalid") ? "❌ Invalid" : ""}
-                            </span>
-                          )}
-                          {locationMatch && <span> · {locationMatch[1]}</span>}
+                        <div className="text-[12px] text-[var(--app-text-muted)] truncate">
+                          {lead.email.includes("@import.placeholder") ? "" : lead.email}
+                          {lead.phone ? `${lead.email.includes("@import.placeholder") ? "" : " · "}${lead.phone}` : ""}
+                          {locationMatch ? ` · ${locationMatch[1]}` : ""}
                         </div>
                       </div>
                     </div>
