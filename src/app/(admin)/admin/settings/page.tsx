@@ -65,6 +65,7 @@ const ALL_NAV_ITEMS = [
   { id: "my-leads", label: "My Leads", icon: "🎯" },
   { id: "earnings-calculator", label: "Earnings Calculator", icon: "🧮" },
   { id: "referral-links", label: "Referral Links", icon: "🔗" },
+  { id: "widget", label: "TMS Widget", icon: "🔌" },
   // Documents used to be a standalone sidebar item — it now lives as
   // the rightmost tab inside Full Reporting. Removed from the editor
   // so admins can't accidentally promote it back to the sidebar.

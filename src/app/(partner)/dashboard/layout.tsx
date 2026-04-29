@@ -44,6 +44,7 @@ const MAIN_NAV: Array<{
   { id: "my-leads", href: "/dashboard/my-leads", icon: "🎯", label: "My Leads", shortLabel: "Leads" },
   { id: "earnings-calculator", href: "/dashboard/earnings-calculator", icon: "🧮", label: "Earnings Calculator", shortLabel: "Calc" },
   { id: "referral-links", href: "/dashboard/referral-links", icon: "🔗", label: "Referral Links", shortLabel: "Links" },
+  { id: "widget", href: "/dashboard/widget", icon: "🔌", label: "TMS Widget", shortLabel: "Widget" },
   {
     id: "communications",
     href: "/dashboard/conference",
