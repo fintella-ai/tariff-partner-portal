@@ -188,8 +188,7 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
   ]);
 
   const agreementSigned =
-    partner.status === "active" ||
-    (agreement?.status === "signed" || agreement?.status === "amended");
+    agreement?.status === "signed" || agreement?.status === "approved" || agreement?.status === "amended";
   const agreementPending =
     agreement?.status === "pending" || agreement?.status === "partner_signed";
 
