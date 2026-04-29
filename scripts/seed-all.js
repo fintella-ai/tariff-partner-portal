@@ -578,7 +578,7 @@ async function main() {
       name: "Password Reset Link",
       category: "Account Security",
       subject: "Reset your Fintella password",
-      preheader: "Reset your Fintella password — link expires in 1 hour.",
+      preheader: "Reset your Fintella password — link expires in 24 hours.",
       heading: "Reset your password",
       bodyHtml:
         "<p>Hi {firstName},</p>" +
@@ -588,14 +588,14 @@ async function main() {
       bodyText:
         "Hi {firstName},\n\n" +
         "We received a request to reset the password for your {roleLabel} account at {firmShort}.\n\n" +
-        "Open this link to choose a new password (expires in 1 hour, single-use):\n{resetUrl}\n\n" +
+        "Open this link to choose a new password (expires in 24 hours, single-use):\n{resetUrl}\n\n" +
         "If you didn't request this, you can safely ignore this email — your password won't change.",
       ctaLabel: "Reset password",
       ctaUrl: "{resetUrl}",
       enabled: true,
       isDraft: false,
       description:
-        "Fires from /api/auth/forgot-password whenever a partner or admin submits their email on the Forgot Password page. Token is a single-use 32-byte hex with a 1-hour TTL. If this template is disabled or missing, sendPasswordResetEmail falls back to a hardcoded body so recovery never silently breaks.",
+        "Fires from /api/auth/forgot-password whenever a partner or admin submits their email on the Forgot Password page. Token is a single-use 32-byte hex with a 24-hour TTL. If this template is disabled or missing, sendPasswordResetEmail falls back to a hardcoded body so recovery never silently breaks.",
       variables: JSON.stringify([
         "firstName",
         "fullName",

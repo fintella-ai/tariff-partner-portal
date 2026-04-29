@@ -846,7 +846,7 @@ export default function PartnerDetailPage() {
           <div className="flex flex-col sm:flex-row gap-3 items-start">
             <div className="flex-1">
               <p className="font-body text-[11px] text-[var(--app-text-muted)] leading-relaxed">
-                Emails <span className="font-mono text-[var(--app-text-secondary)]">{partner.email}</span> a single-use reset link (expires in 1 hour). The partner sets their own password — admin never sees it.
+                Emails <span className="font-mono text-[var(--app-text-secondary)]">{partner.email}</span> a single-use reset link (expires in 24 hours). The partner sets their own password — admin never sees it.
               </p>
             </div>
             <button
@@ -1187,7 +1187,7 @@ export default function PartnerDetailPage() {
 
         <div className="p-3 rounded-lg bg-brand-gold/[0.04] border border-brand-gold/10">
           <p className="font-body text-[11px] text-[var(--app-text-muted)] leading-relaxed">
-            All partners earn <strong className="text-brand-gold">25%</strong> of the firm fee total across tiers. L2/L3 rates are chosen by the recruiting partner (10%, 15%, or 20%) when they generate a recruitment link. The override (25% minus the recruit&apos;s rate) goes to the upline.
+            L1 partners earn <strong className="text-brand-gold">10–25%</strong> of the firm fee on direct deals. L2/L3 rates are chosen by the recruiting partner (10%, 15%, or 20%) when they generate a recruitment link. The upline earns the override (their rate minus the recruit&apos;s rate). Total across all tiers always equals the L1 partner&apos;s assigned rate.
           </p>
         </div>
 

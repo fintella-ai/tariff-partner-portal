@@ -1162,7 +1162,7 @@ export async function sendMonthlyNewsletterToAllPartners(): Promise<{
 
 /**
  * Password-reset email — fired by POST /api/auth/forgot-password.
- * Single-use link with a 1-hour TTL. Looks up the `password_reset`
+ * Single-use link with a 24-hour TTL. Looks up the `password_reset`
  * template from EmailTemplate so admins can edit copy; falls back to
  * a hardcoded body if the row is missing or disabled so a DB mishap
  * can never silently break recovery.
@@ -1220,12 +1220,12 @@ export async function sendPasswordResetEmail(opts: {
 
 We received a request to reset the password for your ${opts.role === "admin" ? "admin" : "partner"} account at ${FIRM_SHORT}.
 
-Open this link to choose a new password (expires in 1 hour, single-use):
+Open this link to choose a new password (expires in 24 hours, single-use):
 ${opts.resetUrl}
 
 If you didn't request this, you can safely ignore this email — your password won't change.`;
   const { html, text } = emailShell({
-    preheader: `Reset your ${FIRM_SHORT} password — link expires in 1 hour.`,
+    preheader: `Reset your ${FIRM_SHORT} password — link expires in 24 hours.`,
     heading,
     bodyHtml,
     bodyText,
