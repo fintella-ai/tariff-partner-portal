@@ -1616,13 +1616,16 @@ model PartnerLead {
   tier             String   @default("l1")
   referredByCode   String?
   notes            String?
-  status           String   @default("prospect") // prospect, invited, signed_up, skipped
+  status           String   @default("prospect") // prospect, contacted, needs_review, invited, signed_up, skipped
   inviteId         String?  // RecruitmentInvite.id once invited
+  scheduledSendAt  DateTime? // when the recruitment email should be sent (timezone-optimized)
+  emailSentAt      DateTime? // when the recruitment email was actually sent
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   @@index([status])
   @@index([email])
+  @@index([scheduledSendAt])
 }
 
 // Admin-defined time windows when John (or whoever) is available for
