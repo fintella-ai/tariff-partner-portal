@@ -376,10 +376,14 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     }
   }
 
-  const visibleSteps = merged.filter((s) => {
+  let visibleSteps = merged.filter((s) => {
     const o = overrides?.[s.id];
     return !(o && o.hidden === true);
   });
+  // Safety: if overrides hide everything, fall back to all built-in steps
+  if (visibleSteps.length === 0 && builtInSteps.length > 0) {
+    visibleSteps = builtInSteps;
+  }
   visibleSteps.sort((a, b) => {
     const ao = explicitOrder.get(a.id) ?? 999;
     const bo = explicitOrder.get(b.id) ?? 999;
