@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#c4a050" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- calculator body -->
+  <rect x="4" y="2" width="16" height="20" rx="2"/>
+  <!-- screen -->
+  <rect x="7" y="5" width="10" height="4" rx="0.5"/>
+  <!-- button row 1 -->
+  <circle cx="8.5" cy="12.5" r="0.8"/>
+  <circle cx="12" cy="12.5" r="0.8"/>
+  <circle cx="15.5" cy="12.5" r="0.8"/>
+  <!-- button row 2 -->
+  <circle cx="8.5" cy="15.5" r="0.8"/>
+  <circle cx="12" cy="15.5" r="0.8"/>
+  <circle cx="15.5" cy="15.5" r="0.8"/>
+  <!-- button row 3 -->
+  <circle cx="8.5" cy="18.5" r="0.8"/>
+  <circle cx="12" cy="18.5" r="0.8"/>
+  <circle cx="15.5" cy="18.5" r="0.8"/>
+</svg>
