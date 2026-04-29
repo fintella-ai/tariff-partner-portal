@@ -672,8 +672,10 @@ export default function InternalLeadsPage() {
               <tr>
                 <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Filer Code</th>
                 <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Broker Name</th>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Title</th>
                 <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Location</th>
                 <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Phone</th>
+                <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Ext</th>
                 <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Type</th>
                 <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Email</th>
                 <th className="px-3 py-2.5 text-left text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-semibold">Validation</th>
@@ -692,12 +694,21 @@ export default function InternalLeadsPage() {
                 const emailVerdict = notes.includes("Email Verdict: Valid") ? "Valid" : notes.includes("Email Verdict: Risky") ? "Risky" : notes.includes("Email Verdict: Invalid") ? "Invalid" : notes.includes("Email Verdict: unknown") ? "Unknown" : null;
                 const realEmail = !lead.email.includes("@import.placeholder") ? lead.email : "";
 
+                const rawPhone = lead.phone || "";
+                const extMatch = rawPhone.match(/\s*x(\d+)$/i);
+                const displayPhone = extMatch ? rawPhone.replace(extMatch[0], "").trim() : rawPhone;
+                const displayExt = extMatch ? extMatch[1] : "";
+                const isJustExt = !extMatch && /^\d{1,4}$/.test(rawPhone.trim());
+                const brokerTitle = lead.lastName === "Broker" ? "" : lead.lastName?.replace(/^Broker\s*/i, "") || "";
+
                 return (
                   <tr key={lead.id} className="border-t border-[var(--app-border)] hover:bg-[var(--app-input-bg)] transition">
                     <td className="px-3 py-2.5 font-mono text-blue-400 whitespace-nowrap">{filerMatch?.[1] || "—"}</td>
-                    <td className="px-3 py-2.5 font-semibold whitespace-nowrap">{lead.firstName} {lead.lastName}</td>
+                    <td className="px-3 py-2.5 font-semibold whitespace-nowrap">{lead.firstName}{brokerTitle ? ` ${brokerTitle}` : ""}</td>
+                    <td className="px-3 py-2.5 text-[var(--app-text-muted)] whitespace-nowrap text-[11px]">{lead.lastName === "Broker" ? lead.lastName : "—"}</td>
                     <td className="px-3 py-2.5 text-[var(--app-text-muted)] whitespace-nowrap">{locationMatch?.[1] || "—"}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">{lead.phone || "—"}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">{isJustExt ? "—" : displayPhone || "—"}</td>
+                    <td className="px-3 py-2.5 text-[var(--app-text-muted)] whitespace-nowrap text-[11px]">{isJustExt ? rawPhone : displayExt || "—"}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">
                       {phoneType ? (
                         <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
