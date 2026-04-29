@@ -11,15 +11,14 @@ type Lead = {
   unsubscribedAt: string | null; createdAt: string; updatedAt: string;
 };
 
-type LeadTab = "all" | "referral" | "broker" | "clients";
+type LeadTab = "clients" | "referral" | "broker";
 type SubTab = "all" | "scheduled" | "good_email" | "replied" | "good_sms" | "good_phone" | "not_validated" | "bad_email" | "bad_phone" | "unsubscribed";
 type Stage = "all" | "new" | "scheduled" | "contacted" | "needs_review" | "submitted" | "converted" | "lost";
 
 const LEAD_TABS: { id: LeadTab; label: string }[] = [
-  { id: "all", label: "All Leads" },
+  { id: "clients", label: "Client Submissions" },
   { id: "referral", label: "Referral Partners" },
   { id: "broker", label: "Customs Brokers" },
-  { id: "clients", label: "Client Submissions" },
 ];
 
 const BROKER_SUB_TABS: { id: SubTab; label: string }[] = [
@@ -81,7 +80,7 @@ const CBP_HEADERS = ["Filer Code", "Permitted Broker Name", "City", "State", "Wo
 export default function InternalLeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [leadTab, setLeadTab] = useState<LeadTab>("all");
+  const [leadTab, setLeadTab] = useState<LeadTab>("clients");
   const [subTab, setSubTab] = useState<SubTab>("all");
   const [stage, setStage] = useState<Stage>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -367,7 +366,7 @@ export default function InternalLeadsPage() {
   const typeFiltered = applySubFilter(leads.filter((l) => {
     if (leadTab === "broker") return isBrokerLead(l);
     if (leadTab === "referral") return isReferralLead(l);
-    return true;
+    return false;
   }));
 
   const q = search.toLowerCase().trim();
@@ -541,13 +540,11 @@ export default function InternalLeadsPage() {
             }`}
           >
             {t.label}
-            <span className="ml-1.5 text-[10px] text-[var(--app-text-faint)]">
-              ({leads.filter((l) => {
-                if (t.id === "broker") return isBrokerLead(l);
-                if (t.id === "referral") return isReferralLead(l);
-                return true;
-              }).length})
-            </span>
+            {t.id !== "clients" && (
+              <span className="ml-1.5 text-[10px] text-[var(--app-text-faint)]">
+                ({leads.filter((l) => t.id === "broker" ? isBrokerLead(l) : isReferralLead(l)).length})
+              </span>
+            )}
           </button>
         ))}
       </div>

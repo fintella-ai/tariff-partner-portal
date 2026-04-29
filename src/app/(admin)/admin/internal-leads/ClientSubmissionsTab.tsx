@@ -3,6 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { fmtDateTime } from "@/lib/format";
 
+const PIPELINE_STAGES = [
+  { value: "all", label: "All" },
+  { value: "pending", label: "Pending" },
+  { value: "lead_submitted", label: "Lead Submitted" },
+  { value: "meeting_booked", label: "Meeting Booked" },
+  { value: "meeting_missed", label: "Meeting Missed" },
+  { value: "qualified", label: "Qualified" },
+  { value: "disqualified", label: "Disqualified" },
+  { value: "client_engaged", label: "Client Engaged" },
+  { value: "in_process", label: "In Process" },
+  { value: "closedwon", label: "Closed Won" },
+];
+
 interface Submission {
   id: string;
   firstName: string;
@@ -52,6 +65,8 @@ export default function ClientSubmissionsTab() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stageFilter, setStageFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -169,14 +184,70 @@ export default function ClientSubmissionsTab() {
         </div>
       )}
 
-      {submissions.length === 0 ? (
+      {/* Pipeline stage tabs */}
+      <div className="mb-4 border-b border-[var(--app-border)] overflow-x-auto">
+        <div className="flex gap-1 min-w-max">
+          {PIPELINE_STAGES.map((s) => {
+            const count = s.value === "all"
+              ? submissions.length
+              : submissions.filter((sub) => (sub.dealStage || "pending") === s.value).length;
+            const active = stageFilter === s.value;
+            return (
+              <button
+                key={s.value}
+                onClick={() => setStageFilter(s.value)}
+                className={`font-body text-[12px] px-3 py-2 rounded-t-lg border border-b-0 transition-colors whitespace-nowrap min-h-[36px] ${
+                  active
+                    ? "text-brand-gold border-[var(--app-border)] bg-[var(--app-card-bg)] -mb-px font-semibold"
+                    : "text-[var(--app-text-muted)] border-transparent hover:text-[var(--app-text-secondary)] hover:bg-brand-gold/5"
+                }`}
+              >
+                {s.label}
+                <span className={`ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${active ? "bg-brand-gold/20 text-brand-gold" : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)]"}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="mb-4">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name, email, company, partner code..."
+          className="w-full bg-[var(--app-input-bg)] border border-[var(--app-input-border)] rounded-lg px-4 py-2.5 text-[var(--app-text)] font-body text-sm outline-none focus:border-brand-gold/40 transition-colors placeholder:text-[var(--app-text-muted)]"
+        />
+      </div>
+
+      {(() => {
+        const filtered = submissions
+          .filter((s) => stageFilter === "all" || (s.dealStage || "pending") === stageFilter)
+          .filter((s) => {
+            if (!search) return true;
+            const q = search.toLowerCase();
+            return (
+              s.firstName.toLowerCase().includes(q) ||
+              s.lastName.toLowerCase().includes(q) ||
+              s.email.toLowerCase().includes(q) ||
+              s.companyName.toLowerCase().includes(q) ||
+              (s.partnerCode || "").toLowerCase().includes(q)
+            );
+          });
+
+        return filtered.length === 0 ? (
         <div className="card p-12 text-center">
           <div className="text-5xl mb-3">📊</div>
-          <h3 className="text-lg font-semibold mb-1">No client submissions yet</h3>
+          <h3 className="text-lg font-semibold mb-1">{search || stageFilter !== "all" ? "No submissions match this filter" : "No client submissions yet"}</h3>
           <p className="text-sm text-[var(--app-text-muted)]">Submissions from /recover will appear here with deal sync status.</p>
         </div>
       ) : (
         <div className="card overflow-x-auto">
+          <div className="font-body text-[12px] text-[var(--app-text-muted)] px-4 py-2 border-b border-[var(--app-border)]">
+            Showing {filtered.length} submission{filtered.length !== 1 ? "s" : ""}{stageFilter !== "all" ? ` in ${PIPELINE_STAGES.find((s) => s.value === stageFilter)?.label}` : ""}
+          </div>
           <table className="w-full text-left font-body text-sm">
             <thead>
               <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
@@ -185,13 +256,13 @@ export default function ClientSubmissionsTab() {
                 <th className="px-4 py-3 text-center">Location</th>
                 <th className="px-4 py-3 text-center">Est. Refund</th>
                 <th className="px-4 py-3 text-center">Partner</th>
-                <th className="px-4 py-3 text-center">Deal Status</th>
+                <th className="px-4 py-3 text-center">Deal Stage</th>
                 <th className="px-4 py-3 text-center">Match</th>
                 <th className="px-4 py-3 text-center">Date</th>
               </tr>
             </thead>
             <tbody>
-              {submissions.map((s) => (
+              {filtered.map((s) => (
                 <tr key={s.id} className="border-b border-[var(--app-border-subtle)] hover:bg-[var(--app-hover)] transition">
                   <td className="px-4 py-3">
                     <div className="font-medium text-[13px]">{s.firstName} {s.lastName}</div>
@@ -230,7 +301,8 @@ export default function ClientSubmissionsTab() {
             </tbody>
           </table>
         </div>
-      )}
+      );
+      })()}
     </div>
   );
 }
