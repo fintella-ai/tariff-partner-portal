@@ -26,6 +26,7 @@ const WIRED_TEMPLATE_KEYS = new Set([
   "agreement_reminder",
   "invite_reminder",
   "onboarding_nudge",
+  "broker_recruitment_cold",
 ]);
 
 /**

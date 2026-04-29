@@ -718,6 +718,42 @@ async function main() {
         "firmName",
       ]),
     },
+    {
+      key: "broker_recruitment_cold",
+      name: "Broker Recruitment — Cold Email",
+      category: "Broker Recruitment",
+      subject: "Your tariff refund clients",
+      preheader: "Your importer clients are sitting on IEEPA tariff refunds",
+      heading: "IEEPA Tariff Refund Partner Opportunity",
+      bodyHtml:
+        "<p>{lead.firstName},</p>" +
+        "<p>Your importer clients are sitting on IEEPA tariff refunds — <strong>$166 billion</strong> is available, and <strong>83% of eligible importers</strong> haven't filed yet.{locationLine}</p>" +
+        "<p>We built a referral program specifically for licensed customs brokers. You refer clients you already serve, our legal team handles the CAPE filing, and you earn a commission on every successful recovery. <strong>Your clients stay yours</strong> — we work behind the scenes.</p>" +
+        "<p>Our Arizona-based legal partner is licensed to pay referral fees directly to brokers. No cost to join, no risk.</p>" +
+        "<p><strong>Worth a 10-minute call this week?</strong></p>",
+      bodyText:
+        "{lead.firstName},\n\n" +
+        "Your importer clients are sitting on IEEPA tariff refunds — $166 billion is available, and 83% of eligible importers haven't filed yet.{locationLine}\n\n" +
+        "We built a referral program specifically for licensed customs brokers. You refer clients you already serve, our legal team handles the CAPE filing, and you earn a commission on every successful recovery. Your clients stay yours — we work behind the scenes.\n\n" +
+        "Our Arizona-based legal partner is licensed to pay referral fees directly to brokers. No cost to join, no risk.\n\n" +
+        "Worth a 10-minute call this week?\n\n" +
+        "Learn more: {brokerPageUrl}",
+      ctaLabel: "Learn More About the Program",
+      ctaUrl: "{brokerPageUrl}",
+      enabled: true,
+      isDraft: false,
+      description:
+        "Cold email sent to imported customs brokers from the CBP listing. Sent via /api/admin/leads/send-broker-email. Admin can edit from Automations > Email Templates. Variables: lead.firstName, lead.location, locationLine, brokerPageUrl, portalUrl.",
+      variables: JSON.stringify([
+        "lead.firstName",
+        "lead.lastName",
+        "lead.location",
+        "locationLine",
+        "brokerPageUrl",
+        "portalUrl",
+        "firmShort",
+      ]),
+    },
   ];
 
   for (const t of emailTemplates) {
