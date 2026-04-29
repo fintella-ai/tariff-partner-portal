@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { FIRM_SHORT, DOC_TYPE_LABELS } from "@/lib/constants";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 
-type AgreementStatus = "not_sent" | "pending" | "partner_signed" | "signed" | "approved" | "amended" | "under_review";
+type AgreementStatus = "not_sent" | "pending" | "viewed" | "partner_signed" | "signed" | "approved" | "amended" | "under_review";
 type DocStatus = "required" | "uploaded" | "under_review" | "approved" | "expired" | "voided";
 
 const AGREEMENT_STATUS_CONFIG: Record<
@@ -15,6 +15,7 @@ const AGREEMENT_STATUS_CONFIG: Record<
 > = {
   not_sent:     { label: "Not Sent",           bg: "bg-[var(--app-input-bg)]",        text: "text-[var(--app-text-secondary)]",   dot: "bg-[var(--app-text-muted)]" },
   pending:      { label: "Pending Signature",  bg: "bg-yellow-500/15",   text: "text-yellow-400", dot: "bg-yellow-400" },
+  viewed:       { label: "Viewed — Sign Now", bg: "bg-orange-500/15",   text: "text-orange-400", dot: "bg-orange-400" },
   partner_signed: { label: "Awaiting Co-sign", bg: "bg-blue-500/15",    text: "text-blue-400",   dot: "bg-blue-400" },
   signed:       { label: "Signed",             bg: "bg-green-500/15",    text: "text-green-400",  dot: "bg-green-400" },
   approved:     { label: "Signed & Approved",  bg: "bg-green-500/15",    text: "text-green-400",  dot: "bg-green-400" },
@@ -102,7 +103,7 @@ export default function DocumentsView() {
   const agreementStatus: AgreementStatus = agreementData?.status || "not_sent";
   const astCfg = AGREEMENT_STATUS_CONFIG[agreementStatus];
   const isSigned = agreementStatus === "signed" || agreementStatus === "approved";
-  const isPending = agreementStatus === "pending" || agreementStatus === "partner_signed";
+  const isPending = agreementStatus === "pending" || agreementStatus === "partner_signed" || agreementStatus === "viewed";
 
   // Request signing — sends agreement then opens embedded signing modal
   const handleSignAgreement = async () => {
