@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
         partnerCode: matched.partner.partnerCode,
         commissionRate: matched.partner.commissionRate,
         totalReferrals,
-        totalEarnings: totalEarnings._sum.amount?.toNumber() ?? 0,
+        totalEarnings: totalEarnings._sum.amount ?? 0,
       },
       { headers: cors }
     );

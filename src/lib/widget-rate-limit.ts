@@ -5,7 +5,10 @@ const store = new Map<string, number[]>();
 
 setInterval(() => {
   const cutoff = Date.now() - WINDOW_MS;
-  for (const [key, timestamps] of store) {
+  const keys = Array.from(store.keys());
+  for (const key of keys) {
+    const timestamps = store.get(key);
+    if (!timestamps) continue;
     const valid = timestamps.filter((t) => t > cutoff);
     if (valid.length === 0) store.delete(key);
     else store.set(key, valid);

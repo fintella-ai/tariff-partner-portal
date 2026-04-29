@@ -72,8 +72,8 @@ export async function GET(req: NextRequest) {
       totalReferrals: total,
       pendingReferrals: pending,
       convertedReferrals: converted,
-      totalCommissionsEarned: totalEarnings._sum.amount?.toNumber() ?? 0,
-      pendingCommissions: pendingEarnings._sum.amount?.toNumber() ?? 0,
+      totalCommissionsEarned: totalEarnings._sum.amount ?? 0,
+      pendingCommissions: pendingEarnings._sum.amount ?? 0,
       recentReferrals,
     },
     { headers: cors }
