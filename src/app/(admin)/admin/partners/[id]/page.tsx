@@ -782,7 +782,7 @@ export default function PartnerDetailPage() {
           {(() => {
             const base = "https://referral.frostlawaz.com/l/ANNEXATIONPR/";
             const link = partner.corporatePartner
-              ? `${base}?utm_content=${partner.partnerCode}&ep=[insert_your_code_here]`
+              ? `${base}?utm_content=${partner.partnerCode}&/?ep=[insert_your_code_here]`
               : `${base}?utm_content=${partner.partnerCode}`;
             return (
               <div
