@@ -142,6 +142,7 @@ export default function AdminPartnersPage() {
   // reload anyway (the status/delete verbs are terminal).
   const [selectedPartnerIds, setSelectedPartnerIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkAgreementRate, setBulkAgreementRate] = useState("0.20");
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [levelFilter, setLevelFilter] = useState<"all" | "l1" | "l2" | "l3" | "l4plus">("all");
@@ -311,6 +312,38 @@ export default function AdminPartnersPage() {
     } finally {
       setBulkBusy(false);
     }
+  };
+
+  const bulkSendAgreement = async () => {
+    if (selectedPartnerIds.size === 0) return;
+    const rate = parseFloat(bulkAgreementRate);
+    const selected = partners.filter((p) => selectedPartnerIds.has(p.id));
+    const noAgreement = selected.filter((p) => !p.agreementStatus || p.agreementStatus === "not_sent" || p.agreementStatus === "none");
+    const hasAgreement = selected.filter((p) => p.agreementStatus && p.agreementStatus !== "not_sent" && p.agreementStatus !== "none");
+
+    let msg = `Send ${Math.round(rate * 100)}% agreement to ${selectedPartnerIds.size} partner(s)?`;
+    if (noAgreement.length > 0) msg += `\n\n${noAgreement.length} will receive a new agreement.`;
+    if (hasAgreement.length > 0) msg += `\n\n${hasAgreement.length} have an existing agreement — it will be voided and replaced.`;
+
+    if (!confirm(msg)) return;
+    setBulkBusy(true);
+    let sent = 0;
+    let failed = 0;
+    for (const p of selected) {
+      try {
+        const res = await fetch(`/api/admin/agreement/${p.partnerCode}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rate }),
+        });
+        if (res.ok) sent++;
+        else failed++;
+      } catch { failed++; }
+    }
+    clearSelection();
+    await fetchPartners();
+    setBulkBusy(false);
+    alert(`Agreements sent: ${sent}${failed > 0 ? `, failed: ${failed}` : ""}`);
   };
 
   const resolvedInviteRate = (): number | null => {
@@ -1212,6 +1245,28 @@ export default function AdminPartnersPage() {
                 <option value="blocked">blocked</option>
                 <option value="inactive">inactive</option>
               </select>
+              <span className="text-[var(--app-text-faint)]">·</span>
+              <label className="font-body text-[11px] text-[var(--app-text-muted)]">Agreement:</label>
+              <select
+                value={bulkAgreementRate}
+                onChange={(e) => setBulkAgreementRate(e.target.value)}
+                disabled={bulkBusy}
+                className="theme-input text-[12px] px-2 py-1.5 rounded-lg"
+              >
+                <option value="0.25">25%</option>
+                <option value="0.20">20%</option>
+                <option value="0.15">15%</option>
+                <option value="0.10">10%</option>
+              </select>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => void bulkSendAgreement()}
+                className="font-body text-[12px] text-brand-gold/80 border border-brand-gold/30 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors disabled:opacity-50"
+              >
+                Send Agreement
+              </button>
+              <span className="text-[var(--app-text-faint)]">·</span>
               <button
                 type="button"
                 disabled={bulkBusy}
