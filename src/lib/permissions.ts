@@ -33,7 +33,7 @@ export type AdminRole = "super_admin" | "admin" | "accounting" | "partner_suppor
 export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
   super_admin: [
     "home",
-    "partners", "applications", "internal-leads", "landingEditor", "deals",
+    "partners", "applications", "internal-leads", "landingEditor", "landingPages", "deals",
     "communications", "internalChats", "partnerSupport",
     "training", "conference", "documents",
     "automations", "gettingStartedEditor", "aiActivity",
@@ -42,7 +42,7 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
   ],
   admin: [
     "home",
-    "partners", "applications", "internal-leads", "landingEditor", "deals",
+    "partners", "applications", "internal-leads", "landingEditor", "landingPages", "deals",
     "communications", "internalChats", "partnerSupport",
     "training", "conference", "documents",
     "automations", "gettingStartedEditor", "aiActivity",

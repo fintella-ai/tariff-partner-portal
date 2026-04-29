@@ -30,7 +30,7 @@ const ADMIN_NAV_IDS_DEFAULT = [
   "partners", "applications", "internal-leads", "deals", "reporting",
   "communications", "internalChats", "partnerSupport",
   "training", "conference", "documents",
-  "automations", "gettingStartedEditor",
+  "automations", "gettingStartedEditor", "landingPages",
   "settings", "users", "dev",
 ];
 
@@ -85,6 +85,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   settings:     { id: "settings", href: "/admin/settings", icon: "⚙️", label: "Settings" },
   billing:      { id: "billing", href: "/admin/billing", icon: "💳", label: "Billing" },
   users:        { id: "users", href: "/admin/users", icon: "🔐", label: "Admin Users" },
+  landingPages: { id: "landingPages", href: "/admin/landing-pages", icon: "🌐", label: "Landing Pages" },
   dev:          { id: "dev", href: "/admin/dev", icon: "🛠️", label: "Development" },
   features:     { id: "features", href: "/admin/features", icon: "💡", label: "Feature Requests" },
 };
