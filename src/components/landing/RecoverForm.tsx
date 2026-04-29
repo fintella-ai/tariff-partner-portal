@@ -452,14 +452,14 @@ export default function RecoverForm({ partnerCode, utmParams }: Props) {
         const frostUrl = `https://referral.frostlawaz.com/l/ANNEXATIONPR/?${new URLSearchParams(p).toString()}`;
         return (
           <div>
-            <div className="rounded-xl border border-white/10 overflow-hidden" style={{ background: "#fff" }}>
+            <div className="rounded-xl border border-white/10 overflow-hidden relative" style={{ background: "#fff", height: "80vh", minHeight: 700 }}>
               <iframe
                 src={frostUrl}
-                className="w-full border-0"
+                className="w-full border-0 absolute"
                 title="Complete Your Filing"
                 allow="camera; microphone; geolocation"
                 sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-top-navigation"
-                style={{ width: "100%", height: "85vh", minHeight: 800 }}
+                style={{ top: -350, left: 0, width: "100%", height: "calc(100% + 700px)" }}
               />
             </div>
             <button onClick={() => setStep("contact")} className="w-full mt-3 py-2 text-xs text-white/40 hover:text-white/60">← Back to edit details</button>
