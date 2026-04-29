@@ -306,20 +306,26 @@ export default function InternalLeadsPage() {
   function hasBadPhone(l: Lead): boolean {
     return !l.phone || hasFailedPhone(l);
   }
+  function hasExtension(l: Lead): boolean {
+    return /x\d+$/i.test((l.phone || "").trim());
+  }
   function hasGoodSms(l: Lead): boolean {
     const t = getPhoneType(l);
     if (!l.phone || !t) return false;
+    if (hasExtension(l)) return false;
     const isSmsType = t === "mobile" || t === "fixedVoip" || t === "nonFixedVoip" || t === "voip" || t === "personal";
     if (!isSmsType) return false;
-    const digits = l.phone.replace(/[^0-9]/g, "");
+    const basePhone = l.phone.replace(/\s*x\d+$/i, "").trim();
+    const digits = basePhone.replace(/[^0-9]/g, "");
     return digits.length >= 10 && digits.length <= 11;
   }
   function hasGoodCalling(l: Lead): boolean {
     const t = getPhoneType(l);
     if (!l.phone || !t) return false;
     if (hasGoodSms(l)) return false;
-    const digits = l.phone.replace(/[^0-9]/g, "");
-    return (t === "landline" || t === "tollFree") && digits.length >= 10 && digits.length <= 11;
+    const basePhone = l.phone.replace(/\s*x\d+$/i, "").trim();
+    const digits = basePhone.replace(/[^0-9]/g, "");
+    return digits.length >= 10 && digits.length <= 11 && t !== "unknown";
   }
 
   function isScheduled(l: Lead): boolean {
