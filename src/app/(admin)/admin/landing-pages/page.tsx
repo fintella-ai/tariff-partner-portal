@@ -2,17 +2,18 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  DEFAULT_RECOVER, DEFAULT_PARTNERS, DEFAULT_BROKERS,
+  DEFAULT_RECOVER, DEFAULT_PARTNERS, DEFAULT_BROKERS, DEFAULT_WEBINAR,
   parsePageContent,
-  type RecoverPageContent, type PartnersPageContent,
+  type RecoverPageContent, type PartnersPageContent, type WebinarPageContent,
 } from "@/lib/landingPageSchemas";
 
-type PageSlug = "recover" | "partners" | "brokers";
+type PageSlug = "recover" | "partners" | "brokers" | "webinar";
 
 const PAGE_TABS: { slug: PageSlug; label: string; route: string }[] = [
   { slug: "recover", label: "Client Recovery", route: "/recover" },
   { slug: "partners", label: "Partner Recruitment", route: "/partners" },
   { slug: "brokers", label: "Customs Brokers", route: "/partners/brokers" },
+  { slug: "webinar", label: "Webinar Funnel", route: "/webinar" },
 ];
 
 const RECOVER_SECTIONS = [
@@ -29,6 +30,13 @@ const PARTNERS_SECTIONS = [
   { id: "opportunity", label: "Opportunity" },
   { id: "faq", label: "FAQ" },
   { id: "bottomCta", label: "Bottom CTA" },
+  { id: "footer", label: "Footer" },
+] as const;
+
+const WEBINAR_SECTIONS = [
+  { id: "hero", label: "Squeeze Page" },
+  { id: "watchPage", label: "Watch Page" },
+  { id: "takeaways", label: "Takeaways" },
   { id: "footer", label: "Footer" },
 ] as const;
 
@@ -69,12 +77,13 @@ export default function LandingPagesEditor() {
 
   const activePage = pages.find((p) => p.slug === activeSlug);
   const activeTab = PAGE_TABS.find((t) => t.slug === activeSlug)!;
-  const sections = activeSlug === "recover" ? RECOVER_SECTIONS : PARTNERS_SECTIONS;
+  const sections = activeSlug === "recover" ? RECOVER_SECTIONS : activeSlug === "webinar" ? WEBINAR_SECTIONS : PARTNERS_SECTIONS;
 
   function getDraft() {
     const raw = activePage?.draft || "{}";
     if (activeSlug === "recover") return parsePageContent(raw, DEFAULT_RECOVER);
     if (activeSlug === "brokers") return parsePageContent(raw, DEFAULT_BROKERS);
+    if (activeSlug === "webinar") return parsePageContent(raw, DEFAULT_WEBINAR);
     return parsePageContent(raw, DEFAULT_PARTNERS);
   }
 
@@ -208,6 +217,7 @@ export default function LandingPagesEditor() {
       {/* Section editor */}
       {activeSlug === "recover" && <RecoverSectionEditor draft={draft as RecoverPageContent} setDraft={setDraft} section={activeSection} />}
       {(activeSlug === "partners" || activeSlug === "brokers") && <PartnersSectionEditor draft={draft as PartnersPageContent} setDraft={setDraft} section={activeSection} />}
+      {activeSlug === "webinar" && <WebinarSectionEditor draft={draft as WebinarPageContent} setDraft={setDraft} section={activeSection} />}
     </div>
   );
 }
@@ -407,6 +417,80 @@ function PartnersSectionEditor({ draft, setDraft, section }: { draft: PartnersPa
       <Field label="Title" value={draft.bottomCta.title} onChange={(v) => setDraft({ ...draft, bottomCta: { ...draft.bottomCta, title: v } })} />
       <Field label="Subtitle" value={draft.bottomCta.subtitle} onChange={(v) => setDraft({ ...draft, bottomCta: { ...draft.bottomCta, subtitle: v } })} />
       <Field label="Button text" value={draft.bottomCta.buttonText} onChange={(v) => setDraft({ ...draft, bottomCta: { ...draft.bottomCta, buttonText: v } })} />
+    </div>
+  );
+
+  if (section === "footer") return (
+    <div className="card p-5 space-y-4">
+      <Field label="Copyright" value={draft.footer.copyright} onChange={(v) => setDraft({ ...draft, footer: { ...draft.footer, copyright: v } })} />
+      <Field label="Disclaimer" value={draft.footer.disclaimer} onChange={(v) => setDraft({ ...draft, footer: { ...draft.footer, disclaimer: v } })} rows={2} />
+    </div>
+  );
+
+  return null;
+}
+
+// ─── Webinar section editor ───────────────────────────────────────
+
+function WebinarSectionEditor({ draft, setDraft, section }: { draft: WebinarPageContent; setDraft: (d: WebinarPageContent) => void; section: string }) {
+  const h = draft.hero;
+  const setHero = (patch: Partial<typeof h>) => setDraft({ ...draft, hero: { ...h, ...patch } });
+
+  if (section === "hero") return (
+    <div className="card p-5 space-y-4">
+      <Field label="Badge" value={h.badge} onChange={(v) => setHero({ badge: v })} />
+      <Field label="Headline" value={h.headline} onChange={(v) => setHero({ headline: v })} />
+      <Field label="Subheadline" value={h.subheadline} onChange={(v) => setHero({ subheadline: v })} rows={3} />
+      <Field label="Timer Label" value={h.timerLabel} onChange={(v) => setHero({ timerLabel: v })} />
+      <Field label="Button Text" value={h.buttonText} onChange={(v) => setHero({ buttonText: v })} />
+      <div>
+        <div className="text-xs uppercase tracking-wider text-[var(--app-text-muted)] mb-2">Bullets</div>
+        {h.bullets.map((b, i) => (
+          <div key={i} className="flex gap-2 mb-2">
+            <input value={b} onChange={(e) => { const next = [...h.bullets]; next[i] = e.target.value; setHero({ bullets: next }); }} className="flex-1 theme-input rounded-lg px-3 py-2 text-sm" />
+            <button onClick={() => setHero({ bullets: h.bullets.filter((_, ix) => ix !== i) })} className="text-xs text-red-400 px-2">✕</button>
+          </div>
+        ))}
+        <button onClick={() => setHero({ bullets: [...h.bullets, ""] })} className="text-xs px-3 py-1.5 rounded-md border border-[var(--app-border)] hover:bg-[var(--app-input-bg)]">+ Add Bullet</button>
+      </div>
+      <div>
+        <div className="text-xs uppercase tracking-wider text-[var(--app-text-muted)] mb-2">Stats</div>
+        {h.stats.map((s, i) => (
+          <div key={i} className="grid grid-cols-2 gap-2 mb-2">
+            <input value={s.value} onChange={(e) => { const next = [...h.stats]; next[i] = { ...s, value: e.target.value }; setHero({ stats: next }); }} placeholder="Value" className="theme-input rounded-lg px-3 py-2 text-sm" />
+            <input value={s.label} onChange={(e) => { const next = [...h.stats]; next[i] = { ...s, label: e.target.value }; setHero({ stats: next }); }} placeholder="Label" className="theme-input rounded-lg px-3 py-2 text-sm" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (section === "watchPage") {
+    const w = draft.watchPage;
+    return (
+      <div className="card p-5 space-y-4">
+        <Field label="Welcome Heading (use {name} for personalization)" value={w.welcomeHeading} onChange={(v) => setDraft({ ...draft, watchPage: { ...w, welcomeHeading: v } })} />
+        <Field label="Subtitle" value={w.subtitle} onChange={(v) => setDraft({ ...draft, watchPage: { ...w, subtitle: v } })} />
+        <Field label="CTA Title" value={w.ctaTitle} onChange={(v) => setDraft({ ...draft, watchPage: { ...w, ctaTitle: v } })} />
+        <Field label="CTA Subtitle" value={w.ctaSubtitle} onChange={(v) => setDraft({ ...draft, watchPage: { ...w, ctaSubtitle: v } })} />
+        <Field label="CTA Button Text" value={w.ctaButton} onChange={(v) => setDraft({ ...draft, watchPage: { ...w, ctaButton: v } })} />
+      </div>
+    );
+  }
+
+  if (section === "takeaways") return (
+    <div className="card p-5 space-y-4">
+      {draft.takeaways.map((t, i) => (
+        <div key={i} className="p-3 rounded-lg border border-[var(--app-border)] space-y-2">
+          <div className="grid grid-cols-[60px_1fr] gap-2">
+            <Field label="Icon" value={t.icon} onChange={(v) => { const next = [...draft.takeaways]; next[i] = { ...t, icon: v }; setDraft({ ...draft, takeaways: next }); }} />
+            <Field label="Title" value={t.title} onChange={(v) => { const next = [...draft.takeaways]; next[i] = { ...t, title: v }; setDraft({ ...draft, takeaways: next }); }} />
+          </div>
+          <Field label="Description" value={t.description} onChange={(v) => { const next = [...draft.takeaways]; next[i] = { ...t, description: v }; setDraft({ ...draft, takeaways: next }); }} rows={2} />
+          <button onClick={() => setDraft({ ...draft, takeaways: draft.takeaways.filter((_, ix) => ix !== i) })} className="text-xs text-red-400">Remove</button>
+        </div>
+      ))}
+      <button onClick={() => setDraft({ ...draft, takeaways: [...draft.takeaways, { icon: "✨", title: "", description: "" }] })} className="text-xs px-3 py-1.5 rounded-md border border-[var(--app-border)] hover:bg-[var(--app-input-bg)]">+ Add Takeaway</button>
     </div>
   );
 

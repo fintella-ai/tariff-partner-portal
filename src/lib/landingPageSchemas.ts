@@ -194,6 +194,65 @@ export const DEFAULT_BROKERS: BrokersPageContent = {
   },
 };
 
+export interface WebinarPageContent {
+  hero: {
+    badge: string;
+    headline: string;
+    subheadline: string;
+    bullets: string[];
+    stats: { value: string; label: string }[];
+    timerLabel: string;
+    buttonText: string;
+  };
+  watchPage: {
+    welcomeHeading: string;
+    subtitle: string;
+    ctaTitle: string;
+    ctaSubtitle: string;
+    ctaButton: string;
+  };
+  takeaways: { icon: string; title: string; description: string }[];
+  footer: { copyright: string; disclaimer: string };
+}
+
+export const DEFAULT_WEBINAR: WebinarPageContent = {
+  hero: {
+    badge: "Free On-Demand Webinar",
+    headline: "How Customs Brokers Earn Commissions on Every IEEPA Tariff Recovery",
+    subheadline: "In this free 15-minute presentation, you'll learn exactly how licensed customs brokers are turning their existing client relationships into a new revenue stream — legally and compliantly.",
+    bullets: [
+      "Why $166 billion in IEEPA refunds creates a massive opportunity for brokers",
+      "How Arizona law allows our legal partner to pay you referral commissions",
+      "The exact process: refer → we file → client gets refund → you get paid",
+      "How the fast-cash buyout option gets your clients paid in weeks",
+      "Real numbers: commission rates, deal sizes, and earning potential",
+    ],
+    stats: [
+      { value: "$166B", label: "In IEEPA Refunds Available" },
+      { value: "14,454", label: "Licensed US Customs Brokers" },
+      { value: "83%", label: "Of Importers Haven't Filed" },
+    ],
+    timerLabel: "Next session starts in",
+    buttonText: "Watch the Webinar Now →",
+  },
+  watchPage: {
+    welcomeHeading: "Welcome, {name}!",
+    subtitle: "Watch the full presentation below. A partner application link appears at the end.",
+    ctaTitle: "Ready to Start Earning?",
+    ctaSubtitle: "Apply to the Fintella partner program. Free to join, no obligations.",
+    ctaButton: "Apply Now — It's Free",
+  },
+  takeaways: [
+    { icon: "💰", title: "Legal Referral Commissions", description: "Arizona-licensed counsel pays you directly on every successful recovery." },
+    { icon: "⚡", title: "Fast-Cash Buyout", description: "Clients can get 65–85 cents on the dollar in weeks. You earn on the buyout amount." },
+    { icon: "🔒", title: "Clients Stay Yours", description: "We never contact your clients directly. You remain their trusted advisor." },
+  ],
+  footer: {
+    copyright: "© 2026 Fintella — Financial Intelligence Network. All rights reserved.",
+    disclaimer: "",
+  },
+};
+
 export function parsePageContent<T>(json: string, defaults: T): T {
   try {
     const parsed = JSON.parse(json || "{}");

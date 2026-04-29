@@ -6,6 +6,7 @@ const DEFAULT_PAGES = [
   { slug: "recover", label: "Client Recovery (/recover)" },
   { slug: "partners", label: "Partner Recruitment (/partners)" },
   { slug: "brokers", label: "Customs Brokers (/partners/brokers)" },
+  { slug: "webinar", label: "Webinar Funnel (/webinar)" },
 ];
 
 export async function GET() {
