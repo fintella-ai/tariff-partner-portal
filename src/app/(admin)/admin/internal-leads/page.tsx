@@ -602,6 +602,20 @@ export default function InternalLeadsPage() {
         </div>
       </div>
 
+      {/* Pagination (top) */}
+      {totalTablePages > 1 && (
+        <div className="flex items-center justify-between mb-3">
+          <span className="font-body text-[11px] text-[var(--app-text-muted)]">
+            Showing {(tablePage - 1) * TABLE_PAGE_SIZE + 1}–{Math.min(tablePage * TABLE_PAGE_SIZE, filtered.length)} of {filtered.length}
+          </span>
+          <div className="flex gap-1">
+            <button onClick={() => setTablePage((p) => Math.max(1, p - 1))} disabled={tablePage === 1} className="font-body text-[11px] px-3 py-1.5 rounded-lg border border-[var(--app-border)] disabled:opacity-30 hover:bg-[var(--app-input-bg)] transition">← Prev</button>
+            <span className="font-body text-[11px] px-3 py-1.5 text-[var(--app-text-muted)]">{tablePage} / {totalTablePages}</span>
+            <button onClick={() => setTablePage((p) => Math.min(totalTablePages, p + 1))} disabled={tablePage === totalTablePages} className="font-body text-[11px] px-3 py-1.5 rounded-lg border border-[var(--app-border)] disabled:opacity-30 hover:bg-[var(--app-input-bg)] transition">Next →</button>
+          </div>
+        </div>
+      )}
+
       {/* Lead List */}
       {loading ? (
         <div className="text-center py-12 font-body text-sm text-[var(--app-text-muted)]">Loading leads...</div>
