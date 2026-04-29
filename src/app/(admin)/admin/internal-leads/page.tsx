@@ -11,7 +11,7 @@ type Lead = {
 
 type LeadTab = "all" | "referral" | "broker";
 type SubTab = "all" | "good_email" | "good_phone" | "bad_email" | "bad_phone";
-type Stage = "all" | "new" | "contacted" | "call_booked" | "qualified" | "submitted" | "converted" | "lost";
+type Stage = "all" | "new" | "contacted" | "needs_review" | "submitted" | "converted" | "lost";
 
 const LEAD_TABS: { id: LeadTab; label: string }[] = [
   { id: "all", label: "All Leads" },
@@ -37,25 +37,23 @@ const STAGES: { id: Stage; label: string }[] = [
   { id: "all", label: "All" },
   { id: "new", label: "New" },
   { id: "contacted", label: "Contacted" },
-  { id: "call_booked", label: "Call Booked" },
-  { id: "qualified", label: "Qualified" },
-  { id: "submitted", label: "Submitted" },
+  { id: "needs_review", label: "Needs Review" },
+  { id: "submitted", label: "Invited" },
   { id: "converted", label: "Converted" },
   { id: "lost", label: "Lost" },
 ];
 
 const STAGE_BADGES: Record<string, string> = {
   new: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  contacted: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  call_booked: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-  qualified: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  submitted: "bg-brand-gold/10 text-brand-gold border-brand-gold/20",
-  converted: "bg-green-500/10 text-green-400 border-green-500/20",
-  lost: "bg-red-500/10 text-red-400 border-red-500/20",
   prospect: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  invited: "bg-green-500/10 text-green-400 border-green-500/20",
+  contacted: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  needs_review: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+  submitted: "bg-brand-gold/10 text-brand-gold border-brand-gold/20",
+  invited: "bg-brand-gold/10 text-brand-gold border-brand-gold/20",
+  converted: "bg-green-500/10 text-green-400 border-green-500/20",
   signed_up: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  skipped: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+  lost: "bg-red-500/10 text-red-400 border-red-500/20",
+  skipped: "bg-red-500/10 text-red-400 border-red-500/20",
 };
 
 function isBrokerLead(lead: Lead): boolean {
@@ -297,16 +295,23 @@ export default function InternalLeadsPage() {
 
   const q = search.toLowerCase().trim();
   const filtered = typeFiltered
-    .filter((l) => stage === "all" || l.status === stage)
+    .filter((l) => {
+      if (stage === "all") return true;
+      if (stage === "new") return l.status === "prospect";
+      if (stage === "converted") return l.status === "signed_up" || l.status === "converted";
+      if (stage === "submitted") return l.status === "invited" || l.status === "submitted";
+      if (stage === "lost") return l.status === "skipped" || l.status === "lost";
+      return l.status === stage;
+    })
     .filter((l) => !q || `${l.firstName} ${l.lastName} ${l.email} ${l.phone || ""} ${l.notes || ""}`.toLowerCase().includes(q));
 
   const stats = {
     total: typeFiltered.length,
     new: typeFiltered.filter((l) => l.status === "prospect").length,
     contacted: typeFiltered.filter((l) => l.status === "contacted").length,
-    qualified: typeFiltered.filter((l) => l.status === "qualified").length,
-    invited: typeFiltered.filter((l) => l.status === "invited").length,
-    converted: typeFiltered.filter((l) => l.status === "signed_up").length,
+    needsReview: typeFiltered.filter((l) => l.status === "needs_review").length,
+    invited: typeFiltered.filter((l) => l.status === "invited" || l.status === "submitted").length,
+    converted: typeFiltered.filter((l) => l.status === "signed_up" || l.status === "converted").length,
   };
   const conversionRate = stats.total > 0 ? Math.round((stats.converted / stats.total) * 100) : 0;
 
@@ -477,8 +482,8 @@ export default function InternalLeadsPage() {
           <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Contacted</div>
         </div>
         <div className="card p-3 text-center">
-          <div className="font-display text-xl font-bold text-yellow-400">{stats.qualified}</div>
-          <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Qualified</div>
+          <div className="font-display text-xl font-bold text-orange-400">{stats.needsReview}</div>
+          <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Needs Review</div>
         </div>
         <div className="card p-3 text-center">
           <div className="font-display text-xl font-bold text-green-400">{stats.invited}</div>
@@ -611,8 +616,7 @@ export default function InternalLeadsPage() {
                       >
                         <option value="prospect">New</option>
                         <option value="contacted">Contacted</option>
-                        <option value="call_booked">Call Booked</option>
-                        <option value="qualified">Qualified</option>
+                        <option value="needs_review">Needs Review</option>
                         <option value="invited">Invited</option>
                         <option value="signed_up">Converted</option>
                         <option value="skipped">Lost</option>
@@ -692,7 +696,7 @@ export default function InternalLeadsPage() {
                       {filerMatch && <span className="text-[10px] text-blue-400 font-mono">{filerMatch[1]}</span>}
                       {dutyMatch && <span className="text-[11px] text-yellow-400 font-semibold">${dutyMatch[1]}</span>}
                       <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase border ${STAGE_BADGES[lead.status] || STAGE_BADGES.new}`}>
-                        {lead.status === "signed_up" ? "Converted" : lead.status}
+                        {lead.status === "signed_up" ? "Converted" : lead.status === "prospect" ? "New" : lead.status === "needs_review" ? "Review" : lead.status === "invited" ? "Invited" : lead.status === "skipped" ? "Lost" : lead.status}
                       </span>
                       <span className="text-[11px] text-[var(--app-text-faint)]">{fmtDate(lead.createdAt)}</span>
                     </div>
@@ -716,8 +720,8 @@ export default function InternalLeadsPage() {
                         <select value={editStage} onChange={(e) => setEditStage(e.target.value)} className="theme-input rounded-lg px-3 py-2 text-sm">
                           <option value="prospect">New</option>
                           <option value="contacted">Contacted</option>
-                          <option value="call_booked">Call Booked</option>
-                          <option value="qualified">Qualified</option>
+                          <option value="needs_review">Needs Review</option>
+                          <option value="invited">Invited</option>
                           <option value="skipped">Lost</option>
                         </select>
                         <input value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className="flex-1 theme-input rounded-lg px-3 py-2 text-sm" placeholder="Add note..." />
@@ -740,12 +744,12 @@ export default function InternalLeadsPage() {
                             Mark Contacted
                           </button>
                         )}
-                        {(lead.status === "prospect" || lead.status === "contacted") && (
+                        {lead.status === "needs_review" && (
                           <button
-                            onClick={() => updateLead(lead.id, { status: "qualified" })}
-                            className="font-body text-[11px] px-3 py-2 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 transition"
+                            onClick={() => sendInvite(lead.id)}
+                            className="font-body text-[11px] px-3 py-2 rounded-lg bg-brand-gold/20 text-brand-gold border border-brand-gold/30 hover:bg-brand-gold/30 transition"
                           >
-                            Mark Qualified
+                            Review & Send Invite
                           </button>
                         )}
                         {lead.status !== "invited" && lead.status !== "signed_up" && (

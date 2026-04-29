@@ -27,9 +27,11 @@ export async function POST(req: NextRequest) {
       await prisma.partnerLead.update({
         where: { id: existing.id },
         data: {
+          status: "needs_review",
           notes: [
             existing.notes || "",
-            `\n[${new Date().toISOString()}] Re-applied via /partners`,
+            `\n[${new Date().toISOString()}] Applied via /partners — NEEDS REVIEW`,
+            company ? `Company: ${company.trim()}` : null,
             professionalType ? `Type: ${professionalType}` : null,
             estimatedClients ? `Est. clients: ${estimatedClients}` : null,
             message ? `Message: ${message}` : null,
@@ -51,6 +53,7 @@ export async function POST(req: NextRequest) {
         phone: phone?.trim() || null,
         commissionRate: 0.25,
         tier: "l1",
+        status: "needs_review",
         notes: [
           "Source: /partners broker recruitment page",
           `Company: ${company.trim()}`,
