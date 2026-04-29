@@ -38,14 +38,14 @@ export default function PersonaAvatar({
         <div className="flex flex-col min-w-0">
           {showName && (
             <span
-              className="font-body text-[12px] font-semibold leading-tight"
+              className={`font-body font-semibold leading-tight ${size === "lg" ? "text-[16px]" : "text-[12px]"}`}
               style={{ color: persona.accentHex }}
             >
               {persona.displayName}
             </span>
           )}
           {showTagline && (
-            <span className="font-body text-[10px] text-[var(--app-text-muted)] leading-tight truncate">
+            <span className={`font-body text-[var(--app-text-muted)] leading-tight truncate ${size === "lg" ? "text-[13px]" : "text-[10px]"}`}>
               {persona.tagline}
             </span>
           )}

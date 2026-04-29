@@ -302,59 +302,20 @@ export default function AiAssistantPage() {
         ]}
       />
       {/* Header */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="mb-4 space-y-3">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <div className="font-body text-[11px] text-[var(--app-text-muted)] tracking-[1px] uppercase mb-1">
               AI Assistant
             </div>
-            <h2 className={`font-display ${device.isMobile ? "text-xl" : "text-2xl"} font-bold mb-1 flex items-center gap-2`}>
+            <h2 className={`font-display ${device.isMobile ? "text-xl" : "text-3xl"} font-bold flex items-center gap-2`}>
               FinnStellaOS
               <span className="font-body text-[10px] bg-brand-gold/15 text-brand-gold border border-brand-gold/30 rounded-full px-2 py-0.5 tracking-wider uppercase">
                 Beta
               </span>
             </h2>
-            <div className="flex items-center gap-3 flex-wrap">
-              <PersonaAvatar
-                personaId={preferredGeneralist}
-                size="sm"
-                showName
-                showTagline
-              />
-              {preferredGeneralist && (
-                <button
-                  onClick={() => setPickerOpen(true)}
-                  className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[var(--app-text)] underline-offset-2 hover:underline"
-                >
-                  Switch
-                </button>
-              )}
-              {pinnedSpecialist ? (
-                <button
-                  onClick={() => setPinnedSpecialist(null)}
-                  className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[var(--app-text)] underline-offset-2 hover:underline"
-                >
-                  ← Back to {preferredGeneralist === "stella" ? "Stella" : "Finn"}
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={() => setPinnedSpecialist("tara")}
-                    className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[#5e7eb8] underline-offset-2 hover:underline"
-                  >
-                    Talk to Tara
-                  </button>
-                  <button
-                    onClick={() => setPinnedSpecialist("ollie")}
-                    className="font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[#4a9d9c] underline-offset-2 hover:underline"
-                  >
-                    Talk to Ollie
-                  </button>
-                </>
-              )}
-            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             {!device.isDesktop && (
               <button
                 onClick={() => setSidebarOpen(true)}
@@ -372,8 +333,53 @@ export default function AiAssistantPage() {
           </div>
         </div>
 
+        {/* Persona + Switch/Talk to — enlarged on desktop */}
+        <div className="flex items-center gap-4">
+          <PersonaAvatar
+            personaId={preferredGeneralist}
+            size={device.isMobile ? "sm" : "lg"}
+            showName
+            showTagline
+          />
+        </div>
+
+        {/* Switch / Specialist tabs — centered */}
+        <div className="flex items-center justify-center gap-4 py-2 border-y border-[var(--app-border)]">
+          {preferredGeneralist && (
+            <button
+              onClick={() => setPickerOpen(true)}
+              className="font-body text-[11px] uppercase tracking-wider font-semibold text-[var(--app-text-muted)] hover:text-[var(--app-text)] transition"
+            >
+              Switch
+            </button>
+          )}
+          {pinnedSpecialist ? (
+            <button
+              onClick={() => setPinnedSpecialist(null)}
+              className="font-body text-[11px] uppercase tracking-wider font-semibold text-[var(--app-text-muted)] hover:text-[var(--app-text)] transition"
+            >
+              ← Back to {preferredGeneralist === "stella" ? "Stella" : "Finn"}
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => setPinnedSpecialist("tara")}
+                className="font-body text-[11px] uppercase tracking-wider font-semibold text-[var(--app-text-muted)] hover:text-[#5e7eb8] transition"
+              >
+                Talk to Tara
+              </button>
+              <button
+                onClick={() => setPinnedSpecialist("ollie")}
+                className="font-body text-[11px] uppercase tracking-wider font-semibold text-[var(--app-text-muted)] hover:text-[#4a9d9c] transition"
+              >
+                Talk to Ollie
+              </button>
+            </>
+          )}
+        </div>
+
         {aiEnabled === false && (
-          <div className="mt-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 font-body text-[11px] text-yellow-400">
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 font-body text-[11px] text-yellow-400">
             ⚠️ AI Assistant is running in mock mode — an admin has not configured ANTHROPIC_API_KEY. Responses are placeholders.
           </div>
         )}
