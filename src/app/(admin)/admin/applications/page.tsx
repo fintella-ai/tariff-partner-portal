@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { fmtDate, fmtDateTime, fmtPhone } from "@/lib/format";
 
@@ -83,12 +83,13 @@ export default function AdminApplicationsPage() {
   const [partnerList, setPartnerList] = useState<Array<{ partnerCode: string; firstName: string; lastName: string }>>([]);
 
   // Lead list state
-  type Lead = { id: string; firstName: string; lastName: string; email: string; phone: string | null; commissionRate: number; tier: string; referredByCode: string | null; notes: string | null; status: string; inviteId: string | null; createdAt: string };
+  type Lead = { id: string; firstName: string; lastName: string; email: string; phone: string | null; commissionRate: number; tier: string; referredByCode: string | null; notes: string | null; status: string; inviteId: string | null; scheduledSendAt: string | null; emailSentAt: string | null; createdAt: string };
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [leadForm, setLeadForm] = useState({ firstName: "", lastName: "", email: "", phone: "", commissionRate: 0.25, tier: "l1", referredByCode: "", notes: "" });
   const [leadSaving, setLeadSaving] = useState(false);
   const [invitingLeadId, setInvitingLeadId] = useState<string | null>(null);
+  const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
 
   const fetchApps = useCallback(async () => {
     setLoading(true);
@@ -581,77 +582,146 @@ export default function AdminApplicationsPage() {
             </div>
           ) : (
             <div className="card overflow-x-auto">
-              <div className="grid grid-cols-[2fr_1fr_0.6fr_0.6fr_0.8fr_auto] gap-3 px-5 py-3 border-b border-[var(--app-border)] items-center">
-                {["Name / Email", "Phone", "Rate", "Level", "Status", ""].map((h) => (
-                  <div key={h} className="font-body text-[11px] text-[var(--app-text-muted)] uppercase tracking-wider">{h}</div>
-                ))}
-              </div>
-              {leads.map((lead) => {
-                const isInviting = invitingLeadId === lead.id;
-                return (
-                  <div key={lead.id} className="grid grid-cols-[2fr_1fr_0.6fr_0.6fr_0.8fr_auto] gap-3 px-5 py-3.5 border-b border-[var(--app-border)] last:border-b-0 items-center">
-                    <div>
-                      <div className="font-body text-[13px] text-[var(--app-text)] font-medium">{lead.firstName} {lead.lastName}</div>
-                      <div className="font-body text-[11px] text-[var(--app-text-muted)]">{lead.email}</div>
-                      {lead.notes && <div className="font-body text-[10px] text-[var(--app-text-faint)] mt-0.5 truncate">{lead.notes}</div>}
-                    </div>
-                    <div className="font-body text-[12px] text-[var(--app-text-secondary)]">{lead.phone || "—"}</div>
-                    <div className="font-body text-[13px] text-[var(--app-text-secondary)]">{Math.round(lead.commissionRate * 100)}%</div>
-                    <div className="font-body text-[12px] text-[var(--app-text-secondary)] uppercase">{lead.tier}</div>
-                    <div>
-                      <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase border ${
-                        lead.status === "prospect" ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                        : lead.status === "invited" ? "bg-green-500/10 text-green-400 border-green-500/20"
-                        : lead.status === "signed_up" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                        : "bg-gray-500/10 text-gray-400 border-gray-500/20"
-                      }`}>
-                        {lead.status === "signed_up" ? "signed up" : lead.status}
-                      </span>
-                    </div>
-                    <div className="flex gap-1.5">
-                      {lead.status === "prospect" && (
-                        <>
-                          <button
-                            onClick={() => inviteLead(lead.id)}
-                            disabled={isInviting}
-                            className="font-body text-[11px] px-3 min-h-[32px] rounded-lg border text-brand-gold border-brand-gold/30 hover:bg-brand-gold/10 disabled:opacity-50 transition-colors whitespace-nowrap"
-                          >
-                            {isInviting ? "Sending…" : "Send Invite"}
-                          </button>
-                          <button
-                            onClick={() => skipLead(lead.id)}
-                            className="font-body text-[11px] px-2 min-h-[32px] rounded-lg border border-[var(--app-border)] text-[var(--app-text-muted)] hover:bg-[var(--app-input-bg)] transition-colors"
-                            title="Skip this lead"
-                          >
-                            Skip
-                          </button>
-                          <button
-                            onClick={() => deleteLead(lead.id)}
-                            className="font-body text-[11px] px-2 min-h-[32px] rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors"
-                            title="Remove lead"
-                          >
-                            ✕
-                          </button>
-                        </>
+              <table className="w-full text-left font-body text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--app-border)] text-[var(--app-text-muted)] text-xs uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center">First Name</th>
+                    <th className="px-4 py-3 text-center">Last Name</th>
+                    <th className="px-4 py-3 text-center">Email</th>
+                    <th className="px-4 py-3 text-center">Phone</th>
+                    <th className="px-4 py-3 text-center">Rate</th>
+                    <th className="px-4 py-3 text-center">Level</th>
+                    <th className="px-4 py-3 text-center">Status</th>
+                    <th className="px-4 py-3 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leads.map((lead) => {
+                    const isInviting = invitingLeadId === lead.id;
+                    const isExpanded = expandedLeadId === lead.id;
+                    const sourceParts = (lead.notes || "").split(/(?:Source:|Filer Code:|Location:|Phone Type:|Synced:)/i).filter(Boolean);
+                    const sourceFields: Array<{ label: string; value: string }> = [];
+                    if (lead.notes) {
+                      const m = lead.notes.match(/Source:\s*([^|]*?)(?:\s+Filer Code:|$)/i);
+                      if (m?.[1]) sourceFields.push({ label: "Source", value: m[1].trim() });
+                      const fc = lead.notes.match(/Filer Code:\s*([^|]*?)(?:\s+Location:|$)/i);
+                      if (fc?.[1]) sourceFields.push({ label: "Filer Code", value: fc[1].trim() });
+                      const loc = lead.notes.match(/Location:\s*([A-Z]{2})\b/i);
+                      if (loc?.[1]) sourceFields.push({ label: "Location", value: loc[1].trim() });
+                      const synced = lead.notes.match(/Synced:\s*([\d-]+)/i);
+                      if (synced?.[1]) sourceFields.push({ label: "Synced", value: synced[1].trim() });
+                      const pt = lead.notes.match(/Phone Type:\s*(\w+)/i);
+                      if (pt?.[1]) sourceFields.push({ label: "Phone Type", value: pt[1].trim() });
+                      if (sourceFields.length === 0) sourceFields.push({ label: "Notes", value: lead.notes });
+                    }
+                    return (
+                      <React.Fragment key={lead.id}>
+                      <tr
+                        onClick={() => setExpandedLeadId(isExpanded ? null : lead.id)}
+                        className={`border-b border-[var(--app-border-subtle)] last:border-b-0 hover:bg-[var(--app-hover)] transition cursor-pointer ${isExpanded ? "bg-[var(--app-hover)]" : ""}`}
+                      >
+                        <td className="px-4 py-3 text-center text-[13px] text-[var(--app-text)] font-medium whitespace-nowrap">{lead.firstName}</td>
+                        <td className="px-4 py-3 text-center text-[13px] text-[var(--app-text)] font-medium whitespace-nowrap">{lead.lastName}</td>
+                        <td className="px-4 py-3 text-center text-[12px] text-[var(--app-text-secondary)]">
+                          <span className="truncate max-w-[180px] inline-block">{lead.email}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center text-[12px] text-[var(--app-text-secondary)] whitespace-nowrap">{lead.phone || "—"}</td>
+                        <td className="px-4 py-3 text-center text-[13px] text-[var(--app-text-secondary)]">{Math.round(lead.commissionRate * 100)}%</td>
+                        <td className="px-4 py-3 text-center text-[12px] text-[var(--app-text-secondary)] uppercase">{lead.tier}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase border ${
+                            lead.status === "prospect" ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                            : lead.status === "invited" ? "bg-green-500/10 text-green-400 border-green-500/20"
+                            : lead.status === "signed_up" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                          }`}>
+                            {lead.status === "signed_up" ? "signed up" : lead.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          {lead.status === "prospect" && (
+                            <select
+                              defaultValue=""
+                              onChange={(e) => {
+                                const action = e.target.value;
+                                e.target.value = "";
+                                if (action === "invite") inviteLead(lead.id);
+                                else if (action === "skip") skipLead(lead.id);
+                                else if (action === "delete") deleteLead(lead.id);
+                              }}
+                              disabled={isInviting}
+                              className="font-body text-[11px] bg-[var(--app-input-bg)] border border-[var(--app-border)] rounded-lg px-2 py-1.5 text-[var(--app-text-secondary)] cursor-pointer"
+                            >
+                              <option value="" disabled>{isInviting ? "Sending…" : "Actions…"}</option>
+                              <option value="invite">Send Invite</option>
+                              <option value="skip">Skip</option>
+                              <option value="delete">Delete</option>
+                            </select>
+                          )}
+                          {lead.status === "invited" && (
+                            <span className="font-body text-[11px] text-green-400">✓ Invited</span>
+                          )}
+                          {lead.status === "skipped" && (
+                            <button
+                              onClick={() => {
+                                fetch(`/api/admin/leads/${lead.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "prospect" }) })
+                                  .then(() => fetchLeads());
+                              }}
+                              className="font-body text-[11px] px-3 py-1.5 rounded-lg border border-[var(--app-border)] text-[var(--app-text-muted)] hover:bg-[var(--app-input-bg)] transition-colors"
+                            >
+                              Restore
+                            </button>
+                          )}
+                          {lead.status === "signed_up" && (
+                            <span className="font-body text-[11px] text-emerald-400">✓ Signed Up</span>
+                          )}
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr className="bg-[var(--app-hover)]">
+                          <td colSpan={8} className="px-6 py-4 border-b border-[var(--app-border-subtle)]">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                              <div>
+                                <div className="font-body text-[10px] text-[var(--app-text-faint)] uppercase tracking-wider">Referred By</div>
+                                <div className="font-body text-[12px] text-[var(--app-text-secondary)] mt-0.5 font-mono">{lead.referredByCode || "—"}</div>
+                              </div>
+                              {sourceFields.map((sf) => (
+                                <div key={sf.label}>
+                                  <div className="font-body text-[10px] text-[var(--app-text-faint)] uppercase tracking-wider">{sf.label}</div>
+                                  <div className="font-body text-[12px] text-[var(--app-text-secondary)] mt-0.5">{sf.value}</div>
+                                </div>
+                              ))}
+                              {lead.scheduledSendAt && (
+                                <div>
+                                  <div className="font-body text-[10px] text-[var(--app-text-faint)] uppercase tracking-wider">Scheduled Send</div>
+                                  <div className="font-body text-[12px] text-[var(--app-text-secondary)] mt-0.5">{new Date(lead.scheduledSendAt).toLocaleString()}</div>
+                                </div>
+                              )}
+                              {lead.emailSentAt && (
+                                <div>
+                                  <div className="font-body text-[10px] text-[var(--app-text-faint)] uppercase tracking-wider">Email Sent</div>
+                                  <div className="font-body text-[12px] text-green-400 mt-0.5">{new Date(lead.emailSentAt).toLocaleString()}</div>
+                                </div>
+                              )}
+                              <div>
+                                <div className="font-body text-[10px] text-[var(--app-text-faint)] uppercase tracking-wider">Added</div>
+                                <div className="font-body text-[12px] text-[var(--app-text-secondary)] mt-0.5">{new Date(lead.createdAt).toLocaleDateString()}</div>
+                              </div>
+                            </div>
+                            {lead.notes && sourceFields.length === 0 && (
+                              <div className="mt-3">
+                                <div className="font-body text-[10px] text-[var(--app-text-faint)] uppercase tracking-wider">Notes</div>
+                                <div className="font-body text-[12px] text-[var(--app-text-secondary)] mt-0.5 whitespace-pre-line">{lead.notes}</div>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
                       )}
-                      {lead.status === "invited" && (
-                        <span className="font-body text-[11px] text-green-400">✓ Invited</span>
-                      )}
-                      {lead.status === "skipped" && (
-                        <button
-                          onClick={() => {
-                            fetch(`/api/admin/leads/${lead.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "prospect" }) })
-                              .then(() => fetchLeads());
-                          }}
-                          className="font-body text-[11px] px-3 min-h-[32px] rounded-lg border border-[var(--app-border)] text-[var(--app-text-muted)] hover:bg-[var(--app-input-bg)] transition-colors"
-                        >
-                          Restore
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
