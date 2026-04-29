@@ -36,29 +36,64 @@ export async function POST() {
     let newFirstName = lead.firstName;
     let newLastName = lead.lastName;
 
-    // 0. Fix firstName/lastName when filer code ended up as firstName
+    // 0. Fix firstName/lastName vs filer code alignment
     const filerInNotes = notes.match(/Filer Code: (\w+)/);
     if (filerInNotes) {
       const filerCode = filerInNotes[1];
-      // If firstName matches the filer code exactly, it's misaligned —
-      // the real broker name is missing and lastName has the city
-      if (lead.firstName.toUpperCase() === filerCode.toUpperCase() && lead.lastName) {
-        // lastName is likely the city name from the CBP CSV offset
-        // Set name to the filer code as company name since we don't have the real broker name
-        newFirstName = filerCode;
-        newLastName = "Broker";
-        changed = true;
-      }
-      // If firstName looks like a short code (1-4 chars, all uppercase/mixed)
-      // and doesn't match filer code but looks like it could be one
-      else if (lead.firstName.length <= 6 && /^[A-Za-z0-9]+$/.test(lead.firstName) && lead.firstName === lead.firstName.toUpperCase()) {
-        // Check if it might be a name that happens to be short and uppercase — skip those
-        const commonNames = new Set(["JOHN", "PAUL", "MARK", "ADAM", "ALAN", "ALEX", "CARL", "DALE", "DAVE", "DEAN", "ERIC", "FRED", "GARY", "GLEN", "GREG", "JACK", "JAKE", "JANE", "JEAN", "JEFF", "JOEL", "JOSE", "JUAN", "KARL", "KENT", "KIRK", "KURT", "KYLE", "LEON", "LORI", "LUKE", "LYNN", "MARY", "MATT", "MIKE", "NEIL", "NICK", "NOEL", "NORM", "OMAR", "OTTO", "OWEN", "PETE", "PHIL", "REED", "RICK", "ROSS", "RUBY", "RUSS", "RUTH", "RYAN", "SARA", "SEAN", "SETH", "STAN", "TODD", "TONY", "TROY", "WADE", "WALT"]);
-        if (!commonNames.has(lead.firstName)) {
+      const NOT_FILER_CODES = new Set(["the", "and", "for", "inc", "llc", "ltd", "usa", "intl", "int"]);
+      const isValidFilerCode = /^[A-Za-z0-9]{2,4}$/.test(filerCode) && !NOT_FILER_CODES.has(filerCode.toLowerCase());
+
+      if (isValidFilerCode) {
+        // Case A: firstName IS the filer code (exact match) — name is missing
+        if (lead.firstName.toUpperCase() === filerCode.toUpperCase()) {
           newFirstName = filerCode;
           newLastName = "Broker";
           changed = true;
         }
+        // Case B: firstName is longer than 4 chars — it's a real name, not a filer code
+        // The filer code in notes is correct, firstName/lastName are the broker name
+        // Nothing to fix for the name fields — they're correct
+        // But if lastName looks like a city (all caps, single word), it may be misaligned
+        else if (lead.firstName.length > 4 && lead.lastName && /^[A-Z\s]+$/.test(lead.lastName) && !lead.lastName.includes(" ")) {
+          // lastName is probably a city from CBP offset, not a last name
+          // Move firstName to be the full broker name
+          newFirstName = lead.firstName;
+          newLastName = "Broker";
+          changed = true;
+        }
+      } else {
+        // Filer code in notes is invalid (> 4 chars, or a common word like "the")
+        // It's probably part of the broker name that got stored wrong
+        if (lead.firstName.length <= 4 && /^[A-Za-z0-9]+$/.test(lead.firstName)) {
+          // firstName looks like it could be a real filer code
+          // Prepend the invalid "filer code" to the broker name
+          newFirstName = `${filerCode} ${lead.firstName}`.trim();
+          newLastName = "Broker";
+          changed = true;
+        } else {
+          // Both are name-like — combine them
+          newFirstName = `${filerCode} ${lead.firstName}`.trim();
+          newLastName = lead.lastName === "Broker" ? "Broker" : "Broker";
+          changed = true;
+        }
+      }
+    }
+
+    // 0b. Extract broker name from location + fix city/state order
+    // Pattern: location="HI, COREY YAMA", lastName="HONOLULU"
+    // Should be: name=COREY YAMA, location=HONOLULU, HI
+    const US_STATES = new Set(["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC","PR","VI","GU"]);
+    const locParts = newLocation.match(/^([A-Z]{2}),\s*(.+)$/);
+    if (locParts && US_STATES.has(locParts[1])) {
+      const stateCode = locParts[1];
+      const afterState = locParts[2].trim();
+      if (afterState && !/^\d/.test(afterState) && !PHONE_REGEX.test(afterState) && !EMAIL_REGEX.test(afterState)) {
+        // afterState is a broker name, and lead.lastName might be the city
+        const cityCandidate = lead.lastName && lead.lastName !== "Broker" && /^[A-Z\s]+$/.test(lead.lastName) ? lead.lastName : null;
+        newFirstName = afterState;
+        newLastName = "Broker";
+        newLocation = cityCandidate ? `${cityCandidate}, ${stateCode}` : stateCode;
+        changed = true;
       }
     }
 
