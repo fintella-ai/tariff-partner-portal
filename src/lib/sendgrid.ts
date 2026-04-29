@@ -859,14 +859,18 @@ export async function sendL1InviteEmail(opts: {
   toEmail: string;
   toName: string | null;
   signupUrl: string;
+  commissionRate?: number;
 }): Promise<SendEmailResult> {
   const name = opts.toName || "there";
+  const ratePct = opts.commissionRate ? `${Math.round(opts.commissionRate * 100)}%` : "20%";
   const vars: Record<string, string> = {
     firstName: name,
     signupUrl: opts.signupUrl,
     portalUrl: PORTAL_URL,
     firmShort: FIRM_SHORT,
     firmName: FIRM_NAME,
+    commissionRate: ratePct,
+    commissionRatePct: ratePct,
   };
 
   const tpl = await loadTemplate("l1_invite");
@@ -897,12 +901,12 @@ export async function sendL1InviteEmail(opts: {
   const heading = `You've been invited to join ${FIRM_SHORT}`;
   const bodyHtml = `
     <p>Hi ${escapeHtml(name)},</p>
-    <p>You've been invited to become a Partner with ${escapeHtml(FIRM_NAME)}. As a partner, you'll earn 25% of the firm fee on every client referral you send us.</p>
+    <p>You've been invited to become a Partner with ${escapeHtml(FIRM_NAME)}. As a partner, you'll earn ${ratePct} of the firm fee on every client referral you send us.</p>
     <p>Click the button below to create your account. The process takes about two minutes — you'll fill out a short form and sign your partnership agreement digitally.</p>
     <p style="font-size:12px;color:#888;">This invitation link expires in 7 days.</p>`;
   const bodyText = `Hi ${name},
 
-You've been invited to become a Partner with ${FIRM_NAME}. As a partner, you'll earn 25% of the firm fee on every client referral you send us.
+You've been invited to become a Partner with ${FIRM_NAME}. As a partner, you'll earn ${ratePct} of the firm fee on every client referral you send us.
 
 Use the link below to create your account and sign your partnership agreement (takes about two minutes):
 ${opts.signupUrl}
@@ -910,7 +914,7 @@ ${opts.signupUrl}
 This invitation link expires in 7 days.`;
 
   const { html, text } = emailShell({
-    preheader: `You've been invited to join ${FIRM_SHORT} as a Partner — earn 25% per deal.`,
+    preheader: `You've been invited to join ${FIRM_SHORT} as a Partner — earn ${ratePct} per deal.`,
     heading,
     bodyHtml,
     bodyText,

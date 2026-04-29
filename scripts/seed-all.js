@@ -649,16 +649,16 @@ async function main() {
       name: "L1 Partner Invitation",
       category: "Onboarding",
       subject: "You're invited to join {firmShort} as a Partner",
-      preheader: "You've been invited to join {firmShort} as a Partner — earn 25% per deal.",
+      preheader: "You've been invited to join {firmShort} as a Partner — earn {commissionRate} per deal.",
       heading: "You've been invited to join {firmShort}",
       bodyHtml:
         "<p>Hi {firstName},</p>" +
-        "<p>You've been invited to become a Partner with {firmName}. As a partner, you'll earn 25% of the firm fee on every client referral you send us.</p>" +
+        "<p>You've been invited to become a Partner with {firmName}. As a partner, you'll earn {commissionRate} of the firm fee on every client referral you send us.</p>" +
         "<p>Click the button below to create your account. The process takes about two minutes — you'll fill out a short form and sign your partnership agreement digitally.</p>" +
         "<p style=\"font-size:12px;color:#888;\">This invitation link expires in 7 days.</p>",
       bodyText:
         "Hi {firstName},\n\n" +
-        "You've been invited to become a Partner with {firmName}. As a partner, you'll earn 25% of the firm fee on every client referral you send us.\n\n" +
+        "You've been invited to become a Partner with {firmName}. As a partner, you'll earn {commissionRate} of the firm fee on every client referral you send us.\n\n" +
         "Use the link below to create your account and sign your partnership agreement (takes about two minutes):\n{signupUrl}\n\n" +
         "This invitation link expires in 7 days.",
       ctaLabel: "Accept Invitation",
@@ -673,6 +673,8 @@ async function main() {
         "portalUrl",
         "firmShort",
         "firmName",
+        "commissionRate",
+        "commissionRatePct",
       ]),
     },
     {

@@ -34,6 +34,7 @@ async function resendOne(
       toEmail: invite.invitedEmail,
       toName: invite.invitedName,
       signupUrl,
+      commissionRate: invite.commissionRate ?? undefined,
     }).catch(() => {});
 
     return { id, ok: true };

@@ -46,6 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     toEmail: lead.email,
     toName: `${lead.firstName} ${lead.lastName}`,
     signupUrl,
+    commissionRate: lead.commissionRate ?? undefined,
   }).catch(() => {});
 
   logAudit({

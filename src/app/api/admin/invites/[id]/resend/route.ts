@@ -61,6 +61,7 @@ export async function POST(
       toEmail: invite.invitedEmail,
       toName: invite.invitedName,
       signupUrl,
+      commissionRate: invite.commissionRate ?? undefined,
     }).catch(() => {});
 
     return NextResponse.json({ invite: updated, signupUrl });

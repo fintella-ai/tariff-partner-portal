@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     // Await the email so Vercel doesn't kill the function before the SendGrid
     // request completes. Email failure is still non-fatal — errors are swallowed
     // and written to EmailLog by sendL1InviteEmail internally.
-    await sendL1InviteEmail({ toEmail: email, toName: invitedName, signupUrl }).catch(() => {});
+    await sendL1InviteEmail({ toEmail: email, toName: invitedName, signupUrl, commissionRate }).catch(() => {});
 
     logAudit({
       action: "invite.create",
