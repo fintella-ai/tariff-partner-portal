@@ -42,6 +42,9 @@ export default function RecoverForm({ partnerCode }: Props) {
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     companyName: "", contactName: "", email: "", phone: "",
+    title: "", city: "", state: "", importerOfRecord: "", ein: "",
+    businessEntityType: "", importsGoods: "", importCountries: "",
+    annualImportValue: "", affiliateNotes: "",
   });
 
   const dutiesAmount = customDuties ? parseFloat(customDuties.replace(/[^0-9.]/g, "")) || 0 : 0;
@@ -52,8 +55,8 @@ export default function RecoverForm({ partnerCode }: Props) {
   const dailyInterest = Math.round(dutiesAmount * 0.07 / 365);
 
   async function submit() {
-    if (!form.companyName.trim() || !form.contactName.trim() || !form.email.trim()) {
-      setError("Please fill in company name, contact name, and email.");
+    if (!form.companyName.trim() || !form.contactName.trim() || !form.email.trim() || !form.city.trim() || !form.state.trim()) {
+      setError("Please fill in all required fields.");
       return;
     }
     setSaving(true);
@@ -72,8 +75,9 @@ export default function RecoverForm({ partnerCode }: Props) {
           partnerCode,
         }),
       });
-      if (res.ok) setStep("done");
-      else {
+      if (res.ok) {
+        setStep("done");
+      } else {
         const data = await res.json().catch(() => ({ error: "Something went wrong" }));
         setError(data.error || "Something went wrong.");
       }
@@ -240,21 +244,127 @@ export default function RecoverForm({ partnerCode }: Props) {
           )}
 
           <div className="space-y-3">
-            <div>
-              <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Company Name *</label>
-              <input value={form.companyName} onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40" placeholder="Acme Imports LLC" />
+            {/* Row 1: Name + Phone */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Your Full Name *</label>
+                <input value={form.contactName} onChange={(e) => setForm((f) => ({ ...f, contactName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40" placeholder="Jane Smith" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Mobile Phone Number *</label>
+                <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40" placeholder="(555) 123-4567" />
+              </div>
             </div>
+            {/* Row 2: Email */}
             <div>
-              <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Your Name *</label>
-              <input value={form.contactName} onChange={(e) => setForm((f) => ({ ...f, contactName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40" placeholder="Jane Smith" />
-            </div>
-            <div>
-              <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Email *</label>
+              <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Business Email Address *</label>
               <input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40" placeholder="jane@acmeimports.com" />
             </div>
+            {/* Row 3: Service + Title */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Service of Interest</label>
+                <div className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/60">Tariff Refund Support</div>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Your Business Title</label>
+                <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40" placeholder="CEO, Owner, Import Manager..." />
+              </div>
+            </div>
+            {/* Row 4: Affiliate Notes */}
             <div>
-              <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Phone</label>
-              <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40" placeholder="(555) 123-4567" />
+              <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Affiliate Notes</label>
+              <textarea value={form.affiliateNotes} onChange={(e) => setForm((f) => ({ ...f, affiliateNotes: e.target.value }))} rows={2} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40 resize-y" placeholder="Any additional notes..." />
+            </div>
+
+            <div className="font-display text-sm mt-2 mb-1" style={{ color: "#c4a050" }}>Business Details</div>
+
+            {/* Row 5: Legal Entity */}
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Legal Entity / Business Name *</label>
+              <input value={form.companyName} onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40" placeholder="Acme Imports LLC" />
+            </div>
+            {/* Row 6: City + State */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">City *</label>
+                <input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40" placeholder="Los Angeles" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">State *</label>
+                <select value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40">
+                  <option value="" className="bg-[#0a0e1a]">Select...</option>
+                  {["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"].map((s) => (
+                    <option key={s} value={s} className="bg-[#0a0e1a]">{s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {/* Row 7: EIN + Entity Type */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">EIN (optional)</label>
+                <input value={form.ein} onChange={(e) => setForm((f) => ({ ...f, ein: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40" placeholder="12-3456789" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Business Entity Type *</label>
+                <select value={form.businessEntityType} onChange={(e) => setForm((f) => ({ ...f, businessEntityType: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40">
+                  <option value="" className="bg-[#0a0e1a]">Select...</option>
+                  <option value="Sole Proprietorship" className="bg-[#0a0e1a]">Sole Proprietorship</option>
+                  <option value="General Partnership" className="bg-[#0a0e1a]">General Partnership</option>
+                  <option value="Limited Liability Company (LLC)" className="bg-[#0a0e1a]">Limited Liability Company (LLC)</option>
+                  <option value="S Corporation" className="bg-[#0a0e1a]">S Corporation</option>
+                  <option value="C Corporation" className="bg-[#0a0e1a]">C Corporation</option>
+                  <option value="Limited Partnership (LP)" className="bg-[#0a0e1a]">Limited Partnership (LP)</option>
+                  <option value="Nonprofit Corporation" className="bg-[#0a0e1a]">Nonprofit Corporation</option>
+                  <option value="Professional Corporation (PC)" className="bg-[#0a0e1a]">Professional Corporation (PC)</option>
+                </select>
+              </div>
+            </div>
+            {/* Row 8: Import goods + Import countries */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Import Goods into the US *</label>
+                <select value={form.importsGoods} onChange={(e) => setForm((f) => ({ ...f, importsGoods: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40">
+                  <option value="" className="bg-[#0a0e1a]">Select...</option>
+                  <option value="Yes - we import goods into the U.S." className="bg-[#0a0e1a]">Yes – we import goods into the U.S.</option>
+                  <option value="No - goods are imported on our behalf" className="bg-[#0a0e1a]">No – goods are imported on our behalf</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Countries You Import From *</label>
+                <select value={form.importCountries} onChange={(e) => setForm((f) => ({ ...f, importCountries: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40">
+                  <option value="" className="bg-[#0a0e1a]">Select...</option>
+                  <option value="China" className="bg-[#0a0e1a]">China</option>
+                  <option value="Canada" className="bg-[#0a0e1a]">Canada</option>
+                  <option value="Mexico" className="bg-[#0a0e1a]">Mexico</option>
+                  <option value="European Union" className="bg-[#0a0e1a]">European Union</option>
+                  <option value="Asia-Pacific (Vietnam, Taiwan, India, etc.)" className="bg-[#0a0e1a]">Asia-Pacific (Vietnam, Taiwan, India, etc.)</option>
+                  <option value="Multiple Countries" className="bg-[#0a0e1a]">Multiple Countries</option>
+                </select>
+              </div>
+            </div>
+            {/* Row 9: Annual Import Value + Importer of Record */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Annual Import Value *</label>
+                <select value={form.annualImportValue} onChange={(e) => setForm((f) => ({ ...f, annualImportValue: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40">
+                  <option value="" className="bg-[#0a0e1a]">Select...</option>
+                  <option value="Under $1,500,000" className="bg-[#0a0e1a]">Under $1,500,000</option>
+                  <option value="$1,500,000 - $3,000,000 per year" className="bg-[#0a0e1a]">$1,500,000 – $3,000,000 per year</option>
+                  <option value="$3,000,001 - $10,000,000 per year" className="bg-[#0a0e1a]">$3,000,001 – $10,000,000 per year</option>
+                  <option value="$10,000,000+ per year" className="bg-[#0a0e1a]">$10,000,000+ per year</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1 block">Importer of Record *</label>
+                <select value={form.importerOfRecord} onChange={(e) => setForm((f) => ({ ...f, importerOfRecord: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#c4a050]/40">
+                  <option value="" className="bg-[#0a0e1a]">Select...</option>
+                  <option value="We are the Importer of Record (we use a customs broker)" className="bg-[#0a0e1a]">We are the Importer of Record (we use a customs broker)</option>
+                  <option value="A third party imports on our behalf (FedEx, UPS, DHL, supplier, etc.)" className="bg-[#0a0e1a]">A third party imports on our behalf (FedEx, UPS, DHL, supplier, etc.)</option>
+                  <option value="Not sure" className="bg-[#0a0e1a]">Not sure</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -265,24 +375,49 @@ export default function RecoverForm({ partnerCode }: Props) {
         </>
       )}
 
-      {/* Done */}
-      {step === "done" && (
-        <div className="text-center py-8">
-          <div className="text-4xl mb-4">✅</div>
-          <h2 className="font-display text-xl mb-2" style={{ color: "#c4a050" }}>Assessment Requested</h2>
-          <p className="text-sm text-white/60 mb-2">
-            Estimated recovery: <strong className="text-green-400">{fmt$(totalRecovery)}</strong>
-          </p>
-          <p className="text-sm text-white/50 mb-4">
-            A tariff recovery specialist will contact you within 24 hours to review your eligibility and outline next steps.
-          </p>
-          <div className="text-xs text-white/30 space-y-1">
-            <p>📋 {selectedCategory?.label} · HTS {selectedCategory?.code}</p>
-            <p>📅 Entry period: {selectedPeriod?.label}</p>
-            <p>⏱️ Expected processing: 60-90 days via CAPE</p>
+      {/* Done — embedded Frost Law form with pre-filled data */}
+      {step === "done" && (() => {
+        const names = form.contactName.trim().split(/\s+/);
+        const p: Record<string, string> = {};
+        if (names[0]) p.first_name = names[0];
+        if (names.length > 1) p.last_name = names.slice(1).join(" ");
+        if (form.email) p.email = form.email;
+        if (form.phone) p.phone = form.phone;
+        if (form.companyName) p.company = form.companyName;
+        if (form.title) p.business_title = form.title;
+        if (form.city) p.city = form.city;
+        if (form.state) p.state = form.state;
+        if (form.importerOfRecord) p.importer_of_record = form.importerOfRecord;
+        if (form.ein) p.company_ein = form.ein;
+        p.service_of_interest = "Tariff Refund Support";
+        if (form.businessEntityType) p.business_entity_type = form.businessEntityType;
+        if (form.importsGoods) p.imports_goods = form.importsGoods;
+        if (form.importCountries) p.import_countries = form.importCountries;
+        if (form.annualImportValue) p.annual_import_value = form.annualImportValue;
+        if (form.affiliateNotes) p.affiliate_notes = form.affiliateNotes;
+        if (partnerCode) p.utm_content = partnerCode;
+        const frostUrl = `https://referral.frostlawaz.com/l/ANNEXATIONPR/?${new URLSearchParams(p).toString()}`;
+        return (
+          <div>
+            <div className="text-center mb-4">
+              <h2 className="font-display text-xl mb-1" style={{ color: "#c4a050" }}>Complete Your Filing</h2>
+              <p className="text-sm text-white/50">Your details have been pre-filled. Review and submit below.</p>
+              <p className="text-sm text-white/40 mt-1">Estimated recovery: <strong className="text-green-400">{fmt$(totalRecovery)}</strong></p>
+            </div>
+            <div className="rounded-xl border border-white/10 overflow-hidden" style={{ background: "#fff" }}>
+              <iframe
+                src={frostUrl}
+                className="w-full border-0"
+                title="Complete Your Filing"
+                allow="camera; microphone; geolocation"
+                sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-top-navigation"
+                style={{ width: "100%", height: "85vh", minHeight: 800 }}
+              />
+            </div>
+            <button onClick={() => setStep("contact")} className="w-full mt-3 py-2 text-xs text-white/40 hover:text-white/60">← Back to edit details</button>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

@@ -4,14 +4,20 @@ import { prisma } from "@/lib/prisma";
 /**
  * POST /api/recover
  * Public endpoint — client-facing refund calculator form submission.
- * Creates a PartnerLead (admin lead list) for internal tracking.
- * If partnerCode is provided (via ?ref= or utm_content), also creates
- * a PartnerProspect in that partner's CRM pipeline.
+ * Creates a ClientSubmission for internal leads tracking + KPIs.
+ * Does NOT create a Deal — the Deal is created by Frost Law's webhook.
+ * ClientSubmission syncs to the Deal by email match when the webhook fires.
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { companyName, contactName, email, phone, importProducts, estimatedDuties, estimatedRefund, partnerCode } = body;
+    const {
+      companyName, contactName, email, phone, importProducts,
+      estimatedDuties, estimatedRefund, partnerCode, entryPeriod,
+      htsCategory, title, city, state, importsGoods, importCountries,
+      annualImportValue, importerOfRecord, businessEntityType,
+      affiliateNotes, ein,
+    } = body;
 
     if (!companyName?.trim() || !contactName?.trim() || !email?.trim()) {
       return NextResponse.json({ error: "Company name, contact name, and email are required" }, { status: 400 });
@@ -25,53 +31,41 @@ export async function POST(req: NextRequest) {
     const firstName = names[0] || contactName.trim();
     const lastName = names.slice(1).join(" ") || "";
 
-    // Create admin lead for internal tracking
-    await prisma.partnerLead.create({
+    // Check if a deal already exists for this email (link if so)
+    const existingDeal = await prisma.deal.findFirst({
+      where: { clientEmail: email.trim().toLowerCase() },
+      select: { id: true, stage: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const submission = await prisma.clientSubmission.create({
       data: {
         firstName,
         lastName,
         email: email.trim().toLowerCase(),
         phone: phone?.trim() || null,
-        commissionRate: 0.25,
-        tier: "l1",
-        referredByCode: partnerCode || null,
-        notes: [
-          `Source: /recover landing page`,
-          importProducts ? `Imports: ${importProducts}` : null,
-          estimatedDuties ? `Est. duties: $${Number(estimatedDuties).toLocaleString()}` : null,
-          estimatedRefund ? `Est. refund: $${Number(estimatedRefund).toLocaleString()}` : null,
-          partnerCode ? `Referred by: ${partnerCode}` : "Direct (no partner referral)",
-        ].filter(Boolean).join("\n"),
+        title: title?.trim() || null,
+        companyName: companyName.trim(),
+        city: city?.trim() || null,
+        state: state?.trim() || null,
+        ein: ein?.trim() || null,
+        businessEntityType: businessEntityType || null,
+        importsGoods: importsGoods || null,
+        importCountries: importCountries || null,
+        annualImportValue: annualImportValue || null,
+        importerOfRecord: importerOfRecord || null,
+        affiliateNotes: affiliateNotes || null,
+        importCategory: importProducts || htsCategory || null,
+        estimatedDuties: estimatedDuties ? Number(estimatedDuties) : null,
+        estimatedRefund: estimatedRefund ? Number(estimatedRefund) : null,
+        entryPeriod: entryPeriod || null,
+        partnerCode: partnerCode || null,
+        dealId: existingDeal?.id || null,
+        dealStage: existingDeal?.stage || null,
       },
     });
 
-    // If a partner referred this lead, also add to their personal CRM pipeline
-    if (partnerCode) {
-      const partner = await prisma.partner.findUnique({
-        where: { partnerCode },
-        select: { partnerCode: true, status: true },
-      });
-
-      if (partner && partner.status === "active") {
-        await prisma.partnerProspect.create({
-          data: {
-            partnerCode,
-            companyName: companyName.trim(),
-            contactName: contactName.trim(),
-            contactEmail: email.trim().toLowerCase(),
-            contactPhone: phone?.trim() || null,
-            productTypes: importProducts?.trim() || null,
-            annualDuties: estimatedDuties ? `$${Number(estimatedDuties).toLocaleString()}` : null,
-            stage: "new",
-            score: estimatedDuties && estimatedDuties >= 250000 ? 60 : estimatedDuties >= 50000 ? 40 : 20,
-            source: "website",
-            notes: `Submitted via /recover calculator. Est. refund: $${Number(estimatedRefund || 0).toLocaleString()}`,
-          },
-        }).catch(() => {});
-      }
-    }
-
-    return NextResponse.json({ success: true }, { status: 201 });
+    return NextResponse.json({ success: true, id: submission.id }, { status: 201 });
   } catch (err) {
     console.error("[api/recover] error:", err);
     return NextResponse.json({ error: "Failed to submit. Please try again." }, { status: 500 });
