@@ -222,6 +222,7 @@ export default function SettingsPage() {
 
   // Navigation
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
+  const [hiddenAdminNavItems, setHiddenAdminNavItems] = useState<string[]>([]);
   const [navOrder, setNavOrder] = useState<string[]>(ALL_NAV_ITEMS.map((n) => n.id));
   const [adminNavOrder, setAdminNavOrder] = useState<string[]>(ALL_ADMIN_NAV_ITEMS.map((n) => n.id));
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -327,6 +328,7 @@ export default function SettingsPage() {
       setAgreementTemplateEnterprise(settings.agreementTemplateEnterprise || "");
 
       try { setHiddenNavItems(JSON.parse(settings.hiddenNavItems || "[]")); } catch { setHiddenNavItems([]); }
+      try { setHiddenAdminNavItems(JSON.parse(settings.hiddenAdminNavItems || "[]")); } catch { setHiddenAdminNavItems([]); }
       try { setNavLabels(JSON.parse(settings.navLabels || "{}")); } catch { setNavLabels({}); }
       try { setNavIcons(JSON.parse(settings.navIcons || "{}")); } catch { setNavIcons({}); }
       try {
@@ -470,6 +472,7 @@ export default function SettingsPage() {
         l3Rate: parseFloat(l3Rate) / 100,
         l3Enabled,
         hiddenNavItems: JSON.stringify(hiddenNavItems),
+        hiddenAdminNavItems: JSON.stringify(hiddenAdminNavItems),
         navOrder: JSON.stringify(navOrder),
         adminNavOrder: JSON.stringify(adminNavOrder),
         navLabels: JSON.stringify(navLabels),
@@ -516,6 +519,12 @@ export default function SettingsPage() {
 
   const toggleNavItem = (id: string) => {
     setHiddenNavItems((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAdminNavItem = (id: string) => {
+    setHiddenAdminNavItems((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
@@ -953,6 +962,7 @@ export default function SettingsPage() {
               <div className="space-y-3">
                 {orderedAdminNavItems.map((item, idx) => {
                   const isDragging = adminDragIdx === idx;
+                  const isAdminVisible = !hiddenAdminNavItems.includes(item.id);
                   const key = `admin.${item.id}`;
                   const currentLabel = navLabels[key] ?? "";
                   const currentIcon = navIcons[key] ?? "";
@@ -967,7 +977,7 @@ export default function SettingsPage() {
                         isDragging
                           ? "bg-brand-gold/10 border-brand-gold/30 scale-[1.02] shadow-lg"
                           : "bg-[var(--app-card-bg)] border-[var(--app-border)]"
-                      }`}
+                      } ${!isAdminVisible ? "opacity-50" : ""}`}
                     >
                       <div className="flex items-center gap-3 mb-3 cursor-grab active:cursor-grabbing">
                         <div className="flex flex-col gap-[2px] shrink-0">
@@ -985,6 +995,12 @@ export default function SettingsPage() {
                         <div className="flex items-center gap-2">
                           <button onClick={() => moveAdminNav(idx, -1)} disabled={idx === 0} className="w-7 h-7 flex items-center justify-center rounded bg-[var(--app-card-bg)] text-[var(--app-text-muted)] disabled:opacity-20 text-[11px]">▲</button>
                           <button onClick={() => moveAdminNav(idx, 1)} disabled={idx === orderedAdminNavItems.length - 1} className="w-7 h-7 flex items-center justify-center rounded bg-[var(--app-card-bg)] text-[var(--app-text-muted)] disabled:opacity-20 text-[11px]">▼</button>
+                          <button
+                            onClick={() => toggleAdminNavItem(item.id)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isAdminVisible ? "bg-green-500" : "bg-[var(--app-input-bg)]"}`}
+                          >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isAdminVisible ? "translate-x-6" : "translate-x-1"}`} />
+                          </button>
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">

@@ -100,6 +100,11 @@ export async function PUT(req: NextRequest) {
         ? body.adminNavOrder
         : JSON.stringify(body.adminNavOrder);
     }
+    if (body.hiddenAdminNavItems !== undefined) {
+      data.hiddenAdminNavItems = typeof body.hiddenAdminNavItems === "string"
+        ? body.hiddenAdminNavItems
+        : JSON.stringify(body.hiddenAdminNavItems);
+    }
     if (body.navLabels !== undefined) {
       data.navLabels = typeof body.navLabels === "string"
         ? body.navLabels

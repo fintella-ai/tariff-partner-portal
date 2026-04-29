@@ -136,6 +136,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Custom admin nav order from settings (empty = use default)
   const [adminNavOrder, setAdminNavOrder] = useState<string[]>([]);
+  const [hiddenAdminNavItems, setHiddenAdminNavItems] = useState<string[]>([]);
 
   const user = session?.user as any;
   const userRole = (user?.role || "admin") as AdminRole;
@@ -161,17 +162,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Filter nav by role. For groups, keep the group if at least one child is
   // visible, and narrow the children to just the visible ones.
   const filteredNav: NavItem[] = orderedNavItems.flatMap((item): NavItem[] => {
+    if (hiddenAdminNavItems.includes(item.id)) return [];
     if (isGroup(item)) {
-      const visibleChildren = item.children.filter((c) => visibleNavIds.includes(c.id));
+      const visibleChildren = item.children.filter((c) => visibleNavIds.includes(c.id) && !hiddenAdminNavItems.includes(c.id));
       if (visibleChildren.length === 0) return [];
       return [{ ...item, children: visibleChildren }];
     }
-    // "reporting" is a synthetic umbrella item. The permissions table
-    // doesn't list it directly — instead, show it if any of the three
-    // underlying pages (reports / revenue / payouts) is visible to the
-    // current role.
     if (item.id === "reporting") {
-      const anyVisible = ["reports", "revenue", "payouts"].some((id) => visibleNavIds.includes(id));
+      const anyVisible = ["reports", "revenue", "payouts"].some((id) => visibleNavIds.includes(id) && !hiddenAdminNavItems.includes(id));
       return anyVisible ? [item] : [];
     }
     return visibleNavIds.includes(item.id) ? [item] : [];
@@ -201,6 +199,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (settings.logoUrl) setLogoUrl(settings.logoUrl);
         try { setNavLabels(JSON.parse(settings.navLabels || "{}")); } catch {}
         try { setNavIcons(JSON.parse(settings.navIcons || "{}")); } catch {}
+        try { setHiddenAdminNavItems(JSON.parse(settings.hiddenAdminNavItems || "[]")); } catch {}
         try {
           let order = JSON.parse(settings.adminNavOrder || "[]");
           if (Array.isArray(order) && order.length > 0) {
