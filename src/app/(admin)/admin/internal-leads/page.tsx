@@ -396,6 +396,20 @@ export default function InternalLeadsPage() {
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={async () => {
+              if (!confirm("Fix misaligned CBP data (phone/email/location columns)? This also resets validation tags so you can re-verify.")) return;
+              try {
+                const res = await fetch("/api/admin/leads/cleanup-columns", { method: "POST" });
+                const data = await res.json();
+                flash("ok", `Fixed ${data.fixed} of ${data.total} leads`);
+                fetchLeads();
+              } catch { flash("err", "Cleanup failed"); }
+            }}
+            className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition"
+          >
+            🔧 Fix Data
+          </button>
+          <button
+            onClick={async () => {
               setSyncing(true);
               try {
                 const res = await fetch("/api/cron/cbp-broker-sync");
