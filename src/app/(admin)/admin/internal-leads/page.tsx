@@ -391,18 +391,22 @@ export default function InternalLeadsPage() {
             📥 Import CSV
           </button>
           <button
-            onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/recover`); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }}
+            onClick={() => {
+              const slug = leadTab === "broker" ? "/partners/brokers" : leadTab === "referral" ? "/partners" : "/recover";
+              navigator.clipboard.writeText(`${window.location.origin}${slug}`);
+              setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000);
+            }}
             className={`px-4 py-2 rounded-lg border text-sm transition-colors ${copiedLink ? "text-green-400 border-green-500/30 bg-green-500/10" : "border-[var(--app-border)] text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)]"}`}
           >
             {copiedLink ? "Copied ✓" : "🔗 Copy Funnel"}
           </button>
           <a
-            href="/recover"
+            href={leadTab === "broker" ? "/partners/brokers" : leadTab === "referral" ? "/partners" : "/recover"}
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90"
           >
-            /recover ↗
+            {leadTab === "broker" ? "/partners/brokers" : leadTab === "referral" ? "/partners" : "/recover"} ↗
           </a>
         </div>
       </div>
