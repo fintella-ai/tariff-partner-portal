@@ -281,13 +281,18 @@ export default function AiAssistantPage() {
 
   return (
     <div className="flex flex-col" style={{ height: "calc(100vh - 120px)" }}>
-      <PersonaPickerModal
-        open={pickerOpen}
-        onPick={handlePickPersona}
-        onClose={preferredGeneralist ? () => setPickerOpen(false) : undefined}
-        allowClose={!!preferredGeneralist}
-        title={preferredGeneralist ? "Switch assistant" : "Pick your AI assistant"}
-      />
+      {/* Gate on !loading so the modal never flashes during SSR hydration /
+         initial data fetch — preferredGeneralist transitions undefined → null
+         which would briefly mount then unmount the picker without this guard. */}
+      {!loading && (
+        <PersonaPickerModal
+          open={pickerOpen}
+          onPick={handlePickPersona}
+          onClose={preferredGeneralist ? () => setPickerOpen(false) : undefined}
+          allowClose={!!preferredGeneralist}
+          title={preferredGeneralist ? "Switch assistant" : "Pick your AI assistant"}
+        />
+      )}
 
       <PageTabBar
         title="Partner Support"
