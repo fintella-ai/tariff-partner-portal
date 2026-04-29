@@ -166,6 +166,10 @@ export const DEFAULT_BROKERS: BrokersPageContent = {
     badge: "Built for Licensed Customs Brokers",
     headline: "Your Importer Clients Are Owed Millions. Earn Commissions for Every Recovery.",
     subheadline: "As a licensed customs broker, you're already the trusted advisor for importers navigating tariffs. Now you can earn legal referral commissions on every IEEPA recovery — without lifting a finger on the legal side.",
+    bullets: [
+      ...DEFAULT_PARTNERS.hero.bullets,
+      { icon: "⚡", title: "Fast-cash buyout option", description: "Clients can sell their accepted claim for 65–85 cents on the dollar and get paid in weeks, not months. You earn your commission on the buyout amount." },
+    ],
   },
   whyPartner: {
     ...DEFAULT_PARTNERS.whyPartner,
@@ -175,9 +179,17 @@ export const DEFAULT_BROKERS: BrokersPageContent = {
       { icon: "⚖️", title: "Arizona-Licensed Referral Fees", description: "Our Arizona-based legal partner is authorized to pay referral commissions to licensed customs brokers. Fully compliant with state bar rules." },
       { icon: "🔒", title: "Your ACE Data Stays Yours", description: "We never access your clients' ACE accounts or customs data. You share only what you choose, and the legal team works from there." },
       { icon: "📈", title: "Revenue Per Entry", description: "Every entry your client filed under IEEPA tariffs is a potential recovery. More entries = more refund = more commission for you." },
+      { icon: "⚡", title: "Claim Buyout for Clients", description: "After a claim is accepted, your client can opt to sell it for 65–85 cents on the dollar and receive funds in weeks instead of waiting months for CBP processing. Your referral commission is calculated on the buyout amount." },
       { icon: "🤝", title: "White-Glove Client Experience", description: "Your clients get a premium legal service experience. They'll thank you for the referral, not question it." },
-      { icon: "📊", title: "Port-Level Insights", description: "Track which of your clients' ports and HTS categories have the highest recovery potential." },
       { icon: "🏢", title: "Firm-to-Firm Referral", description: "This is a business-to-business relationship. You refer, the legal team recovers, and you earn a documented commission." },
+    ],
+  },
+  faq: {
+    ...DEFAULT_PARTNERS.faq,
+    items: [
+      ...DEFAULT_PARTNERS.faq.items,
+      { question: "What is the claim buyout option?", answer: "After a client's refund claim is accepted by CBP, they can choose to sell the claim for 65–85 cents on the dollar through our financing partner. This means they receive funds in a couple of weeks instead of waiting months for full CBP processing. The buyout is optional — clients can always wait for the full refund." },
+      { question: "Does the buyout affect my commission?", answer: "Your referral commission is calculated on the buyout amount when a client chooses the early payout. If the client waits for the full refund, your commission is based on the full recovery fee. Either way, you earn — and your client gets to choose the timeline that works best for them." },
     ],
   },
 };
