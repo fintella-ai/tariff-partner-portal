@@ -37,9 +37,7 @@ export async function POST() {
   for (const lead of leads) {
     try {
       const result = await validateEmail(lead.email);
-      const tag = result.demo
-        ? "Email Verdict: unknown (SendGrid not configured)"
-        : `Email Verdict: ${result.verdict} (score: ${result.score.toFixed(2)}${result.isDisposable ? ", disposable" : ""})`;
+      const tag = `Email Verdict: ${result.verdict} (${result.method}, score: ${result.score.toFixed(2)}${result.isDisposable ? ", disposable" : ""})`;
 
       await prisma.partnerLead.update({
         where: { id: lead.id },

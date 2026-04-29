@@ -1,10 +1,15 @@
 /**
- * SendGrid Email Address Validation API wrapper.
- * Uses the same SENDGRID_API_KEY. Demo-gated if unset.
- * Docs: https://www.twilio.com/docs/sendgrid/api-reference/email-address-validation/validate-an-email
+ * Email validation — uses SendGrid Email Validation API if available,
+ * falls back to basic format + known-bad domain checks.
  */
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || "";
+
+const DISPOSABLE_DOMAINS = new Set([
+  "mailinator.com", "guerrillamail.com", "tempmail.com", "throwaway.email",
+  "yopmail.com", "sharklasers.com", "guerrillamailblock.com", "grr.la",
+  "discard.email", "discardmail.com", "trashmail.com", "fakeinbox.com",
+]);
 
 export interface EmailValidationResult {
   email: string;
@@ -14,12 +19,17 @@ export interface EmailValidationResult {
   isDisposable: boolean;
   isCatchAll: boolean;
   demo: boolean;
+  method: "sendgrid" | "basic";
 }
 
 export async function validateEmail(email: string): Promise<EmailValidationResult> {
-  if (!SENDGRID_API_KEY) {
-    return { email, verdict: "unknown", score: 0, hasValidMx: false, isDisposable: false, isCatchAll: false, demo: true };
-  }
+  const result = await validateViaSendGrid(email);
+  if (result) return result;
+  return validateBasic(email);
+}
+
+async function validateViaSendGrid(email: string): Promise<EmailValidationResult | null> {
+  if (!SENDGRID_API_KEY) return null;
 
   try {
     const res = await fetch("https://api.sendgrid.com/v3/validations/email", {
@@ -31,9 +41,11 @@ export async function validateEmail(email: string): Promise<EmailValidationResul
       body: JSON.stringify({ email, source: "fintella_import" }),
     });
 
-    if (!res.ok) {
-      return { email, verdict: "unknown", score: 0, hasValidMx: false, isDisposable: false, isCatchAll: false, demo: false };
+    if (res.status === 403 || res.status === 404 || res.status === 401) {
+      return null;
     }
+
+    if (!res.ok) return null;
 
     const data = await res.json();
     const r = data.result || {};
@@ -45,17 +57,36 @@ export async function validateEmail(email: string): Promise<EmailValidationResul
       isDisposable: r.checks?.additional?.is_disposable_address ?? false,
       isCatchAll: r.checks?.additional?.is_suspected_disposable_address ?? false,
       demo: false,
+      method: "sendgrid",
     };
   } catch {
-    return { email, verdict: "unknown", score: 0, hasValidMx: false, isDisposable: false, isCatchAll: false, demo: false };
+    return null;
   }
 }
 
-export async function validateEmailBatch(emails: string[]): Promise<Map<string, EmailValidationResult>> {
-  const results = new Map<string, EmailValidationResult>();
-  for (const email of emails) {
-    const result = await validateEmail(email);
-    results.set(email, result);
+function validateBasic(email: string): EmailValidationResult {
+  const atIdx = email.indexOf("@");
+  const domain = atIdx > 0 ? email.slice(atIdx + 1).toLowerCase() : "";
+
+  if (!domain || atIdx < 1 || !domain.includes(".")) {
+    return { email, verdict: "Invalid", score: 0, hasValidMx: false, isDisposable: false, isCatchAll: false, demo: false, method: "basic" };
   }
-  return results;
+
+  if (DISPOSABLE_DOMAINS.has(domain)) {
+    return { email, verdict: "Risky", score: 0.2, hasValidMx: true, isDisposable: true, isCatchAll: false, demo: false, method: "basic" };
+  }
+
+  const knownGoodTlds = [".com", ".net", ".org", ".gov", ".edu", ".co", ".io", ".us"];
+  const hasGoodTld = knownGoodTlds.some((tld) => domain.endsWith(tld));
+
+  return {
+    email,
+    verdict: hasGoodTld ? "Valid" : "Risky",
+    score: hasGoodTld ? 0.7 : 0.4,
+    hasValidMx: true,
+    isDisposable: false,
+    isCatchAll: false,
+    demo: false,
+    method: "basic",
+  };
 }

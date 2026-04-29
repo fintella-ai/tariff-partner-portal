@@ -611,7 +611,7 @@ export default function InternalLeadsPage() {
                 const locationMatch = notes.match(/Location: (.+)/);
                 const phoneTypeMatch = notes.match(/Phone Type: (\S+)/);
                 const phoneType = phoneTypeMatch?.[1] && !phoneTypeMatch[1].startsWith("unknown") ? phoneTypeMatch[1] : null;
-                const emailVerdict = notes.includes("Email Verdict: Valid") ? "Valid" : notes.includes("Email Verdict: Risky") ? "Risky" : notes.includes("Email Verdict: Invalid") ? "Invalid" : null;
+                const emailVerdict = notes.includes("Email Verdict: Valid") ? "Valid" : notes.includes("Email Verdict: Risky") ? "Risky" : notes.includes("Email Verdict: Invalid") ? "Invalid" : notes.includes("Email Verdict: unknown") ? "Unknown" : null;
                 const realEmail = !lead.email.includes("@import.placeholder") ? lead.email : "";
 
                 return (
@@ -629,6 +629,12 @@ export default function InternalLeadsPage() {
                         }`}>
                           {phoneType === "mobile" ? "📱 Mobile" : phoneType === "landline" ? "☎️ Land" : `📞 ${phoneType}`}
                         </span>
+                      ) : lead.phone ? (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
+                          notes.includes("Phone Type: unknown") ? "bg-red-500/15 text-red-400" : "bg-white/5 text-[var(--app-text-faint)]"
+                        }`}>
+                          {notes.includes("Phone Type: unknown") ? "❓ Unknown" : "Not checked"}
+                        </span>
                       ) : <span className="text-[var(--app-text-faint)]">—</span>}
                     </td>
                     <td className="px-3 py-2.5 whitespace-nowrap">{realEmail || <span className="text-[var(--app-text-faint)]">—</span>}</td>
@@ -637,10 +643,13 @@ export default function InternalLeadsPage() {
                         <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
                           emailVerdict === "Valid" ? "bg-green-500/15 text-green-400" :
                           emailVerdict === "Risky" ? "bg-yellow-500/15 text-yellow-400" :
+                          emailVerdict === "Unknown" ? "bg-gray-500/15 text-gray-400" :
                           "bg-red-500/15 text-red-400"
                         }`}>
-                          {emailVerdict === "Valid" ? "✅ Valid" : emailVerdict === "Risky" ? "⚠️ Risky" : "❌ Invalid"}
+                          {emailVerdict === "Valid" ? "✅ Valid" : emailVerdict === "Risky" ? "⚠️ Risky" : emailVerdict === "Unknown" ? "❓ Unknown" : "❌ Invalid"}
                         </span>
+                      ) : realEmail ? (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase bg-white/5 text-[var(--app-text-faint)]">Not checked</span>
                       ) : <span className="text-[var(--app-text-faint)]">—</span>}
                     </td>
                     <td className="px-3 py-2.5 whitespace-nowrap">
