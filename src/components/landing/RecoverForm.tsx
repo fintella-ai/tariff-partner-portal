@@ -31,9 +31,17 @@ function fmt$(n: number): string {
 
 interface Props {
   partnerCode: string | null;
+  utmParams?: {
+    utm_source: string | null;
+    utm_medium: string | null;
+    utm_campaign: string | null;
+    utm_content: string | null;
+    utm_term: string | null;
+    utm_adgroup: string | null;
+  };
 }
 
-export default function RecoverForm({ partnerCode }: Props) {
+export default function RecoverForm({ partnerCode, utmParams }: Props) {
   const [step, setStep] = useState<"product" | "duties" | "timing" | "result" | "contact" | "done">("product");
   const [selectedCategory, setSelectedCategory] = useState<typeof HTS_CATEGORIES[0] | null>(null);
   const [customDuties, setCustomDuties] = useState("");
@@ -73,6 +81,11 @@ export default function RecoverForm({ partnerCode }: Props) {
           entryPeriod: selectedPeriod?.label,
           htsCategory: selectedCategory?.code,
           partnerCode,
+          utmSource: utmParams?.utm_source || null,
+          utmMedium: utmParams?.utm_medium || null,
+          utmCampaign: utmParams?.utm_campaign || null,
+          utmTerm: utmParams?.utm_term || null,
+          utmAdGroup: utmParams?.utm_adgroup || null,
         }),
       });
       if (res.ok) {

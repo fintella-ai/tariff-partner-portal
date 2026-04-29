@@ -23,6 +23,15 @@ export default async function RecoverPage({
   searchParams: { ref?: string; utm_source?: string; utm_medium?: string; utm_campaign?: string; utm_content?: string };
 }) {
   const partnerCode = searchParams.ref || searchParams.utm_content || null;
+  const sp = searchParams as Record<string, string | undefined>;
+  const utmParams = {
+    utm_source: sp.utm_source || null,
+    utm_medium: sp.utm_medium || null,
+    utm_campaign: sp.utm_campaign || null,
+    utm_content: sp.utm_content || null,
+    utm_term: sp.utm_term || null,
+    utm_adgroup: sp.utm_adgroup || null,
+  };
   const c = await getRecoverContent();
 
   return (
@@ -65,7 +74,7 @@ export default async function RecoverPage({
             </div>
           </div>
           <div>
-            <RecoverForm partnerCode={partnerCode} />
+            <RecoverForm partnerCode={partnerCode} utmParams={utmParams} />
           </div>
         </div>
       </div>

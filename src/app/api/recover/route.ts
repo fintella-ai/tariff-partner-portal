@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
       htsCategory, title, city, state, importsGoods, importCountries,
       annualImportValue, importerOfRecord, businessEntityType,
       affiliateNotes, ein,
+      utmSource, utmMedium, utmCampaign, utmTerm, utmAdGroup,
     } = body;
 
     if (!companyName?.trim() || !contactName?.trim() || !email?.trim()) {
@@ -60,6 +61,11 @@ export async function POST(req: NextRequest) {
         estimatedRefund: estimatedRefund ? Number(estimatedRefund) : null,
         entryPeriod: entryPeriod || null,
         partnerCode: partnerCode || null,
+        utmSource: utmSource || null,
+        utmMedium: utmMedium || null,
+        utmCampaign: utmCampaign || null,
+        utmTerm: utmTerm || null,
+        utmAdGroup: utmAdGroup || null,
         dealId: existingDeal?.id || null,
         dealStage: existingDeal?.stage || null,
       },

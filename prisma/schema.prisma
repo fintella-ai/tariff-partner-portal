@@ -1659,6 +1659,15 @@ model ClientSubmission {
   dealId             String?
   dealStage          String?
   source             String   @default("recover")
+  // UTM attribution — captured from /recover URL params
+  utmSource          String?   // google, meta, linkedin, email, direct
+  utmMedium          String?   // cpc, social, email, organic
+  utmCampaign        String?   // campaign name
+  utmTerm            String?   // keyword (Google Ads search term)
+  utmAdGroup         String?   // ad group name
+  // Pre-qualification
+  qualified          Boolean   @default(true)
+  disqualifyReason   String?   // "low_value", "no_imports", "no_ior", "low_duties"
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
