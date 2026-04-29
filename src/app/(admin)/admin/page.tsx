@@ -8,6 +8,7 @@ import WorkspaceStatCard from "@/components/admin/WorkspaceStatCard";
 import AttentionFeedRow, { type AttentionItem, type AttentionSource } from "@/components/admin/AttentionFeedRow";
 import PartnerContextDrawer from "@/components/admin/PartnerContextDrawer";
 import ActivityTimeline from "@/components/admin/ActivityTimeline";
+import CommunicationsWidget from "@/components/admin/CommunicationsWidget";
 import CalendarEmbed from "@/components/admin/CalendarEmbed";
 import { fmt$ } from "@/lib/format";
 
@@ -62,9 +63,9 @@ const INITIAL_STATS: Stats = {
   featureRequests: 0,
 };
 
-type SectionId = "stats" | "quicklinks" | "calendar" | "tasks_activity" | "needs_attention";
-const DEFAULT_SECTION_ORDER: SectionId[] = ["stats", "quicklinks", "calendar", "tasks_activity", "needs_attention"];
-const LAYOUT_KEY = "fintella.admin.workspace.layout.v4";
+type SectionId = "stats" | "quicklinks" | "calendar" | "tasks_activity" | "communications" | "needs_attention";
+const DEFAULT_SECTION_ORDER: SectionId[] = ["stats", "quicklinks", "calendar", "tasks_activity", "communications", "needs_attention"];
+const LAYOUT_KEY = "fintella.admin.workspace.layout.v5";
 
 function readLayout(): SectionId[] {
   if (typeof window === "undefined") return DEFAULT_SECTION_ORDER;
@@ -572,6 +573,23 @@ export default function AdminWorkspacePage() {
           <div>{renderTasksFeed()}</div>
           <div><ActivityTimeline refreshKey={lastRefreshed?.getTime() || 0} /></div>
         </div>
+      </section>
+    ),
+    communications: () => (
+      <section
+        key="communications"
+        draggable={editMode}
+        onDragStart={(e) => onSectionDragStart(e, "communications")}
+        onDragOver={onSectionDragOver}
+        onDrop={(e) => onSectionDrop(e, "communications")}
+        className={`mb-6 ${editMode ? "rounded-lg ring-1 ring-brand-gold/25 p-2 cursor-move" : ""}`}
+      >
+        {editMode && (
+          <div className="font-body text-[10px] uppercase tracking-wider theme-text-muted mb-2">
+            ⋮⋮ Communications Hub — drag to reorder
+          </div>
+        )}
+        <CommunicationsWidget refreshKey={lastRefreshed?.getTime() || 0} />
       </section>
     ),
     needs_attention: () => (

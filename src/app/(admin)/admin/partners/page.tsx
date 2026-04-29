@@ -45,7 +45,7 @@ type Invite = {
   createdAt: string;
 };
 
-type TabType = "all" | "active" | "pending" | "invited" | "blocked";
+type TabType = "all" | "active" | "pending" | "invited" | "blocked" | "unsigned";
 
 // Normalize a stored mobile number to E.164 for the softphone Device.
 // Uses normalizePhone from @/lib/format (imported above).
@@ -143,6 +143,8 @@ export default function AdminPartnersPage() {
   const [selectedPartnerIds, setSelectedPartnerIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkAgreementRate, setBulkAgreementRate] = useState("0.20");
+  const [tablePage, setTablePage] = useState(1);
+  const TABLE_PAGE_SIZE = 50;
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [levelFilter, setLevelFilter] = useState<"all" | "l1" | "l2" | "l3" | "l4plus">("all");
@@ -521,6 +523,8 @@ export default function AdminPartnersPage() {
 
   const filteredPartners = (activeTab === "all" || activeTab === "invited"
     ? partners
+    : activeTab === "unsigned"
+    ? partners.filter((p) => !p.agreementStatus || p.agreementStatus === "none" || p.agreementStatus === "not_sent")
     : partners.filter((p) => p.status === activeTab)
   ).filter((p) => {
     if (levelFilter === "all") return true;
@@ -550,6 +554,9 @@ export default function AdminPartnersPage() {
     return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
   });
 
+  const totalPages = Math.ceil(filteredPartners.length / TABLE_PAGE_SIZE);
+  const paginatedPartners = filteredPartners.slice((tablePage - 1) * TABLE_PAGE_SIZE, tablePage * TABLE_PAGE_SIZE);
+
   const filteredInvites = invites.filter((inv) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -565,10 +572,13 @@ export default function AdminPartnersPage() {
     resendableInvites.length > 0 &&
     resendableInvites.every((inv) => selectedInviteIds.includes(inv.id));
 
-  const tabs: { key: TabType; label: string }[] = [
+  const unsignedCount = partners.filter((p) => !p.agreementStatus || p.agreementStatus === "none" || p.agreementStatus === "not_sent").length;
+
+  const tabs: { key: TabType; label: string; count?: number }[] = [
     { key: "all", label: "All" },
     { key: "active", label: "Active" },
     { key: "pending", label: "Pending" },
+    { key: "unsigned", label: "Unsigned", count: unsignedCount },
     { key: "invited", label: "Invited" },
     { key: "blocked", label: "Blocked" },
   ];
@@ -820,14 +830,14 @@ export default function AdminPartnersPage() {
         {tabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => { setActiveTab(tab.key); setSelectedInviteIds([]); setBulkResult(null); }}
+            onClick={() => { setActiveTab(tab.key); setSelectedInviteIds([]); setBulkResult(null); setTablePage(1); }}
             className={`shrink-0 px-4 rounded-lg font-body text-[12px] font-medium transition-colors min-h-[44px] ${
               activeTab === tab.key
                 ? "bg-brand-gold text-black"
                 : "border border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
             }`}
           >
-            {tab.label}
+            {tab.label}{tab.count != null && tab.count > 0 && <span className="ml-1 text-[10px] text-red-400">({tab.count})</span>}
           </button>
         ))}
       </div>
@@ -953,7 +963,7 @@ export default function AdminPartnersPage() {
         <input
           className={`${inputClass} flex-1`}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setTablePage(1); }}
           placeholder={activeTab === "invited" ? "Search by name or email..." : "Search by name, email, or partner code..."}
         />
         {activeTab !== "invited" && (
@@ -1401,7 +1411,7 @@ export default function AdminPartnersPage() {
                     <input
                       type="checkbox"
                       checked={filteredPartners.length > 0 && filteredPartners.every((p) => selectedPartnerIds.has(p.id))}
-                      onChange={() => toggleAllVisible(filteredPartners.map((p) => p.id))}
+                      onChange={() => toggleAllVisible(paginatedPartners.map((p) => p.id))}
                       className="w-4 h-4 rounded cursor-pointer accent-[#c4a050]"
                       title="Select all visible"
                     />
@@ -1421,7 +1431,7 @@ export default function AdminPartnersPage() {
                 )
               ))}
             </div>
-            {filteredPartners.map((p) => {
+            {paginatedPartners.map((p) => {
               const e164 = normalizeForSoftphone(p.mobilePhone || p.phone);
               return (
                 <div
@@ -1527,9 +1537,37 @@ export default function AdminPartnersPage() {
             )}
           </div>
 
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--app-border)]">
+              <span className="font-body text-[11px] text-[var(--app-text-muted)]">
+                Showing {(tablePage - 1) * TABLE_PAGE_SIZE + 1}–{Math.min(tablePage * TABLE_PAGE_SIZE, filteredPartners.length)} of {filteredPartners.length}
+              </span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setTablePage((p) => Math.max(1, p - 1))}
+                  disabled={tablePage === 1}
+                  className="font-body text-[11px] px-3 py-1.5 rounded-lg border border-[var(--app-border)] disabled:opacity-30 hover:bg-[var(--app-input-bg)] transition"
+                >
+                  ← Prev
+                </button>
+                <span className="font-body text-[11px] px-3 py-1.5 text-[var(--app-text-muted)]">
+                  {tablePage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setTablePage((p) => Math.min(totalPages, p + 1))}
+                  disabled={tablePage === totalPages}
+                  className="font-body text-[11px] px-3 py-1.5 rounded-lg border border-[var(--app-border)] disabled:opacity-30 hover:bg-[var(--app-input-bg)] transition"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Partners — Mobile Cards */}
           <div className="sm:hidden space-y-3">
-            {filteredPartners.map((p) => (
+            {paginatedPartners.map((p) => (
               <div key={p.id} className="card p-4 cursor-pointer hover:bg-[var(--app-card-bg)] transition-colors" onClick={() => router.push(`/admin/partners/${p.id}`)}>
                 <div className="flex items-start justify-between gap-2 mb-2">
                   {bulkOn && (

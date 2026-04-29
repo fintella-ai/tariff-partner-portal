@@ -56,7 +56,7 @@ function fmt$(n: number | null | undefined): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export default function ActivityTimeline({ refreshKey }: { refreshKey: number }) {
   const [allEvents, setAllEvents] = useState<ActivityEvent[]>([]);
