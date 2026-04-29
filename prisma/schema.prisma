@@ -1633,6 +1633,40 @@ model PartnerLead {
   @@index([scheduledSendAt])
 }
 
+model ClientSubmission {
+  id                 String   @id @default(cuid())
+  firstName          String
+  lastName           String
+  email              String
+  phone              String?
+  title              String?
+  companyName        String
+  city               String?
+  state              String?
+  ein                String?
+  businessEntityType String?
+  importsGoods       String?
+  importCountries    String?
+  annualImportValue  String?
+  importerOfRecord   String?
+  affiliateNotes     String?
+  serviceOfInterest  String   @default("Tariff Refund Support")
+  importCategory     String?
+  estimatedDuties    Float?
+  estimatedRefund    Float?
+  entryPeriod        String?
+  partnerCode        String?
+  dealId             String?
+  dealStage          String?
+  source             String   @default("recover")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([email])
+  @@index([dealId])
+  @@index([partnerCode])
+}
+
 // Admin-defined time windows when John (or whoever) is available for
 // qualification calls. Each slot has a capacity (1-5 seats) so one 30-min
 // group call can screen multiple applicants.

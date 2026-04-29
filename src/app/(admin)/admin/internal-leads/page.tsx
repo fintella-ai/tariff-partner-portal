@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fmtDate } from "@/lib/format";
+import ClientSubmissionsTab from "./ClientSubmissionsTab";
 
 type Lead = {
   id: string; firstName: string; lastName: string; email: string; phone: string | null;
@@ -10,7 +11,7 @@ type Lead = {
   unsubscribedAt: string | null; createdAt: string; updatedAt: string;
 };
 
-type LeadTab = "all" | "referral" | "broker";
+type LeadTab = "all" | "referral" | "broker" | "clients";
 type SubTab = "all" | "scheduled" | "good_email" | "replied" | "good_sms" | "good_phone" | "not_validated" | "bad_email" | "bad_phone" | "unsubscribed";
 type Stage = "all" | "new" | "scheduled" | "contacted" | "needs_review" | "submitted" | "converted" | "lost";
 
@@ -18,6 +19,7 @@ const LEAD_TABS: { id: LeadTab; label: string }[] = [
   { id: "all", label: "All Leads" },
   { id: "referral", label: "Referral Partners" },
   { id: "broker", label: "Customs Brokers" },
+  { id: "clients", label: "Client Submissions" },
 ];
 
 const BROKER_SUB_TABS: { id: SubTab; label: string }[] = [
@@ -651,8 +653,11 @@ export default function InternalLeadsPage() {
         </div>
       )}
 
+      {/* Client Submissions */}
+      {leadTab === "clients" && <ClientSubmissionsTab />}
+
       {/* Lead List */}
-      {loading ? (
+      {leadTab !== "clients" && (loading ? (
         <div className="text-center py-12 font-body text-sm text-[var(--app-text-muted)]">Loading leads...</div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center">
@@ -992,7 +997,7 @@ export default function InternalLeadsPage() {
             );
           })}
         </div>
-      )}
+      ))}
 
       {/* Pagination */}
       {totalTablePages > 1 && (

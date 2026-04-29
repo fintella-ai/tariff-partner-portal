@@ -762,6 +762,14 @@ async function postHandler(req: NextRequest): Promise<Response> {
         .catch(() => {}); // Don't fail the webhook if notification fails
     }
 
+    // Sync ClientSubmission records by email — link to this deal + update stage
+    if (deal.clientEmail) {
+      prisma.clientSubmission.updateMany({
+        where: { email: deal.clientEmail.toLowerCase(), dealId: null },
+        data: { dealId: deal.id, dealStage: deal.stage },
+      }).catch(() => {});
+    }
+
     return NextResponse.json(
       {
         received: true,
@@ -1488,6 +1496,14 @@ async function patchHandler(req: NextRequest): Promise<Response> {
           console.warn("[webhook/referral] deal status email failed:", e);
         }
       })();
+    }
+
+    // Sync ClientSubmission stage
+    if (updated.clientEmail && data.stage) {
+      prisma.clientSubmission.updateMany({
+        where: { email: updated.clientEmail.toLowerCase(), dealId: updated.id },
+        data: { dealStage: data.stage },
+      }).catch(() => {});
     }
 
     return NextResponse.json({

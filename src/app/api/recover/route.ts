@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma";
 /**
  * POST /api/recover
  * Public endpoint — client-facing refund calculator form submission.
- * Does NOT create a Deal — the Deal is created by Frost Law's webhook
- * after the client submits their form. This endpoint just logs the
- * submission for admin visibility and tracks the calculator estimates.
+ * Creates a ClientSubmission for internal leads tracking + KPIs.
+ * Does NOT create a Deal — the Deal is created by Frost Law's webhook.
+ * ClientSubmission syncs to the Deal by email match when the webhook fires.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -14,7 +14,9 @@ export async function POST(req: NextRequest) {
     const {
       companyName, contactName, email, phone, importProducts,
       estimatedDuties, estimatedRefund, partnerCode, entryPeriod,
-      htsCategory,
+      htsCategory, title, city, state, importsGoods, importCountries,
+      annualImportValue, importerOfRecord, businessEntityType,
+      affiliateNotes, ein,
     } = body;
 
     if (!companyName?.trim() || !contactName?.trim() || !email?.trim()) {
@@ -25,22 +27,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Please enter a valid email address" }, { status: 400 });
     }
 
-    // Log the submission for admin tracking (webhook log)
-    await prisma.webhookRequestLog.create({
-      data: {
-        direction: "outgoing",
-        method: "POST",
-        path: "/api/recover",
-        body: JSON.stringify({
-          contactName, companyName, email, phone,
-          importProducts, estimatedDuties, estimatedRefund,
-          entryPeriod, htsCategory, partnerCode,
-        }).slice(0, 10000),
-        responseStatus: 200,
-      },
-    }).catch(() => {});
+    const names = contactName.trim().split(/\s+/);
+    const firstName = names[0] || contactName.trim();
+    const lastName = names.slice(1).join(" ") || "";
 
-    return NextResponse.json({ success: true }, { status: 201 });
+    // Check if a deal already exists for this email (link if so)
+    const existingDeal = await prisma.deal.findFirst({
+      where: { clientEmail: email.trim().toLowerCase() },
+      select: { id: true, stage: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const submission = await prisma.clientSubmission.create({
+      data: {
+        firstName,
+        lastName,
+        email: email.trim().toLowerCase(),
+        phone: phone?.trim() || null,
+        title: title?.trim() || null,
+        companyName: companyName.trim(),
+        city: city?.trim() || null,
+        state: state?.trim() || null,
+        ein: ein?.trim() || null,
+        businessEntityType: businessEntityType || null,
+        importsGoods: importsGoods || null,
+        importCountries: importCountries || null,
+        annualImportValue: annualImportValue || null,
+        importerOfRecord: importerOfRecord || null,
+        affiliateNotes: affiliateNotes || null,
+        importCategory: importProducts || htsCategory || null,
+        estimatedDuties: estimatedDuties ? Number(estimatedDuties) : null,
+        estimatedRefund: estimatedRefund ? Number(estimatedRefund) : null,
+        entryPeriod: entryPeriod || null,
+        partnerCode: partnerCode || null,
+        dealId: existingDeal?.id || null,
+        dealStage: existingDeal?.stage || null,
+      },
+    });
+
+    return NextResponse.json({ success: true, id: submission.id }, { status: 201 });
   } catch (err) {
     console.error("[api/recover] error:", err);
     return NextResponse.json({ error: "Failed to submit. Please try again." }, { status: 500 });
