@@ -62,7 +62,10 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   home:         { id: "home", href: "/admin", icon: "🏠", label: "Home" },
   partners:     { id: "partners", href: "/admin/partners", icon: "👥", label: "Partners" },
   applications: { id: "applications", href: "/admin/applications", icon: "📥", label: "Applications" },
-  "internal-leads": { id: "internal-leads", href: "/admin/internal-leads", icon: "📊", label: "Internal Leads" },
+  "internal-leads": { id: "internal-leads", icon: "📊", label: "Internal Leads", children: [
+    { id: "client-leads", href: "/admin/client-leads", icon: "🎯", label: "Client Leads" },
+    { id: "partner-leads", href: "/admin/partner-leads", icon: "🤝", label: "Partner Leads" },
+  ] },
   deals:        { id: "deals", href: "/admin/deals", icon: "📋", label: "Deals" },
   // "reporting" is a synthetic umbrella for Reports / Revenue /
   // Custom Commissions / Payouts. The finance pages share a ReportingTabs

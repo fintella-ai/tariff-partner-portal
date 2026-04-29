@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fmtDate } from "@/lib/format";
-import ClientSubmissionsTab from "./ClientSubmissionsTab";
 
 type Lead = {
   id: string; firstName: string; lastName: string; email: string; phone: string | null;
@@ -11,12 +10,11 @@ type Lead = {
   unsubscribedAt: string | null; createdAt: string; updatedAt: string;
 };
 
-type LeadTab = "clients" | "referral" | "broker";
+type LeadTab = "referral" | "broker";
 type SubTab = "all" | "scheduled" | "good_email" | "replied" | "good_sms" | "good_phone" | "not_validated" | "bad_email" | "bad_phone" | "unsubscribed";
 type Stage = "all" | "new" | "scheduled" | "contacted" | "needs_review" | "submitted" | "converted" | "lost";
 
 const LEAD_TABS: { id: LeadTab; label: string }[] = [
-  { id: "clients", label: "Client Submissions" },
   { id: "referral", label: "Referral Partners" },
   { id: "broker", label: "Customs Brokers" },
 ];
@@ -80,7 +78,7 @@ const CBP_HEADERS = ["Filer Code", "Permitted Broker Name", "City", "State", "Wo
 export default function InternalLeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [leadTab, setLeadTab] = useState<LeadTab>("clients");
+  const [leadTab, setLeadTab] = useState<LeadTab>("referral");
   const [subTab, setSubTab] = useState<SubTab>("all");
   const [stage, setStage] = useState<Stage>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -407,7 +405,7 @@ export default function InternalLeadsPage() {
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="font-display text-[22px] font-bold mb-1">Internal Lead Pipeline</h2>
+          <h2 className="font-display text-[22px] font-bold mb-1">Partner Leads</h2>
           <p className="font-body text-[13px] text-[var(--app-text-muted)]">
             Direct leads from ads and outreach — your internal funnel before opening to partners.
           </p>
@@ -540,11 +538,9 @@ export default function InternalLeadsPage() {
             }`}
           >
             {t.label}
-            {t.id !== "clients" && (
-              <span className="ml-1.5 text-[10px] text-[var(--app-text-faint)]">
-                ({leads.filter((l) => t.id === "broker" ? isBrokerLead(l) : isReferralLead(l)).length})
-              </span>
-            )}
+            <span className="ml-1.5 text-[10px] text-[var(--app-text-faint)]">
+              ({leads.filter((l) => t.id === "broker" ? isBrokerLead(l) : isReferralLead(l)).length})
+            </span>
           </button>
         ))}
       </div>
@@ -650,11 +646,8 @@ export default function InternalLeadsPage() {
         </div>
       )}
 
-      {/* Client Submissions */}
-      {leadTab === "clients" && <ClientSubmissionsTab />}
-
       {/* Lead List */}
-      {leadTab !== "clients" && (loading ? (
+      {loading ? (
         <div className="text-center py-12 font-body text-sm text-[var(--app-text-muted)]">Loading leads...</div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center">
@@ -994,7 +987,7 @@ export default function InternalLeadsPage() {
             );
           })}
         </div>
-      ))}
+      )}
 
       {/* Pagination */}
       {totalTablePages > 1 && (
