@@ -84,16 +84,10 @@ export async function GET(req: NextRequest) {
       totalRefundPipeline: allDeals.reduce((s, d) => s + d.estimatedRefundAmount, 0),
       totalFirmFees: allDeals.reduce((s, d) => s + d.firmFeeAmount, 0),
       totalCommissions: allDeals.reduce((s, d) => s + d.l1CommissionAmount + d.l2CommissionAmount + d.l3CommissionAmount, 0),
-      byStage: {
-        new_lead: allDeals.filter((d) => d.stage === "new_lead").length,
-        no_consultation: allDeals.filter((d) => d.stage === "no_consultation").length,
-        consultation_booked: allDeals.filter((d) => d.stage === "consultation_booked").length,
-        client_no_show: allDeals.filter((d) => d.stage === "client_no_show").length,
-        client_engaged: allDeals.filter((d) => d.stage === "client_engaged").length,
-        in_process: allDeals.filter((d) => d.stage === "in_process").length,
-        closedwon: allDeals.filter((d) => d.stage === "closedwon").length,
-        closedlost: allDeals.filter((d) => d.stage === "closedlost").length,
-      },
+      byStage: allDeals.reduce<Record<string, number>>((acc, d) => {
+        acc[d.stage] = (acc[d.stage] || 0) + 1;
+        return acc;
+      }, {}),
     };
 
     return NextResponse.json({ deals: dealsWithPartnerNames, stats, partners });
