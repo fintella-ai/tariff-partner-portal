@@ -1702,6 +1702,20 @@ model LandingContent {
   updatedAt           DateTime @updatedAt
 }
 
+// ─── LANDING PAGE CONFIGS (multi-page content editor) ─────────────────────
+// One row per public landing page. Admin edits content via /admin/landing-pages.
+// Public pages read `published` JSON at render time, fall back to hardcoded defaults.
+model LandingPageConfig {
+  slug            String   @id // "recover", "partners", "brokers"
+  label           String   // "Client Recovery", "Partner Recruitment", "Customs Brokers"
+  draft           String   @default("{}") // JSON content blob
+  published       String   @default("{}") // JSON content blob (live)
+  enabled         Boolean  @default(true)
+  lastPublishedAt DateTime?
+  lastPublishedBy String?
+  updatedAt       DateTime @updatedAt
+}
+
 // ─── ADMIN INBOX (PartnerOS AI Phase 3 — spec §7, §8.3) ──────────────────
 // Role-scoped inbox used for Ollie escalation routing (ticket emails,
 // scheduled-call Google Calendars, notification fan-out). Four rows seeded
