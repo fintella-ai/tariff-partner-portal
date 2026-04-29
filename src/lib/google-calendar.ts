@@ -57,7 +57,7 @@ export function buildAuthorizationUrl(state: string, originOverride?: string): s
     // previously (otherwise a re-connect skips the refresh_token).
     access_type: "offline",
     prompt: "consent",
-    scope: "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/apps.licensing https://www.googleapis.com/auth/drive.readonly email",
+    scope: "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/apps.licensing https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/gmail.readonly email",
     state,
   });
   return `${AUTH_ENDPOINT}?${params.toString()}`;

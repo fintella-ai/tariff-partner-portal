@@ -11,7 +11,7 @@ type Lead = {
 };
 
 type LeadTab = "all" | "referral" | "broker";
-type SubTab = "all" | "scheduled" | "good_email" | "good_sms" | "good_phone" | "not_validated" | "bad_email" | "bad_phone" | "unsubscribed";
+type SubTab = "all" | "scheduled" | "good_email" | "replied" | "good_sms" | "good_phone" | "not_validated" | "bad_email" | "bad_phone" | "unsubscribed";
 type Stage = "all" | "new" | "scheduled" | "contacted" | "needs_review" | "submitted" | "converted" | "lost";
 
 const LEAD_TABS: { id: LeadTab; label: string }[] = [
@@ -24,6 +24,7 @@ const BROKER_SUB_TABS: { id: SubTab; label: string }[] = [
   { id: "all", label: "All" },
   { id: "scheduled", label: "Scheduled" },
   { id: "good_email", label: "Good Email" },
+  { id: "replied", label: "Replied" },
   { id: "good_sms", label: "SMS Ready" },
   { id: "good_phone", label: "Call Only" },
   { id: "not_validated", label: "Unverified" },
@@ -100,6 +101,7 @@ export default function InternalLeadsPage() {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [emailEngagement, setEmailEngagement] = useState<Record<string, { status: string; sentAt: string }>>({});
+  const [outreachReplies, setOutreachReplies] = useState<Record<string, { from: string; subject: string; snippet: string; date: string }>>({});
   const [tablePage, setTablePage] = useState(1);
   const TABLE_PAGE_SIZE = 50;
   const fileRef = useRef<HTMLInputElement>(null);
@@ -111,10 +113,17 @@ export default function InternalLeadsPage() {
 
   const fetchEngagement = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/leads/email-engagement");
-      if (res.ok) {
-        const data = await res.json();
+      const [engRes, repliesRes] = await Promise.allSettled([
+        fetch("/api/admin/leads/email-engagement"),
+        fetch("/api/admin/leads/outreach-replies"),
+      ]);
+      if (engRes.status === "fulfilled" && engRes.value.ok) {
+        const data = await engRes.value.json();
         setEmailEngagement(data.engagement || {});
+      }
+      if (repliesRes.status === "fulfilled" && repliesRes.value.ok) {
+        const data = await repliesRes.value.json();
+        setOutreachReplies(data.replies || {});
       }
     } catch {}
   }, []);
@@ -343,6 +352,7 @@ export default function InternalLeadsPage() {
   function applySubFilter(list: Lead[]): Lead[] {
     if (subTab === "scheduled") return list.filter(isScheduled);
     if (subTab === "good_email") return list.filter((l) => hasGoodEmail(l) && !isScheduled(l) && !l.unsubscribedAt);
+    if (subTab === "replied") return list.filter((l) => !!outreachReplies[l.email.toLowerCase()]);
     if (subTab === "good_sms") return list.filter((l) => hasGoodSms(l) && !l.unsubscribedAt);
     if (subTab === "good_phone") return list.filter(hasGoodCalling);
     if (subTab === "not_validated") return list.filter(isNotValidated);
@@ -548,6 +558,7 @@ export default function InternalLeadsPage() {
             const count = st.id === "all" ? parentLeads.length
               : st.id === "scheduled" ? parentLeads.filter(isScheduled).length
               : st.id === "good_email" ? parentLeads.filter((l) => hasGoodEmail(l) && !isScheduled(l)).length
+              : st.id === "replied" ? parentLeads.filter((l) => !!outreachReplies[l.email.toLowerCase()]).length
               : st.id === "good_sms" ? parentLeads.filter(hasGoodSms).length
               : st.id === "good_phone" ? parentLeads.filter(hasGoodCalling).length
               : st.id === "not_validated" ? parentLeads.filter(isNotValidated).length
@@ -767,6 +778,14 @@ export default function InternalLeadsPage() {
                           return (
                             <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold bg-indigo-500/15 text-indigo-400" title={d.toLocaleString()}>
                               ⏱ {d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} {d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                            </span>
+                          );
+                        }
+                        const reply = outreachReplies[lead.email.toLowerCase()];
+                        if (reply) {
+                          return (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold bg-emerald-500/15 text-emerald-400 cursor-help" title={`${reply.snippet}\n\n${reply.from}\n${reply.date}`}>
+                              💬 Replied
                             </span>
                           );
                         }
