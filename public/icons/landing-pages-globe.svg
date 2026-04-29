@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#c4a050" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- globe -->
+  <circle cx="12" cy="12" r="9"/>
+  <!-- equator -->
+  <path d="M3 12h18"/>
+  <!-- meridian -->
+  <ellipse cx="12" cy="12" rx="4" ry="9"/>
+  <!-- cursor / edit hint -->
+  <path d="M17 17l3 3"/>
+</svg>
