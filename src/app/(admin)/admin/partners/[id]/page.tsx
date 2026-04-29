@@ -1354,10 +1354,10 @@ export default function PartnerDetailPage() {
                   title="Agreement template rate — controls which SignWell template is sent"
                   className="font-body text-[11px] bg-[var(--app-input-bg)] border border-brand-gold/20 text-brand-gold/80 rounded-lg px-2 py-1.5 outline-none focus:border-brand-gold/40"
                 >
-                  <option value={0.25} className="bg-[var(--app-bg)]">25% L1</option>
-                  <option value={0.20} className="bg-[var(--app-bg)]">20% L1</option>
-                  <option value={0.15} className="bg-[var(--app-bg)]">15% L1</option>
-                  <option value={0.10} className="bg-[var(--app-bg)]">10% L1</option>
+                  {tier === "l1" && <option value={0.25} className="bg-[var(--app-bg)]">25% L1</option>}
+                  {(tier === "l1" || tier === "l2") && <option value={0.20} className="bg-[var(--app-bg)]">20% {tier.toUpperCase()}</option>}
+                  {(tier === "l1" || tier === "l2" || tier === "l3") && <option value={0.15} className="bg-[var(--app-bg)]">15% {tier.toUpperCase()}</option>}
+                  <option value={0.10} className="bg-[var(--app-bg)]">10% {tier.toUpperCase()}</option>
                   <option value="__custom__" className="bg-[var(--app-bg)]">Custom…</option>
                 </select>
               )}
