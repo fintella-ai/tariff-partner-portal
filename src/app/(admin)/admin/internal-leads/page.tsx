@@ -707,7 +707,13 @@ export default function InternalLeadsPage() {
                     <td className="px-3 py-2.5 font-semibold whitespace-nowrap">{lead.firstName}{brokerTitle ? ` ${brokerTitle}` : ""}</td>
                     <td className="px-3 py-2.5 text-[var(--app-text-muted)] whitespace-nowrap text-[11px]">{lead.lastName === "Broker" ? lead.lastName : "—"}</td>
                     <td className="px-3 py-2.5 text-[var(--app-text-muted)] whitespace-nowrap">{locationMatch?.[1] || "—"}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">{isJustExt ? "—" : displayPhone || "—"}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      {isJustExt || !displayPhone ? "—" : (
+                        <a href={`tel:${displayPhone.replace(/[^+\d]/g, "")}`} className="text-brand-gold hover:underline" title="Click to call">
+                          📞 {displayPhone}
+                        </a>
+                      )}
+                    </td>
                     <td className="px-3 py-2.5 text-[var(--app-text-muted)] whitespace-nowrap text-[11px]">{isJustExt ? rawPhone : displayExt || "—"}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap">
                       {phoneType ? (
