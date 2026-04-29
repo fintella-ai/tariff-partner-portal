@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import RecoverForm from "@/components/landing/RecoverForm";
+import GatedResources from "@/components/landing/GatedResources";
 
 export const metadata: Metadata = {
   title: "Find Out How Much You're Owed — IEEPA Tariff Refund Recovery",
@@ -111,33 +112,8 @@ export default function RecoverPage({
         </div>
       </div>
 
-      {/* Free Resources */}
-      <div className="border-t border-white/5">
-        <div className="max-w-6xl mx-auto px-6 py-16">
-          <h2 className="font-display text-2xl text-center mb-3" style={{ color: "#c4a050" }}>Free Resources</h2>
-          <p className="text-sm text-white/40 text-center mb-10">Download these guides to understand the IEEPA tariff recovery process.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <a href="/resources/cape-system-guide.pdf" target="_blank" rel="noopener noreferrer" className="group p-6 rounded-2xl border border-white/10 hover:border-[#c4a050]/30 hover:bg-[#c4a050]/[0.03] transition-all">
-              <div className="text-3xl mb-3">📘</div>
-              <h3 className="font-semibold text-sm text-white/90 mb-2 group-hover:text-[#c4a050] transition">CAPE System Guide</h3>
-              <p className="text-xs text-white/40 mb-3">Why you need legal counsel to navigate CBP&apos;s CAPE refund portal and avoid costly filing errors.</p>
-              <span className="text-xs text-[#c4a050]/70 font-medium">Download PDF →</span>
-            </a>
-            <a href="/resources/our-value-add.pdf" target="_blank" rel="noopener noreferrer" className="group p-6 rounded-2xl border border-white/10 hover:border-[#c4a050]/30 hover:bg-[#c4a050]/[0.03] transition-all">
-              <div className="text-3xl mb-3">📋</div>
-              <h3 className="font-semibold text-sm text-white/90 mb-2 group-hover:text-[#c4a050] transition">Our Value in Your Journey</h3>
-              <p className="text-xs text-white/40 mb-3">How our legal team adds value at every stage of the tariff recovery process — from filing to refund.</p>
-              <span className="text-xs text-[#c4a050]/70 font-medium">Download PDF →</span>
-            </a>
-            <a href="/resources/why-legal-counsel.pdf" target="_blank" rel="noopener noreferrer" className="group p-6 rounded-2xl border border-white/10 hover:border-[#c4a050]/30 hover:bg-[#c4a050]/[0.03] transition-all">
-              <div className="text-3xl mb-3">⚖️</div>
-              <h3 className="font-semibold text-sm text-white/90 mb-2 group-hover:text-[#c4a050] transition">Why Legal Counsel Matters</h3>
-              <p className="text-xs text-white/40 mb-3">The risks of filing IEEPA recovery claims without legal representation and how to protect your refund.</p>
-              <span className="text-xs text-[#c4a050]/70 font-medium">Download PDF →</span>
-            </a>
-          </div>
-        </div>
-      </div>
+      {/* Free Resources — gated behind lead capture */}
+      <GatedResources partnerCode={partnerCode} />
 
       {/* Footer */}
       <div className="border-t border-white/5">
