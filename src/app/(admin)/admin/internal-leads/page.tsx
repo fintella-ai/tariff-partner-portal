@@ -175,7 +175,17 @@ export default function InternalLeadsPage() {
 
     const batch = emailable.slice(0, BATCH_SIZE);
     const remaining = emailable.length - batch.length;
-    const msg = `Schedule ${batch.length} emails for next Tue/Thu 9 AM in each broker's timezone? (Best B2B open rates)${remaining > 0 ? `\n\n${remaining} more available next batch.` : ""}`;
+    const nextDay = (() => {
+      const now = new Date();
+      for (let d = 0; d < 8; d++) {
+        const c = new Date(now.getTime() + d * 86400000);
+        const dow = c.getDay();
+        if ((dow === 2 || dow === 4) && (d > 0 || c.getHours() < 9))
+          return c.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+      }
+      return "next Tue/Thu";
+    })();
+    const msg = `Schedule ${batch.length} emails for ${nextDay} at 9 AM in each broker's timezone? (Best B2B open rates)${remaining > 0 ? `\n\n${remaining} more available next batch.` : ""}`;
 
     if (!confirm(msg)) return;
     setBulkEmailing(true);
