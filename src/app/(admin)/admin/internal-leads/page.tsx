@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { fmtDate, fmtDateTime } from "@/lib/format";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { fmtDate } from "@/lib/format";
 
 type Lead = {
   id: string; firstName: string; lastName: string; email: string; phone: string | null;
@@ -9,17 +9,24 @@ type Lead = {
   status: string; inviteId: string | null; createdAt: string; updatedAt: string;
 };
 
+type LeadTab = "all" | "referral" | "broker";
 type Stage = "all" | "new" | "contacted" | "call_booked" | "qualified" | "submitted" | "converted" | "lost";
 
-const STAGES: { id: Stage; label: string; color: string }[] = [
-  { id: "all", label: "All", color: "text-[var(--app-text)]" },
-  { id: "new", label: "New", color: "text-blue-400" },
-  { id: "contacted", label: "Contacted", color: "text-purple-400" },
-  { id: "call_booked", label: "Call Booked", color: "text-cyan-400" },
-  { id: "qualified", label: "Qualified", color: "text-yellow-400" },
-  { id: "submitted", label: "Submitted", color: "text-brand-gold" },
-  { id: "converted", label: "Converted", color: "text-green-400" },
-  { id: "lost", label: "Lost", color: "text-red-400" },
+const LEAD_TABS: { id: LeadTab; label: string }[] = [
+  { id: "all", label: "All Leads" },
+  { id: "referral", label: "Referral Partners" },
+  { id: "broker", label: "Customs Brokers" },
+];
+
+const STAGES: { id: Stage; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "new", label: "New" },
+  { id: "contacted", label: "Contacted" },
+  { id: "call_booked", label: "Call Booked" },
+  { id: "qualified", label: "Qualified" },
+  { id: "submitted", label: "Submitted" },
+  { id: "converted", label: "Converted" },
+  { id: "lost", label: "Lost" },
 ];
 
 const STAGE_BADGES: Record<string, string> = {
@@ -36,9 +43,21 @@ const STAGE_BADGES: Record<string, string> = {
   skipped: "bg-gray-500/10 text-gray-400 border-gray-500/20",
 };
 
+function isBrokerLead(lead: Lead): boolean {
+  return (lead.notes || "").includes("CBP Broker Listing") || (lead.notes || "").includes("Filer Code:");
+}
+
+function isReferralLead(lead: Lead): boolean {
+  return !isBrokerLead(lead);
+}
+
+// CBP CSV column headers
+const CBP_HEADERS = ["Filer Code", "Permitted Broker Name", "City", "State", "Work Phone Number", "Work Phone Extension", "Email Address"];
+
 export default function InternalLeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [leadTab, setLeadTab] = useState<LeadTab>("all");
   const [stage, setStage] = useState<Stage>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -47,6 +66,12 @@ export default function InternalLeadsPage() {
   const [search, setSearch] = useState("");
   const [banner, setBanner] = useState<{ tone: "ok" | "err"; msg: string } | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importData, setImportData] = useState<any[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
+  const [lookingUp, setLookingUp] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   function flash(tone: "ok" | "err", msg: string) {
     setBanner({ tone, msg });
@@ -58,7 +83,6 @@ export default function InternalLeadsPage() {
       const res = await fetch("/api/admin/leads");
       if (res.ok) {
         const data = await res.json();
-        // Only show leads without a referredByCode (internal/direct leads)
         setLeads((data.leads ?? []).filter((l: Lead) => !l.referredByCode));
       }
     } finally { setLoading(false); }
@@ -92,24 +116,103 @@ export default function InternalLeadsPage() {
     if (res.ok) { fetchLeads(); flash("ok", "Lead removed"); }
   }
 
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const rows = parseCSV(text);
+      setImportData(rows);
+      setImportResult(null);
+    };
+    reader.readAsText(file);
+  }
+
+  function parseCSV(text: string): any[] {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+    return lines.slice(1).map((line) => {
+      const values = parseCSVLine(line);
+      const row: any = {};
+      headers.forEach((h, i) => { row[h] = (values[i] || "").trim(); });
+      return row;
+    });
+  }
+
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === "," && !inQuotes) {
+        result.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current);
+    return result;
+  }
+
+  async function runImport() {
+    if (importData.length === 0) return;
+    setImporting(true);
+    try {
+      const res = await fetch("/api/admin/leads/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: importData, leadType: "customs_broker" }),
+      });
+      const data = await res.json();
+      setImportResult(data);
+      if (data.imported > 0) {
+        fetchLeads();
+        flash("ok", `Imported ${data.imported} brokers`);
+      }
+    } catch {
+      flash("err", "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  const typeFiltered = leads.filter((l) => {
+    if (leadTab === "broker") return isBrokerLead(l);
+    if (leadTab === "referral") return isReferralLead(l);
+    return true;
+  });
+
   const q = search.toLowerCase().trim();
-  const filtered = leads
+  const filtered = typeFiltered
     .filter((l) => stage === "all" || l.status === stage)
     .filter((l) => !q || `${l.firstName} ${l.lastName} ${l.email} ${l.phone || ""} ${l.notes || ""}`.toLowerCase().includes(q));
 
   const stats = {
-    total: leads.length,
-    new: leads.filter((l) => l.status === "prospect").length,
-    contacted: leads.filter((l) => l.status === "contacted").length,
-    qualified: leads.filter((l) => l.status === "qualified").length,
-    invited: leads.filter((l) => l.status === "invited").length,
-    converted: leads.filter((l) => l.status === "signed_up").length,
+    total: typeFiltered.length,
+    new: typeFiltered.filter((l) => l.status === "prospect").length,
+    contacted: typeFiltered.filter((l) => l.status === "contacted").length,
+    qualified: typeFiltered.filter((l) => l.status === "qualified").length,
+    invited: typeFiltered.filter((l) => l.status === "invited").length,
+    converted: typeFiltered.filter((l) => l.status === "signed_up").length,
   };
-
   const conversionRate = stats.total > 0 ? Math.round((stats.converted / stats.total) * 100) : 0;
+
+  const validImportRows = importData.filter((r) => {
+    const phone = (r["Work Phone Number"] || r.phone || "").trim();
+    const email = (r["Email Address"] || r.email || "").trim();
+    return phone || email;
+  });
 
   return (
     <div>
+      {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="font-display text-[22px] font-bold mb-1">Internal Lead Pipeline</h2>
@@ -118,6 +221,28 @@ export default function InternalLeadsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              setLookingUp(true);
+              try {
+                const res = await fetch("/api/admin/leads/lookup-phones", { method: "POST" });
+                const data = await res.json();
+                flash("ok", `Phone lookup: ${data.looked_up} classified${data.demo ? " (demo mode)" : ""}`);
+                fetchLeads();
+              } catch { flash("err", "Lookup failed"); }
+              finally { setLookingUp(false); }
+            }}
+            disabled={lookingUp}
+            className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition disabled:opacity-50"
+          >
+            {lookingUp ? "Looking up..." : "📞 Lookup Phone Types"}
+          </button>
+          <button
+            onClick={() => { setImportOpen(true); setImportData([]); setImportResult(null); }}
+            className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition"
+          >
+            📥 Import CSV
+          </button>
           <button
             onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/recover`); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }}
             className={`px-4 py-2 rounded-lg border text-sm transition-colors ${copiedLink ? "text-green-400 border-green-500/30 bg-green-500/10" : "border-[var(--app-border)] text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)]"}`}
@@ -140,6 +265,26 @@ export default function InternalLeadsPage() {
           {banner.msg}
         </div>
       )}
+
+      {/* Lead type tabs */}
+      <div className="flex gap-1 border-b border-[var(--app-border)] mb-6">
+        {LEAD_TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => { setLeadTab(t.id); setStage("all"); }}
+            className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition border-b-2 ${
+              leadTab === t.id
+                ? "border-[var(--brand-gold)] text-[var(--app-text)]"
+                : "border-transparent text-[var(--app-text-muted)] hover:text-[var(--app-text)]"
+            }`}
+          >
+            {t.label}
+            <span className="ml-1.5 text-[10px] text-[var(--app-text-faint)]">
+              ({leads.filter((l) => t.id === "all" ? true : t.id === "broker" ? isBrokerLead(l) : isReferralLead(l)).length})
+            </span>
+          </button>
+        ))}
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-6">
@@ -169,7 +314,7 @@ export default function InternalLeadsPage() {
         </div>
       </div>
 
-      {/* Search + Filter */}
+      {/* Search + Stage Filter */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <input
           type="search"
@@ -198,20 +343,36 @@ export default function InternalLeadsPage() {
         <div className="text-center py-12 font-body text-sm text-[var(--app-text-muted)]">Loading leads...</div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center">
-          <div className="text-5xl mb-3">📊</div>
-          <h3 className="text-lg font-semibold mb-1">No internal leads yet</h3>
+          <div className="text-5xl mb-3">{leadTab === "broker" ? "🚢" : "📊"}</div>
+          <h3 className="text-lg font-semibold mb-1">
+            {leadTab === "broker" ? "No customs broker leads yet" : leadTab === "referral" ? "No referral partner leads yet" : "No internal leads yet"}
+          </h3>
           <p className="text-sm text-[var(--app-text-muted)]">
-            Leads from /recover and direct outreach will appear here. Run your first ad to start testing the funnel.
+            {leadTab === "broker"
+              ? "Import the CBP broker listing CSV to start building your customs broker pipeline."
+              : "Leads from /recover and direct outreach will appear here."
+            }
           </p>
+          {leadTab === "broker" && (
+            <button
+              onClick={() => { setImportOpen(true); setImportData([]); setImportResult(null); }}
+              className="mt-4 px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90"
+            >
+              📥 Import CBP Broker CSV
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((lead) => {
             const isExpanded = expandedId === lead.id;
             const isEditing = editingId === lead.id;
-            const source = (lead.notes || "").includes("/recover") ? "🌐 Website" : (lead.notes || "").includes("Direct") ? "📞 Direct" : "📋 Manual";
+            const isBroker = isBrokerLead(lead);
+            const source = isBroker ? "🚢 CBP Import" : (lead.notes || "").includes("/recover") ? "🌐 Website" : (lead.notes || "").includes("/partners") ? "🤝 Partner Page" : (lead.notes || "").includes("Direct") ? "📞 Direct" : "📋 Manual";
             const dutyMatch = (lead.notes || "").match(/Est\. duties: \$([\d,]+)/);
             const refundMatch = (lead.notes || "").match(/Est\. refund: \$([\d,]+)/);
+            const filerMatch = (lead.notes || "").match(/Filer Code: (\w+)/);
+            const locationMatch = (lead.notes || "").match(/Location: (.+)/);
 
             return (
               <div key={lead.id} className="card overflow-hidden">
@@ -221,16 +382,33 @@ export default function InternalLeadsPage() {
                 >
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-brand-gold/20 text-brand-gold flex items-center justify-center font-bold text-sm">
-                        {lead.firstName[0]}{lead.lastName[0]}
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${isBroker ? "bg-blue-500/20 text-blue-400" : "bg-brand-gold/20 text-brand-gold"}`}>
+                        {lead.firstName[0]}{lead.lastName?.[0] || ""}
                       </div>
                       <div className="min-w-0">
                         <div className="font-semibold text-sm truncate">{lead.firstName} {lead.lastName}</div>
-                        <div className="text-[12px] text-[var(--app-text-muted)] truncate">{lead.email}{lead.phone ? ` · ${lead.phone}` : ""}</div>
+                        <div className="text-[12px] text-[var(--app-text-muted)] truncate flex items-center gap-1">
+                          <span>{lead.email.includes("@import.placeholder") ? "" : lead.email}</span>
+                          {lead.phone && <span>{lead.email.includes("@import.placeholder") ? "" : " · "}{lead.phone}</span>}
+                          {lead.phone && (
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
+                              (lead.notes || "").includes("Phone Type: mobile") ? "bg-green-500/15 text-green-400" :
+                              (lead.notes || "").includes("Phone Type: landline") ? "bg-gray-500/15 text-gray-400" :
+                              (lead.notes || "").includes("Phone Type: voip") ? "bg-blue-500/15 text-blue-400" :
+                              "bg-white/5 text-[var(--app-text-faint)]"
+                            }`}>
+                              {(lead.notes || "").includes("Phone Type: mobile") ? "📱 Mobile" :
+                               (lead.notes || "").includes("Phone Type: landline") ? "☎️ Landline" :
+                               (lead.notes || "").includes("Phone Type: voip") ? "🌐 VoIP" : ""}
+                            </span>
+                          )}
+                          {locationMatch && <span> · {locationMatch[1]}</span>}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-[var(--app-text-faint)]">{source}</span>
+                      {filerMatch && <span className="text-[10px] text-blue-400 font-mono">{filerMatch[1]}</span>}
                       {dutyMatch && <span className="text-[11px] text-yellow-400 font-semibold">${dutyMatch[1]}</span>}
                       <span className={`inline-block rounded-full px-2.5 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase border ${STAGE_BADGES[lead.status] || STAGE_BADGES.new}`}>
                         {lead.status === "signed_up" ? "Converted" : lead.status}
@@ -242,7 +420,6 @@ export default function InternalLeadsPage() {
 
                 {isExpanded && (
                   <div className="px-5 pb-5 border-t border-[var(--app-border)] pt-4">
-                    {/* Details */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 text-[12px]">
                       <div><span className="text-[var(--app-text-muted)]">Rate:</span> {Math.round(lead.commissionRate * 100)}%</div>
                       <div><span className="text-[var(--app-text-muted)]">Tier:</span> {lead.tier.toUpperCase()}</div>
@@ -253,7 +430,6 @@ export default function InternalLeadsPage() {
                       <div className="font-body text-[12px] text-[var(--app-text-secondary)] mb-4 whitespace-pre-wrap bg-[var(--app-input-bg)] rounded-lg p-3">{lead.notes}</div>
                     )}
 
-                    {/* Edit mode */}
                     {isEditing ? (
                       <div className="flex gap-2 flex-wrap mb-3">
                         <select value={editStage} onChange={(e) => setEditStage(e.target.value)} className="theme-input rounded-lg px-3 py-2 text-sm">
@@ -312,6 +488,118 @@ export default function InternalLeadsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Import CSV Modal */}
+      {importOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+          <div className="w-full max-w-2xl bg-[var(--app-bg-secondary)] border border-[var(--app-border)] rounded-2xl p-6 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">Import Customs Broker CSV</h3>
+              <button onClick={() => setImportOpen(false)} className="text-[var(--app-text-muted)] hover:text-[var(--app-text)] text-lg">✕</button>
+            </div>
+
+            <div className="mb-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-400">
+              <strong>CBP Broker Listing Format</strong> — download the CSV from{" "}
+              <a href="https://www.cbp.gov/about/contact/brokers-listing" target="_blank" rel="noopener noreferrer" className="underline">cbp.gov</a>{" "}
+              and upload it here. Expected columns:
+              <div className="font-mono text-[11px] mt-1 text-blue-300">
+                {CBP_HEADERS.join(", ")}
+              </div>
+            </div>
+
+            <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-sm text-yellow-400">
+              Rows without a phone number or email will be skipped. Duplicate emails are automatically detected.
+            </div>
+
+            <div className="mb-4">
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".csv,.txt"
+                onChange={handleFileUpload}
+                className="block w-full text-sm theme-input rounded-lg px-3 py-2 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-gold/15 file:text-brand-gold file:text-xs file:font-semibold file:px-3 file:py-1.5"
+              />
+            </div>
+
+            {importData.length > 0 && (
+              <div className="mb-4">
+                <div className="text-sm mb-2">
+                  <strong>{importData.length}</strong> rows parsed · <strong className="text-green-400">{validImportRows.length}</strong> have phone or email · <strong className="text-red-400">{importData.length - validImportRows.length}</strong> will be skipped
+                </div>
+
+                {/* Preview table */}
+                <div className="overflow-x-auto border border-[var(--app-border)] rounded-lg max-h-[300px] overflow-y-auto">
+                  <table className="w-full text-[11px]">
+                    <thead className="bg-[var(--app-input-bg)] sticky top-0">
+                      <tr>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">Filer Code</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">Broker Name</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">City</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">State</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">Phone</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">Type</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">Email</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importData.slice(0, 50).map((row, i) => {
+                        const phone = (row["Work Phone Number"] || row.phone || "").trim();
+                        const email = (row["Email Address"] || row.email || "").trim();
+                        const hasContact = phone || email;
+                        return (
+                          <tr key={i} className={`border-t border-[var(--app-border)] ${hasContact ? "" : "opacity-40"}`}>
+                            <td className="px-2 py-1.5 font-mono">{row["Filer Code"] || row.filerCode || ""}</td>
+                            <td className="px-2 py-1.5">{row["Permitted Broker Name"] || row.name || ""}</td>
+                            <td className="px-2 py-1.5">{row["City"] || row.city || ""}</td>
+                            <td className="px-2 py-1.5">{row["State"] || row.state || ""}</td>
+                            <td className="px-2 py-1.5">{phone || <span className="text-red-400">—</span>}</td>
+                            <td className="px-2 py-1.5 text-[var(--app-text-faint)]">{phone ? "—" : ""}</td>
+                            <td className="px-2 py-1.5">{email || <span className="text-red-400">—</span>}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {importData.length > 50 && (
+                    <div className="text-center py-2 text-[11px] text-[var(--app-text-muted)]">
+                      Showing first 50 of {importData.length} rows
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {importResult && (
+              <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-sm">
+                <div className="text-green-400 font-semibold mb-1">Import Complete</div>
+                <div className="text-[12px] text-[var(--app-text-secondary)] space-y-0.5">
+                  <div>✅ Imported: <strong>{importResult.imported}</strong></div>
+                  <div>⏭️ Skipped (no contact): <strong>{importResult.skipped}</strong></div>
+                  <div>🔁 Duplicates: <strong>{importResult.duplicates}</strong></div>
+                  {importResult.errors?.length > 0 && (
+                    <div className="text-red-400">❌ Errors: {importResult.errors.join(", ")}</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setImportOpen(false)} className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-muted)]">
+                {importResult ? "Close" : "Cancel"}
+              </button>
+              {!importResult && (
+                <button
+                  onClick={runImport}
+                  disabled={importing || validImportRows.length === 0}
+                  className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+                >
+                  {importing ? "Importing..." : `Import ${validImportRows.length} Brokers`}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
