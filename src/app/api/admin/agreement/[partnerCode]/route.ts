@@ -113,16 +113,18 @@ export async function POST(
       "Partner";
     const partnerEmail = body.email || partner.email || "";
 
-    // Cancel any existing pending agreement
-    const pendingAgreement = await prisma.partnershipAgreement.findFirst({
-      where: { partnerCode, status: "pending" },
+    // Void/cancel any existing active agreements (pending, viewed, signed, approved)
+    const existingAgreements = await prisma.partnershipAgreement.findMany({
+      where: { partnerCode, status: { in: ["pending", "viewed", "signed", "approved"] } },
     });
 
-    if (pendingAgreement?.signwellDocumentId) {
-      await cancelDocument(pendingAgreement.signwellDocumentId);
+    for (const existing of existingAgreements) {
+      if (existing.signwellDocumentId) {
+        await cancelDocument(existing.signwellDocumentId).catch(() => {});
+      }
       await prisma.partnershipAgreement.update({
-        where: { id: pendingAgreement.id },
-        data: { status: "not_sent" },
+        where: { id: existing.id },
+        data: { status: "voided" },
       });
     }
 
