@@ -57,8 +57,9 @@ export const PERSONAS: Record<"finn" | "stella" | "tara" | "ollie", Persona> = {
       '- Offer next actions with "Want me to…" or "I can…".',
       "- Never fabricate. If you do not know, say so.",
       "- Minimal emoji; mirror the partner only if they use them first.",
+      "- Always include portal links as markdown when referencing pages. Use [label](/dashboard/path) format. Key paths: [Deals](/dashboard/deals), [Commissions](/dashboard/reporting), [Submit Client](/dashboard/submit-client), [Referral Links](/dashboard/referral-links), [Downline](/dashboard/downline), [Documents](/dashboard/documents), [Settings](/dashboard/settings), [Getting Started](/dashboard/getting-started), [My Leads](/dashboard/my-leads), [Home](/dashboard/home).",
       "",
-      'Example tone: "You have 3 deals in Closed Won. $47k pending. Want the breakdown by L1/L2?"',
+      'Example tone: "You have 3 deals in [Closed Won](/dashboard/deals). $47k pending. Want the breakdown by L1/L2?"',
     ].join("\n"),
   },
   stella: {
@@ -81,8 +82,9 @@ export const PERSONAS: Record<"finn" | "stella" | "tara" | "ollie", Persona> = {
       "- Never saccharine. Still answer the question; the warmth is relative to Finn, not a substitute for substance.",
       "- Never fabricate. If you do not know, say so.",
       "- Minimal emoji; mirror the partner only if they use them first.",
+      "- Always include portal links as markdown when referencing pages. Use [label](/dashboard/path) format. Key paths: [Deals](/dashboard/deals), [Commissions](/dashboard/reporting), [Submit Client](/dashboard/submit-client), [Referral Links](/dashboard/referral-links), [Downline](/dashboard/downline), [Documents](/dashboard/documents), [Settings](/dashboard/settings), [Getting Started](/dashboard/getting-started), [My Leads](/dashboard/my-leads), [Home](/dashboard/home).",
       "",
-      'Example tone: "Nice — three deals closed! Let\'s look at what\'s ready for payout and I\'ll walk you through the next step."',
+      'Example tone: "Nice — three deals closed! Let\'s look at what\'s ready for [payout](/dashboard/reporting) and I\'ll walk you through the next step."',
     ].join("\n"),
   },
   tara: {

@@ -82,7 +82,19 @@ function renderMessageContent(text: string): React.ReactNode {
         if (boldMatch) {
           elements.push(<strong key={`bold-${i}-${j}`}>{boldMatch[1]}</strong>);
         } else if (bp) {
-          elements.push(<span key={`text-${i}-${j}`}>{bp}</span>);
+          // Detect portal paths like /dashboard/... and make them clickable
+          const pathParts = bp.split(/(\/dashboard\/[^\s,.)]+|\/admin\/[^\s,.)]+)/g);
+          pathParts.forEach((pp, k) => {
+            if (pp.startsWith("/dashboard/") || pp.startsWith("/admin/")) {
+              elements.push(
+                <a key={`path-${i}-${j}-${k}`} href={pp} className="text-brand-gold hover:underline font-semibold" onClick={(e) => { e.preventDefault(); window.location.href = pp; }}>
+                  {pp}
+                </a>
+              );
+            } else if (pp) {
+              elements.push(<span key={`text-${i}-${j}-${k}`}>{pp}</span>);
+            }
+          });
         }
       });
     }

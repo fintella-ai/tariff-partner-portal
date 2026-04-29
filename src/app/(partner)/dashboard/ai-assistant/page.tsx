@@ -694,7 +694,7 @@ function MessageBubble({ message }: { message: Message }) {
           </div>
         )}
         <div className="font-body text-[13px] text-[var(--app-text)] leading-relaxed whitespace-pre-wrap break-words">
-          {message.content}
+          <LinkifiedText text={message.content} />
         </div>
         <div className="font-body text-[10px] text-[var(--app-text-muted)] mt-1.5">
           {new Date(message.createdAt).toLocaleTimeString("en-US", {
@@ -881,4 +881,51 @@ function safeJson(v: unknown): string {
   } catch {
     return String(v);
   }
+}
+
+// ─── Linkified text — turns portal paths and URLs into clickable links ──────
+
+function LinkifiedText({ text }: { text: string }) {
+  const parts = text.split(/((?:https?:\/\/[^\s]+)|(?:\/dashboard\/[^\s,.)]+)|(?:\/admin\/[^\s,.)]+)|\[([^\]]+)\]\(([^)]+)\))/g);
+  const result: React.ReactNode[] = [];
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (!part) continue;
+
+    // Markdown link: [text](url)
+    const mdMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (mdMatch) {
+      result.push(
+        <a key={i} href={mdMatch[2]} className="text-brand-gold underline underline-offset-2 hover:text-brand-gold/80" target={mdMatch[2].startsWith("http") ? "_blank" : undefined} rel={mdMatch[2].startsWith("http") ? "noopener noreferrer" : undefined}>
+          {mdMatch[1]}
+        </a>
+      );
+      continue;
+    }
+
+    // Portal path: /dashboard/... or /admin/...
+    if (part.startsWith("/dashboard/") || part.startsWith("/admin/")) {
+      result.push(
+        <a key={i} href={part} className="text-brand-gold underline underline-offset-2 hover:text-brand-gold/80">
+          {part}
+        </a>
+      );
+      continue;
+    }
+
+    // Full URL
+    if (part.startsWith("http://") || part.startsWith("https://")) {
+      result.push(
+        <a key={i} href={part} className="text-brand-gold underline underline-offset-2 hover:text-brand-gold/80" target="_blank" rel="noopener noreferrer">
+          {part}
+        </a>
+      );
+      continue;
+    }
+
+    result.push(part);
+  }
+
+  return <>{result}</>;
 }
