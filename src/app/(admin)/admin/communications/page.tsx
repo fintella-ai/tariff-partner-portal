@@ -5,13 +5,14 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import EmailInboxTabImpl from "./EmailInboxTabImpl";
 import EmailComposeTabImpl from "./EmailComposeTabImpl";
+import GmailTabImpl from "./GmailTabImpl";
 import SmsTabImpl from "./SmsTabImpl";
 import PhoneTabImpl from "./PhoneTabImpl";
 import TeamChatPanel from "../team-chat/TeamChatPanel";
 import ChannelsListPanel from "../channels/ChannelsListPanel";
 
 type Tab = "email" | "sms" | "phone" | "team-chat" | "channels";
-type EmailView = "inbox" | "compose";
+type EmailView = "inbox" | "gmail" | "compose";
 
 // Email Templates moved to Admin → Automations → Email Templates. The
 // Communications hub stays focused on partner-facing channels (inbox,
@@ -26,6 +27,7 @@ const ALL_TABS: { id: Tab; label: string; superAdminOnly?: boolean }[] = [
 
 const EMAIL_VIEWS: { id: EmailView; label: string }[] = [
   { id: "inbox",     label: "Inbox" },
+  { id: "gmail",     label: "Gmail" },
   { id: "compose",   label: "Compose" },
 ];
 
@@ -97,6 +99,7 @@ function CommunicationsHostInner() {
             ))}
           </div>
           {emailView === "inbox"     && <EmailInboxTabImpl />}
+          {emailView === "gmail"     && <GmailTabImpl />}
           {emailView === "compose"   && <EmailComposeTabImpl />}
         </>
       )}
