@@ -153,53 +153,27 @@ function GetStartedContent() {
     );
   }
 
-  // ── SUCCESS: Show embedded signing or email fallback ──
+  // ── SUCCESS: Redirect to login ──
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: "var(--app-bg)" }}>
-        <div className="w-full max-w-[900px]">
-          <div className="card p-5 mb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="font-display text-lg font-bold mb-1">Welcome to {FIRM_SHORT}!</h2>
-                <p className="font-body text-[13px] theme-text-muted">Your account has been created. Please sign your partnership agreement below to activate your account.</p>
-                <p className="font-body text-[11px] theme-text-faint mt-1">A copy has also been sent to your email if you prefer to complete it later.</p>
-              </div>
-              <div className="text-center sm:text-right shrink-0">
-                <div className="font-body text-[10px] theme-text-muted uppercase tracking-wider">Your Partner Code</div>
-                <div className="font-mono text-lg font-bold text-brand-gold tracking-[2px]">{success.partnerCode}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* SignWell blocks iframe embedding — open the signing URL in a
-              new tab instead. Matches the dashboard "Sign Now" pattern. */}
-          <div className="card p-6 text-center mb-4">
+        <div className="w-full max-w-[500px]">
+          <div className="card p-8 text-center">
             <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-500/10 border border-green-500/25 flex items-center justify-center">
               <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="font-body text-[14px] font-semibold text-[var(--app-text)] mb-1">
-              Partnership agreement sent
+            <h2 className="font-display text-xl font-bold mb-2">Welcome to {FIRM_SHORT}!</h2>
+            <p className="font-body text-[13px] theme-text-muted mb-1">Your account has been created successfully.</p>
+            <div className="my-4">
+              <div className="font-body text-[10px] theme-text-muted uppercase tracking-wider">Your Partner Code</div>
+              <div className="font-mono text-lg font-bold text-brand-gold tracking-[2px]">{success.partnerCode}</div>
+            </div>
+            <p className="font-body text-[12px] theme-text-muted leading-relaxed mb-6">
+              Log in to your portal to review and sign your partnership agreement. Once signed, your account activates and you can start earning.
             </p>
-            <p className="font-body text-[12px] theme-text-muted leading-relaxed max-w-[420px] mx-auto">
-              A copy has been sent to your email. You can sign it now or later — signing activates your account and unlocks the partner portal.
-            </p>
-            {success.embeddedSigningUrl && (
-              <button
-                onClick={() => window.open(success.embeddedSigningUrl!, "_blank")}
-                className="btn-gold inline-flex items-center gap-2 mt-5 px-6 py-3 text-[13px]"
-              >
-                <span>✍️</span>
-                <span>Sign Agreement Now</span>
-              </button>
-            )}
-          </div>
-
-          <div className="text-center">
-            <a href="/login" className="btn-gold inline-block px-8 py-3 text-[13px]">Sign In to Your Portal</a>
-            <p className="font-body text-[11px] theme-text-muted mt-3">Use your email and password to log in after signing.</p>
+            <a href="/login" className="btn-gold inline-block px-8 py-3 text-[14px] font-semibold">Log In to Sign Agreement →</a>
           </div>
         </div>
       </div>

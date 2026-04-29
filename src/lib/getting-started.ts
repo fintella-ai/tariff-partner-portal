@@ -190,6 +190,8 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
   const agreementSigned =
     partner.status === "active" ||
     (agreement?.status === "signed" || agreement?.status === "amended");
+  const agreementPending =
+    agreement?.status === "pending" || agreement?.status === "partner_signed";
 
   const profileComplete = !!(profile?.street && profile?.city && profile?.state && profile?.zip);
 
@@ -218,11 +220,17 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
     {
       id: "sign_agreement",
       title: "Sign your Partnership Agreement",
-      description: "Review and e-sign your partnership agreement to activate your account. Once both you and Fintella sign, your portal unlocks and you can start submitting referrals immediately.",
-      ctaLabel: agreementSigned ? "Signed" : "Sign now",
+      description: agreementSigned
+        ? "Your partnership agreement is signed and active."
+        : agreement?.status === "partner_signed"
+        ? "Your signature is complete — awaiting Fintella co-signer to finalize."
+        : agreement?.status === "pending"
+        ? "Your agreement has been sent. Review and sign to activate your account."
+        : "Review and e-sign your partnership agreement to activate your account. Once both you and Fintella sign, your portal unlocks and you can start submitting referrals immediately.",
+      ctaLabel: agreementSigned ? "Signed ✓" : agreement?.status === "partner_signed" ? "Awaiting Co-sign" : agreementPending ? "Sign now" : "Sign now",
       ctaUrl: agreementCtaUrl,
       icon: "📝",
-      status: agreementSigned ? "done" : "ready",
+      status: agreementSigned ? "done" : agreementPending ? "ready" : "ready",
       done: agreementSigned,
     },
     {
