@@ -11,7 +11,7 @@ type Lead = {
 };
 
 type LeadTab = "all" | "referral" | "broker";
-type SubTab = "all" | "scheduled" | "good_email" | "good_phone" | "bad_email" | "bad_phone";
+type SubTab = "all" | "scheduled" | "good_email" | "good_sms" | "good_phone" | "bad_email" | "bad_phone";
 type Stage = "all" | "new" | "contacted" | "needs_review" | "submitted" | "converted" | "lost";
 
 const LEAD_TABS: { id: LeadTab; label: string }[] = [
@@ -24,7 +24,8 @@ const BROKER_SUB_TABS: { id: SubTab; label: string }[] = [
   { id: "all", label: "All" },
   { id: "scheduled", label: "Scheduled" },
   { id: "good_email", label: "Good Email" },
-  { id: "good_phone", label: "Good Phone" },
+  { id: "good_sms", label: "Good SMS" },
+  { id: "good_phone", label: "Good Calling" },
   { id: "bad_email", label: "Bad/No Email" },
   { id: "bad_phone", label: "Bad/No Phone" },
 ];
@@ -294,7 +295,11 @@ export default function InternalLeadsPage() {
   function hasBadPhone(l: Lead): boolean {
     return !l.phone || hasFailedPhone(l);
   }
-  function hasGoodPhone(l: Lead): boolean {
+  function hasGoodSms(l: Lead): boolean {
+    const t = getPhoneType(l);
+    return !!l.phone && (t === "mobile" || t === "fixedVoip" || t === "nonFixedVoip" || t === "voip" || t === "personal");
+  }
+  function hasGoodCalling(l: Lead): boolean {
     return !!l.phone && !hasFailedPhone(l);
   }
 
@@ -305,7 +310,8 @@ export default function InternalLeadsPage() {
   function applySubFilter(list: Lead[]): Lead[] {
     if (subTab === "scheduled") return list.filter(isScheduled);
     if (subTab === "good_email") return list.filter((l) => hasGoodEmail(l) && !isScheduled(l));
-    if (subTab === "good_phone") return list.filter(hasGoodPhone);
+    if (subTab === "good_sms") return list.filter(hasGoodSms);
+    if (subTab === "good_phone") return list.filter(hasGoodCalling);
     if (subTab === "bad_email") return list.filter(hasBadEmail);
     if (subTab === "bad_phone") return list.filter(hasBadPhone);
     return list;
@@ -479,7 +485,8 @@ export default function InternalLeadsPage() {
             const count = st.id === "all" ? parentLeads.length
               : st.id === "scheduled" ? parentLeads.filter(isScheduled).length
               : st.id === "good_email" ? parentLeads.filter((l) => hasGoodEmail(l) && !isScheduled(l)).length
-              : st.id === "good_phone" ? parentLeads.filter(hasGoodPhone).length
+              : st.id === "good_sms" ? parentLeads.filter(hasGoodSms).length
+              : st.id === "good_phone" ? parentLeads.filter(hasGoodCalling).length
               : st.id === "bad_email" ? parentLeads.filter(hasBadEmail).length
               : parentLeads.filter(hasBadPhone).length;
             return (
@@ -571,7 +578,8 @@ export default function InternalLeadsPage() {
             {leadTab === "broker" && subTab === "all"
               ? "Import the CBP broker listing CSV to start building your customs broker pipeline."
               : subTab === "good_email" ? "Run 'Validate Emails' to identify leads with verified email addresses."
-              : subTab === "good_phone" ? "Run 'Phone Types' to identify leads with verified phone numbers."
+              : subTab === "good_sms" ? "Run 'Phone Types' to identify mobile numbers eligible for SMS."
+              : subTab === "good_phone" ? "Run 'Phone Types' to identify leads with verified phone numbers for calling."
               : subTab === "bad_email" ? "Leads with invalid, risky, or missing emails will appear here after validation."
               : subTab === "bad_phone" ? "Leads with no phone or unknown phone types will appear here."
               : "Leads from /recover and direct outreach will appear here."
