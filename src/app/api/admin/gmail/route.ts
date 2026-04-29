@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { listMessages, sendMessage, getUnreadCounts, GMAIL_ALIASES } from "@/lib/gmail";
+import { listMessages, sendMessage, getUnreadCounts, GMAIL_ALIASES, diagnoseGmailAccess } from "@/lib/gmail";
 
 const ALLOWED_ROLES = ["super_admin", "admin", "partner_support"];
 
@@ -23,6 +23,13 @@ export async function GET(req: NextRequest) {
   const countOnly = req.nextUrl.searchParams.get("countOnly") === "true";
 
   try {
+    // Diagnostic: ?diagnose=true returns token info + Gmail API status
+    const diagnose = req.nextUrl.searchParams.get("diagnose") === "true";
+    if (diagnose) {
+      const info = await diagnoseGmailAccess();
+      return NextResponse.json(info);
+    }
+
     if (countOnly) {
       const counts = await getUnreadCounts();
       return NextResponse.json({ counts });

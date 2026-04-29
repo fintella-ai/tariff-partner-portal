@@ -61,6 +61,69 @@ async function getAccessToken(): Promise<string> {
   return access_token;
 }
 
+/**
+ * Diagnose Gmail API access: check token scopes + test a simple Gmail call.
+ */
+export async function diagnoseGmailAccess(): Promise<Record<string, any>> {
+  const result: Record<string, any> = {};
+  try {
+    const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
+    result.hasRefreshToken = !!settings?.googleCalendarRefreshToken;
+    result.connectedEmail = settings?.googleCalendarConnectedEmail || null;
+    result.connectedAt = settings?.googleCalendarConnectedAt || null;
+
+    if (!settings?.googleCalendarRefreshToken) {
+      result.error = "No refresh token stored";
+      return result;
+    }
+
+    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID || "";
+    const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET || "";
+
+    // Step 1: Refresh token → get access token + check scope
+    const tokenRes = await fetch(TOKEN_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: settings.googleCalendarRefreshToken,
+        grant_type: "refresh_token",
+      }),
+    });
+
+    const tokenData = await tokenRes.json();
+    result.tokenRefreshOk = tokenRes.ok;
+    result.grantedScopes = tokenData.scope || "(not returned)";
+    result.tokenType = tokenData.token_type || "";
+
+    if (!tokenRes.ok) {
+      result.tokenError = tokenData;
+      return result;
+    }
+
+    // Step 2: tokeninfo — shows exactly which scopes are on this token
+    const infoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${tokenData.access_token}`);
+    const infoData = await infoRes.json();
+    result.tokenInfoScopes = infoData.scope || "(none)";
+    result.tokenInfoEmail = infoData.email || "";
+
+    // Step 3: test Gmail API call
+    const gmailRes = await fetch(`${GMAIL_API}/messages?maxResults=1`, {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+    result.gmailStatus = gmailRes.status;
+    if (!gmailRes.ok) {
+      result.gmailError = await gmailRes.text().catch(() => "");
+    } else {
+      result.gmailOk = true;
+    }
+  } catch (err: any) {
+    result.error = err.message;
+  }
+  return result;
+}
+
 function extractHeader(headers: Array<{ name: string; value: string }>, name: string): string {
   return headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value || "";
 }
@@ -169,10 +232,29 @@ export async function listMessages(opts: {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (listRes.status === 403) {
-    throw new Error("Gmail scope not granted. Reconnect Google in Settings → Integrations.");
+  if (!listRes.ok) {
+    const errBody = await listRes.text().catch(() => "");
+    console.error(`[gmail] list error ${listRes.status}:`, errBody);
+    if (listRes.status === 403) {
+      // Parse Google's error for a specific reason
+      try {
+        const parsed = JSON.parse(errBody);
+        const reason = parsed?.error?.errors?.[0]?.reason || "";
+        const msg = parsed?.error?.message || "";
+        if (reason === "domainPolicy") {
+          throw new Error(`Gmail blocked by domain policy: ${msg}. Check Google Workspace admin → Security → API controls.`);
+        }
+        if (reason === "insufficientPermissions" || msg.includes("Insufficient Permission")) {
+          throw new Error(`Gmail scope not granted. Reconnect Google in Settings → Integrations. (${msg})`);
+        }
+        throw new Error(`Gmail 403: ${msg || reason || errBody.slice(0, 200)}`);
+      } catch (e) {
+        if (e instanceof Error && e.message.startsWith("Gmail")) throw e;
+        throw new Error(`Gmail scope not granted. Reconnect Google in Settings → Integrations. Raw: ${errBody.slice(0, 200)}`);
+      }
+    }
+    throw new Error(`Gmail API error (${listRes.status}): ${errBody.slice(0, 200)}`);
   }
-  if (!listRes.ok) throw new Error(`Gmail list error: ${listRes.status}`);
 
   const listData = await listRes.json();
   const messageIds: Array<{ id: string }> = listData.messages || [];
