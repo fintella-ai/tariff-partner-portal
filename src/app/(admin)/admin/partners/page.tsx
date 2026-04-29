@@ -45,7 +45,7 @@ type Invite = {
   createdAt: string;
 };
 
-type TabType = "all" | "active" | "pending" | "invited" | "blocked" | "unsigned";
+type TabType = "all" | "active" | "pending" | "signed" | "unsigned" | "invited" | "blocked";
 
 // Normalize a stored mobile number to E.164 for the softphone Device.
 // Uses normalizePhone from @/lib/format (imported above).
@@ -523,6 +523,8 @@ export default function AdminPartnersPage() {
 
   const filteredPartners = (activeTab === "all" || activeTab === "invited"
     ? partners
+    : activeTab === "signed"
+    ? partners.filter((p) => p.agreementStatus === "signed" || p.agreementStatus === "approved" || p.agreementStatus === "amended")
     : activeTab === "unsigned"
     ? partners.filter((p) => !p.agreementStatus || p.agreementStatus === "none" || p.agreementStatus === "not_sent")
     : partners.filter((p) => p.status === activeTab)
@@ -573,11 +575,13 @@ export default function AdminPartnersPage() {
     resendableInvites.every((inv) => selectedInviteIds.includes(inv.id));
 
   const unsignedCount = partners.filter((p) => !p.agreementStatus || p.agreementStatus === "none" || p.agreementStatus === "not_sent").length;
+  const signedCount = partners.filter((p) => p.agreementStatus === "signed" || p.agreementStatus === "approved" || p.agreementStatus === "amended").length;
 
   const tabs: { key: TabType; label: string; count?: number }[] = [
     { key: "all", label: "All" },
     { key: "active", label: "Active" },
     { key: "pending", label: "Pending" },
+    { key: "signed", label: "Signed", count: signedCount },
     { key: "unsigned", label: "Unsigned", count: unsignedCount },
     { key: "invited", label: "Invited" },
     { key: "blocked", label: "Blocked" },
@@ -603,11 +607,12 @@ export default function AdminPartnersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-7 gap-3 mb-6">
         {[
           { label: "Total Partners", value: total, color: "text-[var(--app-text)]" },
           { label: "Active", value: active, color: "text-green-400" },
           { label: "Pending", value: pending, color: "text-yellow-400" },
+          { label: "Signed", value: signedCount, color: "text-emerald-400" },
           { label: "Unsigned", value: unsignedCount, color: "text-orange-400" },
           { label: "Invited", value: invitedCount, color: "text-blue-400" },
           { label: "Blocked", value: blocked, color: "text-red-400" },
