@@ -45,7 +45,7 @@ type Invite = {
   createdAt: string;
 };
 
-type TabType = "all" | "active" | "pending" | "signed" | "unsigned" | "invited" | "blocked";
+type TabType = "all" | "active" | "pending" | "signed" | "unsigned" | "none_agreement" | "invited" | "blocked";
 
 // Normalize a stored mobile number to E.164 for the softphone Device.
 // Uses normalizePhone from @/lib/format (imported above).
@@ -526,6 +526,8 @@ export default function AdminPartnersPage() {
     : activeTab === "signed"
     ? partners.filter((p) => p.agreementStatus === "signed" || p.agreementStatus === "approved" || p.agreementStatus === "amended")
     : activeTab === "unsigned"
+    ? partners.filter((p) => p.agreementStatus === "pending" || p.agreementStatus === "viewed" || p.agreementStatus === "partner_signed")
+    : activeTab === "none_agreement"
     ? partners.filter((p) => !p.agreementStatus || p.agreementStatus === "none" || p.agreementStatus === "not_sent")
     : partners.filter((p) => p.status === activeTab)
   ).filter((p) => {
@@ -574,8 +576,9 @@ export default function AdminPartnersPage() {
     resendableInvites.length > 0 &&
     resendableInvites.every((inv) => selectedInviteIds.includes(inv.id));
 
-  const unsignedCount = partners.filter((p) => !p.agreementStatus || p.agreementStatus === "none" || p.agreementStatus === "not_sent").length;
   const signedCount = partners.filter((p) => p.agreementStatus === "signed" || p.agreementStatus === "approved" || p.agreementStatus === "amended").length;
+  const unsignedCount = partners.filter((p) => p.agreementStatus === "pending" || p.agreementStatus === "viewed" || p.agreementStatus === "partner_signed").length;
+  const noneCount = partners.filter((p) => !p.agreementStatus || p.agreementStatus === "none" || p.agreementStatus === "not_sent").length;
 
   const tabs: { key: TabType; label: string; count?: number }[] = [
     { key: "all", label: "All" },
@@ -583,6 +586,7 @@ export default function AdminPartnersPage() {
     { key: "pending", label: "Pending" },
     { key: "signed", label: "Signed", count: signedCount },
     { key: "unsigned", label: "Unsigned", count: unsignedCount },
+    { key: "none_agreement", label: "None", count: noneCount },
     { key: "invited", label: "Invited" },
     { key: "blocked", label: "Blocked" },
   ];
