@@ -136,6 +136,7 @@ export async function PUT(req: NextRequest) {
     if (body.liveChatEnabled !== undefined) data.liveChatEnabled = body.liveChatEnabled;
     if (body.callRecordingEnabled !== undefined) data.callRecordingEnabled = body.callRecordingEnabled;
     if (body.homeEmbedVideoUrl !== undefined) data.homeEmbedVideoUrl = body.homeEmbedVideoUrl;
+    if (body.webinarVideoUrl !== undefined) data.webinarVideoUrl = body.webinarVideoUrl;
     if (body.homeHiddenModules !== undefined) data.homeHiddenModules = body.homeHiddenModules;
     if (body.homeModuleOrder !== undefined) data.homeModuleOrder = body.homeModuleOrder;
     if (body.homeModuleLayout !== undefined) data.homeModuleLayout = body.homeModuleLayout;

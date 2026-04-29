@@ -623,6 +623,7 @@ model PortalSettings {
   // partner home page. Accepts any URL the browser can embed in an
   // <iframe src> — YouTube, Vimeo, Loom, Wistia, Mux, hosted MP4, etc.
   homeEmbedVideoUrl      String?
+  webinarVideoUrl        String?  // YouTube/Loom/MP4 URL for evergreen webinar at /webinar/watch
   // Per-module visibility for the partner home page. JSON array of
   // module IDs the admin has turned OFF. Recognized IDs: "video",
   // "announcements", "events", "opportunities", "leaderboard".

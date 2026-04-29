@@ -6,7 +6,7 @@ export default auth((req) => {
   const session = req.auth;
 
   // Public pages — accessible to anyone, no redirects
-  if (pathname.startsWith("/docs/") || pathname.startsWith("/signup") || pathname.startsWith("/impersonate") || pathname.startsWith("/getstarted") || pathname === "/privacy" || pathname === "/terms" || pathname === "/sms-terms" || pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/apply" || pathname === "/booker" || pathname === "/landing-v2" || pathname.startsWith("/recover") || pathname.startsWith("/partners")) {
+  if (pathname.startsWith("/docs/") || pathname.startsWith("/signup") || pathname.startsWith("/impersonate") || pathname.startsWith("/getstarted") || pathname === "/privacy" || pathname === "/terms" || pathname === "/sms-terms" || pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/apply" || pathname === "/booker" || pathname === "/landing-v2" || pathname.startsWith("/recover") || pathname.startsWith("/partners") || pathname.startsWith("/webinar")) {
     return NextResponse.next();
   }
 
