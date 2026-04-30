@@ -13,41 +13,54 @@ export default function WidgetHowItWorks({ commissionRate }: { commissionRate: n
       desc: "Legal coverage for your client, audit-ready filing review, and error minimization — you file via CAPE with confidence.",
     },
     {
-      icon: "💰",
-      title: `You earn ${commissionRate}%`,
-      desc: "Paid when your client receives their tariff refund. No risk, no upfront cost.",
+      icon: "💸",
+      title: "Receive Your Payout",
+      desc: "Paid via ACH, wire, or check when your client receives their tariff refund. No risk, no upfront cost.",
+      link: { label: "Payout Settings →", href: "https://fintella.partners/dashboard/settings#payout" },
     },
   ];
 
   return (
-    <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+    <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", gap: 28 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         {steps.map((step, i) => (
-          <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <div key={i} style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            textAlign: "center", gap: 8,
+          }}>
             <div style={{
-              flexShrink: 0, width: 40, height: 40, borderRadius: RADII.md,
+              width: 48, height: 48, borderRadius: RADII.lg,
               background: "rgba(196,160,80,0.1)", border: "1px solid rgba(196,160,80,0.15)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
             }}>
               {step.icon}
             </div>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, color: W.gold,
-                  background: "rgba(196,160,80,0.12)", padding: "3px 8px",
-                  borderRadius: RADII.full, letterSpacing: 0.5,
-                }}>
-                  STEP {i + 1}
-                </span>
-                <h3 style={{ fontSize: 14, fontWeight: 600, color: W.text, margin: 0 }}>
-                  {step.title}
-                </h3>
-              </div>
-              <p style={{ fontSize: 13, color: W.textSecondary, margin: 0, lineHeight: 1.4 }}>
-                {step.desc}
-              </p>
-            </div>
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: W.gold,
+              background: "rgba(196,160,80,0.12)", padding: "3px 10px",
+              borderRadius: RADII.full, letterSpacing: 0.5,
+            }}>
+              STEP {i + 1}
+            </span>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: W.text, margin: 0 }}>
+              {step.title}
+            </h3>
+            <p style={{ fontSize: 13, color: W.textSecondary, margin: 0, lineHeight: 1.5, maxWidth: 300 }}>
+              {step.desc}
+            </p>
+            {step.link && (
+              <a
+                href={step.link.href}
+                target="_blank"
+                rel="noopener"
+                style={{
+                  fontSize: 12, color: W.gold, fontWeight: 500,
+                  textDecoration: "none", marginTop: 2,
+                }}
+              >
+                {step.link.label}
+              </a>
+            )}
           </div>
         ))}
       </div>
@@ -55,28 +68,28 @@ export default function WidgetHowItWorks({ commissionRate }: { commissionRate: n
       <div style={{
         ...glassCardStyle(),
         borderColor: "rgba(196,160,80,0.15)",
-        padding: 20, textAlign: "center",
+        padding: 24, textAlign: "center",
       }}>
         <div style={{
           ...goldGradientStyle(),
-          fontSize: 36, fontWeight: 700, fontFamily: "'DM Serif Display', Georgia, serif",
+          fontSize: 40, fontWeight: 700, fontFamily: "'DM Serif Display', Georgia, serif",
           letterSpacing: -0.5,
         }}>
           $47,000
         </div>
-        <div style={{ fontSize: 12, color: W.gold, marginTop: 4, fontWeight: 500 }}>
+        <div style={{ fontSize: 13, color: W.gold, marginTop: 6, fontWeight: 500 }}>
           Average client refund
         </div>
       </div>
 
       <div style={{
-        ...glassCardStyle(), padding: 14,
-        display: "flex", flexDirection: "column", gap: 10,
+        ...glassCardStyle(), padding: 18,
+        display: "flex", flexDirection: "column", gap: 12,
       }}>
         <h4 style={{ fontSize: 12, fontWeight: 600, color: W.textSecondary, margin: 0, textTransform: "uppercase", letterSpacing: 0.5 }}>
           Who qualifies?
         </h4>
-        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
           {[
             "U.S. importers of record",
             "Paid tariffs under IEEPA, Section 232, or 301",
