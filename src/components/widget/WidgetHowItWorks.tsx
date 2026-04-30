@@ -32,11 +32,15 @@ export default function WidgetHowItWorks({ commissionRate }: { commissionRate: n
           }}>
             {/* Icon + Step badge in one unified bubble */}
             <div style={{
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
               background: "rgba(196,160,80,0.08)", border: "1px solid rgba(196,160,80,0.15)",
-              borderRadius: RADII.lg, padding: "10px 20px 8px",
+              borderRadius: RADII.lg, padding: "12px 24px 10px",
             }}>
               <span style={{ fontSize: 22, lineHeight: 1 }}>{step.icon}</span>
+              <div style={{
+                width: 32, height: 1, background: "rgba(196,160,80,0.25)",
+                margin: "6px 0 5px",
+              }} />
               <span style={{
                 fontSize: 9, fontWeight: 700, color: W.gold,
                 letterSpacing: 0.8, lineHeight: 1,
