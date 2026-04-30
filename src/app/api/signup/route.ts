@@ -212,7 +212,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { token, firstName, lastName, email, phone, mobilePhone, companyName, password, emailOptIn, smsOptIn } = body;
+    const { token, firstName, lastName, email, phone, mobilePhone, companyName, partnerType, password, emailOptIn, smsOptIn } = body;
 
     if (!token || !firstName || !lastName || !email || !password) {
       return NextResponse.json({ error: "Token, first name, last name, email, and password are required" }, { status: 400 });
@@ -249,6 +249,7 @@ export async function POST(req: NextRequest) {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         companyName: companyName?.trim() || null,
+        partnerType: ["referral", "corporate", "customs_broker", "licensed"].includes(partnerType) ? partnerType : "referral",
         phone: normalizePhone(phone),
         mobilePhone: normalizePhone(mobilePhone),
         status: "pending", // pending until agreement signed

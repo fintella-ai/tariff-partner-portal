@@ -37,6 +37,7 @@ function SignupContent() {
   const [mobileCountry, setMobileCountry] = useState("US");
   const [mobileNumber, setMobileNumber] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [partnerType, setPartnerType] = useState("referral");
   const [signupPassword, setSignupPassword] = useState("");
   const [confirmSignupPassword, setConfirmSignupPassword] = useState("");
   const [emailOptIn, setEmailOptIn] = useState(false);
@@ -109,7 +110,7 @@ function SignupContent() {
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, firstName, lastName, email, phone, mobilePhone: buildMobilePhone(mobileCountry, mobileNumber) || null, companyName, password: signupPassword, emailOptIn, smsOptIn }),
+        body: JSON.stringify({ token, firstName, lastName, email, phone, mobilePhone: buildMobilePhone(mobileCountry, mobileNumber) || null, companyName, partnerType, password: signupPassword, emailOptIn, smsOptIn }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Signup failed"); return; }
@@ -247,6 +248,15 @@ function SignupContent() {
                   <div>
                     <label className={labelClass}>Company <span className="theme-text-faint normal-case">(optional)</span></label>
                     <input className={inputClass} value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Company name" />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Partner Type</label>
+                    <select className={inputClass} value={partnerType} onChange={(e) => setPartnerType(e.target.value)}>
+                      <option value="referral">Referral Partner</option>
+                      <option value="corporate">Corporate Partner</option>
+                      <option value="customs_broker">Customs Broker</option>
+                      <option value="licensed">Licensed Partner (Law/Accounting)</option>
+                    </select>
                   </div>
                 </div>
 

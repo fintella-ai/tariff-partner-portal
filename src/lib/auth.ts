@@ -60,6 +60,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: `${partner.firstName} ${partner.lastName}`,
           role: "partner",
           partnerCode: partner.partnerCode,
+          partnerType: partner.partnerType || "referral",
         };
       },
     }),
@@ -95,6 +96,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: `${partner.firstName} ${partner.lastName}`,
           role: "partner",
           partnerCode: partner.partnerCode,
+          partnerType: partner.partnerType || "referral",
         };
       },
     }),
@@ -149,6 +151,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.role = (user as any).role ?? token.role;
         token.partnerCode = (user as any).partnerCode ?? token.partnerCode;
+        token.partnerType = (user as any).partnerType ?? token.partnerType;
         // Audit log: sign-in event (fire-and-forget)
         import("@/lib/audit-log").then(({ logAudit }) =>
           logAudit({
@@ -175,6 +178,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (partner) {
           token.role = "partner";
           token.partnerCode = partner.partnerCode;
+          token.partnerType = partner.partnerType || "referral";
           (token as any).name = `${partner.firstName} ${partner.lastName}`.trim();
         }
       }
@@ -184,6 +188,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         (session.user as any).role = token.role;
         (session.user as any).partnerCode = token.partnerCode;
+        (session.user as any).partnerType = token.partnerType;
       }
       return session;
     },

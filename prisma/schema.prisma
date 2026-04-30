@@ -34,7 +34,8 @@ model Partner {
   partnerCode           String   @unique
   email                 String
   ccEmail               String?  // secondary email CC'd on all outbound comms
-  corporatePartner      Boolean  @default(false) // corporate referral partner — submission link uses ?ep= instead of ?utm_content=
+  corporatePartner      Boolean  @default(false) // DEPRECATED — use partnerType instead. Retained for rollback safety.
+  partnerType           String   @default("referral") // "referral" | "corporate" | "customs_broker" | "licensed"
   passwordHash          String?  // bcrypt hash, null = legacy (uses partnerCode to log in)
   firstName             String
   lastName              String
