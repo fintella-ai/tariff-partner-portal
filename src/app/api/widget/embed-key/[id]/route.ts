@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+async function resolvePartnerId(session: any): Promise<string | null> {
+  const partnerCode = session.user?.partnerCode;
+  if (!partnerCode) return null;
+  const partner = await prisma.partner.findUnique({ where: { partnerCode }, select: { id: true } });
+  return partner?.id ?? null;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -11,8 +18,10 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user = session.user as any;
-  const partnerId = user.id;
+  const partnerId = await resolvePartnerId(session);
+  if (!partnerId) {
+    return NextResponse.json({ error: "Partner not found" }, { status: 403 });
+  }
 
   const key = await prisma.widgetSession.findFirst({
     where: { id: params.id, partnerId },
@@ -43,8 +52,10 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user = session.user as any;
-  const partnerId = user.id;
+  const partnerId = await resolvePartnerId(session);
+  if (!partnerId) {
+    return NextResponse.json({ error: "Partner not found" }, { status: 403 });
+  }
 
   const key = await prisma.widgetSession.findFirst({
     where: { id: params.id, partnerId },

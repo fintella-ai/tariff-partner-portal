@@ -16,9 +16,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Partners only" }, { status: 403 });
   }
 
-  const partnerId = user.id;
+  const partnerCode = user.partnerCode;
+  if (!partnerCode) {
+    return NextResponse.json({ error: "Missing partner code" }, { status: 403 });
+  }
 
   try {
+    const partner = await prisma.partner.findUnique({ where: { partnerCode }, select: { id: true } });
+    if (!partner) {
+      return NextResponse.json({ error: "Partner not found" }, { status: 404 });
+    }
+    const partnerId = partner.id;
+
     const body = await req.json();
     const { platform, origin } = body;
 
@@ -65,7 +74,8 @@ export async function POST(req: NextRequest) {
       embedCode,
       widgetUrl,
     });
-  } catch {
+  } catch (err) {
+    console.error("[widget/embed-key] POST error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -81,10 +91,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Partners only" }, { status: 403 });
   }
 
-  const partnerId = user.id;
+  const partnerCode = user.partnerCode;
+  if (!partnerCode) {
+    return NextResponse.json({ error: "Missing partner code" }, { status: 403 });
+  }
+
+  const partner = await prisma.partner.findUnique({ where: { partnerCode }, select: { id: true } });
+  if (!partner) {
+    return NextResponse.json({ error: "Partner not found" }, { status: 404 });
+  }
 
   const keys = await prisma.widgetSession.findMany({
-    where: { partnerId },
+    where: { partnerId: partner.id },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
