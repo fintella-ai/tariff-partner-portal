@@ -2080,6 +2080,7 @@ model WidgetReferral {
   status                String   @default("submitted")
   tmsReference          String?
   notes                 String?
+  documentUrls          String[]
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   referralId            String?
