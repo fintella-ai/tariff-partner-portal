@@ -1,0 +1,786 @@
+{
+  "_metadata": {
+    "version": "1.0.0",
+    "generatedDate": "2026-04-29",
+    "description": "Comprehensive IEEPA tariff rate database for tariff refund calculator. Covers all rate changes from Feb 2025 through SCOTUS termination Feb 2026 and Section 122 replacement.",
+    "legalAuthority": "International Emergency Economic Powers Act (50 U.S.C. 1701 et seq.), Trade Act of 1974 Section 122 (19 U.S.C. 2132)",
+    "sources": [
+      "Executive Orders 14193, 14194, 14195, 14228, 14257, 14259, 14266, 14357",
+      "Federal Register notices",
+      "CBP CSMS guidance messages",
+      "White House Annex I and Annex II",
+      "Learning Resources, Inc. v. Trump (SCOTUS, Feb 20, 2026)"
+    ]
+  },
+
+  "rates": [
+    {
+      "id": "CN-FENT-01",
+      "executiveOrder": "EO 14195",
+      "name": "Fentanyl Surcharge - China (Initial 10%)",
+      "rateType": "fentanyl",
+      "countryCode": "CN",
+      "countryName": "China",
+      "rate": 0.10,
+      "effectiveDate": "2025-02-04",
+      "endDate": "2025-03-03",
+      "htsChapter99": "9903.01.20",
+      "notes": "Initial 10% fentanyl surcharge on products of PRC. EO 14195 signed Feb 1, 2025. Effective 12:01 AM EST Feb 4, 2025. Declared fentanyl flow from PRC an unusual and extraordinary threat.",
+      "supersededBy": "CN-FENT-02"
+    },
+    {
+      "id": "CN-FENT-02",
+      "executiveOrder": "EO 14228",
+      "name": "Fentanyl Surcharge - China (Escalated 20%)",
+      "rateType": "fentanyl",
+      "countryCode": "CN",
+      "countryName": "China",
+      "rate": 0.20,
+      "effectiveDate": "2025-03-04",
+      "endDate": "2025-11-09",
+      "htsChapter99": "9903.01.20",
+      "notes": "Fentanyl tariff doubled to 20%. EO 14228 signed Mar 3, 2025. Effective 12:01 AM EST Mar 4, 2025. China had not taken adequate steps to address opioid crisis.",
+      "supersededBy": "CN-FENT-03"
+    },
+    {
+      "id": "CN-FENT-03",
+      "executiveOrder": "EO 14357",
+      "name": "Fentanyl Surcharge - China (Reduced 10%)",
+      "rateType": "fentanyl",
+      "countryCode": "CN",
+      "countryName": "China",
+      "rate": 0.10,
+      "effectiveDate": "2025-11-10",
+      "endDate": "2026-02-23",
+      "htsChapter99": "9903.01.20",
+      "notes": "Fentanyl tariff reduced from 20% to 10% per US-China trade arrangement reached Oct 30 in Busan, South Korea (Xi-Trump meeting). EO signed Nov 4, 2025. Effective 12:01 AM EST Nov 10, 2025.",
+      "supersededBy": "TERMINATED-SCOTUS"
+    },
+    {
+      "id": "CN-RECIP-01",
+      "executiveOrder": "EO 14257",
+      "name": "Reciprocal Tariff - China (Initial 34%)",
+      "rateType": "reciprocal",
+      "countryCode": "CN",
+      "countryName": "China",
+      "rate": 0.34,
+      "effectiveDate": "2025-04-09",
+      "endDate": "2025-04-08",
+      "htsChapter99": "9903.01.63",
+      "notes": "Liberation Day reciprocal tariff. EO 14257 signed Apr 2, 2025. 34% additional tariff on China effective Apr 9, 2025. Stacked on top of 20% fentanyl = 54% total IEEPA.",
+      "supersededBy": "CN-RECIP-02"
+    },
+    {
+      "id": "CN-RECIP-02",
+      "executiveOrder": "EO 14259",
+      "name": "Reciprocal Tariff - China (Escalated 84%)",
+      "rateType": "reciprocal",
+      "countryCode": "CN",
+      "countryName": "China",
+      "rate": 0.84,
+      "effectiveDate": "2025-04-09",
+      "endDate": "2025-04-09",
+      "htsChapter99": "9903.01.63",
+      "notes": "China reciprocal escalated to 84% in response to Chinese retaliation. EO 14259 signed Apr 8, 2025. Effective 12:01 AM EDT Apr 9, 2025. Total IEEPA with fentanyl = 104%.",
+      "supersededBy": "CN-RECIP-03"
+    },
+    {
+      "id": "CN-RECIP-03",
+      "executiveOrder": "EO 14266",
+      "name": "Reciprocal Tariff - China (Escalated 125%)",
+      "rateType": "reciprocal",
+      "countryCode": "CN",
+      "countryName": "China",
+      "rate": 1.25,
+      "effectiveDate": "2025-04-10",
+      "endDate": "2025-05-13",
+      "htsChapter99": "9903.01.63",
+      "notes": "China reciprocal raised to 125% after further Chinese retaliation. EO 14266 signed Apr 9, 2025. Effective Apr 10, 2025. Total IEEPA with 20% fentanyl = 145%.",
+      "supersededBy": "CN-RECIP-04"
+    },
+    {
+      "id": "CN-RECIP-04",
+      "executiveOrder": "Geneva Joint Statement",
+      "name": "Reciprocal Tariff - China (Geneva De-escalation 10%)",
+      "rateType": "reciprocal",
+      "countryCode": "CN",
+      "countryName": "China",
+      "rate": 0.10,
+      "effectiveDate": "2025-05-14",
+      "endDate": "2025-08-11",
+      "htsChapter99": "9903.01.63",
+      "notes": "Geneva trade talks (May 12) reduced reciprocal from 125% to 10% for 90 days. Effective 12:01 AM EDT May 14, 2025. Fentanyl 20% remains = 30% total IEEPA.",
+      "supersededBy": "CN-RECIP-05"
+    },
+    {
+      "id": "CN-RECIP-05",
+      "executiveOrder": "EO (Aug 11 Extension)",
+      "name": "Reciprocal Tariff - China (90-day Extension at 10%)",
+      "rateType": "reciprocal",
+      "countryCode": "CN",
+      "countryName": "China",
+      "rate": 0.10,
+      "effectiveDate": "2025-08-12",
+      "endDate": "2025-11-09",
+      "htsChapter99": "9903.01.63",
+      "notes": "President extended China tariff truce by another 90 days to Nov 10, 2025. EO signed Aug 11, 2025. Fentanyl 20% remains = 30% total IEEPA.",
+      "supersededBy": "CN-RECIP-06"
+    },
+    {
+      "id": "CN-RECIP-06",
+      "executiveOrder": "EO (Nov 4 Extension)",
+      "name": "Reciprocal Tariff - China (1-Year Extension at 10%)",
+      "rateType": "reciprocal",
+      "countryCode": "CN",
+      "countryName": "China",
+      "rate": 0.10,
+      "effectiveDate": "2025-11-10",
+      "endDate": "2026-02-23",
+      "htsChapter99": "9903.01.63",
+      "notes": "Per Busan Xi-Trump deal, reciprocal 10% extended for 1 year to Nov 10, 2026. Combined with fentanyl reduction to 10% = 20% total IEEPA. Terminated early by SCOTUS.",
+      "supersededBy": "TERMINATED-SCOTUS"
+    },
+
+    {
+      "id": "CA-FENT-01",
+      "executiveOrder": "EO 14193",
+      "name": "Fentanyl Tariff - Canada (25% / 10% Energy)",
+      "rateType": "fentanyl",
+      "countryCode": "CA",
+      "countryName": "Canada",
+      "rate": 0.25,
+      "effectiveDate": "2025-03-04",
+      "endDate": "2025-03-06",
+      "htsChapter99": "9903.01.22",
+      "notes": "EO 14193 signed Feb 1, 2025. Originally effective Feb 4 but paused 30 days after Canadian border commitments. Took effect 12:01 AM EST Mar 4, 2025. Energy/energy resources at 10% under 9903.01.24. All goods subject, no USMCA exemption initially.",
+      "supersededBy": "CA-FENT-02"
+    },
+    {
+      "id": "CA-FENT-01-ENERGY",
+      "executiveOrder": "EO 14193",
+      "name": "Fentanyl Tariff - Canada Energy (10%)",
+      "rateType": "fentanyl",
+      "countryCode": "CA",
+      "countryName": "Canada",
+      "rate": 0.10,
+      "effectiveDate": "2025-03-04",
+      "endDate": "2025-03-06",
+      "htsChapter99": "9903.01.24",
+      "notes": "Reduced 10% rate for Canadian energy and energy resources. Same EO 14193. Effective Mar 4, 2025.",
+      "supersededBy": "CA-FENT-02-ENERGY"
+    },
+    {
+      "id": "CA-FENT-02",
+      "executiveOrder": "EO 14193 (amended)",
+      "name": "Fentanyl Tariff - Canada Non-USMCA (25%)",
+      "rateType": "fentanyl",
+      "countryCode": "CA",
+      "countryName": "Canada",
+      "rate": 0.25,
+      "effectiveDate": "2025-03-07",
+      "endDate": "2025-07-31",
+      "htsChapter99": "9903.01.22",
+      "notes": "Mar 6 amendment: USMCA-compliant goods exempted at 0% (9903.01.26). Non-USMCA goods remain at 25%. Effective 12:01 AM EST Mar 7, 2025.",
+      "supersededBy": "CA-FENT-03"
+    },
+    {
+      "id": "CA-FENT-02-ENERGY",
+      "executiveOrder": "EO 14193 (amended)",
+      "name": "Fentanyl Tariff - Canada Non-USMCA Energy (10%)",
+      "rateType": "fentanyl",
+      "countryCode": "CA",
+      "countryName": "Canada",
+      "rate": 0.10,
+      "effectiveDate": "2025-03-07",
+      "endDate": "2025-07-31",
+      "htsChapter99": "9903.01.24",
+      "notes": "Non-USMCA Canadian energy at 10%. Potash also at 10% regardless of USMCA status.",
+      "supersededBy": "CA-FENT-03-ENERGY"
+    },
+    {
+      "id": "CA-FENT-03",
+      "executiveOrder": "EO (Jul 31 Amendment)",
+      "name": "Fentanyl Tariff - Canada Non-USMCA (Escalated 35%)",
+      "rateType": "fentanyl",
+      "countryCode": "CA",
+      "countryName": "Canada",
+      "rate": 0.35,
+      "effectiveDate": "2025-08-01",
+      "endDate": "2026-02-23",
+      "htsChapter99": "9903.01.22",
+      "notes": "EO signed Jul 31, 2025. Canada tariff raised from 25% to 35% effective Aug 1, 2025. Anti-transshipment surcharge of 40% for goods routed through Canada to evade. USMCA goods remain exempt.",
+      "supersededBy": "TERMINATED-SCOTUS"
+    },
+    {
+      "id": "CA-FENT-03-ENERGY",
+      "executiveOrder": "EO (Jul 31 Amendment)",
+      "name": "Fentanyl Tariff - Canada Non-USMCA Energy (10%)",
+      "rateType": "fentanyl",
+      "countryCode": "CA",
+      "countryName": "Canada",
+      "rate": 0.10,
+      "effectiveDate": "2025-08-01",
+      "endDate": "2026-02-23",
+      "htsChapter99": "9903.01.24",
+      "notes": "Canadian energy rate remained at 10% even after general rate escalation to 35%.",
+      "supersededBy": "TERMINATED-SCOTUS"
+    },
+
+    {
+      "id": "MX-FENT-01",
+      "executiveOrder": "EO 14194",
+      "name": "Fentanyl Tariff - Mexico (25%)",
+      "rateType": "fentanyl",
+      "countryCode": "MX",
+      "countryName": "Mexico",
+      "rate": 0.25,
+      "effectiveDate": "2025-03-04",
+      "endDate": "2025-03-06",
+      "htsChapter99": "9903.01.23",
+      "notes": "EO 14194 signed Feb 1, 2025. Originally effective Feb 4 but paused 30 days. Took effect 12:01 AM EST Mar 4, 2025. 25% on ALL Mexican goods including USMCA initially.",
+      "supersededBy": "MX-FENT-02"
+    },
+    {
+      "id": "MX-FENT-02",
+      "executiveOrder": "EO 14194 (amended)",
+      "name": "Fentanyl Tariff - Mexico Non-USMCA (25%)",
+      "rateType": "fentanyl",
+      "countryCode": "MX",
+      "countryName": "Mexico",
+      "rate": 0.25,
+      "effectiveDate": "2025-03-07",
+      "endDate": "2026-02-23",
+      "htsChapter99": "9903.01.23",
+      "notes": "Mar 6 amendment: USMCA-compliant goods exempted at 0% (9903.01.27). Non-USMCA goods remain at 25%. Potash at 10% regardless of USMCA. Effective 12:01 AM EST Mar 7, 2025. Remained at 25% through SCOTUS termination (not escalated like Canada).",
+      "supersededBy": "TERMINATED-SCOTUS"
+    },
+
+    {
+      "id": "RECIP-BASELINE-01",
+      "executiveOrder": "EO 14257",
+      "name": "Reciprocal Tariff - Global Baseline (10%)",
+      "rateType": "reciprocal",
+      "countryCode": "ALL",
+      "countryName": "All Countries (baseline)",
+      "rate": 0.10,
+      "effectiveDate": "2025-04-05",
+      "endDate": "2026-02-23",
+      "htsChapter99": "9903.01.25",
+      "notes": "Liberation Day baseline tariff. EO 14257 signed Apr 2, 2025. 10% on all imports not otherwise covered by higher country-specific rates. Effective 12:01 AM EDT Apr 5, 2025. Canada, Mexico, and Section 232 goods exempt.",
+      "supersededBy": "TERMINATED-SCOTUS"
+    },
+
+    {
+      "id": "RECIP-PAUSE-01",
+      "executiveOrder": "EO 14266",
+      "name": "Reciprocal Tariff - Country-Specific Pause to 10%",
+      "rateType": "reciprocal",
+      "countryCode": "ANNEX-I-EXCL-CN",
+      "countryName": "All Annex I Countries (except China)",
+      "rate": 0.10,
+      "effectiveDate": "2025-04-10",
+      "endDate": "2025-07-08",
+      "htsChapter99": "9903.01.25",
+      "notes": "On Apr 9, 2025, after market turmoil, Trump paused country-specific reciprocal rates above 10% for 90 days for all Annex I countries EXCEPT China. All Annex I countries (excl China) reverted to 10% baseline. Effective 12:01 AM EDT Apr 10, 2025.",
+      "supersededBy": "RECIP-PAUSE-02"
+    },
+    {
+      "id": "RECIP-PAUSE-02",
+      "executiveOrder": "EO (Jul 9 Extension)",
+      "name": "Reciprocal Tariff - Country-Specific Pause Extended",
+      "rateType": "reciprocal",
+      "countryCode": "ANNEX-I-EXCL-CN",
+      "countryName": "All Annex I Countries (except China)",
+      "rate": 0.10,
+      "effectiveDate": "2025-07-09",
+      "endDate": "2025-08-06",
+      "htsChapter99": "9903.01.25",
+      "notes": "Pause extended to Aug 1, 2025. EO extending modification signed early July 2025.",
+      "supersededBy": "RECIP-RESUME-01"
+    },
+
+    {
+      "id": "RECIP-RESUME-01",
+      "executiveOrder": "EO (Jul 31 Modified Rates)",
+      "name": "Reciprocal Tariff - Country-Specific Rates Resume (Modified)",
+      "rateType": "reciprocal",
+      "countryCode": "ANNEX-I-MODIFIED",
+      "countryName": "Annex I Countries (modified rates)",
+      "rate": null,
+      "effectiveDate": "2025-08-07",
+      "endDate": "2026-02-23",
+      "htsChapter99": "9903.01.25",
+      "notes": "Country-specific rates came into effect Aug 7, 2025 (delayed from Aug 1). Many rates were modified from original Annex I via tariff letters and bilateral deals. See country-specific entries below. Countries without deals or letters reverted to original Annex I rates.",
+      "supersededBy": "TERMINATED-SCOTUS"
+    },
+
+    {
+      "id": "SCOTUS-TERMINATION",
+      "executiveOrder": "Learning Resources v. Trump",
+      "name": "SCOTUS IEEPA Termination",
+      "rateType": "termination",
+      "countryCode": "ALL",
+      "countryName": "All Countries",
+      "rate": 0.00,
+      "effectiveDate": "2026-02-24",
+      "endDate": null,
+      "htsChapter99": null,
+      "notes": "Supreme Court ruled 6-3 on Feb 20, 2026 that IEEPA does not authorize tariffs. All IEEPA tariffs (fentanyl, reciprocal, Russian oil, Brazil) terminated effective 12:00 AM ET Feb 24, 2026. CBP ceased collection.",
+      "supersededBy": "S122-01"
+    },
+
+    {
+      "id": "S122-01",
+      "executiveOrder": "Proclamation (Feb 23, 2026)",
+      "name": "Section 122 Global Surcharge (10%)",
+      "rateType": "section122",
+      "countryCode": "ALL",
+      "countryName": "All Countries",
+      "rate": 0.10,
+      "effectiveDate": "2026-02-24",
+      "endDate": "2026-07-23",
+      "htsChapter99": "9903.03.01",
+      "notes": "Replacement tariff under Section 122 of Trade Act of 1974 (19 USC 2132). 10% global surcharge. Effective 12:01 AM ET Feb 24, 2026. Max 150 days, expires Jul 24, 2026. Max statutory rate is 15%. As of Apr 2026, rate remains 10% - Trump announced intent to raise to 15% on Feb 22 via social media but no formal proclamation issued. Same Annex II exclusions apply (USMCA goods, Section 232 products, critical minerals, pharmaceuticals, semiconductors, certain electronics).",
+      "supersededBy": null
+    }
+  ],
+
+  "liberationDayAnnexI": {
+    "executiveOrder": "EO 14257",
+    "announcedDate": "2025-04-02",
+    "baselineEffective": "2025-04-05",
+    "countrySpecificEffective": "2025-04-09",
+    "pauseDate": "2025-04-10",
+    "pauseEndDate": "2025-08-07",
+    "notes": "Country-specific rates above 10% were in effect only Apr 9 before being paused on Apr 10. Resumed Aug 7, 2025 with modified rates for some countries. All terminated Feb 24, 2026 by SCOTUS.",
+    "htsChapter99": "9903.01.25",
+    "countries": [
+      {"countryCode": "DZ", "countryName": "Algeria", "originalRate": 0.30, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "AO", "countryName": "Angola", "originalRate": 0.32, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "BD", "countryName": "Bangladesh", "originalRate": 0.37, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "BA", "countryName": "Bosnia and Herzegovina", "originalRate": 0.35, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "BW", "countryName": "Botswana", "originalRate": 0.37, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "BN", "countryName": "Brunei", "originalRate": 0.24, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "KH", "countryName": "Cambodia", "originalRate": 0.49, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "CM", "countryName": "Cameroon", "originalRate": 0.11, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "TD", "countryName": "Chad", "originalRate": 0.13, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "CN", "countryName": "China", "originalRate": 0.34, "modifiedRate": 0.10, "modifiedDate": "2025-05-14", "modifiedNotes": "Reduced to 10% via Geneva deal, extended through SCOTUS termination"},
+      {"countryCode": "CI", "countryName": "Cote d'Ivoire", "originalRate": 0.21, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "CD", "countryName": "Democratic Republic of the Congo", "originalRate": 0.11, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "GQ", "countryName": "Equatorial Guinea", "originalRate": 0.13, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "EU", "countryName": "European Union", "originalRate": 0.20, "modifiedRate": 0.15, "modifiedDate": "2025-08-07", "modifiedNotes": "EU-US deal established 15% ceiling rate"},
+      {"countryCode": "FK", "countryName": "Falkland Islands", "originalRate": 0.41, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "FJ", "countryName": "Fiji", "originalRate": 0.32, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "GY", "countryName": "Guyana", "originalRate": 0.38, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "IN", "countryName": "India", "originalRate": 0.26, "modifiedRate": 0.25, "modifiedDate": "2025-08-27", "modifiedNotes": "Tariff letter: 25% on Indian goods effective Aug 27, 2025"},
+      {"countryCode": "ID", "countryName": "Indonesia", "originalRate": 0.32, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "IQ", "countryName": "Iraq", "originalRate": 0.39, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "IL", "countryName": "Israel", "originalRate": 0.17, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "JP", "countryName": "Japan", "originalRate": 0.24, "modifiedRate": 0.15, "modifiedDate": "2025-08-07", "modifiedNotes": "Japan-US deal: reciprocal rate set at 15%"},
+      {"countryCode": "JO", "countryName": "Jordan", "originalRate": 0.20, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "KZ", "countryName": "Kazakhstan", "originalRate": 0.27, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "LA", "countryName": "Laos", "originalRate": 0.48, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "LS", "countryName": "Lesotho", "originalRate": 0.50, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "LY", "countryName": "Libya", "originalRate": 0.31, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "LI", "countryName": "Liechtenstein", "originalRate": 0.37, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "MG", "countryName": "Madagascar", "originalRate": 0.47, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "MW", "countryName": "Malawi", "originalRate": 0.17, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "MY", "countryName": "Malaysia", "originalRate": 0.24, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "MU", "countryName": "Mauritius", "originalRate": 0.40, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "MD", "countryName": "Moldova", "originalRate": 0.31, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "MZ", "countryName": "Mozambique", "originalRate": 0.16, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "MM", "countryName": "Myanmar", "originalRate": 0.44, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "NA", "countryName": "Namibia", "originalRate": 0.21, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "NR", "countryName": "Nauru", "originalRate": 0.30, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "NI", "countryName": "Nicaragua", "originalRate": 0.18, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "NG", "countryName": "Nigeria", "originalRate": 0.14, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "MK", "countryName": "North Macedonia", "originalRate": 0.33, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "NO", "countryName": "Norway", "originalRate": 0.15, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "PK", "countryName": "Pakistan", "originalRate": 0.29, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "PH", "countryName": "Philippines", "originalRate": 0.17, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "RS", "countryName": "Serbia", "originalRate": 0.37, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "ZA", "countryName": "South Africa", "originalRate": 0.30, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "KR", "countryName": "South Korea", "originalRate": 0.25, "modifiedRate": 0.15, "modifiedDate": "2025-08-07", "modifiedNotes": "Korea-US deal: reciprocal rate set at 15%"},
+      {"countryCode": "LK", "countryName": "Sri Lanka", "originalRate": 0.44, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "CH", "countryName": "Switzerland", "originalRate": 0.31, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "SY", "countryName": "Syria", "originalRate": 0.41, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "TW", "countryName": "Taiwan", "originalRate": 0.32, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "TH", "countryName": "Thailand", "originalRate": 0.36, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "TN", "countryName": "Tunisia", "originalRate": 0.28, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "TT", "countryName": "Trinidad and Tobago", "originalRate": 0.10, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "VU", "countryName": "Vanuatu", "originalRate": 0.22, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "VE", "countryName": "Venezuela", "originalRate": 0.15, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "VN", "countryName": "Vietnam", "originalRate": 0.46, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "ZM", "countryName": "Zambia", "originalRate": 0.17, "modifiedRate": null, "modifiedDate": null},
+      {"countryCode": "ZW", "countryName": "Zimbabwe", "originalRate": 0.18, "modifiedRate": null, "modifiedDate": null}
+    ],
+    "baselineOnlyCountries": [
+      {"countryCode": "GB", "countryName": "United Kingdom", "rate": 0.10, "modifiedRate": 0.10, "notes": "UK secured 10% deal; never subject to higher rate"},
+      {"countryCode": "AU", "countryName": "Australia", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "AR", "countryName": "Argentina", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "SA", "countryName": "Saudi Arabia", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "AE", "countryName": "United Arab Emirates", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "EG", "countryName": "Egypt", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "SG", "countryName": "Singapore", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "BR", "countryName": "Brazil", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "CO", "countryName": "Colombia", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "NZ", "countryName": "New Zealand", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "TR", "countryName": "Turkey", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "SV", "countryName": "El Salvador", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "GT", "countryName": "Guatemala", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "HN", "countryName": "Honduras", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "CR", "countryName": "Costa Rica", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "DO", "countryName": "Dominican Republic", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "EC", "countryName": "Ecuador", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "CL", "countryName": "Chile", "rate": 0.10, "notes": "Baseline 10% only"},
+      {"countryCode": "PE", "countryName": "Peru", "rate": 0.10, "notes": "Baseline 10% only"}
+    ]
+  },
+
+  "section232Exemptions": {
+    "description": "Products subject to Section 232 tariffs are EXEMPT from IEEPA tariffs (both fentanyl and reciprocal). This is a critical deduction in the refund calculator.",
+    "categories": [
+      {
+        "product": "Steel",
+        "section232Rate": 0.25,
+        "htsChapter99Range": "9903.80.01 - 9903.81.19",
+        "notes": "25% tariff on steel imports under Section 232. Exempt from IEEPA. No stacking.",
+        "effectiveDate": "2018-03-23",
+        "additionalNotes": "Increased to 50% on some origins (e.g., imports from countries that did not negotiate quotas)"
+      },
+      {
+        "product": "Aluminum",
+        "section232Rate": 0.25,
+        "htsChapter99Range": "9903.85.01 - 9903.85.67",
+        "notes": "25% tariff on aluminum imports under Section 232. Exempt from IEEPA. No stacking.",
+        "effectiveDate": "2018-03-23"
+      },
+      {
+        "product": "Automobiles and Auto Parts",
+        "section232Rate": 0.25,
+        "htsChapter99Range": "9903.94.01 - 9903.94.06",
+        "notes": "25% tariff on passenger vehicles, light trucks, and auto parts under Proclamation 10908 (Mar 26, 2025). Exempt from IEEPA reciprocal tariffs. USMCA-eligible vehicles: US content at 0%, non-US content at 25%.",
+        "effectiveDate": "2025-04-03",
+        "htsBreakdown": [
+          {"code": "9903.94.01", "description": "Covered passenger vehicles and light trucks", "rate": 0.25},
+          {"code": "9903.94.02", "description": "Non-covered vehicles; USMCA US-content vehicles", "rate": 0.00},
+          {"code": "9903.94.03", "description": "USMCA non-US content of passenger vehicles", "rate": 0.25},
+          {"code": "9903.94.04", "description": "Classic vehicles (25+ years old)", "rate": 0.00},
+          {"code": "9903.94.05", "description": "Covered automobile parts", "rate": 0.25},
+          {"code": "9903.94.06", "description": "USMCA-eligible auto parts", "rate": 0.00}
+        ]
+      },
+      {
+        "product": "Copper",
+        "section232Rate": null,
+        "notes": "Section 232 investigation announced. Copper excluded from IEEPA reciprocal tariffs via Annex II regardless.",
+        "effectiveDate": null
+      }
+    ],
+    "antiStackingRule": "Executive Order of April 29, 2025 confirmed Section 232 tariffs take precedence over reciprocal tariffs. No stacking of IEEPA on top of 232. However, Section 232 steel/aluminum CAN stack with Section 232 auto tariffs where both apply."
+  },
+
+  "productExclusions": {
+    "description": "Products excluded from IEEPA reciprocal tariffs via Annex II to EO 14257. These products are NOT subject to the reciprocal tariff and should be deducted from any refund calculation.",
+    "htsExclusionCode": "9903.01.32",
+    "totalExcludedCodes": 1655,
+    "categories": [
+      {
+        "category": "Pharmaceuticals",
+        "description": "Generic pharmaceuticals, generic pharmaceutical ingredients, and generic pharmaceutical chemical precursors",
+        "htsChapters": ["29", "30"],
+        "notes": "Broad pharma exclusion; includes APIs and chemical precursors"
+      },
+      {
+        "category": "Semiconductors and Electronics",
+        "description": "Semiconductors, semiconductor manufacturing equipment, smartphones, laptops, memory chips, flat panel displays",
+        "htsChapters": ["84", "85"],
+        "notes": "Electronics exemption expanded in April 2025. Separate Section 232 investigation announced for semiconductors."
+      },
+      {
+        "category": "Critical Minerals",
+        "description": "Nickel, tin and thorium ores, rare earth elements, permanent magnets, LEDs",
+        "htsChapters": ["25", "26", "28", "71", "75"],
+        "notes": "Critical minerals exclusion covers approximately 50 HTS codes"
+      },
+      {
+        "category": "Energy Products",
+        "description": "Crude oil, natural gas, petroleum products, uranium, and related energy commodities",
+        "htsChapters": ["27"],
+        "notes": "Broad energy exclusion"
+      },
+      {
+        "category": "Copper",
+        "description": "Copper articles and copper alloys",
+        "htsChapters": ["74"],
+        "notes": "Full copper exclusion via Annex II"
+      },
+      {
+        "category": "Lumber and Wood Articles",
+        "description": "Pulp, wood, and wood articles",
+        "htsChapters": ["44", "47"],
+        "notes": "Softwood lumber excluded"
+      },
+      {
+        "category": "Precious Metals",
+        "description": "Nonmonetary gold and silver bullion",
+        "htsChapters": ["71"],
+        "notes": "Bullion exclusion"
+      },
+      {
+        "category": "Informational Materials",
+        "description": "Printed media, books, newspapers, recordings",
+        "htsExclusion": "9903.01.12",
+        "notes": "IEEPA statute itself exempts informational materials (Berman Amendment)"
+      },
+      {
+        "category": "Humanitarian Donations",
+        "description": "Food, clothing, and medicine donated for humanitarian purposes",
+        "htsExclusion": "9903.01.21",
+        "notes": "Statutory humanitarian exemption"
+      },
+      {
+        "category": "Civil Aircraft",
+        "description": "Listed civil aircraft and parts",
+        "notes": "Global exception added for civil aviation products"
+      },
+      {
+        "category": "Personal Effects",
+        "description": "Products for personal use in accompanied baggage",
+        "notes": "Traveler baggage exemption"
+      }
+    ]
+  },
+
+  "htsCodeReference": {
+    "description": "Key IEEPA and Section 122 HTS Chapter 99 codes for tariff classification",
+    "fentanylCodes": {
+      "9903.01.20": "China fentanyl tariff (general, dutiable products)",
+      "9903.01.21": "China fentanyl exemption - humanitarian donations",
+      "9903.01.22": "Canada fentanyl tariff (non-USMCA, non-energy)",
+      "9903.01.23": "Mexico fentanyl tariff (non-USMCA)",
+      "9903.01.24": "Canada fentanyl tariff - energy/energy resources (10%)",
+      "9903.01.26": "Canada USMCA-exempt goods (0% fentanyl tariff)",
+      "9903.01.27": "Mexico USMCA-exempt goods (0% fentanyl tariff)"
+    },
+    "reciprocalCodes": {
+      "9903.01.12": "Reciprocal exemption - informational materials",
+      "9903.01.25": "Reciprocal tariff baseline 10% (all non-exempt countries)",
+      "9903.01.32": "Reciprocal tariff exclusion - Annex II products",
+      "9903.01.33": "Reciprocal tariff exclusion - Section 232 covered goods",
+      "9903.01.63": "China-specific reciprocal tariff (variable rate)"
+    },
+    "section122Codes": {
+      "9903.03.01": "Section 122 global surcharge (10%)",
+      "9903.03.02": "Section 122 exemption - USMCA goods",
+      "9903.03.03": "Section 122 exemption - Section 232 goods",
+      "9903.03.04": "Section 122 exemption - critical minerals",
+      "9903.03.05": "Section 122 exemption - pharmaceuticals",
+      "9903.03.06": "Section 122 exemption - semiconductors/electronics",
+      "9903.03.07": "Section 122 exemption - energy products",
+      "9903.03.08": "Section 122 exemption - civil aircraft",
+      "9903.03.09": "Section 122 exemption - country-specific trade deal goods",
+      "9903.03.10": "Section 122 exemption - agriculture products",
+      "9903.03.11": "Section 122 exemption - other specified exclusions"
+    }
+  },
+
+  "irsInterestRates": {
+    "description": "IRS quarterly interest rates for calculating refund interest under 19 USC 1505. Customs duty overpayment/underpayment interest is calculated per IRC 6621/6622, compounded daily.",
+    "quarters": [
+      {
+        "quarter": "Q1 2025",
+        "startDate": "2025-01-01",
+        "endDate": "2025-03-31",
+        "overpaymentRate": 0.07,
+        "overpaymentRateCorporate": 0.06,
+        "overpaymentRateCorporateLarge": 0.045,
+        "underpaymentRate": 0.07,
+        "underpaymentRateLargeCorporate": 0.09,
+        "federalShortTermRate": 0.04,
+        "compounding": "daily"
+      },
+      {
+        "quarter": "Q2 2025",
+        "startDate": "2025-04-01",
+        "endDate": "2025-06-30",
+        "overpaymentRate": 0.07,
+        "overpaymentRateCorporate": 0.06,
+        "overpaymentRateCorporateLarge": 0.045,
+        "underpaymentRate": 0.07,
+        "underpaymentRateLargeCorporate": 0.09,
+        "federalShortTermRate": 0.04,
+        "compounding": "daily"
+      },
+      {
+        "quarter": "Q3 2025",
+        "startDate": "2025-07-01",
+        "endDate": "2025-09-30",
+        "overpaymentRate": 0.07,
+        "overpaymentRateCorporate": 0.06,
+        "overpaymentRateCorporateLarge": 0.045,
+        "underpaymentRate": 0.07,
+        "underpaymentRateLargeCorporate": 0.09,
+        "federalShortTermRate": 0.04,
+        "compounding": "daily"
+      },
+      {
+        "quarter": "Q4 2025",
+        "startDate": "2025-10-01",
+        "endDate": "2025-12-31",
+        "overpaymentRate": 0.07,
+        "overpaymentRateCorporate": 0.06,
+        "overpaymentRateCorporateLarge": 0.045,
+        "underpaymentRate": 0.07,
+        "underpaymentRateLargeCorporate": 0.09,
+        "federalShortTermRate": 0.04,
+        "compounding": "daily"
+      },
+      {
+        "quarter": "Q1 2026",
+        "startDate": "2026-01-01",
+        "endDate": "2026-03-31",
+        "overpaymentRate": 0.07,
+        "overpaymentRateCorporate": 0.06,
+        "overpaymentRateCorporateLarge": 0.045,
+        "underpaymentRate": 0.07,
+        "underpaymentRateLargeCorporate": 0.09,
+        "federalShortTermRate": 0.04,
+        "compounding": "daily"
+      },
+      {
+        "quarter": "Q2 2026",
+        "startDate": "2026-04-01",
+        "endDate": "2026-06-30",
+        "overpaymentRate": 0.06,
+        "overpaymentRateCorporate": 0.05,
+        "overpaymentRateCorporateLarge": 0.035,
+        "underpaymentRate": 0.06,
+        "underpaymentRateLargeCorporate": 0.08,
+        "federalShortTermRate": 0.03,
+        "compounding": "daily"
+      }
+    ]
+  },
+
+  "capePhase1": {
+    "description": "Consolidated Administration and Processing of Entries (CAPE) Phase 1 - IEEPA Duty Refund Program",
+    "launchDate": "2026-04-20",
+    "systemName": "CAPE (within ACE)",
+    "legalBasis": "Learning Resources, Inc. v. Trump (SCOTUS Feb 20, 2026); CIT order Mar 4, 2026",
+    "refundScope": "IEEPA duties ONLY. Section 232, Section 301, and other duties on same entry are NOT refundable.",
+    "refundPeriod": {
+      "startDate": "2025-02-04",
+      "endDate": "2026-02-23",
+      "description": "All IEEPA duties collected between Feb 4, 2025 and Feb 23, 2026 are refundable"
+    },
+    "eligibleEntryTypes": {
+      "included": [
+        {"code": "01", "name": "Consumption", "notes": "Standard formal consumption entries"},
+        {"code": "03", "name": "Consumption - AD/CVD", "notes": "Eligible if not pending Commerce liquidation instructions"},
+        {"code": "06", "name": "Consumption - FTZ", "notes": "Foreign Trade Zone consumption entries"},
+        {"code": "11", "name": "Informal", "notes": "Informal entries below formal entry threshold"},
+        {"code": "21", "name": "Warehouse Entry", "notes": "Warehouse entries where IEEPA Chapter 99 codes were declared"},
+        {"code": "22", "name": "Warehouse Withdrawal", "notes": "Warehouse withdrawals for consumption"}
+      ],
+      "excluded": [
+        {"code": "08", "name": "USMCA Duty Deferral", "notes": "Not accepted in Phase 1"},
+        {"code": "09", "name": "Reconciliation Summary", "notes": "Flagged for reconciliation - excluded"},
+        {"code": "23", "name": "Temporary Importation Under Bond", "notes": "TIB entries excluded from Phase 1"},
+        {"code": "47", "name": "Drawback", "notes": "Entries on drawback claim excluded"}
+      ]
+    },
+    "eligibilityCriteria": {
+      "liquidationStatus": [
+        "Unliquidated entries (status: open, suspended, extended, under review)",
+        "Entries liquidated within preceding 80 days of CAPE submission",
+        "Entries with liquidation status 'suspended' are accepted but not immediately processed"
+      ],
+      "additionalRequirements": [
+        "Entry must be filed in ACE with a liquidation status visible in ACE",
+        "Entry must have declared IEEPA Chapter 99 HTS codes",
+        "Entry must NOT be covered by an open or suspended protest",
+        "Entry must NOT be flagged for reconciliation",
+        "Entry must NOT be on an active drawback claim"
+      ]
+    },
+    "refundCalculation": {
+      "principal": "Total IEEPA duties collected on the entry",
+      "interest": "Calculated per 19 USC 1505(c) using IRS quarterly rates (IRC 6621/6622), compounded daily, from date of duty deposit to date of refund",
+      "deductions": "None - full IEEPA duty amount is refundable"
+    },
+    "processingTimeline": {
+      "targetDays": 45,
+      "description": "CBP targets 45-day processing for Phase 1 refunds from date of CAPE submission"
+    },
+    "preservingRefundRights": {
+      "description": "For entries NOT eligible for Phase 1, importers must take action to preserve refund rights",
+      "actions": [
+        "File a protest (19 USC 1514) within 180 days of liquidation",
+        "Request voluntary reliquidation within 90 days of liquidation",
+        "If reconciliation-flagged, file reconciliation entry to trigger liquidation",
+        "If on drawback, may need to withdraw drawback claim first"
+      ]
+    }
+  },
+
+  "calculatorLogic": {
+    "description": "Rules for computing IEEPA tariff refund amounts",
+    "steps": [
+      {
+        "step": 1,
+        "action": "Determine entry date (date goods entered for consumption or withdrawn from warehouse)",
+        "notes": "This determines which rate schedule applies"
+      },
+      {
+        "step": 2,
+        "action": "Determine country of origin",
+        "notes": "Affects which tariff type(s) apply (fentanyl, reciprocal, or both)"
+      },
+      {
+        "step": 3,
+        "action": "Check Section 232 exemption",
+        "notes": "If product is steel, aluminum, or auto/auto parts subject to Section 232, it is EXEMPT from IEEPA. No refund for Section 232 duties."
+      },
+      {
+        "step": 4,
+        "action": "Check Annex II product exclusion",
+        "notes": "If product is on the Annex II exclusion list (pharmaceuticals, semiconductors, copper, lumber, energy, critical minerals, etc.), it was not subject to reciprocal tariffs. Verify whether IEEPA duty was actually collected."
+      },
+      {
+        "step": 5,
+        "action": "Check USMCA qualification (Canada/Mexico only)",
+        "notes": "USMCA-compliant goods from Canada and Mexico were exempt from IEEPA fentanyl tariffs starting Mar 7, 2025. No IEEPA duty should have been collected on USMCA goods after that date."
+      },
+      {
+        "step": 6,
+        "action": "Calculate applicable IEEPA rate(s) based on entry date",
+        "notes": "Look up the rate(s) in the rates array. For China: may have both fentanyl + reciprocal stacking. For Canada/Mexico: fentanyl only (not subject to reciprocal). For other countries: reciprocal only."
+      },
+      {
+        "step": 7,
+        "action": "Compute refund amount: customsValue * applicableIEEPARate(s)",
+        "notes": "Refund = sum of all IEEPA duties collected. Section 301, Section 232, and regular MFN duties are NOT refundable."
+      },
+      {
+        "step": 8,
+        "action": "Compute interest: daily compounding at IRS quarterly rate from deposit date to refund date",
+        "notes": "Use irsInterestRates.quarters to determine applicable rate for each day in the accrual period"
+      }
+    ],
+    "stackingRules": {
+      "china": {
+        "description": "China entries may have BOTH fentanyl and reciprocal IEEPA tariffs stacking",
+        "example": "Entry on Jun 1, 2025: 20% fentanyl (9903.01.20) + 10% reciprocal (9903.01.63) = 30% total IEEPA"
+      },
+      "canadaMexico": {
+        "description": "Canada/Mexico have fentanyl tariffs ONLY (not subject to reciprocal tariffs per EO 14257 exemption)",
+        "example": "Canada non-USMCA entry on Sep 1, 2025: 35% fentanyl (9903.01.22) only"
+      },
+      "otherCountries": {
+        "description": "All other countries have reciprocal tariff ONLY (no fentanyl tariff)",
+        "example": "Vietnam entry on Sep 1, 2025: 46% reciprocal (9903.01.25) only"
+      }
+    }
+  }
+}

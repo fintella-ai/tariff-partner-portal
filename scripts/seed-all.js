@@ -1273,6 +1273,10 @@ async function main() {
     console.log("✓ All partners already have payoutDownlineEnabled=true");
   }
 
+  // ── Tariff rates (IEEPA + IRS interest) ────────────────────────────
+  const seedTariffRates = require("./seed-tariff-rates.js");
+  await seedTariffRates();
+
   console.log("\n✅ All seed data complete.");
 }
 
