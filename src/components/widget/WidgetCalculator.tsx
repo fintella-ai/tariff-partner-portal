@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, type FormEvent, type DragEvent } from "react";
-import { W, RADII, SHADOWS, glassCardStyle, goldButtonStyle, goldGradientStyle, inputStyle } from "./widget-theme";
+import { W, RADII, SHADOWS, glassCardStyle, goldButtonStyle, greenButtonStyle, goldGradientStyle, inputStyle } from "./widget-theme";
 
 interface Props {
   token: string;
@@ -941,7 +941,7 @@ export default function WidgetCalculator({ token, commissionRate, onSubmitAsRefe
         <button
           type="button"
           onClick={handleDocReferral}
-          style={{ ...goldButtonStyle(), fontSize: 15, padding: "16px 28px" }}
+          style={{ ...greenButtonStyle(), fontSize: 15, padding: "16px 28px" }}
         >
           Submit Client{" "}
           <span style={{ display: "inline-block", margin: "0 6px", fontSize: 18, verticalAlign: "middle" }}>🚀</span>
@@ -1117,7 +1117,7 @@ export default function WidgetCalculator({ token, commissionRate, onSubmitAsRefe
               {/* CTA button */}
               <button
                 onClick={handleReferral}
-                style={{ ...goldButtonStyle() }}
+                style={{ ...greenButtonStyle() }}
               >
                 Submit Client{" "}
                 <span style={{ display: "inline-block", margin: "0 6px", fontSize: 16, verticalAlign: "middle" }}>🚀</span>

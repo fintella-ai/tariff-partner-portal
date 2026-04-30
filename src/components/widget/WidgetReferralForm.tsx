@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, type FormEvent, type CSSProperties } from "react";
-import { W, RADII, SHADOWS, glassCardStyle, goldButtonStyle, inputStyle, goldGradientStyle } from "./widget-theme";
+import { W, RADII, SHADOWS, glassCardStyle, goldButtonStyle, greenButtonStyle, inputStyle, goldGradientStyle } from "./widget-theme";
 
 interface Props {
   token: string;
@@ -269,7 +269,7 @@ export default function WidgetReferralForm({ token, commissionRate, prefill, onP
         />
       </div>
 
-      <button type="submit" disabled={submitting} style={{ ...goldButtonStyle(submitting), marginTop: 4 }}>
+      <button type="submit" disabled={submitting} style={{ ...greenButtonStyle(submitting), marginTop: 4 }}>
         {submitting ? "Submitting..." : "Submit Client 🚀 Law Firm"}
       </button>
     </form>

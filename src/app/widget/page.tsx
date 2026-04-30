@@ -202,58 +202,46 @@ function WidgetContent() {
       )}
 
       {/* ─── Header ─── */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, #0c1220, #060a14)",
-          padding: 16,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img
-            src="/ai-avatars/stella.png"
-            alt="Stella"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: "50%",
-              border: "2px solid rgba(196,160,80,0.4)",
-              flexShrink: 0,
-              objectFit: "cover",
-            }}
-          />
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{
-              fontSize: 13, fontWeight: 700, color: W.gold,
-              fontFamily: "'DM Serif Display', Georgia, serif",
-              letterSpacing: 0.3,
-            }}>
-              FinStellaTMS
-            </span>
-            <span style={{ fontSize: 10, color: W.textDim, fontWeight: 500 }}>
-              {auth.partnerName}
-            </span>
+      <div style={{ background: "linear-gradient(135deg, #0c1220, #060a14)" }}>
+        <div style={{ padding: "14px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <img
+              src="/ai-avatars/stella.png"
+              alt="Stella"
+              style={{
+                width: 34, height: 34, borderRadius: "50%",
+                border: "2px solid rgba(196,160,80,0.4)",
+                flexShrink: 0, objectFit: "cover",
+              }}
+            />
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{
+                fontSize: 13, fontWeight: 700, color: W.gold,
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                letterSpacing: 0.3,
+              }}>
+                FinStellaTMS
+              </span>
+              <span style={{ fontSize: 10, color: W.textDim, fontWeight: 500 }}>
+                {auth.partnerName}
+              </span>
+            </div>
           </div>
+          {/* Fintella logo top right */}
+          <img
+            src="/api/favicon"
+            alt="Fintella"
+            style={{ width: 28, height: 28, borderRadius: RADII.sm, objectFit: "contain", flexShrink: 0 }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
         </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
-          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill="url(#fGrad)"/>
-            <text x="16" y="22" textAnchor="middle" fill="#060a14" fontWeight="800" fontSize="18" fontFamily="'DM Serif Display', Georgia, serif">F</text>
-            <defs><linearGradient id="fGrad" x1="0" y1="0" x2="32" y2="32"><stop stopColor="#c4a050"/><stop offset="1" stopColor="#f0d070"/></linearGradient></defs>
-          </svg>
-          <span
-            style={{
-              fontSize: 10,
-              background: "rgba(196,160,80,0.15)",
-              color: "#c4a050",
-              padding: "2px 8px",
-              borderRadius: 9999,
-              fontWeight: 600,
-            }}
-          >
-            {rate}%
+        {/* Commission pill centered below */}
+        <div style={{ textAlign: "center", paddingBottom: 10 }}>
+          <span style={{
+            fontSize: 10, background: "rgba(196,160,80,0.15)", color: "#c4a050",
+            padding: "3px 14px", borderRadius: 9999, fontWeight: 600,
+          }}>
+            {rate}% commission
           </span>
         </div>
       </div>

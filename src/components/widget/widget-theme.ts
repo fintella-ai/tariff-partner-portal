@@ -74,6 +74,23 @@ export function goldButtonStyle(disabled = false): CSSProperties {
   };
 }
 
+export function greenButtonStyle(disabled = false): CSSProperties {
+  return {
+    background: disabled ? "rgba(34,197,94,0.3)" : "linear-gradient(135deg, #16a34a, #22c55e)",
+    color: "#fff",
+    fontWeight: 700,
+    padding: "14px 28px",
+    borderRadius: RADII.md,
+    border: "none",
+    boxShadow: disabled ? "none" : "0 4px 20px rgba(34,197,94,0.3)",
+    cursor: disabled ? "not-allowed" : "pointer",
+    transition: "all 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
+    fontSize: 14,
+    width: "100%",
+    opacity: disabled ? 0.5 : 1,
+  };
+}
+
 export function glassCardStyle(hover = false): CSSProperties {
   return {
     background: hover ? W.bgCardHover : W.bgCard,

@@ -17,8 +17,13 @@ export default function WidgetFooter() {
         background: "#060a14",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        <span style={{ fontWeight: 700, color: "#c4a050", fontSize: 12 }}>F</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <img
+          src="/api/favicon"
+          alt=""
+          style={{ width: 14, height: 14, borderRadius: 3, objectFit: "contain" }}
+          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+        />
         <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
           Powered by Fintella
         </span>
