@@ -241,28 +241,31 @@ function WidgetContent() {
               flexShrink: 0, objectFit: "cover",
             }}
           />
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{
-              fontSize: 13, fontWeight: 700, color: W.gold,
-              fontFamily: "'DM Serif Display', Georgia, serif",
-              letterSpacing: 0.3,
-            }}>
-              FinStellaTMS
-            </span>
-            <span style={{ fontSize: 10, color: W.textDim, fontWeight: 500 }}>
+          <span style={{
+            fontSize: 13, fontWeight: 700, color: W.gold,
+            fontFamily: "'DM Serif Display', Georgia, serif",
+            letterSpacing: 0.3,
+          }}>
+            FinStellaTMS
+          </span>
+        </div>
+
+        {/* Partner name + commission centered right */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <span style={{ fontSize: 11, color: W.text, fontWeight: 600 }}>
               {auth.partnerName}
             </span>
             <span style={{
               fontSize: 9, color: W.gold, fontWeight: 600, marginTop: 2,
               background: "rgba(196,160,80,0.12)", padding: "2px 8px",
-              borderRadius: 9999, alignSelf: "flex-start",
+              borderRadius: 9999,
             }}>
               {rate}% commission
             </span>
           </div>
-        </div>
 
-        {/* Hamburger menu */}
+          {/* Hamburger menu */}
         <div style={{ position: "relative" }}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -312,6 +315,7 @@ function WidgetContent() {
               ))}
             </div>
           )}
+        </div>
         </div>
       </div>
 
