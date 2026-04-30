@@ -118,12 +118,17 @@ export async function POST(req: NextRequest) {
     }
 
     const sub = await createSubscription(user.partnerCode, "pro", gatewayData);
-    return NextResponse.json({ subscription: sub, plan: PLANS.pro });
+    return NextResponse.json({
+      subscription: { plan: sub.plan, status: sub.status, cardLast4: sub.cardLast4, currentPeriodEnd: sub.currentPeriodEnd },
+      plan: PLANS.pro,
+    });
   }
 
   if (action === "cancel") {
     const sub = await cancelSubscription(user.partnerCode, body.reason);
-    return NextResponse.json({ subscription: sub });
+    return NextResponse.json({
+      subscription: { plan: sub.plan, status: sub.status, canceledAt: sub.canceledAt },
+    });
   }
 
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });

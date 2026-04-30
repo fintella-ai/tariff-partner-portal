@@ -17,6 +17,15 @@ export const dynamic = "force-dynamic";
  * We match via customer_vault_id → Subscription.gatewayCustomerId.
  */
 export async function POST(req: NextRequest) {
+  const webhookSecret = process.env.NMI_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const url = new URL(req.url);
+    const token = url.searchParams.get("secret");
+    if (token !== webhookSecret) {
+      return NextResponse.json({ error: "Invalid webhook secret" }, { status: 401 });
+    }
+  }
+
   const form = await req.formData();
 
   const action = String(form.get("action") || form.get("action_type") || "");

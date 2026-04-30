@@ -25,12 +25,12 @@ function getTimezoneForState(state: string): string {
   const HI = "Pacific/Honolulu";
 
   const map: Record<string, string> = {
-    CT, IL: CT, IN: ET, ME: ET, MA: ET, MI: ET, MN: CT, MS: CT, MO: CT,
+    CT: ET, IL: CT, IN: ET, ME: ET, MA: ET, MI: ET, MN: CT, MS: CT, MO: CT,
     MT: MT, NE: CT, NV: PT, NH: ET, NJ: ET, NM: MT, NY: ET, NC: ET, ND: CT,
     OH: ET, OK: CT, OR: PT, PA: ET, RI: ET, SC: ET, SD: CT, TN: CT, TX: CT,
     UT: MT, VT: ET, VA: ET, WA: PT, WV: ET, WI: CT, WY: MT, DC: ET,
-    AL: CT, AK, AZ: MT, AR: CT, CA: PT, CO: MT, DE: ET, FL: ET, GA: ET,
-    HI, ID: MT, IA: CT, KS: CT, KY: ET, LA: CT, MD: ET,
+    AL: CT, AK: AK, AZ: MT, AR: CT, CA: PT, CO: MT, DE: ET, FL: ET, GA: ET,
+    HI: HI, ID: MT, IA: CT, KS: CT, KY: ET, LA: CT, MD: ET,
   };
   return map[state?.toUpperCase()] || ET;
 }

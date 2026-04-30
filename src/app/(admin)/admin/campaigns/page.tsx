@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fmt$ } from "@/lib/format";
 
 interface CampaignStep {
   id: string;
