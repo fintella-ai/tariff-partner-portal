@@ -1208,15 +1208,23 @@ model InboundEmail {
   htmlBody          String?  // HTML body when present
   rawHeaders        String?  // full header block for audit / debugging
   spamScore         Float?   // SendGrid's spam score (0..high number)
-  partnerCode       String?  // resolved from fromEmail → Partner.email if matched
-  supportTicketId   String?  // resolved from plus-addressing token if present
-  threadKey         String?  // normalized thread key (In-Reply-To / References) for grouping
-  read              Boolean  @default(false)
-  replied           Boolean  @default(false)
-  createdAt         DateTime @default(now())
+  partnerCode       String?
+  leadId            String?
+  campaignId        String?
+  supportTicketId   String?
+  threadKey         String?
+  read              Boolean   @default(false)
+  replied           Boolean   @default(false)
+  aiDraft           String?
+  aiDraftAt         DateTime?
+  sentReply         String?
+  sentReplyAt       DateTime?
+  createdAt         DateTime  @default(now())
 
   @@index([createdAt])
   @@index([partnerCode])
+  @@index([leadId])
+  @@index([campaignId])
   @@index([supportTicketId])
   @@index([threadKey])
 }
