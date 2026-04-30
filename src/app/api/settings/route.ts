@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
         navOrder: "[]",
         navLabels: "{}",
         navIcons: "{}",
+        partnerTypeNav: "{}",
         announcements: "[]",
         upcomingEvents: "[]",
         referralOpportunities: "[]",

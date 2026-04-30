@@ -115,6 +115,11 @@ export async function PUT(req: NextRequest) {
         ? body.navIcons
         : JSON.stringify(body.navIcons);
     }
+    if (body.partnerTypeNav !== undefined) {
+      data.partnerTypeNav = typeof body.partnerTypeNav === "string"
+        ? body.partnerTypeNav
+        : JSON.stringify(body.partnerTypeNav);
+    }
 
     // Home page content
     if (body.announcements !== undefined) {

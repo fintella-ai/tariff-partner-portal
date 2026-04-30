@@ -45,6 +45,7 @@ const MAIN_NAV: Array<{
   { id: "my-leads", href: "/dashboard/my-leads", icon: "🎯", label: "My Leads", shortLabel: "Leads" },
   { id: "earnings-calculator", href: "/dashboard/earnings-calculator", icon: "🧮", label: "Earnings Calculator", shortLabel: "Calc" },
   { id: "referral-links", href: "/dashboard/referral-links", icon: "🔗", label: "Referral Links", shortLabel: "Links" },
+  { id: "calculator", href: "/dashboard/calculator", icon: "🧮", label: "Tariff Calculator", shortLabel: "TIE" },
   { id: "widget", href: "/dashboard/widget", icon: "🔌", label: "TMS Widget", shortLabel: "Widget" },
   {
     id: "communications",
@@ -315,6 +316,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [liveWeeklyToday, setLiveWeeklyToday] = useState<{ title: string; href: string } | null>(null);
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
   const [navOrder, setNavOrder] = useState<string[]>([]);
+  const [partnerTypeNav, setPartnerTypeNav] = useState<Record<string, string[]>>({});
   // Partner-scope nav label + icon overrides set by super_admin in /admin/settings.
   // Keys are "partner.<itemId>".
   const [navLabels, setNavLabels] = useState<Record<string, string>>({});
@@ -338,6 +340,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         } catch {}
         try { setNavLabels(JSON.parse(settings.navLabels || "{}")); } catch {}
         try { setNavIcons(JSON.parse(settings.navIcons || "{}")); } catch {}
+        try { setPartnerTypeNav(JSON.parse(settings.partnerTypeNav || "{}")); } catch {}
         // liveChatEnabled is a boolean on PortalSettings
         if (settings.liveChatEnabled !== undefined) setLiveChatSettingEnabled(!!settings.liveChatEnabled);
       })
@@ -534,7 +537,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               ]
             : MAIN_NAV
           ).filter((item) => !hiddenNavItems.includes(item.id))
-           .filter((item) => item.id !== "widget" || (session?.user as any)?.partnerType === "customs_broker");
+           .filter((item) => {
+             const pType = (session?.user as { partnerType?: string })?.partnerType || "referral";
+             const typeAllowed = partnerTypeNav[pType];
+             if (typeAllowed && typeAllowed.length > 0) {
+               return typeAllowed.includes(item.id) || typeAllowed.includes(item.parentId || "");
+             }
+             return item.id !== "widget" || pType === "customs_broker";
+           });
 
           const topLevel = orderedNav.filter((item) => !item.parentId);
           const children = orderedNav.filter((item) => item.parentId);
