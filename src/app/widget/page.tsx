@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback, Suspense } from "react";
 import WidgetDashboard from "@/components/widget/WidgetDashboard";
+import WidgetCalculator from "@/components/widget/WidgetCalculator";
 import WidgetReferralForm from "@/components/widget/WidgetReferralForm";
 import WidgetHowItWorks from "@/components/widget/WidgetHowItWorks";
 
@@ -13,7 +14,7 @@ interface AuthData {
   commissionRate: number;
 }
 
-type Tab = "dashboard" | "refer" | "how";
+type Tab = "dashboard" | "calc" | "refer" | "how";
 
 function WidgetContent() {
   const searchParams = useSearchParams();
@@ -22,6 +23,15 @@ function WidgetContent() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("dashboard");
+  const [referralPrefill, setReferralPrefill] = useState<{
+    estimatedImportValue?: string;
+    importDateRange?: string;
+  } | null>(null);
+
+  const handleCalcToReferral = (data: { estimatedImportValue: string; importDateRange: string }) => {
+    setReferralPrefill(data);
+    setTab("refer");
+  };
 
   const authenticate = useCallback(async () => {
     if (!apiKey) {
@@ -84,8 +94,9 @@ function WidgetContent() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "dashboard", label: "Dashboard" },
-    { id: "refer", label: "Refer a Client" },
-    { id: "how", label: "How It Works" },
+    { id: "calc", label: "Calculator" },
+    { id: "refer", label: "Refer" },
+    { id: "how", label: "Info" },
   ];
 
   return (
@@ -123,8 +134,20 @@ function WidgetContent() {
         {tab === "dashboard" && (
           <WidgetDashboard token={auth.token} onReferClick={() => setTab("refer")} />
         )}
+        {tab === "calc" && (
+          <WidgetCalculator
+            token={auth.token}
+            commissionRate={rate}
+            onSubmitAsReferral={handleCalcToReferral}
+          />
+        )}
         {tab === "refer" && (
-          <WidgetReferralForm token={auth.token} commissionRate={rate} />
+          <WidgetReferralForm
+            token={auth.token}
+            commissionRate={rate}
+            prefill={referralPrefill}
+            onPrefillConsumed={() => setReferralPrefill(null)}
+          />
         )}
         {tab === "how" && <WidgetHowItWorks commissionRate={rate} />}
       </div>

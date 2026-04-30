@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 
 interface Props {
   token: string;
   commissionRate: number;
+  prefill?: { estimatedImportValue?: string; importDateRange?: string } | null;
+  onPrefillConsumed?: () => void;
 }
 
 const VALUE_OPTIONS = [
@@ -20,7 +22,7 @@ const PERIOD_OPTIONS = [
   { label: "Post April 9 (IEEPA 145%)", value: "Post April 9 (IEEPA 145%)" },
 ];
 
-export default function WidgetReferralForm({ token, commissionRate }: Props) {
+export default function WidgetReferralForm({ token, commissionRate, prefill, onPrefillConsumed }: Props) {
   const [form, setForm] = useState({
     clientCompanyName: "",
     clientContactName: "",
@@ -34,6 +36,17 @@ export default function WidgetReferralForm({ token, commissionRate }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; referralId?: string; message?: string; duplicate?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Apply prefill from calculator tab
+  useEffect(() => {
+    if (prefill) {
+      setForm((f) => ({
+        ...f,
+        estimatedImportValue: prefill.estimatedImportValue || f.estimatedImportValue,
+      }));
+      onPrefillConsumed?.();
+    }
+  }, [prefill, onPrefillConsumed]);
 
   const set = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
 
