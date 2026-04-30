@@ -11,6 +11,7 @@ import {
   AI_CONFIG,
   type ChatMessage,
 } from "@/lib/ai";
+import { buildRagContext } from "@/lib/ai-knowledge";
 
 /**
  * POST /api/ai/chat
@@ -95,6 +96,12 @@ export async function POST(req: NextRequest) {
     let userContext = await buildUserContext(userId, userType);
     if (currentPage) {
       userContext += buildPageContext(currentPage);
+    }
+
+    // RAG: retrieve relevant knowledge base entries for this query
+    const ragContext = await buildRagContext(message.trim());
+    if (ragContext.text) {
+      userContext += "\n\n" + ragContext.text;
     }
 
     // Resolve the caller's preferred generalist persona. Partners store it
@@ -231,6 +238,7 @@ export async function POST(req: NextRequest) {
         toolCalls: mergedToolCalls.length > 0
           ? (mergedToolCalls as unknown as object[])
           : undefined,
+        sourcesUsed: ragContext.sourceIds,
       },
     });
 
@@ -268,6 +276,7 @@ export async function POST(req: NextRequest) {
         speakerPersona: assistantMessage.speakerPersona,
         handoffMetadata: assistantMessage.handoffMetadata,
         toolCalls: assistantMessage.toolCalls,
+        sourcesUsed: ragContext.sourceIds,
       },
       mocked: finalResult.mocked,
       persona: finalPersonaId,
