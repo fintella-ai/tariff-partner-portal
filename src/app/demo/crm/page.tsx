@@ -238,7 +238,7 @@ function CrmDemoInner() {
               </button>
             </div>
             <iframe
-              src={`/widget?key=${widgetKey}`}
+              src={`/widget?apiKey=${widgetKey}`}
               style={{ flex: 1, border: "none", background: "#0a0a0a" }}
               title="Fintella Widget"
             />
