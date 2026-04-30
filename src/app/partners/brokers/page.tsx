@@ -66,10 +66,10 @@ export default function BrokersLandingPage() {
           {/* Stats bar */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
             {[
-              { value: "$166B", label: "IEEPA Refunds Available" },
-              { value: "83%", label: "Of Importers Haven't Filed" },
-              { value: "5 Min", label: "Widget Setup Time" },
-              { value: "25%", label: "Commission Rate" },
+              { value: "$166B", label: "IEEPA Duties Collected" },
+              { value: "303K", label: "Importers Haven't Filed" },
+              { value: "15%", label: "CAPE Claims Rejected" },
+              { value: "25%", label: "Your Commission Rate" },
             ].map((s) => (
               <div key={s.label} className="text-center p-4 rounded-xl" style={{ background: "rgba(196, 160, 80, 0.05)", border: "1px solid rgba(196, 160, 80, 0.15)" }}>
                 <div className="font-display text-3xl font-bold mb-1" style={{ color: "#f0d070" }}>{s.value}</div>
@@ -209,6 +209,64 @@ export default function BrokersLandingPage() {
             </div>
             <div className="text-white/40 text-sm">
               The lead case is <span className="text-white/60 font-medium">Euro-Notions Florida v. United States</span> (Court No. 25-595). The court is supervising CBP&apos;s entire CAPE development. This is active federal litigation — not a government handout.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEAR: Cost of Getting It Wrong */}
+      <section className="py-20">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <div className="inline-block rounded-full px-4 py-1.5 text-xs font-bold tracking-widest uppercase mb-6" style={{ background: "rgba(239, 68, 68, 0.15)", color: "#f87171", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
+              The Price of DIY
+            </div>
+            <h2 className="font-display text-3xl sm:text-4xl mb-4 text-white">
+              What Happens When It Goes <span style={{ color: "#f87171" }}>Wrong</span>
+            </h2>
+            <p className="text-white/50 text-lg max-w-3xl mx-auto">
+              Filing through CAPE without legal review isn&apos;t just risky for your clients. It&apos;s risky for you.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+            {[
+              { value: "$365M", label: "Largest 19 U.S.C. § 1592 penalty", sub: "Ford Motor Co. — HTS misclassification", color: "#f87171" },
+              { value: "4x", label: "Duties owed for gross negligence", sub: "19 U.S.C. § 1592(c)(2)", color: "#f87171" },
+              { value: "$10K", label: "Per violation — broker penalties", sub: "19 U.S.C. § 1641 + license suspension", color: "#f87171" },
+              { value: "15%", label: "CAPE declarations rejected", sub: "CBP data, April 2026 — CBS News", color: "#f87171" },
+            ].map((s) => (
+              <div key={s.label} className="text-center p-5 rounded-xl" style={{ background: "rgba(239, 68, 68, 0.04)", border: "1px solid rgba(239, 68, 68, 0.12)" }}>
+                <div className="font-display text-3xl font-bold mb-1" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-xs text-white/50 mb-1">{s.label}</div>
+                <div className="text-[10px] text-white/25">{s.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="p-6 rounded-xl" style={{ background: "rgba(239, 68, 68, 0.04)", border: "1px solid rgba(239, 68, 68, 0.1)" }}>
+              <h3 className="font-display text-lg font-semibold text-white mb-3">If Your Client Needs to Hire an Attorney After a Problem</h3>
+              <div className="space-y-2 text-sm text-white/40">
+                <div className="flex justify-between"><span>CIT litigation attorney hourly rate</span><span className="text-white/60 font-mono">$800–$1,650/hr</span></div>
+                <div className="flex justify-between"><span>Typical CIT case total cost</span><span className="text-white/60 font-mono">$100K–$1M+</span></div>
+                <div className="flex justify-between"><span>Reactive CBP audit defense</span><span className="text-white/60 font-mono">10–20x proactive cost</span></div>
+                <div className="flex justify-between"><span>Proactive compliance review</span><span className="text-white/60 font-mono">$15K–$50K</span></div>
+                <div className="border-t border-white/10 pt-2 mt-2">
+                  <div className="flex justify-between"><span className="text-white/60 font-medium">Or refer to counsel upfront</span><span className="font-mono" style={{ color: "#4ade80" }}>$0 — contingency</span></div>
+                </div>
+              </div>
+              <div className="text-[10px] text-white/20 mt-3">Sources: LegalMatch, Cost of Law, industry surveys</div>
+            </div>
+
+            <div className="p-6 rounded-xl" style={{ background: "rgba(239, 68, 68, 0.04)", border: "1px solid rgba(239, 68, 68, 0.1)" }}>
+              <h3 className="font-display text-lg font-semibold text-white mb-3">Broker License &amp; Insurance Risk</h3>
+              <div className="space-y-3 text-sm text-white/40">
+                <p>As the declarant of record on a CAPE filing, you inherit liability for every entry&apos;s accuracy. CBP penalties under 19 U.S.C. § 1641 reach <span className="text-white/60">$10,000 per violation</span> with potential <span className="text-white/60">license suspension or revocation</span>.</p>
+                <p>A single E&amp;O claim can cost <span className="text-white/60">$183,000+</span> in settlement and legal fees. Your premiums increase after every claim.</p>
+                <p>When you refer to counsel instead, the <span style={{ color: "#4ade80" }}>law firm is counsel of record</span>. Your license, your insurance, and your client relationship stay clean.</p>
+              </div>
+              <div className="text-[10px] text-white/20 mt-3">Sources: Roanoke Group, Progressive Commercial, 19 CFR Part 111</div>
             </div>
           </div>
         </div>
@@ -357,6 +415,23 @@ export default function BrokersLandingPage() {
         </div>
       </section>
 
+      {/* Only Widget */}
+      <section className="py-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="p-8 rounded-2xl text-center" style={{ background: "linear-gradient(135deg, rgba(196,160,80,0.08) 0%, rgba(196,160,80,0.02) 100%)", border: "1px solid rgba(196,160,80,0.2)" }}>
+            <div className="inline-block rounded-full px-4 py-1.5 text-xs font-bold tracking-widest uppercase mb-4" style={{ background: "rgba(196, 160, 80, 0.15)", color: "#f0d070", border: "1px solid rgba(196, 160, 80, 0.3)" }}>
+              Industry First
+            </div>
+            <h3 className="font-display text-2xl sm:text-3xl font-semibold mb-4" style={{ color: "#c4a050" }}>
+              The Only TMS-Embedded Referral Widget in the Market
+            </h3>
+            <p className="text-white/45 text-sm leading-relaxed max-w-2xl mx-auto">
+              Other firms ask you to log into a website, fill out a form, make a phone call, or send an email. Fintella is the only platform that embeds directly inside CargoWise and Magaya as a native panel &mdash; so you can refer clients in 30 seconds without leaving the screen you&apos;re already working in. No one else offers this.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Why Arizona */}
       <section className="py-16" style={{ background: "#0c1220" }}>
         <div className="max-w-4xl mx-auto px-6 text-center">
@@ -376,12 +451,14 @@ export default function BrokersLandingPage() {
 
           <div className="space-y-4">
             {[
-              { q: "How long does the widget setup take?", a: "5 minutes. Generate an API key in your partner portal, add a Custom Panel in CargoWise or Magaya, paste the URL. That's it." },
-              { q: "Do you access my clients' ACE accounts?", a: "Never. You share only the information you enter in the referral form. The legal team works from there." },
-              { q: "How do I get paid?", a: "Direct deposit. After the client's recovery is complete and the legal fee is collected, your commission is processed in the next payout batch. Track everything in real time through your portal." },
-              { q: "Is this legal?", a: "Yes. Our Arizona-licensed legal partner is authorized to pay referral fees to licensed customs brokers. The referral program is structured to comply with all applicable state bar rules." },
-              { q: "What if my client doesn't qualify?", a: "No harm done. If a referral doesn't meet the criteria, we'll update the status in your widget dashboard. You're never charged for anything." },
-              { q: "Can I use this with multiple TMS instances?", a: "Yes. Generate up to 10 API keys — one per TMS instance, office location, or team member." },
+              { q: "Can't my clients just file through CAPE themselves?", a: "CAPE is a submission tool, not a legal strategy. It doesn't reconcile cross-broker data, isolate IEEPA from stacked tariffs, monitor 180-day deadlines per entry, or defend against CBP audits. 15% of declarations have already been rejected (CBS News, April 2026). And once accepted, CAPE filings cannot be amended — one error and you start over." },
+              { q: "What if I file CAPE for my clients myself?", a: "You can — for Phase 1 entries. But as the declarant of record, you inherit liability for every entry's accuracy under 19 U.S.C. § 1641 ($10,000/violation, potential license suspension). If underlying entries had classification errors, you risk triggering a false claims investigation. And 37% of entries are excluded from Phase 1 entirely — those require CIT litigation that only attorneys can handle." },
+              { q: "How are referral commissions legal?", a: "In August 2020, the Arizona Supreme Court (Administrative Order 2020-180) unanimously eliminated Ethics Rule 5.4, making Arizona the first state to allow lawyers to pay referral fees to non-attorneys. There is no cap on the percentage. The arrangement requires client disclosure under ER 1.4. Commissions are reported as 1099-NEC income." },
+              { q: "What happens if a client's claim is denied?", a: "That's exactly why legal counsel matters. If CBP denies or reduces a claim, the only recourse is filing suit at the U.S. Court of International Trade. Only licensed attorneys can represent businesses in CIT — brokers and consultants cannot. Over 1,000 importers have already filed CIT cases. The firm handles this at no additional cost under the contingency arrangement." },
+              { q: "What about government offset risk?", a: "CBP can reduce IEEPA refunds by netting them against outstanding Section 301 or 232 liabilities (19 CFR 24.72). Self-filers have no mechanism to challenge offsets. Legal counsel actively defends against improper netting to preserve the full refund amount — something no portal or filing service can do." },
+              { q: "How much does it cost my clients?", a: "Zero upfront. The entire engagement is contingency-based — clients pay nothing unless the firm recovers money. Compare that to hiring a CIT litigation attorney reactively at $800–$1,650/hour, which can cost $250K–$2M+ over 12–24 months (CIT Schedule of Fees, Am Law 100 surveys)." },
+              { q: "Why shouldn't I just refer to any law firm?", a: "Most firms file and wait. Our legal partner represents clients in the remedy phase court proceedings, advocates for streamlined refund processes and nationwide injunctions, and actively defends against refund offsets. They also provide upfront funding options — clients can sell accepted claims for 65–85 cents on the dollar and get paid in weeks." },
+              { q: "Does anyone else have a TMS widget like this?", a: "No. Fintella is the only platform that embeds a referral widget directly inside CargoWise and Magaya. Competitors require you to log into a website, fill out a form, or make a phone call. The widget lets you refer in 30 seconds without leaving your TMS." },
             ].map((item) => (
               <details key={item.q} className="group rounded-xl overflow-hidden" style={{ background: "rgba(196, 160, 80, 0.04)", border: "1px solid rgba(196, 160, 80, 0.1)" }}>
                 <summary className="flex items-center justify-between px-6 py-4 cursor-pointer text-white font-medium hover:text-white/80">
