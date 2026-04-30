@@ -36,7 +36,7 @@ export default function WidgetFooter() {
           animation: "portalGlow 3s ease-in-out infinite",
         }}
       >
-        Fintella Partner Portal &rarr;
+        Full Partner Portal &rarr;
       </a>
       <style>{`
         @keyframes portalGlow {
