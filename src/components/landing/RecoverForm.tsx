@@ -466,7 +466,7 @@ export default function RecoverForm({ partnerCode, utmParams }: Props) {
                 className="w-full border-0 absolute"
                 title="Complete Your Filing"
                 allow="camera; microphone; geolocation"
-                sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
+                sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-top-navigation"
                 style={{ top: -680, left: 0, width: "100%", height: 2800 }}
               />
             </div>
