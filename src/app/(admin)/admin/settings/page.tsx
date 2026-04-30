@@ -65,6 +65,7 @@ const ALL_NAV_ITEMS = [
   { id: "my-leads", label: "My Leads", icon: "🎯" },
   { id: "earnings-calculator", label: "Earnings Calculator", icon: "🧮" },
   { id: "referral-links", label: "Referral Links", icon: "🔗" },
+  { id: "calculator", label: "Tariff Calculator", icon: "🧮" },
   { id: "widget", label: "TMS Widget", icon: "🔌" },
   // Documents used to be a standalone sidebar item — it now lives as
   // the rightmost tab inside Full Reporting. Removed from the editor
@@ -960,6 +961,9 @@ export default function SettingsPage() {
                   );
                 })}
               </div>
+
+              {/* Partner Type Nav Config */}
+              <PartnerTypeNavConfig />
             </div>
           ) : (
             <div className="card p-5 sm:p-6">
@@ -1612,6 +1616,171 @@ export default function SettingsPage() {
           {saving ? "Saving..." : "Save All Settings"}
         </button>
       </div>
+    </div>
+  );
+}
+
+const PARTNER_TYPES = [
+  { id: "referral", label: "Referral Partners", desc: "Standard referral partners" },
+  { id: "customs_broker", label: "Customs Brokers", desc: "Licensed brokers with TMS widget + calculator" },
+  { id: "corporate", label: "Corporate Partners", desc: "Enterprise/white-label partners" },
+  { id: "licensed", label: "Licensed Professionals", desc: "Attorneys, CPAs with specialized flows" },
+];
+
+const ALL_PARTNER_NAV_IDS = [
+  { id: "home", label: "Home" },
+  { id: "notifications", label: "Notifications" },
+  { id: "getting-started", label: "Getting Started" },
+  { id: "overview", label: "Overview" },
+  { id: "training", label: "Partner Training" },
+  { id: "submit-client", label: "Submit Client" },
+  { id: "reporting", label: "Full Reporting" },
+  { id: "deals", label: "My Deals" },
+  { id: "downline", label: "Downline" },
+  { id: "commissions", label: "Commissions" },
+  { id: "my-leads", label: "My Leads" },
+  { id: "earnings-calculator", label: "Earnings Calculator" },
+  { id: "referral-links", label: "Referral Links" },
+  { id: "calculator", label: "Tariff Calculator" },
+  { id: "widget", label: "TMS Widget" },
+  { id: "communications", label: "Communications" },
+  { id: "partner-support", label: "Partner Support" },
+  { id: "feature-request", label: "Feature Requests" },
+];
+
+function PartnerTypeNavConfig() {
+  const [config, setConfig] = useState<Record<string, string[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [activeType, setActiveType] = useState("customs_broker");
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.settings?.partnerTypeNav) {
+          try { setConfig(JSON.parse(data.settings.partnerTypeNav)); } catch {}
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  function toggleItem(typeId: string, navId: string) {
+    setConfig((prev) => {
+      const current = prev[typeId] || [];
+      const next = current.includes(navId)
+        ? current.filter((id) => id !== navId)
+        : [...current, navId];
+      return { ...prev, [typeId]: next };
+    });
+  }
+
+  function selectAll(typeId: string) {
+    setConfig((prev) => ({
+      ...prev,
+      [typeId]: ALL_PARTNER_NAV_IDS.map((n) => n.id),
+    }));
+  }
+
+  function clearAll(typeId: string) {
+    setConfig((prev) => ({ ...prev, [typeId]: [] }));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    await fetch("/api/admin/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ partnerTypeNav: config }),
+    });
+    setSaving(false);
+  }
+
+  if (loading) return null;
+
+  const activeItems = config[activeType] || [];
+  const hasConfig = activeItems.length > 0;
+
+  return (
+    <div className="mt-6 pt-6 border-t border-[var(--app-border)]">
+      <div className="font-body font-semibold text-sm mb-1">Partner Type Navigation</div>
+      <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-4">
+        Customize which nav items each partner type sees. Empty = show all (default). When configured, only checked items appear.
+      </p>
+
+      <div className="flex gap-1 mb-4 overflow-x-auto">
+        {PARTNER_TYPES.map((t) => {
+          const count = (config[t.id] || []).length;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActiveType(t.id)}
+              className={`px-3 py-1.5 text-[11px] font-medium rounded-lg whitespace-nowrap transition-colors ${
+                activeType === t.id
+                  ? "bg-[var(--brand-gold)]/20 text-[var(--brand-gold)]"
+                  : "text-[var(--app-text-muted)] hover:text-[var(--app-text)]"
+              }`}
+            >
+              {t.label}
+              {count > 0 && (
+                <span className="ml-1 text-[10px] opacity-60">({count})</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="rounded-lg border border-[var(--app-border)] bg-[var(--app-card-bg)] p-4">
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-body text-[11px] text-[var(--app-text-muted)]">
+            {PARTNER_TYPES.find((t) => t.id === activeType)?.desc}
+          </p>
+          <div className="flex gap-2">
+            <button onClick={() => selectAll(activeType)} className="font-body text-[10px] text-[var(--brand-gold)] hover:underline">
+              Select All
+            </button>
+            <button onClick={() => clearAll(activeType)} className="font-body text-[10px] text-[var(--app-text-muted)] hover:underline">
+              Clear (show all)
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {ALL_PARTNER_NAV_IDS.map((nav) => {
+            const checked = hasConfig ? activeItems.includes(nav.id) : false;
+            return (
+              <label
+                key={nav.id}
+                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                  checked ? "bg-[var(--brand-gold)]/5" : "hover:bg-white/3"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleItem(activeType, nav.id)}
+                  className="rounded border-[var(--app-border)] accent-[var(--brand-gold)]"
+                />
+                <span className="font-body text-[12px] text-[var(--app-text)]">{nav.label}</span>
+              </label>
+            );
+          })}
+        </div>
+
+        {hasConfig && (
+          <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-3">
+            {activeItems.length} of {ALL_PARTNER_NAV_IDS.length} items visible for {PARTNER_TYPES.find((t) => t.id === activeType)?.label}
+          </p>
+        )}
+      </div>
+
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="mt-3 font-body text-[12px] font-medium px-4 py-2 rounded-lg bg-[var(--brand-gold)]/10 text-[var(--brand-gold)] hover:bg-[var(--brand-gold)]/20 transition-colors disabled:opacity-40"
+      >
+        {saving ? "Saving..." : "Save Type Navigation"}
+      </button>
     </div>
   );
 }

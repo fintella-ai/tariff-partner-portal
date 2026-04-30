@@ -678,6 +678,7 @@ model PortalSettings {
   navOrder       String @default("[]")  // ordered array of partner nav IDs
   adminNavOrder  String @default("[]")  // ordered array of admin nav IDs
   hiddenAdminNavItems String @default("[]") // admin nav items hidden via toggle
+  partnerTypeNav String @default("{}") // JSON: { "customs_broker": ["home","widget",...], "referral": [...] }
   // Per-item label + icon overrides. JSON shape:
   //   { "admin.partners": "Team", "partner.home": "Dashboard" }
   // navIcons values are base64 data URLs (same storage as logoUrl), so an
