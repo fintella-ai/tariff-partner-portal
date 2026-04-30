@@ -123,7 +123,7 @@ export default function WidgetCalculator({ token, commissionRate, onSubmitAsRefe
   const [auditSummary, setAuditSummary] = useState<AuditSummary | null>(null);
 
   // --- Upload mode state ---
-  const [mode, setMode] = useState<WidgetMode>("manual");
+  const [mode, setMode] = useState<WidgetMode>("upload");
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -327,7 +327,7 @@ export default function WidgetCalculator({ token, commissionRate, onSubmitAsRefe
         marginBottom: 12,
       }}
     >
-      {(["manual", "upload"] as const).map((m) => (
+      {(["upload", "manual"] as const).map((m) => (
         <button
           key={m}
           type="button"

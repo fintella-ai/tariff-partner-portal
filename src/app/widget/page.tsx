@@ -6,6 +6,7 @@ import WidgetDashboard from "@/components/widget/WidgetDashboard";
 import WidgetReferralForm from "@/components/widget/WidgetReferralForm";
 import WidgetHowItWorks from "@/components/widget/WidgetHowItWorks";
 import WidgetFooter from "@/components/widget/WidgetFooter";
+import WidgetPopout from "@/components/widget/WidgetPopout";
 import { W, SHADOWS, RADII, glassCardStyle } from "@/components/widget/widget-theme";
 
 const WidgetCalculator = lazy(() => import("@/components/widget/WidgetCalculator"));
@@ -330,6 +331,19 @@ function WidgetContent() {
   );
 }
 
+function WidgetInner() {
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+
+  const content = <WidgetContent />;
+
+  if (mode === "popout") {
+    return <WidgetPopout>{content}</WidgetPopout>;
+  }
+
+  return content;
+}
+
 export default function WidgetPage() {
   return (
     <Suspense
@@ -339,7 +353,7 @@ export default function WidgetPage() {
         </div>
       }
     >
-      <WidgetContent />
+      <WidgetInner />
     </Suspense>
   );
 }
