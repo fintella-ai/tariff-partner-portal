@@ -1,10 +1,6 @@
 "use client";
 
-import { useState } from "react";
-
 export default function WidgetFooter() {
-  const [linkHover, setLinkHover] = useState(false);
-
   return (
     <div
       style={{
@@ -34,14 +30,20 @@ export default function WidgetFooter() {
         rel="noopener"
         style={{
           fontSize: 11,
-          color: linkHover ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.35)",
+          color: "#c4a050",
           textDecoration: "none",
+          fontWeight: 500,
+          animation: "portalGlow 3s ease-in-out infinite",
         }}
-        onMouseEnter={() => setLinkHover(true)}
-        onMouseLeave={() => setLinkHover(false)}
       >
-        Open Fintella Partner Portal &rarr;
+        Fintella Partner Portal &rarr;
       </a>
+      <style>{`
+        @keyframes portalGlow {
+          0%, 100% { text-shadow: 0 0 4px rgba(196,160,80,0.2); }
+          50% { text-shadow: 0 0 10px rgba(196,160,80,0.5), 0 0 4px rgba(196,160,80,0.3); }
+        }
+      `}</style>
     </div>
   );
 }

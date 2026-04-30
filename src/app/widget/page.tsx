@@ -53,6 +53,8 @@ function WidgetContent() {
   } | null>(null);
   const [globalDragOver, setGlobalDragOver] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState<File[] | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [minimized, setMinimized] = useState(false);
 
   const handleGlobalDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
@@ -159,6 +161,27 @@ function WidgetContent() {
 
   const rate = Math.round(auth.commissionRate * 100);
 
+  if (minimized) {
+    return (
+      <div
+        onClick={() => setMinimized(false)}
+        style={{
+          background: "linear-gradient(135deg, #0c1220, #060a14)",
+          padding: "10px 16px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          cursor: "pointer", borderRadius: RADII.md,
+          border: `1px solid ${W.border}`,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <img src="/ai-avatars/stella.png" alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: W.gold }}>FinStellaTMS</span>
+        </div>
+        <span style={{ fontSize: 11, color: W.textDim }}>Tap to expand</span>
+      </div>
+    );
+  }
+
   const tabs: { id: Tab; label: string }[] = [
     { id: "dashboard", label: "Home" },
     { id: "calc", label: "Calc" },
@@ -202,47 +225,93 @@ function WidgetContent() {
       )}
 
       {/* ─── Header ─── */}
-      <div style={{ background: "linear-gradient(135deg, #0c1220, #060a14)" }}>
-        <div style={{ padding: "14px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <img
-              src="/ai-avatars/stella.png"
-              alt="Stella"
-              style={{
-                width: 34, height: 34, borderRadius: "50%",
-                border: "2px solid rgba(196,160,80,0.4)",
-                flexShrink: 0, objectFit: "cover",
-              }}
-            />
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{
-                fontSize: 13, fontWeight: 700, color: W.gold,
-                fontFamily: "'DM Serif Display', Georgia, serif",
-                letterSpacing: 0.3,
-              }}>
-                FinStellaTMS
-              </span>
-              <span style={{ fontSize: 10, color: W.textDim, fontWeight: 500 }}>
-                {auth.partnerName}
-              </span>
-            </div>
-          </div>
-          {/* Fintella logo top right */}
+      <div style={{
+        background: "linear-gradient(135deg, #0c1220, #060a14)",
+        padding: "14px 16px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        position: "relative",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img
-            src="/api/favicon"
-            alt="Fintella"
-            style={{ width: 28, height: 28, borderRadius: RADII.sm, objectFit: "contain", flexShrink: 0 }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            src="/ai-avatars/stella.png"
+            alt="Stella"
+            style={{
+              width: 34, height: 34, borderRadius: "50%",
+              border: "2px solid rgba(196,160,80,0.4)",
+              flexShrink: 0, objectFit: "cover",
+            }}
           />
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{
+              fontSize: 13, fontWeight: 700, color: W.gold,
+              fontFamily: "'DM Serif Display', Georgia, serif",
+              letterSpacing: 0.3,
+            }}>
+              FinStellaTMS
+            </span>
+            <span style={{ fontSize: 10, color: W.textDim, fontWeight: 500 }}>
+              {auth.partnerName}
+            </span>
+            <span style={{
+              fontSize: 9, color: W.gold, fontWeight: 600, marginTop: 2,
+              background: "rgba(196,160,80,0.12)", padding: "2px 8px",
+              borderRadius: 9999, alignSelf: "flex-start",
+            }}>
+              {rate}% commission
+            </span>
+          </div>
         </div>
-        {/* Commission pill centered below */}
-        <div style={{ textAlign: "center", paddingBottom: 10 }}>
-          <span style={{
-            fontSize: 10, background: "rgba(196,160,80,0.15)", color: "#c4a050",
-            padding: "3px 14px", borderRadius: 9999, fontWeight: 600,
-          }}>
-            {rate}% commission
-          </span>
+
+        {/* Hamburger menu */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{
+              background: "none", border: "none", cursor: "pointer", padding: 6,
+              display: "flex", flexDirection: "column", gap: 3,
+            }}
+          >
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{
+                width: 18, height: 2, borderRadius: 1,
+                background: menuOpen ? W.gold : "rgba(255,255,255,0.5)",
+                transition: "all 0.2s",
+              }} />
+            ))}
+          </button>
+
+          {menuOpen && (
+            <div style={{
+              position: "absolute", top: 36, right: 0, zIndex: 100,
+              ...glassCardStyle(),
+              boxShadow: SHADOWS.modal,
+              padding: 4, minWidth: 150,
+              display: "flex", flexDirection: "column",
+            }}>
+              {[
+                { label: "Minimize", icon: "▬", action: () => { setMinimized(true); setMenuOpen(false); } },
+                { label: "Pop Out", icon: "⧉", action: () => { window.open(window.location.href + (window.location.href.includes("?") ? "&" : "?") + "mode=popout", "_blank", "width=440,height=640"); setMenuOpen(false); } },
+                { label: "Fintella Portal", icon: "→", action: () => { window.open("https://fintella.partners/dashboard", "_blank"); setMenuOpen(false); } },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={item.action}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    padding: "8px 12px", fontSize: 12, color: W.textSecondary,
+                    display: "flex", alignItems: "center", gap: 8,
+                    borderRadius: RADII.sm, textAlign: "left",
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget).style.background = W.bgCardHover; (e.currentTarget).style.color = W.text; }}
+                  onMouseLeave={(e) => { (e.currentTarget).style.background = "none"; (e.currentTarget).style.color = W.textSecondary; }}
+                >
+                  <span style={{ fontSize: 14, width: 18, textAlign: "center" }}>{item.icon}</span>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
