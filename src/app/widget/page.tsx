@@ -167,12 +167,12 @@ function WidgetContent() {
     { id: "help", label: "Help" },
   ];
 
-  const tabIcons: Record<Tab, (c: string) => JSX.Element> = {
-    dashboard: (c) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-    calc: (c) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>,
-    refer: (c) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
-    how: (c) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
-    help: (c) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  const tabIcons: Record<Tab, (c: string, active: boolean) => JSX.Element> = {
+    dashboard: (c, a) => <svg width="20" height="20" viewBox="0 0 24 24" fill={a ? c : "none"} stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 13.999L12 4l8 9.999" fill="none"/><path d="M6 12.5V20a1 1 0 001 1h3.5v-5a1.5 1.5 0 013 0v5H17a1 1 0 001-1v-7.5" fill={a ? "rgba(196,160,80,0.15)" : "none"}/></svg>,
+    calc: (c, a) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2.5" fill={a ? "rgba(196,160,80,0.1)" : "none"}/><rect x="7" y="5" width="10" height="3" rx="1"/><circle cx="8.5" cy="12" r="0.8" fill={c}/><circle cx="12" cy="12" r="0.8" fill={c}/><circle cx="15.5" cy="12" r="0.8" fill={c}/><circle cx="8.5" cy="15.5" r="0.8" fill={c}/><circle cx="12" cy="15.5" r="0.8" fill={c}/><circle cx="15.5" cy="15.5" r="0.8" fill={c}/><circle cx="8.5" cy="19" r="0.8" fill={c}/><rect x="11" y="18.2" width="5.5" height="1.6" rx="0.8" fill={c}/></svg>,
+    refer: (c, a) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13" strokeWidth="2"/><path d="M22 2L15 22l-4-9-9-4z" fill={a ? "rgba(196,160,80,0.12)" : "none"}/></svg>,
+    how: (c, a) => <svg width="20" height="20" viewBox="0 0 24 24" fill={a ? "rgba(196,160,80,0.1)" : "none"} stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4" strokeWidth="2.5"/><circle cx="12" cy="8" r="1" fill={c} stroke="none"/></svg>,
+    help: (c, a) => <svg width="20" height="20" viewBox="0 0 24 24" fill={a ? "rgba(196,160,80,0.1)" : "none"} stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><circle cx="12" cy="10" r="0.8" fill={c} stroke="none"/><circle cx="8" cy="10" r="0.8" fill={c} stroke="none"/><circle cx="16" cy="10" r="0.8" fill={c} stroke="none"/></svg>,
   };
 
   return (
@@ -282,13 +282,15 @@ function WidgetContent() {
             }}
           >
             <span style={{
-              display: "block", lineHeight: 1,
-              transition: "transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)",
-              transform: tab === t.id ? "scale(1.15)" : "scale(1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 24, height: 24, margin: "0 auto",
+              transition: "transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
+              transform: tab === t.id ? "scale(1.2)" : "scale(1)",
+              filter: tab === t.id ? "drop-shadow(0 0 6px rgba(196,160,80,0.4))" : "none",
             }}>
-              {tabIcons[t.id](tab === t.id ? "#c4a050" : "rgba(255,255,255,0.4)")}
+              {tabIcons[t.id](tab === t.id ? "#c4a050" : "rgba(255,255,255,0.35)", tab === t.id)}
             </span>
-            <span style={{ fontSize: 9, marginTop: 3, display: "block" }}>{t.label}</span>
+            <span style={{ fontSize: 9, marginTop: 4, display: "block", letterSpacing: 0.8 }}>{t.label}</span>
           </button>
         ))}
       </div>
