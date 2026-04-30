@@ -533,7 +533,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 ...MAIN_NAV.filter((n) => !navOrder.includes(n.id)),
               ]
             : MAIN_NAV
-          ).filter((item) => !hiddenNavItems.includes(item.id));
+          ).filter((item) => !hiddenNavItems.includes(item.id))
+           .filter((item) => item.id !== "widget" || (session?.user as any)?.partnerType === "customs_broker");
 
           const topLevel = orderedNav.filter((item) => !item.parentId);
           const children = orderedNav.filter((item) => item.parentId);

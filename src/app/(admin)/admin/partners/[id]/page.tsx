@@ -32,6 +32,7 @@ type Partner = {
   notes: string | null;
   ccEmail: string | null;
   corporatePartner: boolean;
+  partnerType: string;
   signupDate: string;
 };
 
@@ -757,31 +758,38 @@ export default function PartnerDetailPage() {
           )}
         </div>
 
+        {/* Partner Type */}
+        <div className="mb-4 pb-4" style={{ borderBottom: "1px solid var(--app-border)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-body text-[12px] text-[var(--app-text-secondary)]">Partner Type</div>
+            <select
+              value={partner.partnerType || "referral"}
+              onChange={async (e) => {
+                await fetch(`/api/admin/partners/${id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ partnerType: e.target.value, corporatePartner: e.target.value === "corporate" }),
+                });
+                fetchPartner();
+              }}
+              className="theme-input font-body text-[12px] py-1 px-2"
+            >
+              <option value="referral">Referral Partner</option>
+              <option value="corporate">Corporate Partner</option>
+              <option value="customs_broker">Customs Broker</option>
+              <option value="licensed">Licensed Partner (Law/Accounting)</option>
+            </select>
+          </div>
+        </div>
+
         {/* Client Submission Link */}
         <div className="mb-4 pb-4" style={{ borderBottom: "1px solid var(--app-border)" }}>
           <div className="flex items-center justify-between mb-2">
             <div className="font-body text-[12px] text-[var(--app-text-secondary)]">Client Submission Link</div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={partner.corporatePartner || false}
-                onChange={async (e) => {
-                  const val = e.target.checked;
-                  await fetch(`/api/admin/partners/${id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ corporatePartner: val }),
-                  });
-                  fetchPartner();
-                }}
-                className="accent-[var(--brand-gold)]"
-              />
-              <span className="font-body text-[11px] text-[var(--app-text-muted)]">Corporate Referral Partner</span>
-            </label>
           </div>
           {(() => {
             const base = "https://referral.frostlawaz.com/l/ANNEXATIONPR/";
-            const link = partner.corporatePartner
+            const link = (partner.partnerType === "corporate" || partner.corporatePartner)
               ? `${base}?utm_content=${partner.partnerCode}&/?ep=[insert_your_code_here]`
               : `${base}?utm_content=${partner.partnerCode}`;
             return (
@@ -794,7 +802,7 @@ export default function PartnerDetailPage() {
               </div>
             );
           })()}
-          <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">Click to copy. {partner.corporatePartner ? "Corporate link — partner replaces [insert_your_code_here] with their own EP code." : "Standard partner tracking link."}</p>
+          <p className="font-body text-[10px] text-[var(--app-text-muted)] mt-1">Click to copy. {(partner.partnerType === "corporate" || partner.corporatePartner) ? "Corporate link — partner replaces [insert_your_code_here] with their own EP code." : "Standard partner tracking link."}</p>
         </div>
 
         {/* Code History */}
