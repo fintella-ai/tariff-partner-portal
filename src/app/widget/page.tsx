@@ -427,7 +427,7 @@ export default function WidgetPage() {
         </div>
       }
     >
-      <WidgetInner />
+      <WidgetContent />
     </Suspense>
   );
 }
