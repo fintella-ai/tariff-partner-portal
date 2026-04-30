@@ -31,7 +31,7 @@ const ADMIN_NAV_IDS_DEFAULT = [
   "communications", "internalChats", "partnerSupport",
   "training", "conference", "documents",
   "campaigns", "campaignReplies", "automations", "gettingStartedEditor", "knowledgeCenter", "landingPages",
-  "settings", "users", "dev",
+  "subscriptions", "settings", "users", "dev",
 ];
 
 // Built-in icon overrides — wins over the default emoji, loses to an
@@ -91,6 +91,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   aiActivity:   { id: "aiActivity", href: "/admin/ai-activity", icon: "🤖", label: "AI Activity" },
   knowledgeCenter: { id: "knowledgeCenter", href: "/admin/knowledge-center", icon: "🧠", label: "Knowledge Center" },
   settings:     { id: "settings", href: "/admin/settings", icon: "⚙️", label: "Settings" },
+  subscriptions: { id: "subscriptions", href: "/admin/subscriptions", icon: "💎", label: "Subscriptions" },
   billing:      { id: "billing", href: "/admin/billing", icon: "💳", label: "Billing" },
   users:        { id: "users", href: "/admin/users", icon: "🔐", label: "Admin Users" },
   landingPages: { id: "landingPages", href: "/admin/landing-pages", icon: "🌐", label: "Landing Pages" },
