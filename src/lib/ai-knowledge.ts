@@ -159,3 +159,24 @@ export async function buildProductSpecialistPrompt(): Promise<Anthropic.Messages
     cache_control: { type: "ephemeral" },
   };
 }
+
+/**
+ * RAG context builder — searches the KnowledgeEntry table for entries
+ * relevant to the user's query and returns formatted prompt text +
+ * the IDs of referenced entries (for source citation tracking).
+ */
+export async function buildRagContext(query: string): Promise<{
+  text: string;
+  sourceIds: string[];
+}> {
+  let results: KnowledgeSearchResult[] = [];
+  try {
+    results = await searchKnowledge(query, 5);
+  } catch (err) {
+    console.error("[ai-knowledge] RAG search failed, continuing without:", err);
+  }
+  return {
+    text: formatKnowledgeForPrompt(results),
+    sourceIds: results.map((r) => r.id),
+  };
+}

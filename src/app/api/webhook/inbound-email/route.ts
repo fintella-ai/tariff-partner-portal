@@ -97,6 +97,25 @@ export async function POST(req: NextRequest) {
       if (partner) partnerCode = partner.partnerCode;
     }
 
+    // Resolve lead + campaign for campaign reply detection
+    let leadId: string | null = null;
+    let campaignId: string | null = null;
+    if (fromEmail && !partnerCode) {
+      const lead = await prisma.partnerLead.findFirst({
+        where: { email: fromEmail },
+        select: { id: true },
+      });
+      if (lead) {
+        leadId = lead.id;
+        const enrollment = await prisma.campaignEnrollment.findFirst({
+          where: { leadId: lead.id, status: { in: ["active", "completed"] } },
+          orderBy: { enrolledAt: "desc" },
+          select: { campaignId: true },
+        });
+        if (enrollment) campaignId = enrollment.campaignId;
+      }
+    }
+
     // Resolve support ticket from plus-addressing token
     let supportTicketId: string | null = null;
     const token = extractPlusToken(toEmail);
@@ -133,6 +152,8 @@ export async function POST(req: NextRequest) {
         rawHeaders: headers,
         spamScore,
         partnerCode,
+        leadId,
+        campaignId,
         supportTicketId,
         threadKey,
       },
