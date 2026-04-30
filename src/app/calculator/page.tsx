@@ -1243,42 +1243,98 @@ function CalculatorInner() {
         </section>
       )}
 
-      {/* ── Below the fold — stats + sign in ─────────────────────── */}
+      {/* ── Lead Capture + PDF Offer ─────────────────────────────── */}
+      {showResults && result && (
+        <LeadCaptureSection totalRefund={result.summary.totalEstRefund + result.summary.totalEstInterest} />
+      )}
+
+      {/* ── Broker Partnership CTA ─────────────────────────────── */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
+        <div
+          className="rounded-2xl border overflow-hidden"
+          style={{
+            borderColor: "var(--brand-gold)",
+            background: "linear-gradient(135deg, rgba(176,140,48,0.08), rgba(176,140,48,0.02))",
+          }}
+        >
+          <div className="p-6 sm:p-8">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">🤝</span>
+              <span
+                className="text-xs font-semibold tracking-widest uppercase"
+                style={{ color: "var(--brand-gold)" }}
+              >
+                For Customs Brokers
+              </span>
+            </div>
+            <h3
+              className="text-xl sm:text-2xl font-bold mb-3"
+              style={{ color: "var(--app-text)", fontFamily: "'DM Serif Display', Georgia, serif" }}
+            >
+              Turn Your Importer Book Into Passive Income
+            </h3>
+            <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--app-text-muted)" }}>
+              Licensed customs brokers are earning <strong style={{ color: "var(--app-text)" }}>$5,000–$50,000/month</strong> in referral commissions
+              by connecting their existing clients to IEEPA refund recovery. No cost to join. No risk. Your clients stay yours.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              {[
+                { num: "1", title: "Run the Calculator", desc: "Free estimate for any client — takes 30 seconds" },
+                { num: "2", title: "Share the PDF", desc: "Professional Fintella-branded recovery analysis" },
+                { num: "3", title: "Earn Commission", desc: "10–25% on every successful recovery" },
+              ].map((step) => (
+                <div key={step.num} className="flex items-start gap-3">
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                    style={{ background: "var(--brand-gold)", color: "#000" }}
+                  >
+                    <span className="text-xs font-bold">{step.num}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>{step.title}</p>
+                    <p className="text-xs" style={{ color: "var(--app-text-muted)" }}>{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/apply"
+                className="h-11 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 px-6 transition-all duration-200"
+                style={{
+                  background: "var(--brand-gold)",
+                  color: "#000",
+                  boxShadow: "0 4px 14px rgba(176,140,48,0.3)",
+                }}
+              >
+                Apply to Become a Partner
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+              <Link
+                href="/webinar"
+                className="h-11 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 px-6 border transition-colors"
+                style={{
+                  borderColor: "var(--brand-gold)",
+                  color: "var(--brand-gold)",
+                  background: "transparent",
+                }}
+              >
+                Watch the Demo
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12 mb-12">
           {[
-            {
-              icon: (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-                </svg>
-              ),
-              title: "$3.4T+",
-              desc: "In IEEPA tariffs assessed since April 2025",
-            },
-            {
-              icon: (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                  <polyline points="10 9 9 9 8 9" />
-                </svg>
-              ),
-              title: "180 Days",
-              desc: "Protest filing deadline from liquidation date",
-            },
-            {
-              icon: (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-              ),
-              title: "Act Now",
-              desc: "Deadlines are expiring daily — every day costs your clients money",
-            },
+            { title: "$166B", desc: "Available in IEEPA refunds" },
+            { title: "83%", desc: "Of eligible importers haven't filed" },
+            { title: "80 Days", desc: "Protest window — entries expiring daily" },
           ].map((item) => (
             <div
               key={item.title}
@@ -1288,16 +1344,10 @@ function CalculatorInner() {
                 borderColor: "var(--app-card-border)",
               }}
             >
-              <div
-                className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
-                style={{
-                  background: "var(--app-gold-overlay)",
-                  color: "var(--brand-gold)",
-                }}
+              <p
+                className="text-2xl font-bold mb-1"
+                style={{ color: "var(--brand-gold)", fontFamily: "'DM Serif Display', Georgia, serif" }}
               >
-                {item.icon}
-              </div>
-              <p className="text-xl font-bold mb-1" style={{ color: "var(--app-text)" }}>
                 {item.title}
               </p>
               <p className="text-sm" style={{ color: "var(--app-text-muted)" }}>
@@ -1320,6 +1370,42 @@ function CalculatorInner() {
           </Link>
         </div>
       </section>
+
+      {/* ── Sticky bottom CTA bar ─────────────────────────────── */}
+      {showResults && result && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 border-t py-3 px-4 flex items-center justify-between backdrop-blur-xl"
+          style={{
+            background: "rgba(6,10,20,0.95)",
+            borderColor: "var(--brand-gold)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-lg">💰</span>
+            <div>
+              <p className="text-sm font-bold" style={{ color: "var(--brand-gold)" }}>
+                {usdFmt.format(result.summary.totalEstRefund + result.summary.totalEstInterest)} estimated recovery
+              </p>
+              <p className="text-xs" style={{ color: "var(--app-text-muted)" }}>
+                {result.summary.eligibleCount} eligible entries
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/apply"
+            className="h-9 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 px-4 shrink-0"
+            style={{
+              background: "var(--brand-gold)",
+              color: "#000",
+            }}
+          >
+            Get Started
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      )}
 
       {/* ── Footer ───────────────────────────────────────────────── */}
       <footer
@@ -1351,6 +1437,131 @@ function CalculatorInner() {
 }
 
 /* ── Page wrapper with Suspense for useSearchParams ────────────────── */
+
+function LeadCaptureSection({ totalRefund }: { totalRefund: number }) {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || submitting) return;
+    setSubmitting(true);
+
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      await fetch("/api/calculator/lead-capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          name: name.trim() || undefined,
+          estimatedRefund: totalRefund,
+          source: "calculator",
+          utm_source: searchParams.get("utm_source") || undefined,
+          utm_medium: searchParams.get("utm_medium") || undefined,
+          utm_campaign: searchParams.get("utm_campaign") || undefined,
+          utm_content: searchParams.get("utm_content") || undefined,
+        }),
+      });
+      setSubmitted(true);
+    } catch {
+      // silent — don't block the user experience
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (submitted) {
+    return (
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+        <div
+          className="rounded-2xl border p-6 sm:p-8 text-center"
+          style={{
+            borderColor: "rgba(22,163,74,0.3)",
+            background: "rgba(22,163,74,0.05)",
+          }}
+        >
+          <div className="text-3xl mb-3">✅</div>
+          <h3 className="text-lg font-bold mb-1" style={{ color: "var(--app-text)" }}>
+            Analysis Saved
+          </h3>
+          <p className="text-sm" style={{ color: "var(--app-text-muted)" }}>
+            We&apos;ll follow up with a detailed recovery analysis. Check your inbox.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+      <div
+        className="rounded-2xl border p-6 sm:p-8"
+        style={{
+          borderColor: "var(--brand-gold)",
+          background: "linear-gradient(135deg, rgba(176,140,48,0.06), rgba(176,140,48,0.01))",
+        }}
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xl">📄</span>
+          <h3
+            className="text-lg font-bold"
+            style={{ color: "var(--app-text)", fontFamily: "'DM Serif Display', Georgia, serif" }}
+          >
+            Get Your Full Recovery Analysis
+          </h3>
+        </div>
+        <p className="text-sm mb-5" style={{ color: "var(--app-text-muted)" }}>
+          Enter your email to receive a professional PDF summary you can share with your clients — includes entry breakdown, audit score, filing deadlines, and recommended next steps.
+        </p>
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            className="h-11 rounded-lg border px-4 text-sm flex-1"
+            style={{
+              background: "var(--app-input-bg)",
+              borderColor: "var(--app-border)",
+              color: "var(--app-text)",
+            }}
+          />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Your email address"
+            required
+            className="h-11 rounded-lg border px-4 text-sm flex-1"
+            style={{
+              background: "var(--app-input-bg)",
+              borderColor: "var(--app-border)",
+              color: "var(--app-text)",
+            }}
+          />
+          <button
+            type="submit"
+            disabled={submitting || !email.trim()}
+            className="h-11 rounded-lg font-semibold text-sm px-6 shrink-0 transition-all disabled:opacity-40"
+            style={{
+              background: "var(--brand-gold)",
+              color: "#000",
+              boxShadow: "0 4px 14px rgba(176,140,48,0.3)",
+            }}
+          >
+            {submitting ? "Sending..." : "Email My Analysis"}
+          </button>
+        </form>
+        <p className="text-xs mt-3" style={{ color: "var(--app-text-faint)" }}>
+          No spam. One follow-up with your results. Unsubscribe anytime.
+        </p>
+      </div>
+    </section>
+  );
+}
 
 export default function CalculatorPage() {
   return (
