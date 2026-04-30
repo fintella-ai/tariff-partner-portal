@@ -65,7 +65,7 @@ const STAGE_BADGES: Record<string, string> = {
 };
 
 function isBrokerLead(lead: Lead): boolean {
-  return (lead.notes || "").includes("CBP Broker Listing") || (lead.notes || "").includes("Filer Code:");
+  return (lead.notes || "").includes("CBP Broker Listing") || (lead.notes || "").includes("Filer Code:") || (lead.notes || "").includes("NCBFAA");
 }
 
 function isReferralLead(lead: Lead): boolean {
@@ -95,6 +95,12 @@ export default function InternalLeadsPage() {
   const [lookingUp, setLookingUp] = useState(false);
   const [validatingEmails, setValidatingEmails] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [ncbfaaSyncing, setNcbfaaSyncing] = useState(false);
+  const [ncbfaaImportOpen, setNcbfaaImportOpen] = useState(false);
+  const [ncbfaaImportData, setNcbfaaImportData] = useState<any[]>([]);
+  const [ncbfaaImporting, setNcbfaaImporting] = useState(false);
+  const [ncbfaaImportResult, setNcbfaaImportResult] = useState<any>(null);
+  const ncbfaaFileRef = useRef<HTMLInputElement>(null);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [bulkEmailing, setBulkEmailing] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
@@ -440,6 +446,34 @@ export default function InternalLeadsPage() {
             className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition disabled:opacity-50"
           >
             {syncing ? "Syncing..." : "🔄 Sync CBP"}
+          </button>
+          <button
+            onClick={async () => {
+              setNcbfaaSyncing(true);
+              try {
+                const res = await fetch("/api/admin/leads/ncbfaa-import", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ mode: "scrape" }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                  flash("ok", `NCBFAA: ${data.imported} new members imported (${data.duplicates} dups skipped)`);
+                  fetchLeads();
+                } else flash("err", data.error || "NCBFAA import failed");
+              } catch { flash("err", "NCBFAA sync failed"); }
+              finally { setNcbfaaSyncing(false); }
+            }}
+            disabled={ncbfaaSyncing}
+            className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition disabled:opacity-50"
+          >
+            {ncbfaaSyncing ? "Importing..." : "🏛️ Import NCBFAA"}
+          </button>
+          <button
+            onClick={() => { setNcbfaaImportOpen(true); setNcbfaaImportData([]); setNcbfaaImportResult(null); }}
+            className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-input-bg)] transition"
+          >
+            📥 NCBFAA CSV
           </button>
           <button
             onClick={async () => {
@@ -1164,6 +1198,138 @@ export default function InternalLeadsPage() {
                   className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90 disabled:opacity-50"
                 >
                   {importing ? "Importing..." : `Import ${validImportRows.length} Brokers`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NCBFAA CSV Import Modal */}
+      {ncbfaaImportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+          <div className="w-full max-w-2xl bg-[var(--app-bg-secondary)] border border-[var(--app-border)] rounded-2xl p-6 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">Import NCBFAA Membership CSV</h3>
+              <button onClick={() => setNcbfaaImportOpen(false)} className="text-[var(--app-text-muted)] hover:text-[var(--app-text)] text-lg">✕</button>
+            </div>
+
+            <div className="mb-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-400">
+              <strong>NCBFAA Membership Directory</strong> — upload a CSV exported from the{" "}
+              <a href="https://www.ncbfaa.org/search-our-membership" target="_blank" rel="noopener noreferrer" className="underline">NCBFAA directory</a>.
+              <div className="font-mono text-[11px] mt-1 text-blue-300">
+                Expected columns: Company Name, Primary Contact, Email, Phone, City, State
+              </div>
+            </div>
+
+            <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-sm text-yellow-400">
+              Emails are verified via MX record lookup. Invalid email domains are skipped. Duplicates by company name and email are auto-detected.
+            </div>
+
+            <div className="mb-4">
+              <input
+                ref={ncbfaaFileRef}
+                type="file"
+                accept=".csv,.txt"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    const text = ev.target?.result as string;
+                    const rows = parseCSV(text);
+                    setNcbfaaImportData(rows);
+                    setNcbfaaImportResult(null);
+                  };
+                  reader.readAsText(file);
+                }}
+                className="block w-full text-sm theme-input rounded-lg px-3 py-2 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-gold/15 file:text-brand-gold file:text-xs file:font-semibold file:px-3 file:py-1.5"
+              />
+            </div>
+
+            {ncbfaaImportData.length > 0 && (
+              <div className="mb-4">
+                <div className="text-sm mb-2">
+                  <strong>{ncbfaaImportData.length}</strong> rows parsed
+                </div>
+                <div className="overflow-x-auto border border-[var(--app-border)] rounded-lg max-h-[300px] overflow-y-auto">
+                  <table className="w-full text-[11px]">
+                    <thead className="bg-[var(--app-input-bg)] sticky top-0">
+                      <tr>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">Company</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">Contact</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">Email</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">Phone</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">City</th>
+                        <th className="px-2 py-1.5 text-left text-[var(--app-text-muted)]">State</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ncbfaaImportData.slice(0, 50).map((row: any, i: number) => (
+                        <tr key={i} className="border-t border-[var(--app-border)]">
+                          <td className="px-2 py-1.5">{row["Company Name"] || row.companyName || row.Company || ""}</td>
+                          <td className="px-2 py-1.5">{row["Primary Contact"] || row.contactName || row.Contact || ""}</td>
+                          <td className="px-2 py-1.5">{row["Email Address"] || row.email || row.Email || ""}</td>
+                          <td className="px-2 py-1.5">{row["Phone Number"] || row.phone || row.Phone || ""}</td>
+                          <td className="px-2 py-1.5">{row.City || row.city || ""}</td>
+                          <td className="px-2 py-1.5">{row.State || row.state || ""}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {ncbfaaImportData.length > 50 && (
+                    <div className="text-center py-2 text-[11px] text-[var(--app-text-muted)]">
+                      Showing first 50 of {ncbfaaImportData.length} rows
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {ncbfaaImportResult && (
+              <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-sm">
+                <div className="text-green-400 font-semibold mb-1">NCBFAA Import Complete</div>
+                <div className="text-[12px] text-[var(--app-text-secondary)] space-y-0.5">
+                  <div>Imported: <strong>{ncbfaaImportResult.imported}</strong></div>
+                  <div>Skipped: <strong>{ncbfaaImportResult.skipped}</strong></div>
+                  <div>Duplicates: <strong>{ncbfaaImportResult.duplicates}</strong></div>
+                  <div>Email MX verified: <strong>{ncbfaaImportResult.emailVerified || 0}</strong></div>
+                  <div>Email MX failed: <strong>{ncbfaaImportResult.emailFailed || 0}</strong></div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setNcbfaaImportOpen(false)} className="px-4 py-2 rounded-lg border border-[var(--app-border)] text-sm text-[var(--app-text-muted)]">
+                {ncbfaaImportResult ? "Close" : "Cancel"}
+              </button>
+              {!ncbfaaImportResult && (
+                <button
+                  onClick={async () => {
+                    if (ncbfaaImportData.length === 0) return;
+                    setNcbfaaImporting(true);
+                    try {
+                      const res = await fetch("/api/admin/leads/ncbfaa-import", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ mode: "csv", rows: ncbfaaImportData }),
+                      });
+                      const data = await res.json();
+                      setNcbfaaImportResult(data);
+                      if (data.imported > 0) {
+                        fetchLeads();
+                        flash("ok", `Imported ${data.imported} NCBFAA members`);
+                      }
+                    } catch {
+                      flash("err", "NCBFAA CSV import failed");
+                    } finally {
+                      setNcbfaaImporting(false);
+                    }
+                  }}
+                  disabled={ncbfaaImporting || ncbfaaImportData.length === 0}
+                  className="px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+                >
+                  {ncbfaaImporting ? "Importing..." : `Import ${ncbfaaImportData.length} NCBFAA Members`}
                 </button>
               )}
             </div>
