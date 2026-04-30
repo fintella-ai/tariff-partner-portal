@@ -176,6 +176,7 @@ model Partner {
   widgetSessions  WidgetSession[]
   widgetReferrals WidgetReferral[]
   tariffDossiers  TariffDossier[]
+  subscription    Subscription?
 
   @@index([email])
   @@index([referredByPartnerCode])
@@ -2345,4 +2346,48 @@ model ResearchJob {
 
   @@index([status])
   @@index([runAt])
+}
+
+// ── Subscriptions & Monetization ────────────────────────────────────────────
+
+model Subscription {
+  id              String    @id @default(cuid())
+  partnerCode     String
+  partner         Partner   @relation(fields: [partnerCode], references: [partnerCode])
+  plan            String    @default("free") // free, pro, enterprise
+  status          String    @default("active") // active, past_due, canceled, trialing
+  priceMonthly    Int       @default(0) // cents (14900 = $149.00)
+  currency        String    @default("usd")
+  gatewayId       String?   // NMI transaction/subscription ID
+  gatewayCustomerId String? // NMI customer vault ID
+  cardLast4       String?
+  cardBrand       String?
+  trialEndsAt     DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  canceledAt      DateTime?
+  cancelReason    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([partnerCode])
+  @@index([plan])
+  @@index([status])
+}
+
+model PaymentLog {
+  id              String    @id @default(cuid())
+  partnerCode     String
+  subscriptionId  String?
+  amount          Int       // cents
+  currency        String    @default("usd")
+  status          String    // success, failed, refunded
+  gatewayTxnId    String?   // NMI transaction ID
+  gatewayResponse String?   // raw response for debugging
+  description     String?
+  createdAt       DateTime  @default(now())
+
+  @@index([partnerCode])
+  @@index([subscriptionId])
+  @@index([createdAt])
 }

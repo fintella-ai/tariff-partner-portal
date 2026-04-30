@@ -47,6 +47,7 @@ const MAIN_NAV: Array<{
   { id: "referral-links", href: "/dashboard/referral-links", icon: "🔗", label: "Referral Links", shortLabel: "Links" },
   { id: "calculator", href: "/dashboard/calculator", icon: "🧮", label: "Tariff Calculator", shortLabel: "TIE" },
   { id: "widget", href: "/dashboard/widget", icon: "🔌", label: "TMS Widget", shortLabel: "Widget" },
+  { id: "pricing", href: "/dashboard/pricing", icon: "💎", label: "Upgrade Plan", shortLabel: "Pro" },
   {
     id: "communications",
     href: "/dashboard/conference",
