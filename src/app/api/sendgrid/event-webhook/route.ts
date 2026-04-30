@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { recordActivity } from "@/lib/engagement";
+import { recordCampaignEngagement } from "@/lib/campaign-engine";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -108,6 +109,11 @@ export async function POST(req: NextRequest) {
       } else if (evt.event === "click") {
         recordActivity(matched.partnerCode, "email_click", { url: evt.url ?? null, messageId: providerMessageId }).catch(() => {});
       }
+    }
+
+    // Track campaign drip engagement for lead-targeted emails
+    if (evt.email && (evt.event === "open" || evt.event === "click")) {
+      recordCampaignEngagement(evt.email, evt.event as "open" | "click", matched?.template ?? undefined).catch(() => {});
     }
 
     accepted++;

@@ -1697,12 +1697,22 @@ model PartnerLead {
   scheduledSendAt  DateTime? // when the recruitment email should be sent (timezone-optimized)
   emailSentAt      DateTime? // when the recruitment email was actually sent
   unsubscribedAt   DateTime? // when the lead opted out of emails
+  lastOpenedAt     DateTime? // last email open from this lead
+  lastClickedAt    DateTime? // last email click from this lead
+  emailsSent       Int       @default(0) // total emails sent to this lead
+  emailsOpened     Int       @default(0) // total opens
+  emailsClicked    Int       @default(0) // total clicks
+  source           String    @default("cbp_listing") // cbp_listing, manual, calculator, webinar, referral
+  filerCode        String?   // CBP filer code for dedup
+  state            String?   // US state for timezone mapping
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   @@index([status])
   @@index([email])
   @@index([scheduledSendAt])
+  @@index([filerCode])
+  @@index([source])
 }
 
 model ClientSubmission {
@@ -2195,4 +2205,69 @@ model DossierDocument {
   createdAt          DateTime      @default(now())
 
   @@index([dossierId])
+}
+
+// ── Outreach Campaigns ──────────────────────────────────────────────────────
+
+model Campaign {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  status        String   @default("draft") // draft, active, paused, completed
+  audience      String   @default("all_leads") // all_leads, prospects_only, contacted, custom
+  audienceFilter Json?   // optional filter criteria for "custom" audience
+  totalLeads    Int      @default(0)
+  sentCount     Int      @default(0)
+  openCount     Int      @default(0)
+  clickCount    Int      @default(0)
+  convertCount  Int      @default(0) // signed up as partner
+  unsubCount    Int      @default(0)
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  steps         CampaignStep[]
+  enrollments   CampaignEnrollment[]
+
+  @@index([status])
+}
+
+model CampaignStep {
+  id            String   @id @default(cuid())
+  campaignId    String
+  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  stepNumber    Int      // 1, 2, 3...
+  templateKey   String   // EmailTemplate.key to use
+  subject       String?  // override template subject if provided
+  delayDays     Int      @default(0) // days after previous step (0 = immediate for step 1)
+  skipIfOpened  Boolean  @default(false) // skip this step if lead already opened a previous email
+  skipIfClicked Boolean  @default(false) // skip if lead already clicked
+  sentCount     Int      @default(0)
+  openCount     Int      @default(0)
+  clickCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@unique([campaignId, stepNumber])
+  @@index([campaignId])
+}
+
+model CampaignEnrollment {
+  id            String    @id @default(cuid())
+  campaignId    String
+  campaign      Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  leadId        String
+  currentStep   Int       @default(0) // 0 = enrolled but not sent yet
+  status        String    @default("active") // active, completed, unsubscribed, converted, paused
+  lastSentAt    DateTime?
+  nextSendAt    DateTime?
+  openedAny     Boolean   @default(false)
+  clickedAny    Boolean   @default(false)
+  enrolledAt    DateTime  @default(now())
+  completedAt   DateTime?
+
+  @@unique([campaignId, leadId])
+  @@index([campaignId, status])
+  @@index([nextSendAt])
+  @@index([leadId])
 }

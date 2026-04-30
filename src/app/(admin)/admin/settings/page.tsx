@@ -99,6 +99,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "training", label: "Training", icon: "📖" },
   { id: "conference", label: "Live Weekly", icon: "📹" },
   { id: "documents", label: "Documents", icon: "📁" },
+  { id: "campaigns", label: "Campaigns", icon: "📧" },
   { id: "automations", label: "Automations", icon: "⚡" },
   { id: "gettingStartedEditor", label: "Getting Started", icon: "✅" },
   { id: "landingPages", label: "Landing Pages", icon: "🌐" },

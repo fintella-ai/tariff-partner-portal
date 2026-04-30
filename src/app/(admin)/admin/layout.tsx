@@ -30,7 +30,7 @@ const ADMIN_NAV_IDS_DEFAULT = [
   "partners", "applications", "internal-leads", "deals", "widget-referrals", "reporting",
   "communications", "internalChats", "partnerSupport",
   "training", "conference", "documents",
-  "automations", "gettingStartedEditor", "landingPages",
+  "campaigns", "automations", "gettingStartedEditor", "landingPages",
   "settings", "users", "dev",
 ];
 
@@ -84,6 +84,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   training:     { id: "training", href: "/admin/training", icon: "📖", label: "Training" },
   conference:   { id: "conference", href: "/admin/conference", icon: "📹", label: "Live Weekly" },
   documents:    { id: "documents", href: "/admin/documents", icon: "📁", label: "Documents" },
+  campaigns:    { id: "campaigns", href: "/admin/campaigns", icon: "📧", label: "Campaigns" },
   automations:  { id: "automations", href: "/admin/automations", icon: "⚡", label: "Automations" },
   gettingStartedEditor: { id: "gettingStartedEditor", href: "/admin/getting-started-editor", icon: "✅", label: "Getting Started" },
   aiActivity:   { id: "aiActivity", href: "/admin/ai-activity", icon: "🤖", label: "AI Activity" },
