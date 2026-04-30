@@ -1392,39 +1392,342 @@ function BulkUploadTab({ commissionRate }: { commissionRate: number }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TAB 3 — DOCUMENT INTAKE (AI) — Coming Soon
+   TAB 3 — DOCUMENT INTAKE (AI)
    ═══════════════════════════════════════════════════════════════════════════ */
 
+interface DocIntakeEntry {
+  index: number;
+  entryNumber: string | null;
+  countryOfOrigin: string;
+  entryDate: string;
+  enteredValue: number;
+  combinedRate: number;
+  estimatedDuty: number;
+  estimatedInterest: number;
+  estimatedRefund: number;
+  eligibility: { status: string; reason: string; deadlineDays?: number; isUrgent?: boolean };
+  routingBucket: string;
+  confidence: number;
+  needsReview: boolean;
+  htsCode: string | null;
+  importerName: string | null;
+}
+
+interface DocIntakeResult {
+  success: boolean;
+  importerName: string | null;
+  summary: {
+    totalEntries: number;
+    totalEnteredValue: number;
+    totalEstimatedRefund: number;
+    selfFileCount: number;
+    selfFileRefund: number;
+    needsLegalCount: number;
+    needsLegalRefund: number;
+    notApplicableCount: number;
+    lowConfidenceCount: number;
+    auditScore: number;
+    auditPassed: boolean;
+    auditErrors: number;
+    auditWarnings: number;
+  };
+  entries: DocIntakeEntry[];
+  audit: { score: number; passed: boolean; errors: { message: string; fix?: string }[]; warnings: { message: string }[] };
+  filingPackage: { capeCsv: string; auditReportCsv: string; eligibleForCape: number };
+  warnings: string[];
+  documentsProcessed: number;
+}
+
 function DocumentAiTab() {
-  return (
-    <div className="py-12 text-center">
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[11px] font-body font-medium mb-4">
-        Coming Soon
+  const [dragging, setDragging] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [result, setResult] = useState<DocIntakeResult | null>(null);
+  const [error, setError] = useState("");
+  const [fileNames, setFileNames] = useState<string[]>([]);
+
+  async function handleFiles(files: FileList | File[]) {
+    const fileArray = Array.from(files).filter((f) =>
+      f.type === "application/pdf" || f.type.startsWith("image/")
+    );
+    if (fileArray.length === 0) {
+      setError("Please upload PDF or image files (CF 7501, ACE reports, invoices)");
+      return;
+    }
+    setProcessing(true);
+    setError("");
+    setResult(null);
+    setFileNames(fileArray.map((f) => f.name));
+
+    const formData = new FormData();
+    for (const file of fileArray) {
+      formData.append("files", file);
+    }
+
+    try {
+      const res = await fetch("/api/tariff/document-intake", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setResult(data);
+      } else {
+        setError(data.warnings?.join("; ") || "Failed to extract entries from documents");
+      }
+    } catch {
+      setError("Upload failed — please try again");
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  function downloadBlob(content: string, filename: string) {
+    const blob = new Blob([content], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  if (processing) {
+    return (
+      <div className="py-16 text-center">
+        <div className="w-12 h-12 border-3 border-purple-400/30 border-t-purple-400 rounded-full animate-spin mx-auto mb-4" />
+        <h3 className="font-display text-lg font-semibold text-[var(--app-text)] mb-2">
+          AI is Reading Your Documents
+        </h3>
+        <p className="font-body text-[13px] text-[var(--app-text-muted)]">
+          Extracting entry numbers, dates, values, HTS codes, and eligibility...
+        </p>
+        <div className="mt-4 space-y-1">
+          {fileNames.map((name) => (
+            <div key={name} className="font-body text-[11px] text-purple-400">📄 {name}</div>
+          ))}
+        </div>
       </div>
-      <div className="text-4xl mb-4">🤖</div>
-      <h3 className="font-display text-lg font-semibold mb-2">
-        AI Document Intake
-      </h3>
-      <p className="font-body text-[13px] text-[var(--app-text-muted)] max-w-md mx-auto leading-relaxed">
-        Upload CF 7501 entry summaries, ACE reports, and commercial invoices.
-        AI will automatically extract entry data, classify HTS codes, and
-        calculate refund eligibility — no manual data entry required.
-      </p>
-      <div className="mt-6 space-y-2 max-w-sm mx-auto">
-        {[
-          { icon: "📋", text: "CF 7501 Entry Summaries" },
-          { icon: "🏛️", text: "ACE Portal Reports" },
-          { icon: "📄", text: "Commercial Invoices" },
-          { icon: "📦", text: "Bills of Lading" },
-        ].map((item) => (
-          <div
-            key={item.text}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-white/3 border border-[var(--app-border)]"
+    );
+  }
+
+  if (result) {
+    const s = result.summary;
+    const datestamp = new Date().toISOString().slice(0, 10);
+
+    return (
+      <div className="space-y-4">
+        {/* Summary header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-display text-lg font-semibold text-[var(--app-text)]">
+              {result.importerName || "Document Analysis"} — {s.totalEntries} Entries Extracted
+            </h3>
+            <p className="font-body text-[12px] text-[var(--app-text-muted)]">
+              {result.documentsProcessed} document{result.documentsProcessed !== 1 ? "s" : ""} processed
+              {s.lowConfidenceCount > 0 && ` · ${s.lowConfidenceCount} entries need review`}
+            </p>
+          </div>
+          <button
+            onClick={() => { setResult(null); setFileNames([]); }}
+            className="font-body text-[11px] px-3 py-1.5 rounded-lg bg-white/5 text-[var(--app-text-muted)] hover:bg-white/10"
           >
-            <span className="text-lg">{item.icon}</span>
-            <span className="font-body text-[13px] text-[var(--app-text-muted)]">
-              {item.text}
+            Upload More
+          </button>
+        </div>
+
+        {/* Summary cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-xl p-4 bg-[var(--brand-gold)]/10 border border-[var(--brand-gold)]/20 text-center">
+            <div className="font-display text-xl font-bold text-[var(--brand-gold)]">
+              {fmt$(s.totalEstimatedRefund)}
+            </div>
+            <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Total Recovery</div>
+          </div>
+          <div className="rounded-xl p-4 bg-green-500/10 border border-green-500/20 text-center">
+            <div className="font-display text-xl font-bold text-green-400">{s.selfFileCount}</div>
+            <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Self-File Ready</div>
+          </div>
+          <div className="rounded-xl p-4 bg-red-500/10 border border-red-500/20 text-center">
+            <div className="font-display text-xl font-bold text-red-400">{s.needsLegalCount}</div>
+            <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Needs Legal</div>
+          </div>
+          <div className="rounded-xl p-4 border border-[var(--app-border)] text-center">
+            <div className={`font-display text-xl font-bold ${s.auditScore >= 80 ? "text-green-400" : s.auditScore >= 60 ? "text-yellow-400" : "text-red-400"}`}>
+              {s.auditScore}
+            </div>
+            <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Audit Score</div>
+          </div>
+        </div>
+
+        {/* Warnings */}
+        {result.warnings.length > 0 && (
+          <div className="rounded-lg bg-yellow-500/5 border border-yellow-500/20 p-3">
+            {result.warnings.map((w, i) => (
+              <p key={i} className="font-body text-[11px] text-yellow-400">⚠️ {w}</p>
+            ))}
+          </div>
+        )}
+
+        {/* Entry table */}
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full min-w-[900px]">
+            <thead>
+              <tr className="border-b border-[var(--app-border)]">
+                {["#", "Entry Number", "Country", "Date", "Value", "Rate", "Refund", "Status", "Filing", "Conf."].map((h) => (
+                  <th key={h} className="font-body text-[9px] text-[var(--app-text-muted)] tracking-wider uppercase text-left py-2 px-2">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {result.entries.map((e, i) => (
+                <tr
+                  key={i}
+                  className={`border-b border-[var(--app-border)]/50 ${e.needsReview ? "bg-yellow-500/3" : i % 2 === 1 ? "bg-blue-500/2" : ""}`}
+                >
+                  <td className="font-body text-[11px] py-2 px-2 text-[var(--app-text-muted)]">{i + 1}</td>
+                  <td className="font-body text-[11px] py-2 px-2 text-[var(--app-text)] font-mono">
+                    {e.entryNumber || <span className="text-yellow-400 italic">missing</span>}
+                  </td>
+                  <td className="font-body text-[11px] py-2 px-2">{e.countryOfOrigin}</td>
+                  <td className="font-body text-[11px] py-2 px-2 text-[var(--app-text-muted)]">{fmtDate(e.entryDate)}</td>
+                  <td className="font-body text-[11px] py-2 px-2 text-right">{fmt$(e.enteredValue)}</td>
+                  <td className="font-body text-[11px] py-2 px-2 text-right">{(e.combinedRate * 100).toFixed(1)}%</td>
+                  <td className="font-body text-[11px] py-2 px-2 text-right font-semibold text-green-400">{fmt$(e.estimatedRefund)}</td>
+                  <td className="py-2 px-2">
+                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                      e.eligibility.status === "eligible" ? "bg-green-500/10 text-green-400"
+                      : "bg-red-500/10 text-red-400"
+                    }`}>
+                      {e.eligibility.status === "eligible" ? "Eligible" : "Excluded"}
+                    </span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                      e.routingBucket === "self_file" ? "bg-green-500/10 text-green-400"
+                      : e.routingBucket === "legal_required" ? "bg-red-500/10 text-red-400"
+                      : "bg-white/5 text-white/50"
+                    }`}>
+                      {e.routingBucket === "self_file" ? "🟢" : e.routingBucket === "legal_required" ? "🔴" : "⚪"}
+                    </span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className={`font-body text-[10px] font-medium ${
+                      e.confidence >= 0.8 ? "text-green-400" : e.confidence >= 0.5 ? "text-yellow-400" : "text-red-400"
+                    }`}>
+                      {Math.round(e.confidence * 100)}%
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-3 pt-2">
+          {result.filingPackage.eligibleForCape > 0 && (
+            <button
+              onClick={() => downloadBlob(result.filingPackage.capeCsv, `cape-entries-${datestamp}.csv`)}
+              className="font-body text-[12px] font-medium px-4 py-2.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors flex items-center gap-2"
+            >
+              🟢 Download CAPE CSV ({result.filingPackage.eligibleForCape} entries)
+            </button>
+          )}
+          <button
+            onClick={() => downloadBlob(result.filingPackage.auditReportCsv, `audit-report-${datestamp}.csv`)}
+            className="font-body text-[12px] font-medium px-4 py-2.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors flex items-center gap-2"
+          >
+            📋 Download Audit Report
+          </button>
+          {s.needsLegalCount > 0 && (
+            <button
+              onClick={() => window.location.href = "/apply"}
+              className="font-body text-[12px] font-medium px-4 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors flex items-center gap-2"
+            >
+              🔴 Submit {s.needsLegalCount} to Legal Review
+            </button>
+          )}
+        </div>
+
+        {/* Audit issues */}
+        {result.audit.errors.length > 0 && (
+          <div className="rounded-lg bg-red-500/5 border border-red-500/20 p-3">
+            <h4 className="font-body text-[11px] font-semibold text-red-400 mb-2">Audit Errors ({result.audit.errors.length})</h4>
+            {result.audit.errors.slice(0, 5).map((e, i) => (
+              <p key={i} className="font-body text-[11px] text-[var(--app-text-muted)] mb-1">• {e.message}{e.fix ? ` → ${e.fix}` : ""}</p>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-display text-lg font-semibold text-[var(--app-text)] mb-1">
+          AI Document Intake
+        </h3>
+        <p className="font-body text-[13px] text-[var(--app-text-muted)]">
+          Drop your client&apos;s customs documents. AI extracts every entry, runs the audit, and tells you green or red.
+        </p>
+      </div>
+
+      {/* Drop zone */}
+      <div
+        className={`relative rounded-2xl border-2 border-dashed p-12 text-center transition-colors cursor-pointer ${
+          dragging ? "border-purple-400 bg-purple-500/5" : "border-[var(--app-border)] hover:border-purple-400/50 hover:bg-purple-500/3"
+        }`}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          handleFiles(e.dataTransfer.files);
+        }}
+        onClick={() => {
+          const input = document.createElement("input");
+          input.type = "file";
+          input.multiple = true;
+          input.accept = ".pdf,.png,.jpg,.jpeg,.webp";
+          input.onchange = () => { if (input.files) handleFiles(input.files); };
+          input.click();
+        }}
+      >
+        <div className="text-5xl mb-4">{dragging ? "📥" : "📄"}</div>
+        <h4 className="font-body text-sm font-semibold text-[var(--app-text)] mb-2">
+          {dragging ? "Drop files here" : "Drop documents or click to upload"}
+        </h4>
+        <p className="font-body text-[12px] text-[var(--app-text-muted)] mb-4">
+          PDF or images — CF 7501 entry summaries, ACE reports, commercial invoices, bills of lading
+        </p>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {["CF 7501", "ACE Report", "Invoice", "Bill of Lading"].map((t) => (
+            <span key={t} className="font-body text-[10px] px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              {t}
             </span>
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <div className="rounded-lg bg-red-500/5 border border-red-500/20 p-3">
+          <p className="font-body text-[12px] text-red-400">{error}</p>
+        </div>
+      )}
+
+      {/* How it works */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        {[
+          { icon: "📄", title: "Upload", desc: "Drop PDF or image" },
+          { icon: "🤖", title: "AI Extract", desc: "Entries parsed automatically" },
+          { icon: "✅", title: "Audit", desc: "19 checks, green/red routing" },
+          { icon: "📦", title: "File", desc: "CAPE CSV + audit report ready" },
+        ].map((step) => (
+          <div key={step.title} className="rounded-lg bg-white/2 border border-[var(--app-border)] p-3 text-center">
+            <div className="text-2xl mb-1">{step.icon}</div>
+            <div className="font-body text-[12px] font-semibold text-[var(--app-text)]">{step.title}</div>
+            <div className="font-body text-[10px] text-[var(--app-text-muted)]">{step.desc}</div>
           </div>
         ))}
       </div>
