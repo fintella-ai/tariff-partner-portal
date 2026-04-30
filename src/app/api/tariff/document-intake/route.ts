@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { extractFromPdf, extractFromImage } from "@/lib/document-intake";
 import { lookupCombinedRate, calculateIeepaDuty, calculateInterest, checkEligibility, getRoutingBucket } from "@/lib/tariff-calculator";
 import { runAudit, generateCleanCapeEntries, formatCapeCSV, generateAuditReportCSV, type AuditEntry } from "@/lib/tariff-audit";
+import { classifyHtsCode, detectTariffStacking } from "@/lib/hts-classifier";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -109,6 +110,13 @@ export async function POST(req: NextRequest) {
     });
     const routingBucket = getRoutingBucket(eligibility.status);
 
+    const htsClassification = extracted.htsCode
+      ? classifyHtsCode(extracted.htsCode, countryCode, [])
+      : null;
+    const tariffStacking = extracted.htsCode
+      ? detectTariffStacking(extracted.htsCode, countryCode, [])
+      : null;
+
     return {
       index,
       entryNumber: extracted.entryNumber,
@@ -120,6 +128,17 @@ export async function POST(req: NextRequest) {
       importerName: extracted.importerName || importerName,
       importerNumber: extracted.importerNumber,
       filerCode: extracted.filerCode,
+      htsClassification: htsClassification ? {
+        description: htsClassification.description,
+        programs: htsClassification.programs.map((p) => p.name),
+        ieepaApplicable: htsClassification.ieepaApplicable,
+        notes: htsClassification.notes,
+      } : null,
+      tariffStacking: tariffStacking?.isStacked ? {
+        programs: tariffStacking.programs,
+        totalRate: tariffStacking.totalRate,
+        warning: tariffStacking.warning,
+      } : null,
       combinedRate: rateLookup.combinedRate,
       rateBreakdown: rateLookup.breakdown,
       estimatedDuty: duty,
