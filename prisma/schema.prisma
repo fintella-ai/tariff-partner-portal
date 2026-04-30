@@ -1,11 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
 }
 
 // ─── TARIFF INTELLIGENCE ENGINE ENUMS ────────────────────────────────────────
@@ -70,6 +72,32 @@ enum ExtractedFrom {
   manual
   csv
   document_ai
+}
+
+// ─── AI KNOWLEDGE BASE ENUMS ────────────────────────────────────────────────
+
+enum KnowledgeCategory {
+  CAPE_UPDATE
+  LEGAL_CHANGE
+  TARIFF_RATE
+  STRATEGY_TIP
+  COUNTRY_POLICY
+  BROKER_GUIDANCE
+  LEGAL_GUIDANCE
+  GENERAL
+}
+
+enum KnowledgeSourceType {
+  ADMIN_PASTE
+  WEB_RESEARCH
+  SYSTEM_SEED
+}
+
+enum ResearchJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
 }
 
 // ─── ADMIN USERS ─────────────────────────────────────────────────────────────
@@ -1062,6 +1090,7 @@ model AiMessage {
   handoffMetadata     Json?     // { from, to, reason, summary, triggeredBy } — populated when a specialist handoff fires (Phase 2+)
   attachments         Json?     // [{ url, mimeType, width, height }] — populated for bug-triage screenshots (Phase 3)
   toolCalls           Json?     // [{ name, input, output, isError? }] — populated when a persona with tools (e.g. Ollie) called one or more DB lookups while producing this reply (Phase 3b)
+  sourcesUsed         String[]  // KnowledgeEntry IDs referenced in each AI response (RAG pipeline)
   readAt              DateTime?
   createdAt           DateTime  @default(now())
   conversation        AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -2278,4 +2307,41 @@ model CampaignEnrollment {
   @@index([campaignId, status])
   @@index([nextSendAt])
   @@index([leadId])
+}
+
+// ─── AI KNOWLEDGE BASE ──────────────────────────────────────────────────────
+
+model KnowledgeEntry {
+  id           String               @id @default(cuid())
+  title        String
+  content      String
+  summary      String?
+  category     KnowledgeCategory    @default(GENERAL)
+  source       String?
+  sourceType   KnowledgeSourceType  @default(ADMIN_PASTE)
+  tags         String[]
+  embedding    Unsupported("vector(1536)")?
+  isApproved   Boolean              @default(false)
+  isActive     Boolean              @default(true)
+  createdBy    String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([category])
+  @@index([isApproved, isActive])
+  @@index([sourceType])
+}
+
+model ResearchJob {
+  id             String            @id @default(cuid())
+  status         ResearchJobStatus @default(PENDING)
+  query          String
+  resultsFound   Int               @default(0)
+  entriesCreated Int               @default(0)
+  runAt          DateTime          @default(now())
+  completedAt    DateTime?
+  errorMessage   String?
+
+  @@index([status])
+  @@index([runAt])
 }
