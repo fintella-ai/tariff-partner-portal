@@ -9,8 +9,8 @@ export default function WidgetHowItWorks({ commissionRate }: { commissionRate: n
     },
     {
       icon: "⚖️",
-      title: "We prepare the recovery package",
-      desc: "Audit-ready filing, rate analysis, and documentation — then you or your client submits via CAPE.",
+      title: "We back you up",
+      desc: "Legal coverage for your client, audit-ready filing review, and error minimization — you file via CAPE with confidence.",
     },
     {
       icon: "💰",
