@@ -35,7 +35,7 @@ export default function WidgetFooter() {
         onMouseEnter={() => setLinkHover(true)}
         onMouseLeave={() => setLinkHover(false)}
       >
-        Open Portal &rarr;
+        Open Fintella Partner Portal &rarr;
       </a>
     </div>
   );

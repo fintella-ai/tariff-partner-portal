@@ -155,9 +155,9 @@ export default function WidgetDashboard({
 
       <ConfirmModal
         open={confirmOpen}
-        title="Open Fintella Portal?"
-        body="This will open your partner dashboard in a new tab."
-        confirmLabel="Open Portal"
+        title="Open Fintella Partner Portal?"
+        body="This will open your full partner dashboard at fintella.partners in a new tab."
+        confirmLabel="Open Partner Portal"
         onConfirm={() => {
           window.open("https://fintella.partners/dashboard", "_blank");
           setConfirmOpen(false);
