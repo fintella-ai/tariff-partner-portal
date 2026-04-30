@@ -55,6 +55,7 @@ function WidgetContent() {
   const [droppedFiles, setDroppedFiles] = useState<File[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [poppedOut, setPoppedOut] = useState(false);
 
   const handleGlobalDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
@@ -198,9 +199,9 @@ function WidgetContent() {
     help: (c, a) => <svg width="20" height="20" viewBox="0 0 24 24" fill={a ? "rgba(196,160,80,0.1)" : "none"} stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><circle cx="12" cy="10" r="0.8" fill={c} stroke="none"/><circle cx="8" cy="10" r="0.8" fill={c} stroke="none"/><circle cx="16" cy="10" r="0.8" fill={c} stroke="none"/></svg>,
   };
 
-  return (
+  const widgetBody = (
     <div
-      style={{ display: "flex", flexDirection: "column", height: "100vh", position: "relative" }}
+      style={{ display: "flex", flexDirection: "column", height: poppedOut ? "100%" : "100vh", position: "relative" }}
       onDragOver={handleGlobalDragOver}
       onDragLeave={handleGlobalDragLeave}
       onDrop={handleGlobalDrop}
@@ -293,7 +294,7 @@ function WidgetContent() {
             }}>
               {[
                 { label: "Minimize", icon: "▬", action: () => { setMinimized(true); setMenuOpen(false); } },
-                { label: "Pop Out", icon: "⧉", action: () => { window.open(window.location.href + (window.location.href.includes("?") ? "&" : "?") + "mode=popout", "_blank", "width=440,height=640"); setMenuOpen(false); } },
+                { label: poppedOut ? "Dock" : "Pop Out", icon: poppedOut ? "▣" : "⧉", action: () => { setPoppedOut(!poppedOut); setMenuOpen(false); } },
                 { label: "Fintella Portal", icon: "→", action: () => { window.open("https://fintella.partners/dashboard", "_blank"); setMenuOpen(false); } },
               ].map((item) => (
                 <button
@@ -398,19 +399,19 @@ function WidgetContent() {
       <WidgetFooter />
     </div>
   );
-}
 
-function WidgetInner() {
-  const searchParams = useSearchParams();
-  const mode = searchParams.get("mode");
-
-  const content = <WidgetContent />;
-
-  if (mode === "popout") {
-    return <WidgetPopout>{content}</WidgetPopout>;
+  if (poppedOut) {
+    return (
+      <WidgetPopout
+        onClose={() => setPoppedOut(false)}
+        onMinimize={() => { setMinimized(true); setPoppedOut(false); }}
+      >
+        {widgetBody}
+      </WidgetPopout>
+    );
   }
 
-  return content;
+  return widgetBody;
 }
 
 export default function WidgetPage() {
