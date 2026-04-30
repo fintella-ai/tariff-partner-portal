@@ -1,11 +1,15 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense, lazy } from "react";
 import WidgetDashboard from "@/components/widget/WidgetDashboard";
-import WidgetCalculator from "@/components/widget/WidgetCalculator";
 import WidgetReferralForm from "@/components/widget/WidgetReferralForm";
 import WidgetHowItWorks from "@/components/widget/WidgetHowItWorks";
+import WidgetFooter from "@/components/widget/WidgetFooter";
+import { W, SHADOWS, RADII, glassCardStyle } from "@/components/widget/widget-theme";
+
+const WidgetCalculator = lazy(() => import("@/components/widget/WidgetCalculator"));
+const WidgetChat = lazy(() => import("@/components/widget/WidgetChat"));
 
 interface AuthData {
   token: string;
@@ -14,7 +18,26 @@ interface AuthData {
   commissionRate: number;
 }
 
-type Tab = "dashboard" | "calc" | "refer" | "how";
+type Tab = "dashboard" | "calc" | "refer" | "how" | "help";
+
+/* Gold spinner used in Suspense fallbacks and initial load */
+function GoldSpinner() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: "50%",
+          border: `2px solid ${W.gold}`,
+          borderTopColor: "transparent",
+          animation: "widget-spin 0.8s linear infinite",
+        }}
+      />
+      <style>{`@keyframes widget-spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
 
 function WidgetContent() {
   const searchParams = useSearchParams();
@@ -68,21 +91,33 @@ function WidgetContent() {
     authenticate();
   }, [authenticate]);
 
+  /* --- Loading state --- */
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: W.bg }}>
+        <GoldSpinner />
       </div>
     );
   }
 
+  /* --- Error state --- */
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen p-6">
-        <div className="text-center">
-          <div className="text-4xl mb-3">🔒</div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-1">Widget Not Authorized</h2>
-          <p className="text-sm text-gray-500">{error}</p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", padding: 24, background: W.bg }}>
+        <div
+          style={{
+            ...glassCardStyle(),
+            padding: 24,
+            textAlign: "center" as const,
+            borderColor: "rgba(239,68,68,0.2)",
+            boxShadow: SHADOWS.card,
+          }}
+        >
+          <div style={{ fontSize: 32, marginBottom: 12 }}>&#128274;</div>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: W.text, marginBottom: 4 }}>
+            Widget Not Authorized
+          </h2>
+          <p style={{ fontSize: 13, color: W.textSecondary }}>{error}</p>
         </div>
       </div>
     );
@@ -97,49 +132,112 @@ function WidgetContent() {
     { id: "calc", label: "Calculator" },
     { id: "refer", label: "Refer" },
     { id: "how", label: "Info" },
+    { id: "help", label: "Help" },
   ];
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold text-lg">F</span>
-          <span className="font-semibold text-sm">{auth.partnerName}</span>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      {/* ─── Header ─── */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, #0c1220, #060a14)",
+          padding: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Gold circle avatar */}
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #c4a050, #f0d070)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#060a14",
+              fontWeight: 700,
+              fontSize: 16,
+              flexShrink: 0,
+            }}
+          >
+            {auth.partnerName.charAt(0).toUpperCase()}
+          </div>
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.95)",
+              fontFamily: "'DM Serif Display', Georgia, serif",
+            }}
+          >
+            {auth.partnerName}
+          </span>
         </div>
-        <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-medium">
+        <span
+          style={{
+            fontSize: 11,
+            background: "rgba(196,160,80,0.15)",
+            color: "#c4a050",
+            padding: "3px 10px",
+            borderRadius: 9999,
+            fontWeight: 600,
+            flexShrink: 0,
+          }}
+        >
           {rate}% commission
         </span>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 bg-gray-50">
+      {/* ─── Tab bar ─── */}
+      <div
+        style={{
+          display: "flex",
+          background: "rgba(255,255,255,0.02)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
-              tab === t.id
-                ? "text-amber-600 border-b-2 border-amber-500 bg-white"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              fontSize: 11,
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              position: "relative",
+              color: tab === t.id ? "#c4a050" : "rgba(255,255,255,0.4)",
+              borderBottom: tab === t.id ? "2px solid #c4a050" : "2px solid transparent",
+            }}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      {/* ─── Content ─── */}
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 36 }}>
         {tab === "dashboard" && (
           <WidgetDashboard token={auth.token} onReferClick={() => setTab("refer")} />
         )}
         {tab === "calc" && (
-          <WidgetCalculator
-            token={auth.token}
-            commissionRate={rate}
-            onSubmitAsReferral={handleCalcToReferral}
-          />
+          <Suspense fallback={<GoldSpinner />}>
+            <WidgetCalculator
+              token={auth.token}
+              commissionRate={rate}
+              onSubmitAsReferral={handleCalcToReferral}
+            />
+          </Suspense>
         )}
         {tab === "refer" && (
           <WidgetReferralForm
@@ -150,7 +248,15 @@ function WidgetContent() {
           />
         )}
         {tab === "how" && <WidgetHowItWorks commissionRate={rate} />}
+        {tab === "help" && (
+          <Suspense fallback={<GoldSpinner />}>
+            <WidgetChat token={auth.token} />
+          </Suspense>
+        )}
       </div>
+
+      {/* ─── Footer ─── */}
+      <WidgetFooter />
     </div>
   );
 }
@@ -159,8 +265,8 @@ export default function WidgetPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent" />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: W.bg }}>
+          <GoldSpinner />
         </div>
       }
     >
