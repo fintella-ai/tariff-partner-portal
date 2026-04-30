@@ -127,12 +127,12 @@ function WidgetContent() {
 
   const rate = Math.round(auth.commissionRate * 100);
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "dashboard", label: "Dashboard" },
-    { id: "calc", label: "Calculator" },
-    { id: "refer", label: "Refer" },
-    { id: "how", label: "Info" },
-    { id: "help", label: "Help" },
+  const tabs: { id: Tab; label: string; icon: string }[] = [
+    { id: "dashboard", label: "Home", icon: "🏠" },
+    { id: "calc", label: "Calc", icon: "🧮" },
+    { id: "refer", label: "Refer", icon: "📤" },
+    { id: "how", label: "Info", icon: "ℹ️" },
+    { id: "help", label: "Help", icon: "❓" },
   ];
 
   return (
@@ -148,34 +148,35 @@ function WidgetContent() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Gold circle avatar */}
           <div
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: "50%",
+              width: 32,
+              height: 32,
+              borderRadius: RADII.sm,
               background: "linear-gradient(135deg, #c4a050, #f0d070)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "#060a14",
-              fontWeight: 700,
-              fontSize: 16,
+              fontWeight: 800,
+              fontSize: 14,
               flexShrink: 0,
             }}
           >
-            {auth.partnerName.charAt(0).toUpperCase()}
+            F
           </div>
-          <span
-            style={{
-              fontSize: 16,
-              fontWeight: 600,
-              color: "rgba(255,255,255,0.95)",
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{
+              fontSize: 13, fontWeight: 700, color: W.gold,
               fontFamily: "'DM Serif Display', Georgia, serif",
-            }}
-          >
-            {auth.partnerName}
-          </span>
+              letterSpacing: 0.3,
+            }}>
+              FinnPartnerOS
+            </span>
+            <span style={{ fontSize: 10, color: W.textDim, fontWeight: 500 }}>
+              {auth.partnerName}
+            </span>
+          </div>
         </div>
         <span
           style={{
@@ -206,11 +207,12 @@ function WidgetContent() {
             onClick={() => setTab(t.id)}
             style={{
               flex: 1,
-              padding: "10px 0",
+              padding: "8px 0 6px",
               fontSize: 11,
               fontWeight: 600,
-              textTransform: "uppercase",
+              textTransform: "uppercase" as const,
               letterSpacing: 0.5,
+              textAlign: "center" as const,
               border: "none",
               background: "transparent",
               cursor: "pointer",
@@ -220,7 +222,8 @@ function WidgetContent() {
               borderBottom: tab === t.id ? "2px solid #c4a050" : "2px solid transparent",
             }}
           >
-            {t.label}
+            <span style={{ fontSize: 16, display: "block", lineHeight: 1 }}>{t.icon}</span>
+            <span style={{ fontSize: 9, marginTop: 2, display: "block" }}>{t.label}</span>
           </button>
         ))}
       </div>
