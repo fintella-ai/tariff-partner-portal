@@ -544,7 +544,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
              if (typeAllowed && typeAllowed.length > 0) {
                return typeAllowed.includes(item.id) || typeAllowed.includes(item.parentId || "");
              }
-             return item.id !== "widget" || pType === "customs_broker";
+             if (item.id === "widget" || item.id === "pricing" || item.id === "calculator") {
+               return pType === "customs_broker";
+             }
+             return true;
            });
 
           const topLevel = orderedNav.filter((item) => !item.parentId);
