@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { isStarSuperAdminEmail } from "@/lib/starSuperAdmin";
@@ -211,6 +212,9 @@ export default function BillingPage() {
         </div>
       ))}
 
+      {/* Subscription Revenue */}
+      <SubscriptionRevenueSection />
+
       {/* Footer note */}
       <div
         className="card p-4 flex items-start gap-3"
@@ -222,6 +226,109 @@ export default function BillingPage() {
           Usage-based services (Twilio Voice, Anthropic API, Claude Code) may vary month to month.
         </p>
       </div>
+    </div>
+  );
+}
+
+function SubscriptionRevenueSection() {
+  const [payments, setPayments] = useState<Array<{
+    id: string;
+    partnerCode: string;
+    amount: number;
+    status: string;
+    description: string | null;
+    gatewayTxnId: string | null;
+    createdAt: string;
+  }>>([]);
+  const [stats, setStats] = useState<{ totalRevenue: number; monthRevenue: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/payments")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data) {
+          setPayments(data.payments || []);
+          setStats(data.stats || null);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-lg">💎</span>
+          <h2 className="font-display text-lg font-semibold">Subscription Revenue</h2>
+        </div>
+        <div className="h-32 bg-[var(--app-card-bg)] rounded-xl animate-pulse" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-lg">💎</span>
+        <h2 className="font-display text-lg font-semibold">Subscription Revenue</h2>
+      </div>
+
+      {stats && (
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="card p-4 text-center">
+            <div className="font-display text-2xl font-bold text-green-400">
+              ${((stats.totalRevenue || 0) / 100).toLocaleString()}
+            </div>
+            <div className="font-body text-[10px] theme-text-muted tracking-wider uppercase">Total Revenue</div>
+          </div>
+          <div className="card p-4 text-center">
+            <div className="font-display text-2xl font-bold text-brand-gold">
+              ${((stats.monthRevenue || 0) / 100).toLocaleString()}
+            </div>
+            <div className="font-body text-[10px] theme-text-muted tracking-wider uppercase">This Month</div>
+          </div>
+        </div>
+      )}
+
+      {payments.length === 0 ? (
+        <div className="card p-6 text-center">
+          <p className="font-body text-sm theme-text-muted">No subscription payments yet.</p>
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b" style={{ borderColor: "var(--app-border)" }}>
+                {["Date", "Partner", "Amount", "Status", "Description"].map((h) => (
+                  <th key={h} className="font-body text-[10px] theme-text-muted tracking-wider uppercase text-left py-2 px-3">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {payments.slice(0, 20).map((p) => (
+                <tr key={p.id} className="border-b" style={{ borderColor: "var(--app-border)" }}>
+                  <td className="font-body text-[12px] py-2 px-3 theme-text-muted">
+                    {new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </td>
+                  <td className="font-body text-[12px] py-2 px-3">{p.partnerCode}</td>
+                  <td className="font-body text-[12px] py-2 px-3 font-semibold text-green-400">
+                    ${(p.amount / 100).toFixed(2)}
+                  </td>
+                  <td className="py-2 px-3">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                      p.status === "success" ? "bg-green-500/10 text-green-400"
+                      : p.status === "failed" ? "bg-red-500/10 text-red-400"
+                      : "bg-white/5 text-white/50"
+                    }`}>{p.status}</span>
+                  </td>
+                  <td className="font-body text-[11px] py-2 px-3 theme-text-muted">{p.description || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
