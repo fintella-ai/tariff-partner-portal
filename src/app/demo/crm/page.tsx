@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 const ENTRIES = [
   { id: "ENT-2025-0847", client: "Pacific Rim Imports LLC", origin: "CN", hts: "8542.31.0000", value: "$847,200", duty: "$254,160", date: "2025-06-14", status: "Liquidated" },
@@ -29,7 +31,9 @@ const SIDEBAR_ITEMS = [
 
 type CrmTab = "entries" | "fintella";
 
-export default function CrmDemoPage() {
+function CrmDemoInner() {
+  const searchParams = useSearchParams();
+  const widgetKey = searchParams.get("key") || "demo";
   const [activeTab, setActiveTab] = useState<CrmTab>("entries");
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
 
@@ -234,7 +238,7 @@ export default function CrmDemoPage() {
               </button>
             </div>
             <iframe
-              src="/widget?key=demo"
+              src={`/widget?key=${widgetKey}`}
               style={{ flex: 1, border: "none", background: "#0a0a0a" }}
               title="Fintella Widget"
             />
@@ -242,5 +246,13 @@ export default function CrmDemoPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CrmDemoPage() {
+  return (
+    <Suspense fallback={<div style={{ background: "#1a1d23", height: "100vh" }} />}>
+      <CrmDemoInner />
+    </Suspense>
   );
 }
