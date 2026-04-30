@@ -9,8 +9,8 @@ export default function WidgetHowItWorks({ commissionRate }: { commissionRate: n
     },
     {
       icon: "⚖️",
-      title: "Fintella handles everything",
-      desc: "Legal filing, CAPE portal submission, IRS correspondence — the full recovery process.",
+      title: "We prepare the recovery package",
+      desc: "Audit-ready filing, rate analysis, and documentation — then you or your client submits via CAPE.",
     },
     {
       icon: "💰",
