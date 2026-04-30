@@ -5,6 +5,7 @@ import { useDevice } from "@/lib/useDevice";
 import PageTabBar from "@/components/ui/PageTabBar";
 import PersonaAvatar from "@/components/ai/PersonaAvatar";
 import PersonaPickerModal from "@/components/ai/PersonaPickerModal";
+import SourceCitations from "@/components/ai/SourceCitations";
 
 interface ToolCallRecord {
   name: string;
@@ -27,6 +28,7 @@ interface Message {
     triggeredBy?: "llm_tool" | "user_button";
   } | null;
   toolCalls?: ToolCallRecord[] | null;
+  sourcesUsed?: string[];
 }
 
 interface ConversationSummary {
@@ -702,6 +704,9 @@ function MessageBubble({ message }: { message: Message }) {
             minute: "2-digit",
           })}
         </div>
+        {!isUser && message.sourcesUsed && message.sourcesUsed.length > 0 && (
+          <SourceCitations sourceIds={message.sourcesUsed} />
+        )}
       </div>
     </div>
   );
