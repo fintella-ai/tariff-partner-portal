@@ -67,6 +67,7 @@ export interface CustomStep {
   icon?: string;
   doneWhen?: "never" | "manual";
   order?: number;
+  partnerTypes?: string[];
 }
 
 export interface OnboardingState {
@@ -152,7 +153,7 @@ export function applyAction(state: OnboardingState, action: StateAction): Onboar
 export async function computeGettingStarted(partnerCode: string): Promise<GettingStartedResult> {
   const partner = await prisma.partner.findUnique({
     where: { partnerCode },
-    select: { partnerCode: true, status: true, onboardingState: true },
+    select: { partnerCode: true, status: true, onboardingState: true, partnerType: true },
   });
   if (!partner) {
     return emptyResult();
@@ -321,8 +322,10 @@ export async function computeGettingStarted(partnerCode: string): Promise<Gettin
   const customStepDefs: CustomStep[] = Array.isArray(settings?.gettingStartedCustomSteps)
     ? ((settings!.gettingStartedCustomSteps as unknown) as CustomStep[])
     : [];
+  const pType = partner.partnerType || "referral";
   const customSteps: ChecklistStep[] = customStepDefs
     .filter((c) => c && typeof c.id === "string" && c.id.startsWith("custom_"))
+    .filter((c) => !c.partnerTypes?.length || c.partnerTypes.includes(pType))
     .map((c) => {
       const manualKey = `custom_done_${c.id}`;
       const manuallyDone =

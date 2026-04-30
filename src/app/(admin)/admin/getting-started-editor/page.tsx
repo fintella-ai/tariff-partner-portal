@@ -59,6 +59,7 @@ interface CustomStep {
   icon?: string;
   doneWhen?: "never" | "manual";
   order?: number;
+  partnerTypes?: string[];
 }
 
 type OverridesMap = Record<string, StepOverride>;
@@ -685,6 +686,46 @@ function CustomStepCard({
             <option value="manual">Admin marks done</option>
             <option value="never">Always shown</option>
           </select>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="block font-body text-[10px] uppercase tracking-wider text-[var(--app-text-muted)] mb-1.5">
+            Show for partner types
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: "referral", label: "Referral" },
+              { id: "customs_broker", label: "Customs Broker" },
+              { id: "corporate", label: "Corporate" },
+              { id: "licensed", label: "Licensed" },
+            ].map((pt) => {
+              const types = step.partnerTypes || [];
+              const checked = types.length === 0 || types.includes(pt.id);
+              return (
+                <label key={pt.id} className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      if (types.length === 0) {
+                        onChange({ partnerTypes: [pt.id] });
+                      } else if (types.includes(pt.id)) {
+                        const next = types.filter((t: string) => t !== pt.id);
+                        onChange({ partnerTypes: next.length === 0 ? undefined : next });
+                      } else {
+                        onChange({ partnerTypes: [...types, pt.id] });
+                      }
+                    }}
+                    className="rounded accent-[var(--brand-gold)]"
+                  />
+                  <span className="font-body text-[11px] text-[var(--app-text)]">{pt.label}</span>
+                </label>
+              );
+            })}
+          </div>
+          <p className="font-body text-[9px] text-[var(--app-text-muted)] mt-1">
+            Empty = all types. Check specific types to limit visibility.
+          </p>
         </div>
       </div>
     </div>
