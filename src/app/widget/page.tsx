@@ -237,19 +237,25 @@ function WidgetContent() {
             </span>
           </div>
         </div>
-        <span
-          style={{
-            fontSize: 11,
-            background: "rgba(196,160,80,0.15)",
-            color: "#c4a050",
-            padding: "3px 10px",
-            borderRadius: 9999,
-            fontWeight: 600,
-            flexShrink: 0,
-          }}
-        >
-          {rate}% commission
-        </span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
+          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="url(#fGrad)"/>
+            <text x="16" y="22" textAnchor="middle" fill="#060a14" fontWeight="800" fontSize="18" fontFamily="'DM Serif Display', Georgia, serif">F</text>
+            <defs><linearGradient id="fGrad" x1="0" y1="0" x2="32" y2="32"><stop stopColor="#c4a050"/><stop offset="1" stopColor="#f0d070"/></linearGradient></defs>
+          </svg>
+          <span
+            style={{
+              fontSize: 10,
+              background: "rgba(196,160,80,0.15)",
+              color: "#c4a050",
+              padding: "2px 8px",
+              borderRadius: 9999,
+              fontWeight: 600,
+            }}
+          >
+            {rate}%
+          </span>
+        </div>
       </div>
 
       {/* ─── Tab bar ─── */}
