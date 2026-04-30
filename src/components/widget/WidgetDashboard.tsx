@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { W, RADII, SHADOWS, STATUS_COLORS, glassCardStyle, goldButtonStyle, goldGradientStyle } from "./widget-theme";
+import ConfirmModal from "./ConfirmModal";
 
 interface Stats {
   totalReferrals: number;
@@ -16,14 +18,6 @@ interface Stats {
   }[];
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  submitted: "bg-blue-100 text-blue-700",
-  contacted: "bg-yellow-100 text-yellow-700",
-  qualified: "bg-purple-100 text-purple-700",
-  converted: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
-};
-
 export default function WidgetDashboard({
   token,
   onReferClick,
@@ -33,6 +27,8 @@ export default function WidgetDashboard({
 }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/widget/stats", {
@@ -46,66 +42,128 @@ export default function WidgetDashboard({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-6 w-6 border-2 border-amber-500 border-t-transparent" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 0" }}>
+        <div style={{
+          width: 24, height: 24, borderRadius: "50%",
+          border: `2px solid ${W.gold}`, borderTopColor: "transparent",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     );
   }
 
   if (!stats) {
-    return <div className="p-4 text-center text-sm text-gray-500">Failed to load stats</div>;
+    return (
+      <div style={{ padding: 16 }}>
+        <div style={{ ...glassCardStyle(), padding: 16, textAlign: "center", borderColor: "rgba(239,68,68,0.15)" }}>
+          <span style={{ fontSize: 13, color: W.red }}>Failed to load stats</span>
+        </div>
+      </div>
+    );
   }
 
   const fmt = (n: number) =>
     n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 });
 
+  const statCards = [
+    { label: "Referred", value: String(stats.totalReferrals), color: W.text },
+    { label: "Earned", value: fmt(stats.totalCommissionsEarned), color: W.green },
+    { label: "Pending", value: fmt(stats.pendingCommissions), color: W.gold },
+  ];
+
   return (
-    <div className="p-4 space-y-4">
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-gray-900">{stats.totalReferrals}</div>
-          <div className="text-[10px] uppercase tracking-wide text-gray-500 mt-1">Referred</div>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-green-600">{fmt(stats.totalCommissionsEarned)}</div>
-          <div className="text-[10px] uppercase tracking-wide text-gray-500 mt-1">Earned</div>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-amber-600">{fmt(stats.pendingCommissions)}</div>
-          <div className="text-[10px] uppercase tracking-wide text-gray-500 mt-1">Pending</div>
-        </div>
+    <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        {statCards.map((card) => (
+          <div key={card.label} style={{
+            ...glassCardStyle(), padding: "14px 8px", textAlign: "center",
+          }}>
+            <div style={{
+              ...goldGradientStyle(),
+              fontSize: 22, fontWeight: 700,
+              fontFamily: "'DM Serif Display', Georgia, serif",
+              ...(card.color !== W.text ? { WebkitTextFillColor: card.color, background: "none" } : {}),
+            }}>
+              {card.value}
+            </div>
+            <div style={{
+              fontSize: 10, fontWeight: 600, textTransform: "uppercase",
+              letterSpacing: 0.5, color: W.textDim, marginTop: 4,
+            }}>
+              {card.label}
+            </div>
+          </div>
+        ))}
       </div>
 
-      <button
-        onClick={onReferClick}
-        className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors text-sm"
-      >
+      <button onClick={onReferClick} style={goldButtonStyle()}>
         Refer a Client →
       </button>
 
       {stats.recentReferrals.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          <h3 style={{
+            fontSize: 11, fontWeight: 600, color: W.textDim,
+            textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8,
+          }}>
             Recent Referrals
           </h3>
-          <div className="space-y-1.5">
-            {stats.recentReferrals.map((r, i) => (
-              <div key={i} className="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-gray-800 truncate">{r.clientCompanyName}</div>
-                  <div className="text-[10px] text-gray-400">
-                    {new Date(r.createdAt).toLocaleDateString()}
-                    {r.estimatedImportValue ? ` · ${r.estimatedImportValue}` : ""}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {stats.recentReferrals.map((r, i) => {
+              const sc = STATUS_COLORS[r.status] || STATUS_COLORS.submitted;
+              return (
+                <div
+                  key={i}
+                  onClick={() => setConfirmOpen(true)}
+                  onMouseEnter={() => setHoveredRow(i)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                  style={{
+                    ...glassCardStyle(hoveredRow === i),
+                    padding: "10px 12px",
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    cursor: "pointer",
+                    boxShadow: hoveredRow === i ? SHADOWS.cardHover : SHADOWS.card,
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: 500, color: W.text,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {r.clientCompanyName}
+                    </div>
+                    <div style={{ fontSize: 11, color: W.textDim, marginTop: 2 }}>
+                      {new Date(r.createdAt).toLocaleDateString()}
+                      {r.estimatedImportValue ? ` · ${r.estimatedImportValue}` : ""}
+                    </div>
                   </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 600, padding: "3px 8px",
+                    borderRadius: RADII.full, flexShrink: 0, marginLeft: 8,
+                    background: sc.bg, color: sc.text,
+                    border: `1px solid ${sc.border}`,
+                  }}>
+                    {r.status}
+                  </span>
                 </div>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ml-2 ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-600"}`}>
-                  {r.status}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="Open Fintella Portal?"
+        body="This will open your partner dashboard in a new tab."
+        confirmLabel="Open Portal"
+        onConfirm={() => {
+          window.open("https://fintella.partners/dashboard", "_blank");
+          setConfirmOpen(false);
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

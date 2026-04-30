@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     prisma.widgetReferral.findMany({
       where: { partnerId },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: 10,
       select: {
         clientCompanyName: true,
         status: true,
