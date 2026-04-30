@@ -5,7 +5,7 @@ export default function WidgetHowItWorks({ commissionRate }: { commissionRate: n
     {
       icon: "📋",
       title: "You refer a client",
-      desc: "Fill in the referral form — takes 60 seconds. We take it from there.",
+      desc: "Fill in the referral form or upload document(s) — takes 60 seconds. We take it from there.",
     },
     {
       icon: "⚖️",
