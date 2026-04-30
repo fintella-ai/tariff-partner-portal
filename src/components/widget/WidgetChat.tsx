@@ -100,17 +100,19 @@ export default function WidgetChat({ token }: { token: string }) {
 
         {/* Quick-action chips after welcome only */}
         {messages.length === 1 && !sending && (
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
-            {CHIPS.map((chip) => (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8, justifyContent: "center" }}>
+            {CHIPS.map((chip, i) => (
               <button
                 key={chip}
                 onClick={() => sendMessage(chip)}
                 style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: W.textSecondary, fontSize: 12, fontWeight: 500,
-                  padding: "6px 14px", borderRadius: RADII.full,
-                  cursor: "pointer", transition: "all 0.2s",
+                  background: "rgba(196,160,80,0.08)",
+                  border: "1px solid rgba(196,160,80,0.2)",
+                  color: W.gold, fontSize: 12, fontWeight: 600,
+                  padding: "8px 18px", borderRadius: RADII.full,
+                  cursor: "pointer", transition: "all 0.3s",
+                  animation: `chipGlow 2.5s ease-in-out ${i * 0.3}s infinite`,
+                  boxShadow: "0 0 8px rgba(196,160,80,0.1)",
                 }}
               >
                 {chip}
@@ -174,6 +176,18 @@ export default function WidgetChat({ token }: { token: string }) {
         @keyframes dotPulse {
           0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
           40% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes chipGlow {
+          0%, 100% {
+            box-shadow: 0 0 8px rgba(196,160,80,0.1);
+            border-color: rgba(196,160,80,0.2);
+            background: rgba(196,160,80,0.08);
+          }
+          50% {
+            box-shadow: 0 0 16px rgba(196,160,80,0.3), 0 0 4px rgba(196,160,80,0.15) inset;
+            border-color: rgba(196,160,80,0.4);
+            background: rgba(196,160,80,0.14);
+          }
         }
       `}</style>
     </div>
