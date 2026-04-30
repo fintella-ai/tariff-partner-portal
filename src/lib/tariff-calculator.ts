@@ -191,8 +191,11 @@ export function calculateInterest(
 /** CBP entry types excluded from CAPE Phase 1 */
 const EXCLUDED_ENTRY_TYPES = new Set(["08", "09", "23", "47"]);
 
-/** Days from liquidation within which a protest must be filed */
-const PROTEST_WINDOW_DAYS = 80;
+/** Days from liquidation within which a CAPE Phase 1 claim can be filed */
+const CAPE_PHASE1_WINDOW_DAYS = 80;
+
+/** Days from liquidation within which a protest can be filed (19 USC 1514) */
+const PROTEST_DEADLINE_DAYS = 180;
 
 /** Entries with <= this many days remaining are flagged urgent */
 const URGENT_THRESHOLD_DAYS = 14;
@@ -225,31 +228,51 @@ export function checkEligibility(entry: EntryForEligibility): EligibilityResult 
     };
   }
 
-  // 4. Liquidation + protest window check
+  // 4. Liquidation window checks (three tiers)
   if (entry.liquidationDate) {
-    const deadlineDate = new Date(entry.liquidationDate);
-    deadlineDate.setDate(deadlineDate.getDate() + PROTEST_WINDOW_DAYS);
+    const capeDeadlineDate = new Date(entry.liquidationDate);
+    capeDeadlineDate.setDate(capeDeadlineDate.getDate() + CAPE_PHASE1_WINDOW_DAYS);
+
+    const protestDeadlineDate = new Date(entry.liquidationDate);
+    protestDeadlineDate.setDate(protestDeadlineDate.getDate() + PROTEST_DEADLINE_DAYS);
 
     const now = new Date();
-    const daysRemaining = daysBetween(now, deadlineDate);
+    const capeDaysRemaining = daysBetween(now, capeDeadlineDate);
+    const protestDaysRemaining = daysBetween(now, protestDeadlineDate);
 
-    if (daysRemaining < 0) {
+    if (capeDaysRemaining >= 0) {
+      // Within 80 days of liquidation — CAPE Phase 1 eligible
       return {
-        status: "excluded_expired",
-        reason: "Protest window expired (liquidated > 80 days ago)",
-        deadlineDays: daysRemaining,
-        deadlineDate,
+        status: "eligible",
+        reason: entry.isAdCvd
+          ? "Liquidated AD/CVD entry — eligible with deadline"
+          : "Liquidated entry — eligible with deadline",
+        deadlineDays: capeDaysRemaining,
+        isUrgent: capeDaysRemaining <= URGENT_THRESHOLD_DAYS,
+        deadlineDate: capeDeadlineDate,
       };
     }
 
+    if (protestDaysRemaining >= 0) {
+      // Beyond CAPE Phase 1 window (>80 days) but protest still available (<180 days)
+      // Euro-Notions order (Apr 7, 2026) covers these entries; path is protest under 19 USC 1514
+      return {
+        status: "excluded_cape_protest_eligible",
+        reason: "Not eligible for CAPE Phase 1 (liquidated >80 days ago). Protest available under 19 USC 1514.",
+        deadlineDays: protestDaysRemaining,
+        isUrgent: protestDaysRemaining <= URGENT_THRESHOLD_DAYS,
+        deadlineDate: protestDeadlineDate,
+      };
+    }
+
+    // Beyond both CAPE Phase 1 and protest windows (>180 days)
+    // Euro-Notions court order still directs CBP to reliquidate these entries,
+    // but refund requires litigation track — CBP has not yet operationalized this path.
     return {
-      status: "eligible",
-      reason: entry.isAdCvd
-        ? "Liquidated AD/CVD entry — eligible with deadline"
-        : "Liquidated entry — eligible with deadline",
-      deadlineDays: daysRemaining,
-      isUrgent: daysRemaining <= URGENT_THRESHOLD_DAYS,
-      deadlineDate,
+      status: "excluded_expired",
+      reason: "CAPE Phase 1 and protest windows expired. Refund may still be available via Euro-Notions court order (CIT No. 25-00595) litigation track.",
+      deadlineDays: protestDaysRemaining,
+      deadlineDate: protestDeadlineDate,
     };
   }
 
@@ -393,6 +416,7 @@ export type RoutingBucket = "self_file" | "legal_required" | "not_applicable";
 export function getRoutingBucket(eligibilityStatus: string): RoutingBucket {
   if (eligibilityStatus === "eligible") return "self_file";
   if (eligibilityStatus === "excluded_date" || eligibilityStatus === "unknown") return "not_applicable";
+  // excluded_cape_protest_eligible, excluded_expired, excluded_type, excluded_adcvd → legal counsel
   return "legal_required";
 }
 

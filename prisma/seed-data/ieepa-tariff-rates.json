@@ -1,7 +1,7 @@
 {
   "_metadata": {
-    "version": "1.0.0",
-    "generatedDate": "2026-04-29",
+    "version": "1.1.0",
+    "generatedDate": "2026-04-30",
     "description": "Comprehensive IEEPA tariff rate database for tariff refund calculator. Covers all rate changes from Feb 2025 through SCOTUS termination Feb 2026 and Section 122 replacement.",
     "legalAuthority": "International Emergency Economic Powers Act (50 U.S.C. 1701 et seq.), Trade Act of 1974 Section 122 (19 U.S.C. 2132)",
     "sources": [
@@ -9,7 +9,10 @@
       "Federal Register notices",
       "CBP CSMS guidance messages",
       "White House Annex I and Annex II",
-      "Learning Resources, Inc. v. Trump (SCOTUS, Feb 20, 2026)"
+      "Learning Resources, Inc. v. Trump (SCOTUS, Feb 20, 2026)",
+      "Euro-Notions Florida, Inc. v. United States (CIT No. 25-00595) — April 7, 2026 refund order",
+      "Presidential Proclamation 11021 — Section 232 restructuring, effective April 6, 2026 (91 FR 18201)",
+      "FR Doc. 2026-08297 — Technical corrections to HTS for Proclamation 11021, published April 29, 2026"
     ]
   },
 
@@ -444,16 +447,35 @@
         "product": "Steel",
         "section232Rate": 0.25,
         "htsChapter99Range": "9903.80.01 - 9903.81.19",
-        "notes": "25% tariff on steel imports under Section 232. Exempt from IEEPA. No stacking.",
+        "notes": "25% tariff on steel imports under Section 232 during IEEPA period (Feb 4, 2025 – Feb 23, 2026). Exempt from IEEPA. No stacking. IEEPA-era codes 9903.80.* and 9903.81.* remain the applicable reference for IEEPA refund calculations.",
         "effectiveDate": "2018-03-23",
-        "additionalNotes": "Increased to 50% on some origins (e.g., imports from countries that did not negotiate quotas)"
+        "proclamation11021Update": {
+          "proclamation": "Proclamation 11021",
+          "effectiveDate": "2026-04-06",
+          "newHtsFamily": "9903.82.*",
+          "newRate": 0.50,
+          "newRateDerivatives": 0.25,
+          "valuationChange": "Full customs value (not metal content value)",
+          "deminimis": "Products with ≤15% steel content no longer subject to Section 232",
+          "notes": "For post-April 6 2026 entries only. Does not affect IEEPA refund calculations (IEEPA period ended Feb 23, 2026). Old 9903.80.*/9903.81.* codes obsolete for new entries."
+        }
       },
       {
         "product": "Aluminum",
         "section232Rate": 0.25,
         "htsChapter99Range": "9903.85.01 - 9903.85.67",
-        "notes": "25% tariff on aluminum imports under Section 232. Exempt from IEEPA. No stacking.",
-        "effectiveDate": "2018-03-23"
+        "notes": "25% tariff on aluminum imports under Section 232 during IEEPA period (Feb 4, 2025 – Feb 23, 2026). Exempt from IEEPA. No stacking. IEEPA-era codes 9903.85.* remain the applicable reference for IEEPA refund calculations.",
+        "effectiveDate": "2018-03-23",
+        "proclamation11021Update": {
+          "proclamation": "Proclamation 11021",
+          "effectiveDate": "2026-04-06",
+          "newHtsFamily": "9903.82.*",
+          "newRate": 0.50,
+          "newRateDerivatives": 0.25,
+          "valuationChange": "Full customs value (not metal content value)",
+          "deminimis": "Products with ≤15% aluminum content no longer subject to Section 232",
+          "notes": "For post-April 6 2026 entries only. Does not affect IEEPA refund calculations. Old 9903.85.* codes obsolete for new entries."
+        }
       },
       {
         "product": "Automobiles and Auto Parts",
@@ -473,11 +495,22 @@
       {
         "product": "Copper",
         "section232Rate": null,
-        "notes": "Section 232 investigation announced. Copper excluded from IEEPA reciprocal tariffs via Annex II regardless.",
-        "effectiveDate": null
+        "notes": "During IEEPA period (Feb 4, 2025 – Feb 23, 2026): Section 232 investigation was ongoing; copper was NOT subject to Section 232. Copper was excluded from IEEPA reciprocal tariffs via Annex II (9903.01.32). No IEEPA refund calculation impact — copper importers owed no IEEPA reciprocal duty.",
+        "effectiveDate": null,
+        "proclamation11021Update": {
+          "proclamation": "Proclamation 11021",
+          "effectiveDate": "2026-04-06",
+          "newHtsFamily": "9903.82.*",
+          "newRatePureCopper": 0.50,
+          "newRateCopperDerivatives": 0.25,
+          "valuationChange": "Full customs value",
+          "deminimis": "Products with ≤15% copper content no longer subject to Section 232",
+          "section122Interaction": "Copper is now a Section 232 product; exempt from Section 122 via 9903.03.03 for post-April 6 2026 entries",
+          "notes": "Copper first acquired a formal Section 232 tariff on April 6, 2026 under Proclamation 11021 (replaces old 9903.78.* family). Does not affect IEEPA-era refund calculations. FR Doc. 2026-08297 (April 29, 2026) issued technical corrections to HTS for this proclamation."
+        }
       }
     ],
-    "antiStackingRule": "Executive Order of April 29, 2025 confirmed Section 232 tariffs take precedence over reciprocal tariffs. No stacking of IEEPA on top of 232. However, Section 232 steel/aluminum CAN stack with Section 232 auto tariffs where both apply."
+    "antiStackingRule": "Executive Order of April 29, 2025 confirmed Section 232 tariffs take precedence over reciprocal tariffs. No stacking of IEEPA on top of 232. However, Section 232 steel/aluminum CAN stack with Section 232 auto tariffs where both apply. NOTE: Proclamation 11021 (effective April 6, 2026) restructured Section 232 metals under new 9903.82.* code family and extended coverage to copper for the first time; does not affect IEEPA-period (pre-Feb 24, 2026) anti-stacking analysis."
   },
 
   "productExclusions": {
@@ -710,8 +743,24 @@
       "deductions": "None - full IEEPA duty amount is refundable"
     },
     "processingTimeline": {
-      "targetDays": 45,
-      "description": "CBP targets 45-day processing for Phase 1 refunds from date of CAPE submission"
+      "targetDays": 90,
+      "targetDaysRange": "60-90",
+      "description": "CBP guidance (April 2026): valid IEEPA refunds will generally be issued within 60-90 days following acceptance of the CAPE Declaration, unless a compliance concern requires further CBP review. Original 45-day target was superseded by updated CBP guidance at CAPE launch."
+    },
+    "euroNotionsCourtOrder": {
+      "case": "Euro-Notions Florida, Inc. v. United States",
+      "docketNumber": "1:25-cv-00595",
+      "judge": "Senior Judge Richard K. Eaton, CIT",
+      "orderDate": "2026-04-07",
+      "background": "On April 6, 2026, the prior lead case (Atmus Filtration, Inc. v. United States, No. 26-01259) was voluntarily dismissed. Judge Eaton immediately lifted the stay in Euro-Notions and reissued the refund directive there.",
+      "orderScope": {
+        "unliquidated": "CBP directed to liquidate all unliquidated entries that were entered subject to IEEPA duties without regard to those duties",
+        "liquidatedNotFinal": "Entries where liquidation is NOT final shall be reliquidated without regard to IEEPA duties",
+        "liquidatedFinal": "Entries where liquidation IS FINAL shall also be reliquidated without regard to IEEPA duties — this is broader than CAPE Phase 1"
+      },
+      "capeRelationship": "CAPE Phase 1 implements the court order for unliquidated entries and those liquidated within 80 days. For finally liquidated entries (>80 days, including those where the 180-day protest window has also expired), CBP has not yet operationalized the refund mechanism. These entries are covered by the court order but must pursue refunds via litigation track.",
+      "nextStatusReport": "CBP status report due in Euro-Notions on April 28, 2026",
+      "notes": "The Euro-Notions order supersedes the earlier Atmus Filtration order. The order covers ALL entries subject to IEEPA duties, including those where liquidation is final."
     },
     "preservingRefundRights": {
       "description": "For entries NOT eligible for Phase 1, importers must take action to preserve refund rights",
