@@ -26,9 +26,9 @@ const DEAL_FIELDS: Array<{ key: string; label: string; required?: boolean }> = [
   { key: "importCountries", label: "Import Countries" },
   { key: "annualImportValue", label: "Annual Import Value" },
   { key: "importerOfRecord", label: "Importer of Record" },
-  { key: "affiliateNotes", label: "Affiliate Notes" },
+  { key: "affiliateNotes", label: "Affiliate / Intake Notes" },
   { key: "epLevel1", label: "Enterprise Partner (EP)" },
-  { key: "externalDealId", label: "HubSpot Deal ID (hs_object_id)" },
+  { key: "externalDealId", label: "HubSpot Deal ID / Record ID" },
   { key: "estimatedRefundAmount", label: "Estimated Refund Amount" },
   { key: "actualRefundAmount", label: "Actual Refund Amount" },
   { key: "firmFeeRate", label: "Firm Fee Rate (%)" },
@@ -37,6 +37,10 @@ const DEAL_FIELDS: Array<{ key: string; label: string; required?: boolean }> = [
   { key: "l1CommissionAmount", label: "L1 Commission Amount" },
   { key: "consultBookedDate", label: "Consultation Date" },
   { key: "consultBookedTime", label: "Consultation Time" },
+  { key: "productType", label: "Product Type (ieepa/section301)" },
+  { key: "importedProducts", label: "Imported Products (description)" },
+  { key: "closedLostReason", label: "Closed Lost Reason" },
+  { key: "rawCreateDate", label: "Original Create Date" },
   { key: "notes", label: "Notes" },
 ];
 
@@ -125,6 +129,38 @@ const AUTO_MAP: Record<string, string> = {
   "consultation time": "consultBookedTime",
   "ep": "epLevel1",
   "enterprise partner": "epLevel1",
+  "fullname": "clientName",
+  "full_name": "clientName",
+  "amount": "estimatedRefundAmount",
+  "record id": "externalDealId",
+  "recordid": "externalDealId",
+  "record_id": "externalDealId",
+  "deal id": "externalDealId",
+  "dealid": "externalDealId",
+  "intake notes": "affiliateNotes",
+  "intake_notes": "affiliateNotes",
+  "intakenotes": "affiliateNotes",
+  "publicnote": "notes",
+  "public note": "notes",
+  "membernote": "affiliateNotes",
+  "member note": "affiliateNotes",
+  "createdate": "rawCreateDate",
+  "create date": "rawCreateDate",
+  "created": "rawCreateDate",
+  "created date": "rawCreateDate",
+  "date created": "rawCreateDate",
+  "created at": "rawCreateDate",
+  "date": "rawCreateDate",
+  "lastupdate": "rawCreateDate",
+  "product type": "productType",
+  "imported products": "importedProducts",
+  "products": "importedProducts",
+  "closed lost reason": "closedLostReason",
+  "lost reason": "closedLostReason",
+  "deny reason": "closedLostReason",
+  "state name": "businessState",
+  "import goods to us": "importsGoods",
+  "hubspot deal id": "externalDealId",
 };
 
 function autoMapHeader(header: string): string {
@@ -136,7 +172,12 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length === 0) return { headers: [], rows: [] };
 
+  const firstLine = lines[0];
+  const isTabSeparated = firstLine.includes("\t") && !firstLine.includes(",");
+  const delimiter = isTabSeparated ? "\t" : ",";
+
   const parseLine = (line: string): string[] => {
+    if (isTabSeparated) return line.split("\t").map((c) => c.trim());
     const result: string[] = [];
     let current = "";
     let inQuotes = false;
@@ -154,7 +195,7 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
       } else {
         if (ch === '"') {
           inQuotes = true;
-        } else if (ch === ",") {
+        } else if (ch === delimiter) {
           result.push(current.trim());
           current = "";
         } else {
@@ -181,8 +222,11 @@ export default function DealImportPage() {
   const [rows, setRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Record<number, string>>({});
   const [dragOver, setDragOver] = useState(false);
-  const [importResult, setImportResult] = useState<{ created: number; errors: Array<{ row: number; error: string }> } | null>(null);
+  const [importResult, setImportResult] = useState<{ created: number; skipped: number; errors: Array<{ row: number; error: string }> } | null>(null);
   const [importing, setImporting] = useState(false);
+  const [defaultPartnerCode, setDefaultPartnerCode] = useState("");
+  const [defaultStage, setDefaultStage] = useState("lead_submitted");
+  const [pasteText, setPasteText] = useState("");
 
   const handleFile = useCallback((file: File) => {
     setFileName(file.name);
@@ -217,6 +261,21 @@ export default function DealImportPage() {
     if (file) handleFile(file);
   }, [handleFile]);
 
+  const handlePaste = useCallback(() => {
+    if (!pasteText.trim()) return;
+    const { headers: h, rows: r } = parseCSV(pasteText);
+    setHeaders(h);
+    setRows(r);
+    setFileName("Pasted data");
+    const autoMap: Record<number, string> = {};
+    h.forEach((header, idx) => {
+      const matched = autoMapHeader(header);
+      if (matched) autoMap[idx] = matched;
+    });
+    setMapping(autoMap);
+    setStep("map");
+  }, [pasteText]);
+
   const mappedRows = useMemo(() => {
     return rows.map((row) => {
       const mapped: Record<string, string> = {};
@@ -240,13 +299,17 @@ export default function DealImportPage() {
       const res = await fetch("/api/admin/deals/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: mappedRows }),
+        body: JSON.stringify({
+          rows: mappedRows,
+          defaultPartnerCode: defaultPartnerCode || undefined,
+          defaultStage: defaultStage || undefined,
+        }),
       });
       const data = await res.json();
       setImportResult(data);
       setStep("done");
     } catch (e: any) {
-      setImportResult({ created: 0, errors: [{ row: 0, error: e.message || "Network error" }] });
+      setImportResult({ created: 0, skipped: 0, errors: [{ row: 0, error: e.message || "Network error" }] });
       setStep("done");
     } finally {
       setImporting(false);
@@ -291,20 +354,68 @@ export default function DealImportPage() {
 
       {/* Step 1: Upload */}
       {step === "upload" && (
-        <div
-          className={`card p-12 text-center border-2 border-dashed transition-colors cursor-pointer ${
-            dragOver ? "border-brand-gold bg-brand-gold/5" : "border-[var(--app-border)]"
-          }`}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          onClick={() => document.getElementById("csv-input")?.click()}
-        >
-          <div className="text-4xl mb-4">📄</div>
-          <div className="font-display text-lg font-semibold mb-2">Drop your CSV file here</div>
-          <div className="font-body text-[13px] theme-text-muted mb-4">or click to browse</div>
-          <div className="font-body text-[11px] theme-text-faint">Supports .csv files up to 500 rows</div>
-          <input id="csv-input" type="file" accept=".csv,.tsv,.txt" className="hidden" onChange={handleFileInput} />
+        <div className="space-y-4">
+          {/* Default settings */}
+          <div className="card p-5">
+            <div className="font-body font-semibold text-sm mb-3">Import Defaults</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-body text-[11px] uppercase tracking-wider theme-text-muted mb-1">Default Partner Code</label>
+                <input type="text" value={defaultPartnerCode} onChange={(e) => setDefaultPartnerCode(e.target.value.toUpperCase())}
+                  placeholder="e.g. PTNJV9WDT" className={inputClass} />
+                <div className="font-body text-[10px] theme-text-faint mt-1">Applied to rows without a partner code column</div>
+              </div>
+              <div>
+                <label className="block font-body text-[11px] uppercase tracking-wider theme-text-muted mb-1">Default Stage</label>
+                <select value={defaultStage} onChange={(e) => setDefaultStage(e.target.value)} className={inputClass}>
+                  <option value="lead_submitted">Lead Submitted</option>
+                  <option value="meeting_booked">Meeting Booked</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="client_engaged">Client Engaged</option>
+                  <option value="in_process">In Process</option>
+                  <option value="closedwon">Closed Won</option>
+                  <option value="disqualified">Disqualified</option>
+                </select>
+                <div className="font-body text-[10px] theme-text-faint mt-1">Applied when no stage column is mapped, or stage value is empty</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Drop zone */}
+          <div
+            className={`card p-12 text-center border-2 border-dashed transition-colors cursor-pointer ${
+              dragOver ? "border-brand-gold bg-brand-gold/5" : "border-[var(--app-border)]"
+            }`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => document.getElementById("csv-input")?.click()}
+          >
+            <div className="text-4xl mb-4">📄</div>
+            <div className="font-display text-lg font-semibold mb-2">Drop your CSV or TSV file here</div>
+            <div className="font-body text-[13px] theme-text-muted mb-4">or click to browse — supports comma and tab separated</div>
+            <div className="font-body text-[11px] theme-text-faint">Up to 500 rows per import</div>
+            <input id="csv-input" type="file" accept=".csv,.tsv,.txt" className="hidden" onChange={handleFileInput} />
+          </div>
+
+          {/* Paste option */}
+          <div className="card p-5">
+            <div className="font-body font-semibold text-sm mb-2">Or paste data directly</div>
+            <div className="font-body text-[11px] theme-text-muted mb-3">Copy rows from a spreadsheet (tab-separated) or paste CSV text</div>
+            <textarea
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              placeholder={"FullName\tStatus\tPhone\tAmount\nJohn Doe\tPending\t(555) 123-4567\t$100,000"}
+              rows={5}
+              className={`${inputClass} font-mono resize-y`}
+            />
+            <div className="mt-3 flex justify-end">
+              <button onClick={handlePaste} disabled={!pasteText.trim()}
+                className="btn-gold text-[11px] px-5 py-2 disabled:opacity-50">
+                Parse Pasted Data
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -446,6 +557,11 @@ export default function DealImportPage() {
             <div className="font-display text-xl font-semibold mb-1">
               {importResult.created} Deal{importResult.created !== 1 ? "s" : ""} Imported
             </div>
+            {(importResult.skipped || 0) > 0 && (
+              <div className="font-body text-[13px] text-amber-400">
+                {importResult.skipped} test row{importResult.skipped !== 1 ? "s" : ""} skipped
+              </div>
+            )}
             {importResult.errors.length > 0 && (
               <div className="font-body text-[13px] text-red-400">
                 {importResult.errors.length} row{importResult.errors.length !== 1 ? "s" : ""} failed
