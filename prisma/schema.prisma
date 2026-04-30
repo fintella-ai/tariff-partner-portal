@@ -1356,6 +1356,7 @@ model AnnouncementChannel {
   description    String?
   createdByEmail String
   segmentRule    String?  // JSON: { filters: [{field, op, value}, ...] }
+  replyMode      String   @default("threads") // "disabled" | "threads" | "open"
   archivedAt     DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

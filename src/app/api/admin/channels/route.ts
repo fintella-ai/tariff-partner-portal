@@ -51,12 +51,15 @@ export async function POST(req: NextRequest) {
   const manualSeed: string[] = Array.isArray(body.manualMembers) ? body.manualMembers : [];
 
   const channel = await prisma.$transaction(async (tx) => {
+    const validModes = ["disabled", "threads", "open"];
+    const replyMode = validModes.includes(body.replyMode) ? body.replyMode : "threads";
     const c = await tx.announcementChannel.create({
       data: {
         name: body.name,
         description: body.description ?? null,
         createdByEmail: adminEmail,
         segmentRule,
+        replyMode,
       },
     });
     const allToAdd = new Map<string, "manual" | "segment">();

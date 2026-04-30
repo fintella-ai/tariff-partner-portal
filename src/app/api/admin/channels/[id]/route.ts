@@ -42,6 +42,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     data.segmentRule = body.segmentRule;
   }
+  if (typeof body?.replyMode === "string" && ["disabled", "threads", "open"].includes(body.replyMode)) {
+    data.replyMode = body.replyMode;
+  }
   const updated = await prisma.announcementChannel.update({ where: { id: params.id }, data });
   return NextResponse.json({ channel: updated });
 }

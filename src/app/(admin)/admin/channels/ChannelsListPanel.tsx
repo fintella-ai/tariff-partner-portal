@@ -25,6 +25,7 @@ export default function ChannelsListPanel() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [segmentRule, setSegmentRule] = useState<string>('{"filters":[]}');
+  const [replyMode, setReplyMode] = useState<string>("threads");
   const [submitting, setSubmitting] = useState(false);
 
   const load = async () => {
@@ -51,6 +52,7 @@ export default function ChannelsListPanel() {
       const payload: any = {
         name: name.trim(),
         description: description.trim() || null,
+        replyMode,
       };
       try {
         const parsed = JSON.parse(segmentRule);
@@ -104,6 +106,24 @@ export default function ChannelsListPanel() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+          <div>
+            <label className="block font-body text-[11px] tracking-wider uppercase theme-text-muted mb-1">Reply Mode</label>
+            <div className="space-y-1.5">
+              {[
+                { value: "open", label: "Chat freely", desc: "Partners can reply in the channel — everyone sees messages" },
+                { value: "disabled", label: "Admin only (no replies)", desc: "Announcement-only — partners cannot respond" },
+                { value: "threads", label: "Reply 1-on-1 to admin", desc: "Partners reply privately in a direct thread with admin" },
+              ].map((opt) => (
+                <label key={opt.value} className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${replyMode === opt.value ? "border-brand-gold/40 bg-brand-gold/5" : "border-[var(--app-border)]"}`}>
+                  <input type="radio" name="replyMode" value={opt.value} checked={replyMode === opt.value} onChange={() => setReplyMode(opt.value)} className="accent-[#c4a050] mt-0.5" />
+                  <div>
+                    <div className="font-body text-[12px] font-medium text-[var(--app-text)]">{opt.label}</div>
+                    <div className="font-body text-[10px] theme-text-muted">{opt.desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
           <SegmentRuleBuilder onChange={setSegmentRule} />
           {error && <div className="text-xs text-red-500">{error}</div>}
           <button

@@ -2,22 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-/**
- * Channel-member admin panel.
- *
- * UX:
- *   1. Dropdown to pick an L1 partner (no upline). Picking one loads
- *      their full downline tree (L2 + L3 + L4+).
- *   2. Below the dropdown: a checkbox list of that L1 + every partner
- *      in their chain. Top-level "Select entire downline" toggle
- *      flips all of them at once.
- *   3. Submit POSTs the selected partnerCodes to
- *      /api/admin/channels/[id]/members.
- *
- * Current members list sits at the bottom so the admin can see who's
- * already in the channel without leaving the panel.
- */
-
 type Partner = {
   id: string;
   partnerCode: string;
@@ -51,8 +35,9 @@ export default function ChannelMemberManager({ channelId, onMembersChanged }: { 
   const [partners, setPartners] = useState<Partner[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const [rootCode, setRootCode] = useState<string>("");
+  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -72,69 +57,93 @@ export default function ChannelMemberManager({ channelId, onMembersChanged }: { 
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  // L1 roots = partners with no upline (referredByPartnerCode is null).
-  // Using `tier` alone would miss someone manually marked L1 but with a
-  // stale upline row, and vice-versa; chaining is the ground truth.
-  const l1Roots = useMemo(
-    () =>
-      partners
-        .filter((p) => !p.referredByPartnerCode)
-        .sort((a, b) => displayName(a).localeCompare(displayName(b))),
-    [partners],
-  );
-
-  // Downline of the currently-picked root. Walks the chain breadth-first
-  // via referredByPartnerCode. Includes the root itself at the top of
-  // the list so the admin can add them alone or with their subordinates.
-  const downline = useMemo(() => {
-    if (!rootCode) return [] as Partner[];
-    const root = partners.find((p) => p.partnerCode === rootCode);
-    if (!root) return [];
-    const byUpline: Record<string, Partner[]> = {};
-    for (const p of partners) {
-      const key = p.referredByPartnerCode || "";
-      (byUpline[key] ||= []).push(p);
-    }
-    const out: Partner[] = [root];
-    const stack = [root.partnerCode];
-    while (stack.length) {
-      const code = stack.shift()!;
-      const kids = (byUpline[code] || []).sort((a, b) => displayName(a).localeCompare(displayName(b)));
-      for (const k of kids) {
-        out.push(k);
-        stack.push(k.partnerCode);
-      }
-    }
-    return out;
-  }, [rootCode, partners]);
-
   const activeMemberCodes = useMemo(
     () => new Set(members.map((m) => m.partnerCode)),
     [members],
   );
 
-  // When the root changes, preselect every partner in the downline that
-  // is NOT already an active member. That way "Add selected" defaults to
-  // onboarding the whole chain in one click.
-  useEffect(() => {
-    if (!rootCode) { setSelected(new Set()); return; }
-    setSelected(new Set(downline.filter((p) => !activeMemberCodes.has(p.partnerCode)).map((p) => p.partnerCode)));
-  }, [rootCode, downline, activeMemberCodes]);
-
-  const toggleAll = () => {
-    const toggleCandidates = downline.filter((p) => !activeMemberCodes.has(p.partnerCode));
-    if (toggleCandidates.every((p) => selected.has(p.partnerCode))) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(toggleCandidates.map((p) => p.partnerCode)));
+  const byUpline = useMemo(() => {
+    const map: Record<string, Partner[]> = {};
+    for (const p of partners) {
+      const key = p.referredByPartnerCode || "";
+      (map[key] ||= []).push(p);
     }
-  };
+    return map;
+  }, [partners]);
+
+  const getDownline = useCallback((code: string): Partner[] => {
+    const root = partners.find((p) => p.partnerCode === code);
+    if (!root) return [];
+    const out: Partner[] = [];
+    const queue = [code];
+    while (queue.length) {
+      const c = queue.shift()!;
+      const kids = (byUpline[c] || []).sort((a, b) => displayName(a).localeCompare(displayName(b)));
+      for (const k of kids) {
+        out.push(k);
+        queue.push(k.partnerCode);
+      }
+    }
+    return out;
+  }, [partners, byUpline]);
+
+  const getDepth = useCallback((p: Partner, rootCode: string): number => {
+    let d = 0;
+    let cur: string | null | undefined = p.referredByPartnerCode;
+    while (cur && cur !== rootCode && d < 10) {
+      const n = partners.find((x) => x.partnerCode === cur);
+      cur = n?.referredByPartnerCode;
+      d++;
+    }
+    return d + 1;
+  }, [partners]);
+
+  const searchResults = useMemo(() => {
+    if (!search.trim()) return [];
+    const q = search.toLowerCase().trim();
+    return partners
+      .filter((p) => {
+        const name = displayName(p).toLowerCase();
+        const code = p.partnerCode.toLowerCase();
+        const email = (p.email || "").toLowerCase();
+        return name.includes(q) || code.includes(q) || email.includes(q);
+      })
+      .sort((a, b) => displayName(a).localeCompare(displayName(b)))
+      .slice(0, 20);
+  }, [search, partners]);
+
+  const expandedDownline = useMemo(() => {
+    if (!expandedCode) return [];
+    return getDownline(expandedCode);
+  }, [expandedCode, getDownline]);
 
   const toggleOne = (code: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(code)) next.delete(code);
-      else next.add(code);
+      if (next.has(code)) next.delete(code); else next.add(code);
+      return next;
+    });
+  };
+
+  const selectAllDownline = (rootCode: string) => {
+    const dl = getDownline(rootCode);
+    const root = partners.find((p) => p.partnerCode === rootCode);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (root && !activeMemberCodes.has(rootCode)) next.add(rootCode);
+      for (const p of dl) {
+        if (!activeMemberCodes.has(p.partnerCode)) next.add(p.partnerCode);
+      }
+      return next;
+    });
+  };
+
+  const deselectAllDownline = (rootCode: string) => {
+    const dl = getDownline(rootCode);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(rootCode);
+      for (const p of dl) next.delete(p.partnerCode);
       return next;
     });
   };
@@ -154,8 +163,10 @@ export default function ChannelMemberManager({ channelId, onMembersChanged }: { 
         throw new Error(err.error || `HTTP ${r.status}`);
       }
       const d = await r.json();
-      setMessage(`Added ${d.added} partner${d.added === 1 ? "" : "s"}. Notification + email sent.`);
+      setMessage(`Added ${d.added} partner${d.added === 1 ? "" : "s"}.`);
       setSelected(new Set());
+      setSearch("");
+      setExpandedCode(null);
       await loadAll();
       onMembersChanged?.();
     } catch (e) {
@@ -165,100 +176,160 @@ export default function ChannelMemberManager({ channelId, onMembersChanged }: { 
     }
   };
 
+  const renderPartnerRow = (p: Partner, indent: number, showDownlineBtn: boolean) => {
+    const isMember = activeMemberCodes.has(p.partnerCode);
+    const isSelected = selected.has(p.partnerCode);
+    const dlCount = getDownline(p.partnerCode).length;
+    return (
+      <div
+        key={p.partnerCode}
+        className={`flex items-center gap-2 px-3 py-2 hover:bg-[var(--app-hover)] ${isMember ? "opacity-50" : ""}`}
+        style={{ paddingLeft: 12 + indent * 20 }}
+      >
+        <input
+          type="checkbox"
+          checked={isMember || isSelected}
+          disabled={isMember}
+          onChange={() => !isMember && toggleOne(p.partnerCode)}
+          className="accent-[#c4a050] shrink-0"
+        />
+        <span className="font-body text-[12px] text-[var(--app-text)] truncate flex-1">
+          {displayName(p)}
+        </span>
+        <span className="font-mono text-[10px] theme-text-muted shrink-0">{p.partnerCode}</span>
+        <span className="font-body text-[10px] theme-text-faint uppercase tracking-wider shrink-0">
+          {p.tier || "—"}
+        </span>
+        {isMember && <span className="text-[10px] text-green-400 shrink-0">✓</span>}
+        {showDownlineBtn && dlCount > 0 && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); setExpandedCode(expandedCode === p.partnerCode ? null : p.partnerCode); }}
+            className="font-body text-[10px] text-brand-gold hover:underline shrink-0"
+          >
+            {expandedCode === p.partnerCode ? "▾ hide" : `▸ ${dlCount} downline`}
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="theme-card p-4 space-y-3">
-      <div className="text-sm font-medium">👥 Members</div>
+      <div className="text-sm font-medium">👥 Add Members</div>
 
-      <div>
-        <label className="block font-body text-[11px] tracking-wider uppercase theme-text-muted mb-1">
-          Select L1 (upline root) to expand their downline
-        </label>
-        <select
-          value={rootCode}
-          onChange={(e) => setRootCode(e.target.value)}
-          className="theme-input w-full text-sm"
-        >
-          <option value="">— Pick an L1 partner —</option>
-          {l1Roots.map((p) => (
-            <option key={p.partnerCode} value={p.partnerCode}>
-              {displayName(p)} ({p.partnerCode})
-            </option>
-          ))}
-        </select>
+      {/* Search input */}
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setExpandedCode(null); }}
+          placeholder="Search by name, email, or partner code…"
+          className="theme-input w-full text-sm pl-8"
+        />
+        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[13px] theme-text-muted">🔍</span>
       </div>
 
-      {rootCode && downline.length > 0 && (
+      {/* Quick actions */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            setSelected(new Set(partners.filter((p) => !activeMemberCodes.has(p.partnerCode)).map((p) => p.partnerCode)));
+          }}
+          className="font-body text-[11px] text-brand-gold hover:underline"
+        >
+          Select all partners ({partners.filter((p) => !activeMemberCodes.has(p.partnerCode)).length})
+        </button>
+        {selected.size > 0 && (
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className="font-body text-[11px] theme-text-muted hover:underline"
+          >
+            Clear selection
+          </button>
+        )}
+      </div>
+
+      {/* Selected chips */}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {Array.from(selected).slice(0, 10).map((code) => {
+            const p = partners.find((x) => x.partnerCode === code);
+            return (
+              <span key={code} className="inline-flex items-center gap-1 bg-brand-gold/10 border border-brand-gold/30 rounded-full px-2.5 py-0.5 font-body text-[11px] text-brand-gold">
+                {p ? displayName(p) : code}
+                <button type="button" onClick={() => toggleOne(code)} className="hover:text-red-400 ml-0.5">×</button>
+              </span>
+            );
+          })}
+          {selected.size > 10 && (
+            <span className="font-body text-[11px] theme-text-muted self-center">+{selected.size - 10} more</span>
+          )}
+        </div>
+      )}
+
+      {/* Search results */}
+      {search.trim() && (
         <div className="border border-[var(--app-border)] rounded-lg overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--app-border)] bg-[var(--app-input-bg)]">
-            <label className="flex items-center gap-2 font-body text-[12px] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={downline.filter((p) => !activeMemberCodes.has(p.partnerCode)).every((p) => selected.has(p.partnerCode)) && downline.some((p) => !activeMemberCodes.has(p.partnerCode))}
-                onChange={toggleAll}
-                className="accent-[#c4a050]"
-              />
-              <span>Select entire downline</span>
-            </label>
+          <div className="px-3 py-2 border-b border-[var(--app-border)] bg-[var(--app-input-bg)] flex items-center justify-between">
             <span className="font-body text-[11px] theme-text-muted">
-              {selected.size} selected · {downline.length} in chain
+              {searchResults.length === 0 ? "No matches" : `${searchResults.length} match${searchResults.length === 1 ? "" : "es"}`}
             </span>
+            {searchResults.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelected((prev) => {
+                    const next = new Set(prev);
+                    for (const p of searchResults) if (!activeMemberCodes.has(p.partnerCode)) next.add(p.partnerCode);
+                    return next;
+                  });
+                }}
+                className="font-body text-[10px] text-brand-gold hover:underline"
+              >
+                Select all results
+              </button>
+            )}
           </div>
-          <div className="max-h-72 overflow-y-auto divide-y divide-[var(--app-border)]">
-            {downline.map((p, i) => {
-              const isRoot = p.partnerCode === rootCode;
-              const depth = (() => {
-                // Compute tier depth relative to root
-                let d = 0;
-                let cur: string | null | undefined = p.referredByPartnerCode;
-                while (cur && cur !== rootCode && d < 10) {
-                  const n = partners.find((x) => x.partnerCode === cur);
-                  cur = n?.referredByPartnerCode;
-                  d++;
-                }
-                return isRoot ? 0 : d + 1;
-              })();
-              const isActiveMember = activeMemberCodes.has(p.partnerCode);
-              return (
-                <label
-                  key={p.partnerCode}
-                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[var(--app-hover)] ${isActiveMember ? "opacity-60" : ""}`}
-                  style={{ paddingLeft: 12 + depth * 20 }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isActiveMember || selected.has(p.partnerCode)}
-                    disabled={isActiveMember}
-                    onChange={() => !isActiveMember && toggleOne(p.partnerCode)}
-                    className="accent-[#c4a050]"
-                  />
-                  <span className="font-body text-[12px] text-[var(--app-text)] truncate flex-1">
-                    {displayName(p)}
-                  </span>
-                  <span className="font-mono text-[10px] theme-text-muted">{p.partnerCode}</span>
-                  <span className="font-body text-[10px] theme-text-faint uppercase tracking-wider">
-                    {isRoot ? "L1" : `L${depth + 1}`}
-                  </span>
-                  {isActiveMember && <span className="text-[10px] text-green-400">✓ member</span>}
-                </label>
-              );
-            })}
+          <div className="max-h-64 overflow-y-auto divide-y divide-[var(--app-border)]">
+            {searchResults.map((p) => (
+              <div key={p.partnerCode}>
+                {renderPartnerRow(p, 0, true)}
+                {/* Expanded downline */}
+                {expandedCode === p.partnerCode && expandedDownline.length > 0 && (
+                  <div className="bg-[var(--app-input-bg)]">
+                    <div className="flex items-center justify-between px-3 py-1.5 border-t border-b border-[var(--app-border)]">
+                      <span className="font-body text-[10px] theme-text-muted">{expandedDownline.length} in downline</span>
+                      <div className="flex gap-3">
+                        <button type="button" onClick={() => selectAllDownline(p.partnerCode)}
+                          className="font-body text-[10px] text-brand-gold hover:underline">Select all</button>
+                        <button type="button" onClick={() => deselectAllDownline(p.partnerCode)}
+                          className="font-body text-[10px] theme-text-muted hover:underline">Deselect all</button>
+                      </div>
+                    </div>
+                    {expandedDownline.map((dl) => renderPartnerRow(dl, getDepth(dl, p.partnerCode), false))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
+      {/* Submit */}
       <button
         type="button"
         onClick={submit}
         disabled={submitting || selected.size === 0}
-        className="theme-btn-primary text-sm px-3 py-1.5 disabled:opacity-50"
+        className="theme-btn-primary text-sm px-3 py-1.5 disabled:opacity-50 w-full"
       >
-        {submitting ? "Adding…" : `Add ${selected.size} to channel`}
+        {submitting ? "Adding…" : `Add ${selected.size} partner${selected.size === 1 ? "" : "s"} to channel`}
       </button>
-      {message && (
-        <div className="font-body text-[12px] text-brand-gold">{message}</div>
-      )}
+      {message && <div className="font-body text-[12px] text-brand-gold">{message}</div>}
 
-      {/* Current members list */}
+      {/* Current members */}
       <div className="pt-3 border-t border-[var(--app-border)]">
         <div className="font-body text-[11px] tracking-wider uppercase theme-text-muted mb-2">
           Current members ({members.length})
@@ -275,9 +346,7 @@ export default function ChannelMemberManager({ channelId, onMembersChanged }: { 
                   {m.partner ? displayName(m.partner) : m.partnerCode}
                 </span>
                 <span className="font-mono text-[10px] theme-text-muted">{m.partnerCode}</span>
-                <span className="font-body text-[10px] theme-text-faint uppercase tracking-wider">
-                  {m.source}
-                </span>
+                <span className="font-body text-[10px] theme-text-faint uppercase tracking-wider">{m.source}</span>
               </div>
             ))}
           </div>
