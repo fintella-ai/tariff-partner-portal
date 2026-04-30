@@ -943,10 +943,9 @@ export default function WidgetCalculator({ token, commissionRate, onSubmitAsRefe
           onClick={handleDocReferral}
           style={{ ...goldButtonStyle(), fontSize: 15, padding: "16px 28px" }}
         >
-          Submit as Referral — Earn {commissionRate}%
-          <svg style={{ width: 16, height: 16, display: "inline", marginLeft: 8, verticalAlign: "middle" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
+          Submit Client{" "}
+          <span style={{ display: "inline-block", margin: "0 6px", fontSize: 18, verticalAlign: "middle" }}>🚀</span>
+          {" "}Law Firm
         </button>
       </div>
     );
@@ -1125,10 +1124,9 @@ export default function WidgetCalculator({ token, commissionRate, onSubmitAsRefe
                 onClick={handleReferral}
                 style={{ ...goldButtonStyle() }}
               >
-                Submit as Referral
-                <svg style={{ width: 16, height: 16, display: "inline", marginLeft: 6, verticalAlign: "middle" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
+                Submit Client{" "}
+                <span style={{ display: "inline-block", margin: "0 6px", fontSize: 16, verticalAlign: "middle" }}>🚀</span>
+                {" "}Law Firm
               </button>
             </div>
           )}

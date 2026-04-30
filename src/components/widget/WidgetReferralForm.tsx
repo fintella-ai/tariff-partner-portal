@@ -270,7 +270,7 @@ export default function WidgetReferralForm({ token, commissionRate, prefill, onP
       </div>
 
       <button type="submit" disabled={submitting} style={{ ...goldButtonStyle(submitting), marginTop: 4 }}>
-        {submitting ? "Submitting..." : `Refer This Client — Earn ${commissionRate}%`}
+        {submitting ? "Submitting..." : "Submit Client 🚀 Law Firm"}
       </button>
     </form>
   );
