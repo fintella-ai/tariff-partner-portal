@@ -20,6 +20,7 @@ const WIRED_TEMPLATE_KEYS = new Set([
   "monthly_newsletter",
   "password_reset",
   "l1_invite",
+  "downline_invite",
   "partner_added_to_channel",
   // workflow-engine `email.send` actions fired from scheduled cron reminders
   // (no hardcoded fallback — deleting the row breaks the reminder flow)

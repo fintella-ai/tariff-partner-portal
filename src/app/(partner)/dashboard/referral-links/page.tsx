@@ -173,27 +173,38 @@ export default function ReferralLinksPage() {
 
   async function handleSendInvite(e: React.FormEvent) {
     e.preventDefault();
-    if (!sendRate || !sendEmail.trim()) return;
+    if (!sendRate || !sendEmail.trim() || !sendFirstName.trim() || !sendLastName.trim()) return;
     setSending(true);
     try {
-      let inv = getInviteForRate(sendRate);
-      if (!inv) inv = await createInviteForRate(sendRate);
-      if (!inv) { alert("No invite link available for this rate"); return; }
-      // For now, record the invite send (actual email/SMS sending will be Phase 15)
-      // We'll store it as a notification for tracking
-      await fetch("/api/notifications", {
-        method: "PATCH",
+      const res = await fetch("/api/invites/send", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ markAllRead: false }), // placeholder — actual send in Phase 15
+        body: JSON.stringify({
+          firstName: sendFirstName.trim(),
+          lastName: sendLastName.trim(),
+          email: sendEmail.trim(),
+          phone: sendPhone.trim() || undefined,
+          rate: sendRate,
+          method: sendMethod,
+        }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Failed to send invite");
+        return;
+      }
+      await loadInvites();
       setSendSuccess(true);
       setTimeout(() => {
         setSendSuccess(false);
         setSendFirstName(""); setSendLastName(""); setSendEmail(""); setSendPhone("");
         setSendRate(null);
       }, 3000);
-    } catch {}
-    finally { setSending(false); }
+    } catch {
+      alert("Failed to send invite — please try again.");
+    } finally {
+      setSending(false);
+    }
   }
 
   // Split invites by status for tracking tabs

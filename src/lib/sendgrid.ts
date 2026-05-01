@@ -1128,6 +1128,96 @@ Where to go: portal sidebar → Communications → Announcements.`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Downline partner invite — fired when a partner sends a recruitment
+// invite to a prospective downline partner via /api/invites/send.
+// Template key: downline_invite. Falls back to hardcoded copy below.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export async function sendDownlineInviteEmail(opts: {
+  toEmail: string;
+  toName: string | null;
+  signupUrl: string;
+  senderName: string;
+  senderPartnerCode: string;
+  commissionRate: number;
+  targetTier: string;
+}): Promise<SendEmailResult> {
+  const name = opts.toName || "there";
+  const ratePct = `${Math.round(opts.commissionRate * 100)}%`;
+  const tierLabel = opts.targetTier.toUpperCase();
+  const vars: Record<string, string> = {
+    firstName: name,
+    signupUrl: opts.signupUrl,
+    portalUrl: PORTAL_URL,
+    firmShort: FIRM_SHORT,
+    firmName: FIRM_NAME,
+    senderName: opts.senderName,
+    commissionRate: ratePct,
+    commissionRatePct: ratePct,
+    tierLabel,
+  };
+
+  const tpl = await loadTemplate("downline_invite");
+  if (tpl) {
+    const { html, text } = emailShell({
+      preheader: tpl.preheader ? interpolate(tpl.preheader, vars) : undefined,
+      heading: interpolate(tpl.heading, vars),
+      bodyHtml: interpolate(tpl.bodyHtml, vars, escapeHtml),
+      bodyText: interpolate(tpl.bodyText, vars),
+      ctaLabel: tpl.ctaLabel || "Accept Invitation",
+      ctaUrl: tpl.ctaUrl ? interpolate(tpl.ctaUrl, vars) : opts.signupUrl,
+    });
+    return sendEmail({
+      to: opts.toEmail,
+      toName: opts.toName || undefined,
+      subject: interpolate(tpl.subject, vars),
+      html,
+      text,
+      template: "downline_invite",
+      partnerCode: opts.senderPartnerCode,
+      fromEmail: tpl.fromEmail || undefined,
+      fromName: tpl.fromName || undefined,
+      replyTo: tpl.replyTo || undefined,
+    });
+  }
+
+  // ── Hardcoded fallback ──
+  const heading = `${opts.senderName} invited you to join ${FIRM_SHORT}`;
+  const bodyHtml = `
+    <p>Hi ${escapeHtml(name)},</p>
+    <p>${escapeHtml(opts.senderName)}, a partner at ${escapeHtml(FIRM_NAME)}, has invited you to join as a ${tierLabel} Partner. You'll earn ${ratePct} of the firm fee on every client referral you send.</p>
+    <p>Click the button below to create your account. The process takes about two minutes — you'll fill out a short form and sign your partnership agreement digitally.</p>
+    <p style="font-size:12px;color:#888;">This invitation link expires in 7 days.</p>`;
+  const bodyText = `Hi ${name},
+
+${opts.senderName}, a partner at ${FIRM_NAME}, has invited you to join as a ${tierLabel} Partner. You'll earn ${ratePct} of the firm fee on every client referral you send.
+
+Use the link below to create your account and sign your partnership agreement (takes about two minutes):
+${opts.signupUrl}
+
+This invitation link expires in 7 days.`;
+
+  const { html, text } = emailShell({
+    preheader: `${opts.senderName} invited you to join ${FIRM_SHORT} — earn ${ratePct} per deal.`,
+    heading,
+    bodyHtml,
+    bodyText,
+    ctaLabel: "Accept Invitation",
+    ctaUrl: opts.signupUrl,
+  });
+
+  return sendEmail({
+    to: opts.toEmail,
+    toName: opts.toName || undefined,
+    subject: `${opts.senderName} invited you to join ${FIRM_SHORT} as a Partner`,
+    html,
+    text,
+    template: "downline_invite",
+    partnerCode: opts.senderPartnerCode,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Monthly newsletter — fired by Vercel cron on the 1st of each month,
 // iterates every active partner and sends one email each
 // ═══════════════════════════════════════════════════════════════════════════
