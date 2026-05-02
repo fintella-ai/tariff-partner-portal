@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 
 interface AuditEntry {
   id: string;
@@ -62,8 +63,24 @@ export default function AiPermissionsPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState<AuditEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [portalTier, setPortalTier] = useState<string | null>(null); // null = loading
+  const [tierLoaded, setTierLoaded] = useState(false);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+
+  // Load portal tier to check Enterprise gate
+  useEffect(() => {
+    fetch("/api/admin/portal-tier")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        setPortalTier(data?.tier ?? "enterprise"); // fallback: don't lock out
+        setTierLoaded(true);
+      })
+      .catch(() => {
+        setPortalTier("enterprise"); // fallback: don't lock out
+        setTierLoaded(true);
+      });
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -127,13 +144,82 @@ export default function AiPermissionsPage() {
     } catch { showToast("Failed to reset"); }
   };
 
-  if (loading) return (
+  if (loading || !tierLoaded) return (
     <div className="p-6">
       <div className="animate-pulse space-y-4">
         {[1, 2, 3, 4].map((i) => <div key={i} className="h-48 bg-[var(--app-bg-secondary)] rounded-xl" />)}
       </div>
     </div>
   );
+
+  // Enterprise tier gate — show upgrade prompt if not Enterprise
+  if (portalTier !== "enterprise") {
+    return (
+      <div className="p-6 max-w-3xl mx-auto">
+        <div
+          className="rounded-2xl border p-8 sm:p-12 text-center"
+          style={{
+            borderColor: "var(--brand-gold)",
+            background: "linear-gradient(135deg, rgba(176,140,48,0.08), rgba(176,140,48,0.02))",
+          }}
+        >
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
+            style={{ background: "rgba(176,140,48,0.12)" }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--brand-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+          </div>
+          <h1
+            className="text-2xl font-bold mb-3"
+            style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: "var(--brand-gold)" }}
+          >
+            AI Governance Suite
+          </h1>
+          <p className="font-body text-sm text-[var(--app-text-muted)] mb-2 max-w-lg mx-auto">
+            Full control over your AI personas — tool permissions, daily budgets,
+            custom instructions, and a complete audit trail of every change.
+          </p>
+          <p className="font-body text-xs text-[var(--app-text-muted)] mb-6">
+            Available on the <span className="font-semibold text-[var(--brand-gold)]">Enterprise</span> plan.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-md mx-auto mb-8">
+            {[
+              { icon: "🔧", label: "Tool Permissions" },
+              { icon: "📋", label: "Audit Trail" },
+              { icon: "💬", label: "Custom Prompts" },
+              { icon: "📊", label: "Daily Limits" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="flex flex-col items-center gap-1 px-3 py-3 rounded-lg border border-[var(--app-border)]"
+                style={{ background: "var(--app-card-bg)" }}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="font-body text-[10px] font-semibold text-[var(--app-text)]">{item.label}</span>
+              </div>
+            ))}
+          </div>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 h-12 px-8 rounded-xl font-body text-sm font-semibold transition-all"
+            style={{
+              background: "var(--brand-gold)",
+              color: "#000",
+              boxShadow: "0 4px 14px rgba(176,140,48,0.3)",
+            }}
+          >
+            View Enterprise Plans
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto">

@@ -12,6 +12,7 @@ const PLANS = [
     cta: "Get Started Free",
     ctaUrl: "/apply",
     highlight: false,
+    aiLabel: "Standard AI assistant",
     features: [
       "IEEPA Tariff Refund Calculator",
       "CAPE CSV File Generation",
@@ -33,6 +34,7 @@ const PLANS = [
     ctaUrl: "/apply?plan=pro",
     highlight: true,
     badge: "Most Popular",
+    aiLabel: "AI assistant + usage dashboard",
     features: [
       "Everything in Free",
       "Unlimited calculator entries",
@@ -55,8 +57,10 @@ const PLANS = [
     cta: "Contact Sales",
     ctaUrl: "mailto:partnerships@fintella.partners?subject=Enterprise Plan Inquiry",
     highlight: false,
+    aiLabel: "Full AI governance: tool permissions, audit trail, custom prompts, daily limits",
     features: [
       "Everything in Pro",
+      "AI Governance Suite",
       "REST API access for TMS integration",
       "White-label PDF branding",
       "Dedicated account manager",
@@ -199,7 +203,7 @@ export default function PublicPricingPage() {
                       className="w-4 h-4 mt-0.5 shrink-0"
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      style={{ color: plan.highlight ? "var(--brand-gold)" : "#16a34a" }}
+                      style={{ color: f === "AI Governance Suite" ? "var(--brand-gold)" : plan.highlight ? "var(--brand-gold)" : "#16a34a" }}
                     >
                       <path
                         fillRule="evenodd"
@@ -207,7 +211,19 @@ export default function PublicPricingPage() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span className="font-body text-[13px]">{f}</span>
+                    {f === "AI Governance Suite" ? (
+                      <span className="font-body text-[13px] font-semibold flex items-center gap-1.5">
+                        {f}
+                        <span
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
+                          style={{ background: "var(--brand-gold)", color: "#000" }}
+                        >
+                          New
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="font-body text-[13px]">{f}</span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -237,6 +253,97 @@ export default function PublicPricingPage() {
               )}
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* AI Comparison Row */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-10">
+        <h2
+          className="text-xl font-bold text-center mb-6"
+          style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
+        >
+          AI Assistant Comparison
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {PLANS.map((plan) => (
+            <div
+              key={`ai-${plan.id}`}
+              className={`rounded-xl border p-5 ${
+                plan.id === "enterprise"
+                  ? "border-[var(--brand-gold)] bg-gradient-to-b from-[rgba(176,140,48,0.06)] to-transparent"
+                  : "border-[var(--app-border)]"
+              }`}
+              style={{ background: plan.id === "enterprise" ? undefined : "var(--app-card-bg)" }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-semibold text-[var(--app-text)]">{plan.name}</span>
+                {plan.id === "enterprise" && (
+                  <span
+                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
+                    style={{ background: "var(--brand-gold)", color: "#000" }}
+                  >
+                    Premium
+                  </span>
+                )}
+              </div>
+              <p className="font-body text-[12px] text-[var(--app-text-muted)] leading-relaxed">
+                {plan.aiLabel}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Enterprise AI Governance Explainer */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
+        <div
+          className="rounded-2xl border p-8 sm:p-10"
+          style={{
+            borderColor: "var(--brand-gold)",
+            background: "linear-gradient(135deg, rgba(176,140,48,0.06), rgba(176,140,48,0.01))",
+          }}
+        >
+          <div className="flex flex-col sm:flex-row items-start gap-6">
+            <div
+              className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: "rgba(176,140,48,0.12)" }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--brand-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+            </div>
+            <div>
+              <h3
+                className="text-lg font-bold mb-2"
+                style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: "var(--brand-gold)" }}
+              >
+                Enterprise AI Governance
+              </h3>
+              <p className="font-body text-[13px] text-[var(--app-text-muted)] leading-relaxed mb-4">
+                The only partner portal with admin-visible AI controls. Configure exactly which tools each
+                AI persona can use, set daily budgets, add custom instructions, and audit every change.
+                Built for compliance-first organizations.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { icon: "🔧", label: "Tool Permissions" },
+                  { icon: "📋", label: "Audit Trail" },
+                  { icon: "💬", label: "Custom Prompts" },
+                  { icon: "📊", label: "Daily Limits" },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--app-border)]"
+                    style={{ background: "var(--app-card-bg)" }}
+                  >
+                    <span className="text-base">{item.icon}</span>
+                    <span className="font-body text-[11px] font-semibold text-[var(--app-text)]">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

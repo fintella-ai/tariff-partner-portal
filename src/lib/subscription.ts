@@ -206,3 +206,46 @@ export async function cancelSubscription(partnerCode: string, reason?: string) {
     },
   });
 }
+
+// ─── Portal-level tier (admin features like AI Governance) ────────────────
+
+export type PortalTier = "free" | "pro" | "enterprise";
+
+/** Gated portal features — maps feature key to required minimum tier */
+export const PORTAL_FEATURE_TIERS: Record<string, PortalTier> = {
+  ai_governance: "enterprise",
+};
+
+/**
+ * Read the portal-level subscription tier from PortalSettings.
+ * Falls back to "free" if the row is missing or the field is unset.
+ * During development (no row), returns "enterprise" to avoid locking
+ * out admins — controlled by the FALLBACK comment below.
+ */
+export async function getPortalTier(): Promise<PortalTier> {
+  const settings = await prisma.portalSettings.findUnique({
+    where: { id: "global" },
+    select: { subscriptionTier: true },
+  });
+  if (!settings) return "enterprise"; // FALLBACK: don't lock out during dev
+  const tier = settings.subscriptionTier as PortalTier;
+  if (!["free", "pro", "enterprise"].includes(tier)) return "free";
+  return tier;
+}
+
+const TIER_RANK: Record<PortalTier, number> = { free: 0, pro: 1, enterprise: 2 };
+
+/**
+ * Check whether the portal's current tier meets the minimum for a feature.
+ */
+export async function checkPortalFeature(
+  feature: string,
+): Promise<{ allowed: boolean; currentTier: PortalTier; requiredTier: PortalTier }> {
+  const required = PORTAL_FEATURE_TIERS[feature] ?? "free";
+  const current = await getPortalTier();
+  return {
+    allowed: TIER_RANK[current] >= TIER_RANK[required],
+    currentTier: current,
+    requiredTier: required,
+  };
+}

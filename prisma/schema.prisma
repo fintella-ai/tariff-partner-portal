@@ -878,6 +878,12 @@ model PortalSettings {
   //   custom sections interleave cleanly with built-ins. Mutate only
   //   through src/lib/page-custom-sections.ts.
   pageCustomSections Json?
+  // Portal-level subscription tier — determines which features are
+  // available across the entire portal (admin + partner). Default
+  // "free" for new portals. Set to "pro" or "enterprise" when the
+  // portal owner subscribes. Controls feature gates like AI
+  // Governance (Enterprise-only).
+  subscriptionTier String @default("free")
   // Timestamps
   updatedAt DateTime @updatedAt
 }
