@@ -2,6 +2,23 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+interface AuditEntry {
+  id: string;
+  action: string;
+  actorEmail: string;
+  actorRole: string;
+  targetId: string | null;
+  details: {
+    changes?: Record<string, { old: unknown; new: unknown }>;
+    personaId?: string;
+    isNew?: boolean;
+    resetAll?: boolean;
+    deletedCount?: number;
+    deletedPersonas?: string[];
+  } | null;
+  createdAt: string;
+}
+
 interface PersonaConfig {
   id: string | null;
   personaId: string;
@@ -42,6 +59,9 @@ export default function AiPermissionsPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [expandedPrompt, setExpandedPrompt] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [history, setHistory] = useState<AuditEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
@@ -55,6 +75,15 @@ export default function AiPermissionsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch("/api/admin/ai-permissions/history");
+      const data = await res.json();
+      setHistory(data.history ?? []);
+    } catch { /* ignore */ } finally { setHistoryLoading(false); }
+  }, []);
 
   const updateConfig = async (personaId: string, updates: Partial<PersonaConfig>) => {
     const current = configs.find((c) => c.personaId === personaId);
@@ -271,6 +300,114 @@ export default function AiPermissionsPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Change History */}
+      <div className="mt-8 rounded-xl border border-[var(--app-border)] bg-[var(--app-bg)] overflow-hidden">
+        <button
+          onClick={() => {
+            const willOpen = !historyOpen;
+            setHistoryOpen(willOpen);
+            if (willOpen && history.length === 0) loadHistory();
+          }}
+          className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-[var(--app-bg-secondary)] transition"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-[var(--app-text-muted)]">{historyOpen ? "▼" : "▶"}</span>
+            <h2 className="text-sm font-semibold text-[var(--app-text)]">Change History</h2>
+          </div>
+          <span className="text-xs text-[var(--app-text-muted)]">Recent AI permission changes</span>
+        </button>
+
+        {historyOpen && (
+          <div className="border-t border-[var(--app-border)]">
+            {historyLoading ? (
+              <div className="p-5 text-sm text-[var(--app-text-muted)] animate-pulse">Loading history...</div>
+            ) : history.length === 0 ? (
+              <div className="p-5 text-sm text-[var(--app-text-muted)]">No changes recorded yet.</div>
+            ) : (
+              <div className="divide-y divide-[var(--app-border)]">
+                {history.map((entry) => {
+                  const personaId = entry.details?.personaId ?? entry.targetId ?? "unknown";
+                  const personaName = PERSONA_META[personaId]?.name ?? personaId;
+                  const isReset = entry.action === "ai_permissions.reset";
+
+                  return (
+                    <div key={entry.id} className="px-5 py-3 flex flex-col gap-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-[var(--app-text)]">
+                            {entry.actorEmail}
+                          </span>
+                          <span className="text-xs text-[var(--app-text-muted)]">
+                            ({entry.actorRole})
+                          </span>
+                        </div>
+                        <span className="text-xs text-[var(--app-text-muted)]">
+                          {new Date(entry.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+
+                      {isReset ? (
+                        <div className="text-xs text-[var(--app-text-muted)]">
+                          Reset all persona configs to defaults
+                          {entry.details?.deletedPersonas && (
+                            <span> ({entry.details.deletedPersonas.join(", ")})</span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span
+                            className="text-xs font-semibold px-1.5 py-0.5 rounded"
+                            style={{
+                              background: `${PERSONA_META[personaId]?.accent ?? "#888"}20`,
+                              color: PERSONA_META[personaId]?.accent ?? "#888",
+                            }}
+                          >
+                            {personaName}
+                          </span>
+                          {entry.details?.isNew && (
+                            <span className="text-xs text-green-500 font-medium">New config</span>
+                          )}
+                          {entry.details?.changes && Object.entries(entry.details.changes).map(([field, change]) => (
+                            <span key={field} className="text-xs text-[var(--app-text-muted)]">
+                              <span className="font-medium text-[var(--app-text)]">{field}</span>
+                              {": "}
+                              {field === "enabledTools" ? (
+                                <>
+                                  {Array.isArray(change.old) ? change.old.length : 0} tools
+                                  {" → "}
+                                  {Array.isArray(change.new) ? change.new.length : 0} tools
+                                </>
+                              ) : (
+                                <>
+                                  <span className="line-through opacity-60">{String(change.old ?? "none")}</span>
+                                  {" → "}
+                                  <span>{String(change.new ?? "none")}</span>
+                                </>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {history.length > 0 && (
+              <div className="px-5 py-2 bg-[var(--app-bg-secondary)] border-t border-[var(--app-border)]">
+                <button
+                  onClick={loadHistory}
+                  className="text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text)] transition"
+                >
+                  Refresh
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Toast */}

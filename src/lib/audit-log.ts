@@ -19,7 +19,9 @@ export type AuditAction =
   | "payout.batch_process"
   | "admin.impersonate"
   | "import.deals"
-  | "export.deals";
+  | "export.deals"
+  | "ai_permissions.update"
+  | "ai_permissions.reset";
 
 interface AuditEntry {
   action: AuditAction | string;

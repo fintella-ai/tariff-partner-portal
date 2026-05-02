@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit-log";
 import { NextResponse } from "next/server";
 
 const VALID_PERSONAS = ["finn", "stella", "tara", "ollie"] as const;
@@ -71,6 +72,9 @@ export async function PUT(req: Request) {
 
   const validTools = (enabledTools as string[]).filter((t) => (ALL_TOOLS as readonly string[]).includes(t));
 
+  // Snapshot current config before update (for diff)
+  const before = await prisma.aiPersonaConfig.findUnique({ where: { personaId } });
+
   const config = await prisma.aiPersonaConfig.upsert({
     where: { personaId },
     create: {
@@ -92,6 +96,54 @@ export async function PUT(req: Request) {
     },
   });
 
+  // Compute diff and audit log
+  const beforeSnapshot = before
+    ? {
+        enabledTools: (before.enabledTools as string[]).sort().join(","),
+        maxDailyMessages: before.maxDailyMessages,
+        maxDailySpend: before.maxDailySpend,
+        systemPromptOverride: before.systemPromptOverride ?? null,
+        isActive: before.isActive,
+      }
+    : { enabledTools: "", maxDailyMessages: null, maxDailySpend: null, systemPromptOverride: null, isActive: null };
+
+  const afterSnapshot = {
+    enabledTools: validTools.sort().join(","),
+    maxDailyMessages: config.maxDailyMessages,
+    maxDailySpend: config.maxDailySpend,
+    systemPromptOverride: config.systemPromptOverride ?? null,
+    isActive: config.isActive,
+  };
+
+  const changes: Record<string, { old: unknown; new: unknown }> = {};
+  for (const key of Object.keys(afterSnapshot) as (keyof typeof afterSnapshot)[]) {
+    const oldVal = beforeSnapshot[key];
+    const newVal = afterSnapshot[key];
+    if (String(oldVal) !== String(newVal)) {
+      // For enabledTools show the arrays, not the joined strings
+      if (key === "enabledTools") {
+        changes[key] = {
+          old: before ? (before.enabledTools as string[]) : [],
+          new: validTools,
+        };
+      } else {
+        changes[key] = { old: oldVal, new: newVal };
+      }
+    }
+  }
+
+  if (Object.keys(changes).length > 0) {
+    logAudit({
+      action: "ai_permissions.update",
+      actorEmail: session.user.email ?? "unknown",
+      actorRole: role,
+      actorId: (session.user as any).id ?? undefined,
+      targetType: "AiPersonaConfig",
+      targetId: personaId,
+      details: { changes, personaId, isNew: !before },
+    });
+  }
+
   return NextResponse.json({ config });
 }
 
@@ -105,7 +157,24 @@ export async function POST(req: Request) {
 
   const body = await req.json();
   if (body.action === "reset") {
+    // Snapshot current configs before deletion for audit
+    const beforeConfigs = await prisma.aiPersonaConfig.findMany();
     await prisma.aiPersonaConfig.deleteMany({});
+
+    logAudit({
+      action: "ai_permissions.reset",
+      actorEmail: session.user.email ?? "unknown",
+      actorRole: role,
+      actorId: (session.user as any).id ?? undefined,
+      targetType: "AiPersonaConfig",
+      targetId: "all",
+      details: {
+        resetAll: true,
+        deletedCount: beforeConfigs.length,
+        deletedPersonas: beforeConfigs.map((c) => c.personaId),
+      },
+    });
+
     return NextResponse.json({ message: "All persona configs reset to defaults" });
   }
 
