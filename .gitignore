@@ -29,3 +29,4 @@ Thumbs.db
 # files each terminal writes so peers can avoid colliding on files/branches.
 .claude/coordination/
 tsconfig.tsbuildinfo
+tariff-partner-portal/
