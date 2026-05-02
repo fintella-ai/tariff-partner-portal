@@ -1177,6 +1177,21 @@ async function main() {
   });
   console.log("✓ Portal settings initialized");
 
+  // ── Ops Center 2.0: Entities ──────────────────────────────────────────
+  const ENTITIES = [
+    { slug: "fintella", name: "Fintella", colorAccent: "#3B82F6" },
+    { slug: "robotax", name: "RoboTax", colorAccent: "#10B981" },
+    { slug: "furdock_foglia", name: "Furdock & Foglia Law LLP", colorAccent: "#8B5CF6" },
+  ];
+  for (const ent of ENTITIES) {
+    await prisma.entity.upsert({
+      where: { slug: ent.slug },
+      update: {},
+      create: ent,
+    });
+  }
+  console.log("✓ Ops Center entities seeded (3)");
+
   // ── Admin Inboxes (PartnerOS AI Phase 3c — spec §7.2 / §7.6) ────────
   // Four role-scoped inboxes used for Ollie's escalation routing. Seeded
   // on every build; `update: {}` keeps this idempotent so admins can edit

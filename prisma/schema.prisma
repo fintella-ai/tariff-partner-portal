@@ -100,6 +100,37 @@ enum ResearchJobStatus {
   FAILED
 }
 
+// ─── OPS CENTER 2.0 ENUMS ──────────────────────────────────────────────────
+
+enum EntitySlug {
+  fintella
+  robotax
+  furdock_foglia
+}
+
+enum RequestType {
+  time_bound
+  due_by
+  open_ended
+}
+
+enum RequestStatus {
+  pending
+  accepted
+  declined
+  proposed_new_time
+  completed
+  cancelled
+}
+
+enum IdeaStatus {
+  raw
+  in_discussion
+  committed
+  shipped
+  parked
+}
+
 // ─── ADMIN USERS ─────────────────────────────────────────────────────────────
 model User {
   id                    String   @id @default(cuid())
@@ -118,6 +149,20 @@ model User {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
+  // ── Ops Center 2.0 relations ──
+  entityMemberships  EntityMembership[]
+  channelsCreated    OpsChannel[]         @relation("OpsChannelCreator")
+  channelMemberships OpsChannelMember[]
+  opsMessages        OpsMessage[]
+  opsReactions       OpsMessageReaction[]
+  opsMentions        OpsMessageMention[]
+  dmParticipations   OpsDMParticipant[]
+  requestsMade       Request[]            @relation("RequestsMade")
+  requestsReceived   Request[]            @relation("RequestsReceived")
+  requestResponses   RequestResponse[]
+  ideas              Idea[]
+  ideaReactions      IdeaReaction[]
+  ideaComments       IdeaComment[]
 }
 
 // ─── PARTNERS ───────────────────────────────────────────────────────────────
@@ -2439,4 +2484,295 @@ model PaymentLog {
   @@index([partnerCode])
   @@index([subscriptionId])
   @@index([createdAt])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OPS CENTER 2.0 — PHASE 1 MODELS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── ENTITIES (multi-org) ───────────────────────────────────────────────────
+
+model Entity {
+  id          String      @id @default(cuid())
+  slug        EntitySlug  @unique
+  name        String
+  colorAccent String
+  createdAt   DateTime    @default(now())
+
+  memberships EntityMembership[]
+  channels    OpsChannel[]
+  requests    Request[]
+  ideaTags    IdeaEntityTag[]
+}
+
+model EntityMembership {
+  id        String   @id @default(cuid())
+  userId    String
+  entityId  String
+  role      String   @default("partner")
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityId])
+  @@index([userId])
+  @@index([entityId])
+}
+
+// ─── OPS MESSAGING ──────────────────────────────────────────────────────────
+
+model OpsChannel {
+  id          String   @id @default(cuid())
+  entityId    String?
+  name        String
+  description String?
+  isPrivate   Boolean  @default(false)
+  isPinned    Boolean  @default(false)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  entity     Entity?            @relation(fields: [entityId], references: [id])
+  creator    User               @relation("OpsChannelCreator", fields: [createdBy], references: [id])
+  members    OpsChannelMember[]
+  messages   OpsMessage[]
+  pinnedMsgs OpsPinnedMessage[]
+
+  @@index([entityId])
+  @@index([createdBy])
+}
+
+model OpsChannelMember {
+  id         String   @id @default(cuid())
+  channelId  String
+  userId     String
+  notifyMode String   @default("mentions")
+  lastReadAt DateTime @default(now())
+  joinedAt   DateTime @default(now())
+
+  channel OpsChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([userId])
+}
+
+model OpsMessage {
+  id          String    @id @default(cuid())
+  channelId   String?
+  dmThreadId  String?
+  authorId    String
+  content     String    @db.Text
+  contentType String    @default("text")
+  voiceUrl    String?
+  parentId    String?
+  isEdited    Boolean   @default(false)
+  editedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  embedding   Unsupported("vector(1536)")?
+
+  channel   OpsChannel?          @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  dmThread  OpsDMThread?         @relation(fields: [dmThreadId], references: [id], onDelete: Cascade)
+  author    User                 @relation(fields: [authorId], references: [id])
+  parent    OpsMessage?          @relation("OpsThreadReplies", fields: [parentId], references: [id])
+  replies   OpsMessage[]         @relation("OpsThreadReplies")
+  reactions OpsMessageReaction[]
+  mentions  OpsMessageMention[]
+  pinned    OpsPinnedMessage[]
+
+  @@index([channelId, createdAt])
+  @@index([dmThreadId, createdAt])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model OpsMessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message OpsMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+}
+
+model OpsMessageMention {
+  id          String   @id @default(cuid())
+  messageId   String
+  mentionedId String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  message   OpsMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  mentioned User       @relation(fields: [mentionedId], references: [id], onDelete: Cascade)
+
+  @@index([mentionedId, isRead])
+  @@index([messageId])
+}
+
+model OpsPinnedMessage {
+  id        String   @id @default(cuid())
+  channelId String
+  messageId String
+  pinnedBy  String
+  createdAt DateTime @default(now())
+
+  channel OpsChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  message OpsMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([channelId])
+}
+
+model OpsDMThread {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants OpsDMParticipant[]
+  messages     OpsMessage[]
+}
+
+model OpsDMParticipant {
+  id         String   @id @default(cuid())
+  threadId   String
+  userId     String
+  lastReadAt DateTime @default(now())
+  notifyMode String   @default("all")
+
+  thread OpsDMThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@index([userId])
+}
+
+// ─── REQUEST SYSTEM ─────────────────────────────────────────────────────────
+
+model Request {
+  id               String        @id @default(cuid())
+  entityId         String?
+  requesterId      String
+  recipientId      String
+  type             RequestType
+  status           RequestStatus @default(pending)
+  title            String
+  body             String?       @db.Text
+  proposedTime     DateTime?
+  dueBy            DateTime?
+  requiresApproval Boolean       @default(false)
+  approvedBy       String?
+  approvedAt       DateTime?
+  calEventId       String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  entity    Entity?           @relation(fields: [entityId], references: [id])
+  requester User              @relation("RequestsMade", fields: [requesterId], references: [id])
+  recipient User              @relation("RequestsReceived", fields: [recipientId], references: [id])
+  responses RequestResponse[]
+  reminders RequestReminder[]
+
+  @@index([requesterId])
+  @@index([recipientId])
+  @@index([status])
+  @@index([entityId])
+}
+
+model RequestResponse {
+  id           String    @id @default(cuid())
+  requestId    String
+  responderId  String
+  action       String
+  note         String?
+  proposedTime DateTime?
+  createdAt    DateTime  @default(now())
+
+  request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  responder User    @relation(fields: [responderId], references: [id])
+
+  @@index([requestId])
+}
+
+model RequestReminder {
+  id           String    @id @default(cuid())
+  requestId    String
+  scheduledAt  DateTime
+  sentAt       DateTime?
+  isSnoozed    Boolean   @default(false)
+  snoozedUntil DateTime?
+  createdAt    DateTime  @default(now())
+
+  request Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([scheduledAt])
+}
+
+// ─── IDEAS BOARD ────────────────────────────────────────────────────────────
+
+model Idea {
+  id        String                    @id @default(cuid())
+  authorId  String
+  title     String
+  body      String?                   @db.Text
+  status    IdeaStatus                @default(raw)
+  entityIds String[]
+  voiceUrl  String?
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
+  embedding Unsupported("vector(1536)")?
+
+  author     User            @relation(fields: [authorId], references: [id])
+  reactions  IdeaReaction[]
+  comments   IdeaComment[]
+  entityTags IdeaEntityTag[]
+
+  @@index([authorId])
+  @@index([status])
+}
+
+model IdeaEntityTag {
+  id       String @id @default(cuid())
+  ideaId   String
+  entityId String
+
+  idea   Idea   @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([ideaId, entityId])
+}
+
+model IdeaReaction {
+  id        String   @id @default(cuid())
+  ideaId    String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ideaId, userId, emoji])
+}
+
+model IdeaComment {
+  id        String   @id @default(cuid())
+  ideaId    String
+  authorId  String
+  content   String   @db.Text
+  parentId  String?
+  createdAt DateTime @default(now())
+
+  idea    Idea          @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  author  User          @relation(fields: [authorId], references: [id])
+  parent  IdeaComment?  @relation("IdeaCommentReplies", fields: [parentId], references: [id])
+  replies IdeaComment[] @relation("IdeaCommentReplies")
+
+  @@index([ideaId])
+  @@index([authorId])
+  @@index([parentId])
 }
