@@ -24,7 +24,12 @@ export default function TemplatesPage() {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Templates</h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Manage email and SMS communication templates</p>
         </div>
-        <Link href="/admin/templates/generate" className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium">Generate with AI</Link>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/templates/ab-tests" className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700">A/B Tests</Link>
+          <Link href="/admin/templates/marketplace" className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700">Marketplace</Link>
+          <Link href="/admin/templates/auto-triggers" className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700">Auto-Triggers</Link>
+          <Link href="/admin/templates/generate" className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium">Generate with AI</Link>
+        </div>
       </div>
       <div className="flex gap-1 mb-4 border-b border-zinc-200 dark:border-zinc-700">
         {(["email", "sms"] as const).map((t) => (<button key={t} onClick={() => setTab(t)} className={`px-4 py-2.5 text-sm font-medium border-b-2 ${tab === t ? "border-blue-600 text-blue-600" : "border-transparent text-zinc-500"}`}>{t === "email" ? "Email Templates" : "SMS Templates"}</button>))}
