@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { W, SHADOWS, RADII, glassCardStyle, goldButtonStyle, goldGradientStyle, inputStyle } from "@/components/widget/widget-theme";
+import { useState, type ReactNode, type FormEvent } from "react";
+import { W, SHADOWS, RADII, glassCardStyle, goldButtonStyle, greenButtonStyle, goldGradientStyle, inputStyle } from "@/components/widget/widget-theme";
 import WidgetFooter from "@/components/widget/WidgetFooter";
 import WidgetHowItWorks from "@/components/widget/WidgetHowItWorks";
 
@@ -22,6 +22,100 @@ function DemoToast({ message, onClose }: { message: string; onClose: () => void 
       {message}
       <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", marginLeft: 12, fontWeight: 700, color: "#060a14" }}>&times;</button>
       <style>{`@keyframes demo-toast-in { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }`}</style>
+    </div>
+  );
+}
+
+function LeadCaptureModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", companyName: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.firstName.trim() || !form.email.trim()) { setError("Name and email are required"); return; }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          referralSource: "widget_demo",
+          audienceContext: "Converted from widget demo — high intent prospect",
+          utmSource: "widget_demo",
+          utmMedium: "interactive",
+          utmCampaign: "demo_lead_capture",
+        }),
+      });
+      if (res.ok) { onSuccess(); } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Something went wrong");
+      }
+    } catch { setError("Connection failed"); } finally { setSubmitting(false); }
+  };
+
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.7)",
+      backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 16, animation: "demo-toast-in 0.2s ease",
+    }}>
+      <div style={{
+        ...glassCardStyle(), width: "100%", maxWidth: 380, padding: 24,
+        boxShadow: SHADOWS.modal, position: "relative",
+      }}>
+        <button onClick={onClose} style={{
+          position: "absolute", top: 12, right: 12, background: "none", border: "none",
+          color: W.textDim, fontSize: 18, cursor: "pointer", lineHeight: 1,
+        }}>&times;</button>
+
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 28, marginBottom: 8 }}>&#x1F680;</div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, ...goldGradientStyle(), marginBottom: 4 }}>
+            Ready to Earn Real Commissions?
+          </h3>
+          <p style={{ fontSize: 12, color: W.textSecondary, lineHeight: 1.5 }}>
+            Apply to become a Fintella partner. Get your own widget, calculator, and referral tools — free to join.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 10, color: W.textDim, display: "block", marginBottom: 3 }}>First Name *</label>
+              <input style={inputStyle()} value={form.firstName} onChange={set("firstName")} placeholder="John" required />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 10, color: W.textDim, display: "block", marginBottom: 3 }}>Last Name</label>
+              <input style={inputStyle()} value={form.lastName} onChange={set("lastName")} placeholder="Smith" />
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize: 10, color: W.textDim, display: "block", marginBottom: 3 }}>Email *</label>
+            <input style={inputStyle()} type="email" value={form.email} onChange={set("email")} placeholder="you@company.com" required />
+          </div>
+          <div>
+            <label style={{ fontSize: 10, color: W.textDim, display: "block", marginBottom: 3 }}>Phone</label>
+            <input style={inputStyle()} value={form.phone} onChange={set("phone")} placeholder="(555) 123-4567" />
+          </div>
+          <div>
+            <label style={{ fontSize: 10, color: W.textDim, display: "block", marginBottom: 3 }}>Company</label>
+            <input style={inputStyle()} value={form.companyName} onChange={set("companyName")} placeholder="Your company name" />
+          </div>
+          {error && <div style={{ fontSize: 11, color: W.red, textAlign: "center" }}>{error}</div>}
+          <button type="submit" disabled={submitting} style={greenButtonStyle(submitting)}>
+            {submitting ? "Submitting..." : "Apply Now — It's Free"}
+          </button>
+          <p style={{ fontSize: 10, color: W.textDim, textAlign: "center", marginTop: 2 }}>
+            No cost. No obligation. Start earning on every referral.
+          </p>
+        </form>
+      </div>
     </div>
   );
 }
@@ -63,7 +157,7 @@ function DemoDashboard() {
   );
 }
 
-function DemoCalculator({ onToast }: { onToast: (m: string) => void }) {
+function DemoCalculator({ onToast, onCapture }: { onToast: (m: string) => void; onCapture: () => void }) {
   const [showResults, setShowResults] = useState(false);
   return (
     <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
@@ -113,8 +207,8 @@ function DemoCalculator({ onToast }: { onToast: (m: string) => void }) {
               <div style={{ fontSize: 10, color: W.textDim }}>High</div>
             </div>
           </div>
-          <button onClick={() => { onToast("Demo mode — sign up for real access"); setShowResults(false); }} style={goldButtonStyle()}>
-            Submit as Referral
+          <button onClick={onCapture} style={greenButtonStyle()}>
+            Submit as Referral &#x1F680;
           </button>
         </div>
       )}
@@ -122,7 +216,7 @@ function DemoCalculator({ onToast }: { onToast: (m: string) => void }) {
   );
 }
 
-function DemoReferralForm({ onToast }: { onToast: (m: string) => void }) {
+function DemoReferralForm({ onCapture }: { onCapture: () => void }) {
   return (
     <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ ...glassCardStyle(), padding: 16 }}>
@@ -142,8 +236,8 @@ function DemoReferralForm({ onToast }: { onToast: (m: string) => void }) {
           ))}
         </div>
       </div>
-      <button onClick={() => onToast("Demo mode — sign up for real access")} style={goldButtonStyle()}>
-        Submit Referral
+      <button onClick={onCapture} style={greenButtonStyle()}>
+        Submit Referral &#x1F680;
       </button>
     </div>
   );
@@ -194,6 +288,8 @@ const tabIcons: Record<Tab, (c: string, active: boolean) => ReactNode> = {
 export default function WidgetDemoPage() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [toast, setToast] = useState<string | null>(null);
+  const [showCapture, setShowCapture] = useState(false);
+  const [captured, setCaptured] = useState(false);
 
   const showToast = (m: string) => {
     setToast(m);
@@ -296,14 +392,20 @@ export default function WidgetDemoPage() {
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", paddingBottom: 36 }}>
         {tab === "dashboard" && <DemoDashboard />}
-        {tab === "calc" && <DemoCalculator onToast={showToast} />}
-        {tab === "refer" && <DemoReferralForm onToast={showToast} />}
+        {tab === "calc" && <DemoCalculator onToast={showToast} onCapture={() => setShowCapture(true)} />}
+        {tab === "refer" && <DemoReferralForm onCapture={() => setShowCapture(true)} />}
         {tab === "how" && <WidgetHowItWorks commissionRate={DEMO_RATE} />}
         {tab === "help" && <DemoChat />}
       </div>
 
       <WidgetFooter />
       {toast && <DemoToast message={toast} onClose={() => setToast(null)} />}
+      {showCapture && !captured && (
+        <LeadCaptureModal
+          onClose={() => setShowCapture(false)}
+          onSuccess={() => { setCaptured(true); setShowCapture(false); showToast("Application submitted! We'll be in touch."); }}
+        />
+      )}
     </div>
   );
 }
