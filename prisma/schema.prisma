@@ -2018,6 +2018,18 @@ model AiKnowledgeGap {
   @@index([category])
 }
 
+model AiPersonaConfig {
+  id                   String   @id @default(cuid())
+  personaId            String   @unique // finn, stella, tara, ollie
+  enabledTools         String[] // tool names this persona can use
+  maxDailyMessages     Int      @default(50)
+  maxDailySpend        Float    @default(5.0)
+  systemPromptOverride String?  // optional custom instructions appended to voice wrapper
+  isActive             Boolean  @default(true)
+  updatedAt            DateTime @updatedAt
+  updatedBy            String?  // admin user ID who last edited
+}
+
 // ─── PARTNER PROSPECT CRM ──────────────────────────────────────────────
 // Each partner tracks their own leads before submitting to the firm.
 // Pipeline: new → contacted → call_booked → qualified → submitted → won → lost

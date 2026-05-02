@@ -106,6 +106,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "automations", label: "Automations", icon: "⚡" },
   { id: "gettingStartedEditor", label: "Getting Started", icon: "✅" },
   { id: "knowledgeCenter", label: "Knowledge Center", icon: "🧠" },
+  { id: "aiPermissions", label: "AI Permissions", icon: "🛡️" },
   { id: "landingPages", label: "Landing Pages", icon: "🌐" },
   { id: "settings", label: "Settings", icon: "⚙️" },
   { id: "subscriptions", label: "Subscriptions", icon: "💎" },
