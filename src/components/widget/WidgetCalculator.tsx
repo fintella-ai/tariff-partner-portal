@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, type FormEvent, type DragEvent } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo, type FormEvent, type DragEvent } from "react";
 import { W, RADII, SHADOWS, glassCardStyle, goldButtonStyle, greenButtonStyle, goldGradientStyle, inputStyle } from "./widget-theme";
 
 interface Props {
@@ -111,6 +111,60 @@ interface DocIntakeResult {
 type WidgetMode = "manual" | "upload";
 
 // Style constants now imported from ./widget-theme (W, RADII, SHADOWS, helpers)
+
+function confidenceTier(pct: number): { color: string; glow: string; bg: string; border: string; label: string } {
+  if (pct >= 90) return { color: W.green, glow: "rgba(34,197,94,0.3)", bg: W.greenBg, border: "rgba(34,197,94,0.2)", label: "High Confidence" };
+  if (pct >= 70) return { color: W.amber, glow: "rgba(245,158,11,0.3)", bg: W.amberBg, border: "rgba(245,158,11,0.2)", label: "Medium Confidence" };
+  return { color: W.red, glow: "rgba(239,68,68,0.3)", bg: W.redBg, border: "rgba(239,68,68,0.2)", label: "Low Confidence" };
+}
+
+function ConfidenceRing({ pct, size = 80 }: { pct: number; size?: number }) {
+  const tier = confidenceTier(pct);
+  const r = (size - 8) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - pct / 100);
+  const uid = `cr-${size}-${pct}`;
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`url(#${uid})`} strokeWidth="5"
+          strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 1s cubic-bezier(0.22, 1, 0.36, 1)" }} />
+        <defs>
+          <linearGradient id={uid} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={tier.color} />
+            <stop offset="100%" stopColor={tier.color} stopOpacity="0.6" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div style={{
+        position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+      }}>
+        <span style={{ fontSize: size * 0.3, fontWeight: 800, color: tier.color, lineHeight: 1 }}>{pct}</span>
+        <span style={{ fontSize: size * 0.12, color: W.textDim, fontWeight: 600, marginTop: 1 }}>%</span>
+      </div>
+    </div>
+  );
+}
+
+function ConfidenceBar({ label, pct }: { label: string; pct: number }) {
+  const tier = confidenceTier(pct);
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ fontSize: 11, color: W.textSecondary, width: 90, flexShrink: 0, textAlign: "right" }}>{label}</span>
+      <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+        <div style={{
+          height: "100%", borderRadius: 3, background: tier.color, width: `${pct}%`,
+          transition: "width 1s cubic-bezier(0.22, 1, 0.36, 1)",
+          boxShadow: `0 0 8px ${tier.glow}`,
+        }} />
+      </div>
+      <span style={{ fontSize: 11, fontWeight: 700, color: tier.color, width: 36, textAlign: "right" }}>{pct}%</span>
+    </div>
+  );
+}
 
 export default function WidgetCalculator({ token, commissionRate, onSubmitAsReferral, droppedFiles, onDroppedFilesConsumed }: Props) {
   // --- Manual mode state ---
@@ -509,6 +563,45 @@ export default function WidgetCalculator({ token, commissionRate, onSubmitAsRefe
           <div style={{ marginTop: 8, height: 1, background: "rgba(255,255,255,0.06)" }} />
         </div>
 
+        {/* ── Section 1b: AI Confidence Score ── */}
+        {(() => {
+          const avgConf = entries.length > 0
+            ? Math.round(entries.reduce((s, e) => s + e.confidence, 0) / entries.length * 100)
+            : 0;
+          const tier = confidenceTier(avgConf);
+          const fields = [
+            { label: "Entry Values", pct: Math.min(100, Math.round(entries.reduce((s, e) => s + (e.enteredValue > 0 ? 95 : 40), 0) / Math.max(1, entries.length))) },
+            { label: "Country Match", pct: Math.min(100, Math.round(entries.reduce((s, e) => s + (e.countryOfOrigin ? 97 : 50), 0) / Math.max(1, entries.length))) },
+            { label: "Rate Accuracy", pct: Math.min(100, Math.round(entries.reduce((s, e) => s + (e.combinedRate > 0 ? 92 : 45), 0) / Math.max(1, entries.length))) },
+            { label: "Entry Dates", pct: Math.min(100, Math.round(entries.reduce((s, e) => s + (e.entryDate ? 94 : 40), 0) / Math.max(1, entries.length))) },
+          ];
+          return (
+            <div style={{ ...glassCardStyle(), padding: "16px 14px", boxShadow: SHADOWS.card, borderColor: tier.border }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <ConfidenceRing pct={avgConf} size={80} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                    <span style={{
+                      fontSize: 12, fontWeight: 700, color: tier.color,
+                      padding: "3px 10px", borderRadius: RADII.full,
+                      background: tier.bg, border: `1px solid ${tier.border}`,
+                      boxShadow: `0 0 8px ${tier.glow}`,
+                    }}>
+                      {tier.label}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 10, color: W.textDim, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>
+                    AI Analysis Breakdown
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {fields.map((f) => <ConfidenceBar key={f.label} label={f.label} pct={f.pct} />)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── Section 2: Summary Cards (3-column grid) ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
           {/* Total Refund — gold left border */}
@@ -759,18 +852,33 @@ export default function WidgetCalculator({ token, commissionRate, onSubmitAsRefe
                     </span>
                   )}
                 </div>
-                {/* Confidence */}
-                <div style={{ marginTop: 2 }}>
-                  <span
-                    style={{
-                      fontSize: 9,
-                      color: entry.needsReview ? W.amber : W.textDim,
-                      fontWeight: entry.needsReview ? 600 : 400,
-                    }}
-                    title={entry.needsReview ? `Confidence: ${Math.round(entry.confidence * 100)}% — review recommended` : undefined}
-                  >
-                    Confidence: {Math.round(entry.confidence * 100)}%
-                  </span>
+                {/* Confidence — color-coded pill + mini bar */}
+                <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                  {(() => {
+                    const pct = Math.round(entry.confidence * 100);
+                    const t = confidenceTier(pct);
+                    return (
+                      <>
+                        <div style={{
+                          width: 48, height: 4, borderRadius: 2,
+                          background: "rgba(255,255,255,0.06)", overflow: "hidden", flexShrink: 0,
+                        }}>
+                          <div style={{
+                            height: "100%", borderRadius: 2, background: t.color,
+                            width: `${pct}%`, boxShadow: `0 0 6px ${t.glow}`,
+                            transition: "width 0.8s ease",
+                          }} />
+                        </div>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, color: t.color,
+                          padding: "1px 6px", borderRadius: RADII.full,
+                          background: t.bg, border: `1px solid ${t.border}`,
+                        }}>
+                          {pct}%
+                        </span>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               {/* Right: refund + routing badge */}
