@@ -37,6 +37,10 @@ export default function WidgetAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"analytics" | "manage">("analytics");
 
+  // Auto-optimize state
+  const [autoOptimize, setAutoOptimize] = useState(false);
+  const [togglingAuto, setTogglingAuto] = useState(false);
+
   // Variant editor state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: "", description: "", weight: 50, config: "{}", isActive: true });
@@ -53,6 +57,7 @@ export default function WidgetAnalyticsPage() {
       if (vRes.ok) {
         const vData = await vRes.json();
         setVariants(vData.variants || []);
+        setAutoOptimize(!!vData.autoOptimize);
       }
       if (fRes.ok) {
         const fData = await fRes.json();
@@ -68,6 +73,23 @@ export default function WidgetAnalyticsPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  /* ── Toggle auto-optimize ── */
+  const toggleAutoOptimize = async () => {
+    setTogglingAuto(true);
+    try {
+      const res = await fetch("/api/admin/widget-analytics/variants", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autoOptimize: !autoOptimize }),
+      });
+      if (res.ok) {
+        setAutoOptimize(!autoOptimize);
+      }
+    } finally {
+      setTogglingAuto(false);
+    }
+  };
 
   /* ── Save variant (create or update) ── */
   const saveVariant = async (isNew: boolean) => {
@@ -330,6 +352,47 @@ export default function WidgetAnalyticsPage() {
       ) : (
         /* ── Manage Variants tab ── */
         <div className="space-y-4">
+          {/* ── Auto-Optimize toggle ── */}
+          <div
+            className="rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+            style={{ background: "var(--app-bg-secondary)", border: "1px solid var(--app-border)" }}
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-display text-sm font-bold">Auto-Optimize</span>
+                <span
+                  className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                    autoOptimize
+                      ? "bg-green-500/15 text-green-400"
+                      : "bg-neutral-500/15 theme-text-muted"
+                  }`}
+                >
+                  {autoOptimize ? "Enabled" : "Disabled"}
+                </span>
+              </div>
+              <p className="font-body text-xs theme-text-muted mt-1">
+                {autoOptimize
+                  ? "Weights are automatically optimized weekly via Thompson sampling based on referral conversion rates."
+                  : "Variant weights are set manually. Enable to let the system auto-adjust weights based on performance."}
+              </p>
+            </div>
+            <button
+              onClick={toggleAutoOptimize}
+              disabled={togglingAuto}
+              className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                autoOptimize ? "bg-brand-gold" : "bg-neutral-600"
+              }`}
+              role="switch"
+              aria-checked={autoOptimize}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  autoOptimize ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
           <div className="flex justify-end">
             <button
               onClick={() => {
@@ -366,15 +429,24 @@ export default function WidgetAnalyticsPage() {
                 </div>
                 <div>
                   <label className="font-body text-xs theme-text-muted block mb-1">Weight (0-100)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    className="w-full px-3 py-2 rounded-lg font-body text-sm"
-                    style={{ background: "var(--app-bg)", border: "1px solid var(--app-border)", color: "var(--app-text)" }}
-                    value={editForm.weight}
-                    onChange={(e) => setEditForm({ ...editForm, weight: parseInt(e.target.value) || 0 })}
-                  />
+                  {autoOptimize ? (
+                    <div
+                      className="w-full px-3 py-2 rounded-lg font-body text-xs theme-text-muted italic"
+                      style={{ background: "var(--app-bg)", border: "1px solid var(--app-border)" }}
+                    >
+                      Managed by auto-optimizer
+                    </div>
+                  ) : (
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      className="w-full px-3 py-2 rounded-lg font-body text-sm"
+                      style={{ background: "var(--app-bg)", border: "1px solid var(--app-border)", color: "var(--app-text)" }}
+                      value={editForm.weight}
+                      onChange={(e) => setEditForm({ ...editForm, weight: parseInt(e.target.value) || 0 })}
+                    />
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <label className="font-body text-xs theme-text-muted block mb-1">Description</label>

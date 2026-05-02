@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/admin/widget-analytics/variants
- * Returns all widget variants with impression counts.
+ * Returns all widget variants with impression counts, plus the auto-optimize flag.
  */
 export async function GET() {
   const session = await auth();
@@ -14,12 +14,15 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const variants = await prisma.widgetVariant.findMany({
-    orderBy: { createdAt: "asc" },
-    include: { _count: { select: { impressions: true } } },
-  });
+  const [variants, settings] = await Promise.all([
+    prisma.widgetVariant.findMany({
+      orderBy: { createdAt: "asc" },
+      include: { _count: { select: { impressions: true } } },
+    }),
+    prisma.portalSettings.findUnique({ where: { id: "global" }, select: { widgetAutoOptimize: true } }),
+  ]);
 
-  return NextResponse.json({ variants });
+  return NextResponse.json({ variants, autoOptimize: settings?.widgetAutoOptimize ?? false });
 }
 
 /**
@@ -59,6 +62,34 @@ export async function POST(req: NextRequest) {
     }
     throw err;
   }
+}
+
+/**
+ * PATCH /api/admin/widget-analytics/variants
+ * Toggle widgetAutoOptimize in PortalSettings.
+ */
+export async function PATCH(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const role = (session.user as any).role;
+  if (!["super_admin", "admin"].includes(role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const { autoOptimize } = body;
+
+  if (typeof autoOptimize !== "boolean") {
+    return NextResponse.json({ error: "autoOptimize must be a boolean" }, { status: 400 });
+  }
+
+  await prisma.portalSettings.upsert({
+    where: { id: "global" },
+    create: { id: "global", widgetAutoOptimize: autoOptimize },
+    update: { widgetAutoOptimize: autoOptimize },
+  });
+
+  return NextResponse.json({ autoOptimize });
 }
 
 /**

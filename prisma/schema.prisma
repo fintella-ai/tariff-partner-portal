@@ -878,6 +878,10 @@ model PortalSettings {
   //   custom sections interleave cleanly with built-ins. Mutate only
   //   through src/lib/page-custom-sections.ts.
   pageCustomSections Json?
+  // Widget A/B testing — when true the weekly cron auto-adjusts variant
+  // weights via Thompson sampling. When false (default) admins set weights
+  // manually on /admin/widget-analytics.
+  widgetAutoOptimize Boolean @default(false)
   // Timestamps
   updatedAt DateTime @updatedAt
 }

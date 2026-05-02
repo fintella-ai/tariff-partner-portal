@@ -51,6 +51,10 @@
     {
       "path": "/api/cron/agreement-refresh",
       "schedule": "0 */3 * * *"
+    },
+    {
+      "path": "/api/cron/optimize-variants",
+      "schedule": "0 5 * * 1"
     }
   ]
 }
