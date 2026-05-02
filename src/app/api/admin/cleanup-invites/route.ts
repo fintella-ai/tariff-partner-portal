@@ -31,11 +31,14 @@ export async function DELETE(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const keepUsed = body.keepUsed !== false;
+  const mode = body.mode || "unused_only";
 
-  const where = keepUsed
-    ? { status: "active", usedByPartnerCode: null }
-    : { status: "active", usedByPartnerCode: null, invitedEmail: null };
+  const where =
+    mode === "all"
+      ? {}
+      : mode === "unused_and_expired"
+        ? { usedByPartnerCode: null }
+        : { status: "active", usedByPartnerCode: null };
 
   const toDelete = await prisma.recruitmentInvite.findMany({
     where,
@@ -55,7 +58,7 @@ export async function DELETE(req: Request) {
     targetType: "RecruitmentInvite",
     details: {
       deleted: result.count,
-      keepUsed,
+      mode,
       sample: toDelete.slice(0, 5).map((i) => ({
         inviter: i.inviterCode,
         tier: i.targetTier,
@@ -66,6 +69,6 @@ export async function DELETE(req: Request) {
 
   return NextResponse.json({
     deleted: result.count,
-    message: `Deleted ${result.count} unused auto-generated invite links`,
+    message: `Deleted ${result.count} invite${result.count !== 1 ? "s" : ""}`,
   });
 }

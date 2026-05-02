@@ -1165,17 +1165,17 @@ export default function AdminPartnersPage() {
         </div>
       ) : activeTab === "invited" ? (
         <>
-          {/* Cleanup unused invites */}
-          <div className="mb-3 flex items-center gap-3">
+          {/* Cleanup invites — super admin can delete anything */}
+          <div className="mb-3 flex flex-wrap items-center gap-3">
             <button
               onClick={async () => {
-                if (!confirm("Delete all unused auto-generated invite links? Used invites (where someone signed up) are preserved.")) return;
+                if (!confirm("Delete all unused invite links? Used invites are preserved.")) return;
                 setCleanupBusy(true);
                 try {
                   const res = await fetch("/api/admin/cleanup-invites", {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ keepUsed: true }),
+                    body: JSON.stringify({ mode: "unused_only" }),
                   });
                   const data = await res.json();
                   setCleanupResult({ deleted: data.deleted || 0 });
@@ -1188,11 +1188,34 @@ export default function AdminPartnersPage() {
               disabled={cleanupBusy}
               className="text-[12px] px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition disabled:opacity-50 min-h-[44px]"
             >
-              {cleanupBusy ? "Cleaning..." : "Clean Up Unused Invites"}
+              {cleanupBusy ? "Cleaning..." : "Delete Unused"}
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm("DELETE ALL INVITES including used ones? This removes the entire invite history. Are you sure?")) return;
+                setCleanupBusy(true);
+                try {
+                  const res = await fetch("/api/admin/cleanup-invites", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "all" }),
+                  });
+                  const data = await res.json();
+                  setCleanupResult({ deleted: data.deleted || 0 });
+                  if (data.deleted > 0) {
+                    const invRes = await fetch("/api/admin/invites");
+                    if (invRes.ok) { const d = await invRes.json(); setInvites(d.invites || []); }
+                  }
+                } catch {} finally { setCleanupBusy(false); }
+              }}
+              disabled={cleanupBusy}
+              className="text-[12px] px-4 py-2 rounded-lg border border-red-700/40 text-red-500 hover:bg-red-500/10 transition disabled:opacity-50 min-h-[44px]"
+            >
+              {cleanupBusy ? "Cleaning..." : "Delete All Invites"}
             </button>
             {cleanupResult && (
               <span className="font-body text-[13px] text-green-400">
-                {cleanupResult.deleted > 0 ? `${cleanupResult.deleted} unused invites deleted` : "No unused invites found"}
+                {cleanupResult.deleted > 0 ? `${cleanupResult.deleted} invite${cleanupResult.deleted !== 1 ? "s" : ""} deleted` : "Nothing to delete"}
               </span>
             )}
           </div>

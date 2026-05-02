@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit-log";
 
 /**
  * DELETE /api/invites/[id]
  *
- * Delete a RecruitmentInvite created by the current partner.
- * Only allowed when the invite is still `active` (unused). Used or
- * expired invites are part of the partner's recruitment history and
- * cannot be deleted to preserve the audit trail.
- *
- * Returns 404 if the invite doesn't exist or belongs to another partner.
- * Returns 409 if the invite is already used/expired.
+ * Partners: can delete their own active (unused) invites only.
+ * Super admins: can delete ANY invite regardless of status or ownership.
  */
 export async function DELETE(
   _req: NextRequest,
@@ -21,17 +17,42 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const role = (session.user as any).role as string | undefined;
   const partnerCode = (session.user as any).partnerCode as string | undefined;
-  if (!partnerCode) {
-    return NextResponse.json({ error: "Not a partner" }, { status: 403 });
+  const isSuperAdmin = role === "super_admin";
+
+  if (!partnerCode && !isSuperAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const invite = await prisma.recruitmentInvite.findUnique({
     where: { id: params.id },
   });
 
-  if (!invite || invite.inviterCode !== partnerCode) {
-    // 404 to avoid leaking existence of another partner's invites
+  if (!invite) {
+    return NextResponse.json({ error: "Invite not found" }, { status: 404 });
+  }
+
+  if (isSuperAdmin) {
+    await prisma.recruitmentInvite.delete({ where: { id: params.id } });
+    await logAudit({
+      action: "invites.delete",
+      actorEmail: session.user.email || "unknown",
+      actorRole: role || "super_admin",
+      targetType: "RecruitmentInvite",
+      targetId: params.id,
+      details: {
+        inviterCode: invite.inviterCode,
+        targetTier: invite.targetTier,
+        status: invite.status,
+        usedByPartnerCode: invite.usedByPartnerCode,
+      },
+    });
+    return NextResponse.json({ success: true });
+  }
+
+  if (invite.inviterCode !== partnerCode) {
     return NextResponse.json({ error: "Invite not found" }, { status: 404 });
   }
 
