@@ -1,0 +1,8 @@
+"use client";
+interface A { tag: string; name: string; description?: string|null; templateType: string; requiredVariables: string[]; }
+interface Props { actions: A[]; selectedTags: string[]; onChange: (t: string[]) => void; }
+export default function WorkflowAssociationPanel({ actions, selectedTags, onChange }: Props) {
+  const toggle = (t: string) => onChange(selectedTags.includes(t)?selectedTags.filter(x=>x!==t):[...selectedTags,t]);
+  if (!actions||actions.length===0) return null;
+  return (<div className="border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900 p-4"><h3 className="text-sm font-semibold mb-3">Workflow Associations</h3><div className="space-y-2">{actions.map(a=>(<label key={a.tag} className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer"><input type="checkbox" checked={selectedTags.includes(a.tag)} onChange={()=>toggle(a.tag)} className="mt-0.5 rounded border-zinc-300 text-blue-600"/><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-sm font-medium">{a.name}</span><span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase ${a.templateType==="both"?"bg-purple-100 text-purple-700":a.templateType==="email"?"bg-blue-100 text-blue-700":"bg-green-100 text-green-700"}`}>{a.templateType}</span></div>{a.description&&<p className="text-xs text-zinc-500 mt-0.5">{a.description}</p>}{a.requiredVariables.length>0&&<div className="flex flex-wrap gap-1 mt-1">{a.requiredVariables.map(v=><span key={v} className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-[10px] font-mono text-zinc-500">{`{{${v}}}`}</span>)}</div>}</div></label>))}</div></div>);
+}

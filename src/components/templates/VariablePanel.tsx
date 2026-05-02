@@ -1,0 +1,11 @@
+"use client";
+import { useState } from "react";
+import { Search, ChevronDown, ChevronRight } from "lucide-react";
+interface V { key: string; label: string; category: string; description?: string|null; example?: string|null; }
+interface Props { variables: V[]; activeKeys: string[]; onVariableClick: (k: string) => void; }
+export default function VariablePanel({ variables, activeKeys, onVariableClick }: Props) {
+  const [search, setSearch] = useState(""); const [col, setCol] = useState<Record<string,boolean>>({});
+  const f = search ? variables.filter((v) => v.key.includes(search.toLowerCase())||v.label.toLowerCase().includes(search.toLowerCase())) : variables;
+  const g: Record<string,V[]> = {}; for (const v of f) { if (!g[v.category]) g[v.category]=[]; g[v.category].push(v); }
+  return (<div className="border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900 p-4"><h3 className="text-sm font-semibold mb-3">Variables</h3><div className="relative mb-3"><Search className="absolute left-2.5 top-2.5 w-4 h-4 text-zinc-400" /><input type="text" placeholder="Search..." value={search} onChange={(e)=>setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800" /></div>{Object.entries(g).map(([c,vs])=>(<div key={c} className="mb-2"><button onClick={()=>setCol(p=>({...p,[c]:!p[c]}))} className="flex items-center gap-1.5 w-full text-xs font-medium text-zinc-500 uppercase tracking-wider py-1.5">{col[c]?<ChevronRight className="w-3 h-3"/>:<ChevronDown className="w-3 h-3"/>}{c}<span className="ml-auto text-zinc-400 normal-case tracking-normal">{vs.length}</span></button>{!col[c]&&<div className="flex flex-wrap gap-1.5 pb-2">{vs.map(v=><button key={v.key} onClick={()=>onVariableClick(v.key)} title={`${v.label}${v.description?` — ${v.description}`:""}${v.example?` (e.g. ${v.example})`:""}`} className={`px-2 py-1 rounded-md text-xs font-mono ${activeKeys.includes(v.key)?"bg-blue-100 dark:bg-blue-900/40 text-blue-700 ring-1 ring-blue-400":"bg-zinc-100 dark:bg-zinc-800 text-zinc-600 hover:bg-zinc-200 dark:hover:bg-zinc-700"}`}>{`{{${v.key}}}`}</button>)}</div>}</div>))}</div>);
+}
