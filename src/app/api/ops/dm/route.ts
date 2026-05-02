@@ -7,7 +7,7 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const userId = session.user.id;
+    const userId = session.user!.id;
 
     const participations = await prisma.opsDMParticipant.findMany({
       where: { userId },
@@ -27,7 +27,7 @@ export async function GET() {
         participants: {
           include: {
             user: {
-              select: { id: true, name: true, email: true, image: true, role: true },
+              select: { id: true, name: true, email: true, role: true },
             },
           },
         },
@@ -36,7 +36,7 @@ export async function GET() {
           take: 1,
           include: {
             author: {
-              select: { id: true, name: true, email: true, image: true },
+              select: { id: true, name: true, email: true },
             },
           },
         },
@@ -70,7 +70,6 @@ export async function GET() {
         userId: p.user.id,
         name: p.user.name,
         email: p.user.email,
-        image: p.user.image,
         role: p.user.role,
         lastReadAt: p.lastReadAt,
       })),
@@ -97,7 +96,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "participantIds required" }, { status: 400 });
     }
 
-    const userId = session.user.id;
+    const userId = session.user!.id;
     const allUserIds = Array.from(new Set([userId, ...participantIds]));
 
     if (allUserIds.length < 2) {
@@ -123,7 +122,7 @@ export async function POST(req: NextRequest) {
             participants: {
               include: {
                 user: {
-                  select: { id: true, name: true, email: true, image: true, role: true },
+                  select: { id: true, name: true, email: true, role: true },
                 },
               },
             },
@@ -143,7 +142,7 @@ export async function POST(req: NextRequest) {
         participants: {
           include: {
             user: {
-              select: { id: true, name: true, email: true, image: true, role: true },
+              select: { id: true, name: true, email: true, role: true },
             },
           },
         },

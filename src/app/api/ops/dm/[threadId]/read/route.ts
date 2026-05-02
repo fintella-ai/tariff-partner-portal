@@ -11,7 +11,7 @@ export async function POST(
 
   try {
     const { threadId } = params;
-    const userId = session.user.id;
+    const userId = session.user!.id;
 
     const participant = await prisma.opsDMParticipant.findUnique({
       where: { threadId_userId: { threadId, userId } },

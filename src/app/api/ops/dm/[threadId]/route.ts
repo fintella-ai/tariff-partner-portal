@@ -13,7 +13,7 @@ export async function GET(
     const { threadId } = params;
 
     const participant = await prisma.opsDMParticipant.findUnique({
-      where: { threadId_userId: { threadId, userId: session.user.id } },
+      where: { threadId_userId: { threadId, userId: session.user!.id } },
     });
 
     if (!participant) {
@@ -26,7 +26,7 @@ export async function GET(
         participants: {
           include: {
             user: {
-              select: { id: true, name: true, email: true, image: true, role: true },
+              select: { id: true, name: true, email: true, role: true },
             },
           },
         },

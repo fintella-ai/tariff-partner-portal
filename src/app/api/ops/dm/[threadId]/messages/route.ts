@@ -13,7 +13,7 @@ export async function GET(
     const { threadId } = params;
 
     const participant = await prisma.opsDMParticipant.findUnique({
-      where: { threadId_userId: { threadId, userId: session.user.id } },
+      where: { threadId_userId: { threadId, userId: session.user!.id } },
     });
 
     if (!participant) {
@@ -31,7 +31,7 @@ export async function GET(
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: {
         author: {
-          select: { id: true, name: true, email: true, image: true },
+          select: { id: true, name: true, email: true },
         },
         reactions: {
           include: {
@@ -70,7 +70,7 @@ export async function POST(
 
   try {
     const { threadId } = params;
-    const userId = session.user.id;
+    const userId = session.user!.id;
 
     const participant = await prisma.opsDMParticipant.findUnique({
       where: { threadId_userId: { threadId, userId } },
@@ -113,7 +113,7 @@ export async function POST(
         },
         include: {
           author: {
-            select: { id: true, name: true, email: true, image: true },
+            select: { id: true, name: true, email: true },
           },
           reactions: true,
         },
