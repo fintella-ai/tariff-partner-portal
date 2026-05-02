@@ -89,6 +89,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   automations:  { id: "automations", href: "/admin/automations", icon: "⚡", label: "Automations" },
   gettingStartedEditor: { id: "gettingStartedEditor", href: "/admin/getting-started-editor", icon: "✅", label: "Getting Started" },
   aiActivity:   { id: "aiActivity", href: "/admin/ai-activity", icon: "🤖", label: "AI Activity" },
+  aiPermissions: { id: "aiPermissions", href: "/admin/ai-permissions", icon: "🛡️", label: "AI Permissions" },
   knowledgeCenter: { id: "knowledgeCenter", href: "/admin/knowledge-center", icon: "🧠", label: "Knowledge Center" },
   settings:     { id: "settings", href: "/admin/settings", icon: "⚙️", label: "Settings" },
   subscriptions: { id: "subscriptions", href: "/admin/subscriptions", icon: "💎", label: "Subscriptions" },

@@ -48,6 +48,39 @@ const TICKET_CATEGORIES = [
 
 const TICKET_PRIORITIES = ["low", "normal", "high", "urgent"] as const;
 
+/**
+ * Fetch persona-specific tool config from DB. Falls back to hardcoded defaults
+ * when no AiPersonaConfig row exists (backward-compatible).
+ */
+export async function getPersonaToolConfig(personaId: string): Promise<{
+  enabledTools: string[];
+  maxDailyMessages: number;
+  maxDailySpend: number;
+  systemPromptOverride: string | null;
+  isActive: boolean;
+} | null> {
+  try {
+    const config = await prisma.aiPersonaConfig.findUnique({
+      where: { personaId },
+    });
+    return config;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Filter a tool array to only include tools enabled for a persona.
+ * Returns the full array unchanged when no DB config exists (backward-compatible).
+ */
+export function filterToolsByConfig(
+  tools: typeof SHARED_TOOLS,
+  enabledToolNames: string[] | null
+): typeof SHARED_TOOLS {
+  if (!enabledToolNames) return tools;
+  return tools.filter((t) => enabledToolNames.includes(t.name));
+}
+
 // ─── SHARED_TOOLS — available to ALL personas (Ollie, Finn, Stella, etc.) ────
 // These 8 tools handle lookup + standard escalation paths that every persona
 // needs. cache_control on the last entry marks the cache breakpoint for callers

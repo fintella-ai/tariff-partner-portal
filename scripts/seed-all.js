@@ -1312,6 +1312,23 @@ async function main() {
     console.log("✓ Knowledge base: seeded " + kbCreated + " entries");
   }
 
+  // ── AI Persona Configs ──────────────────────────────────────────────
+  var PERSONA_DEFAULTS = [
+    { personaId: "finn", enabledTools: ["lookupDeal","lookupCommissions","lookupAgreement","lookupDownline","create_support_ticket","start_live_chat","offer_schedule_slots","book_slot","hand_off"], maxDailyMessages: 50, maxDailySpend: 5.0 },
+    { personaId: "stella", enabledTools: ["lookupDeal","lookupCommissions","lookupAgreement","lookupDownline","create_support_ticket","start_live_chat","offer_schedule_slots","book_slot","hand_off"], maxDailyMessages: 50, maxDailySpend: 5.0 },
+    { personaId: "tara", enabledTools: ["lookupDeal","lookupCommissions","lookupAgreement","lookupDownline","create_support_ticket","start_live_chat","offer_schedule_slots","book_slot"], maxDailyMessages: 50, maxDailySpend: 5.0 },
+    { personaId: "ollie", enabledTools: ["lookupDeal","lookupCommissions","lookupAgreement","lookupDownline","create_support_ticket","start_live_chat","offer_schedule_slots","book_slot","investigate_bug","initiate_live_transfer"], maxDailyMessages: 50, maxDailySpend: 5.0 },
+  ];
+  for (var pdi = 0; pdi < PERSONA_DEFAULTS.length; pdi++) {
+    var pd = PERSONA_DEFAULTS[pdi];
+    await prisma.aiPersonaConfig.upsert({
+      where: { personaId: pd.personaId },
+      create: pd,
+      update: {},
+    });
+  }
+  console.log("✓ AI persona configs: seeded 4 defaults");
+
   // ── Tariff rates (IEEPA + IRS interest) ────────────────────────────
   const seedTariffRates = require("./seed-tariff-rates.js");
   await seedTariffRates();

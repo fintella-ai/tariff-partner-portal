@@ -1,0 +1,284 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+
+interface PersonaConfig {
+  id: string | null;
+  personaId: string;
+  enabledTools: string[];
+  maxDailyMessages: number;
+  maxDailySpend: number;
+  systemPromptOverride: string | null;
+  isActive: boolean;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
+const PERSONA_META: Record<string, { name: string; role: string; accent: string; desc: string; avatar: string }> = {
+  finn: { name: "Finn", role: "Generalist", accent: "#c4a050", desc: "Direct, data-driven. Fast answers.", avatar: "/ai-avatars/finn.png" },
+  stella: { name: "Stella", role: "Generalist", accent: "#d8a5a5", desc: "Warm, coaching. Walks you through it.", avatar: "/ai-avatars/stella.png" },
+  tara: { name: "Tara", role: "Product Specialist", accent: "#5e7eb8", desc: "Tariff refund expert. Cites sources.", avatar: "/ai-avatars/tara.svg" },
+  ollie: { name: "Ollie", role: "Support Specialist", accent: "#4a9d9c", desc: "Portal ops. Troubleshooting.", avatar: "/ai-avatars/ollie.svg" },
+};
+
+const TOOL_DESCRIPTIONS: Record<string, string> = {
+  lookupDeal: "Search partner deals by name/entity",
+  lookupCommissions: "View commission ledger entries",
+  lookupAgreement: "Check agreement status",
+  lookupDownline: "View recruited downline partners",
+  create_support_ticket: "Create support tickets",
+  start_live_chat: "Transfer to live admin chat",
+  offer_schedule_slots: "Show available call slots",
+  book_slot: "Book a scheduled call",
+  investigate_bug: "Triage portal bug reports",
+  initiate_live_transfer: "Bridge live phone calls",
+  hand_off: "Transfer to specialist persona",
+};
+
+export default function AiPermissionsPage() {
+  const [configs, setConfigs] = useState<PersonaConfig[]>([]);
+  const [allTools, setAllTools] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [expandedPrompt, setExpandedPrompt] = useState<string | null>(null);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/ai-permissions");
+      const data = await res.json();
+      setConfigs(data.configs);
+      setAllTools(data.allTools);
+    } catch { /* ignore */ } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const updateConfig = async (personaId: string, updates: Partial<PersonaConfig>) => {
+    const current = configs.find((c) => c.personaId === personaId);
+    if (!current) return;
+    setSaving(personaId);
+    try {
+      const res = await fetch("/api/admin/ai-permissions", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...current, ...updates, personaId }),
+      });
+      if (res.ok) {
+        showToast(`${PERSONA_META[personaId]?.name ?? personaId} updated`);
+        load();
+      } else {
+        const data = await res.json();
+        showToast(data.error || "Failed to save");
+      }
+    } catch { showToast("Failed to save"); } finally { setSaving(null); }
+  };
+
+  const toggleTool = (personaId: string, tool: string) => {
+    const config = configs.find((c) => c.personaId === personaId);
+    if (!config) return;
+    const tools = config.enabledTools.includes(tool)
+      ? config.enabledTools.filter((t) => t !== tool)
+      : [...config.enabledTools, tool];
+    updateConfig(personaId, { enabledTools: tools });
+  };
+
+  const resetAll = async () => {
+    if (!confirm("Reset all AI persona configs to defaults?")) return;
+    try {
+      await fetch("/api/admin/ai-permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset" }),
+      });
+      showToast("All configs reset to defaults");
+      load();
+    } catch { showToast("Failed to reset"); }
+  };
+
+  if (loading) return (
+    <div className="p-6">
+      <div className="animate-pulse space-y-4">
+        {[1, 2, 3, 4].map((i) => <div key={i} className="h-48 bg-[var(--app-bg-secondary)] rounded-xl" />)}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="p-6 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--app-text)]">AI Permissions</h1>
+          <p className="text-sm text-[var(--app-text-muted)] mt-1">Configure tools, limits, and behavior for each AI persona</p>
+        </div>
+        <button
+          onClick={resetAll}
+          className="px-4 py-2 text-sm rounded-lg border border-[var(--app-border)] text-[var(--app-text-muted)] hover:bg-[var(--app-bg-secondary)] transition"
+        >
+          Reset to Defaults
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        {configs.map((config) => {
+          const meta = PERSONA_META[config.personaId] ?? { name: config.personaId, role: "Unknown", accent: "#888", desc: "", avatar: "" };
+          const isSaving = saving === config.personaId;
+
+          return (
+            <div
+              key={config.personaId}
+              className="rounded-xl border border-[var(--app-border)] bg-[var(--app-bg)] overflow-hidden"
+              style={{ borderLeftWidth: 4, borderLeftColor: meta.accent }}
+            >
+              {/* Header */}
+              <div className="p-5 flex items-center gap-4">
+                <img
+                  src={meta.avatar}
+                  alt={meta.name}
+                  className="w-12 h-12 rounded-full object-cover border-2"
+                  style={{ borderColor: meta.accent }}
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-bold text-[var(--app-text)]">{meta.name}</h2>
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: `${meta.accent}20`, color: meta.accent }}
+                    >
+                      {meta.role}
+                    </span>
+                    {isSaving && (
+                      <span className="text-xs text-[var(--app-text-muted)] animate-pulse">Saving...</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-[var(--app-text-muted)] mt-0.5">{meta.desc}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-[var(--app-text-muted)]">Active</label>
+                  <button
+                    onClick={() => updateConfig(config.personaId, { isActive: !config.isActive })}
+                    className="relative w-10 h-5 rounded-full transition-colors"
+                    style={{ background: config.isActive ? meta.accent : "var(--app-bg-secondary)" }}
+                  >
+                    <div
+                      className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
+                      style={{ left: config.isActive ? 22 : 2 }}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Tools grid */}
+              <div className="px-5 pb-4">
+                <h3 className="text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider mb-3">Enabled Tools</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {allTools.map((tool) => {
+                    const enabled = config.enabledTools.includes(tool);
+                    return (
+                      <button
+                        key={tool}
+                        onClick={() => toggleTool(config.personaId, tool)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition border ${
+                          enabled
+                            ? "border-[var(--app-border)] bg-[var(--app-bg-secondary)] text-[var(--app-text)]"
+                            : "border-transparent bg-transparent text-[var(--app-text-muted)] opacity-50 hover:opacity-70"
+                        }`}
+                      >
+                        <div
+                          className="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center text-xs font-bold"
+                          style={{
+                            background: enabled ? meta.accent : "var(--app-bg-secondary)",
+                            color: enabled ? "#fff" : "transparent",
+                            border: enabled ? "none" : "1px solid var(--app-border)",
+                          }}
+                        >
+                          {enabled ? "✓" : ""}
+                        </div>
+                        <div>
+                          <div className="font-medium text-xs">{tool}</div>
+                          <div className="text-[10px] text-[var(--app-text-muted)]">{TOOL_DESCRIPTIONS[tool] ?? ""}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Limits row */}
+              <div className="px-5 pb-4 flex flex-wrap gap-4">
+                <div>
+                  <label className="text-xs text-[var(--app-text-muted)] block mb-1">Daily Message Limit</label>
+                  <input
+                    type="number"
+                    value={config.maxDailyMessages}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value) || 50;
+                      setConfigs((prev) => prev.map((c) => c.personaId === config.personaId ? { ...c, maxDailyMessages: v } : c));
+                    }}
+                    onBlur={() => updateConfig(config.personaId, { maxDailyMessages: config.maxDailyMessages })}
+                    className="w-24 px-3 py-1.5 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg-secondary)] text-sm text-[var(--app-text)]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-[var(--app-text-muted)] block mb-1">Daily Spend Cap ($)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={config.maxDailySpend}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value) || 5.0;
+                      setConfigs((prev) => prev.map((c) => c.personaId === config.personaId ? { ...c, maxDailySpend: v } : c));
+                    }}
+                    onBlur={() => updateConfig(config.personaId, { maxDailySpend: config.maxDailySpend })}
+                    className="w-24 px-3 py-1.5 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg-secondary)] text-sm text-[var(--app-text)]"
+                  />
+                </div>
+              </div>
+
+              {/* System prompt override */}
+              <div className="px-5 pb-5">
+                <button
+                  onClick={() => setExpandedPrompt(expandedPrompt === config.personaId ? null : config.personaId)}
+                  className="text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text)] transition flex items-center gap-1"
+                >
+                  <span>{expandedPrompt === config.personaId ? "▼" : "▶"}</span>
+                  Custom Instructions Override
+                </button>
+                {expandedPrompt === config.personaId && (
+                  <div className="mt-2">
+                    <textarea
+                      value={config.systemPromptOverride ?? ""}
+                      onChange={(e) => {
+                        setConfigs((prev) => prev.map((c) => c.personaId === config.personaId ? { ...c, systemPromptOverride: e.target.value || null } : c));
+                      }}
+                      onBlur={() => updateConfig(config.personaId, { systemPromptOverride: config.systemPromptOverride })}
+                      placeholder="Additional instructions appended to this persona's system prompt..."
+                      rows={4}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg-secondary)] text-sm text-[var(--app-text)] placeholder:text-[var(--app-text-muted)] resize-y"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              {config.updatedAt && (
+                <div className="px-5 py-2 bg-[var(--app-bg-secondary)] border-t border-[var(--app-border)] text-xs text-[var(--app-text-muted)]">
+                  Last updated {new Date(config.updatedAt).toLocaleString()} {config.updatedBy ? `by ${config.updatedBy}` : ""}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 px-4 py-2 rounded-lg bg-[var(--brand-gold)] text-[var(--app-button-gold-text)] text-sm font-semibold shadow-lg z-50 animate-pulse">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}
