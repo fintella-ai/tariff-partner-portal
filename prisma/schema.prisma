@@ -1212,11 +1212,22 @@ model EmailTemplate {
   isDraft     Boolean  @default(false)     // unwired placeholder for future automation work
   description String?                      // admin-facing notes about when this template fires
   variables   String?                      // JSON array of variable names available for interpolation
+  status          String   @default("draft")
+  styleId         String?
+  style           CommunicationStyle? @relation(fields: [styleId], references: [id])
+  generationPrompt String? @db.Text
+  variableKeys    String[]
+  workflowTags    String[]
+  version         Int      @default(1)
+  parentId        String?
+  aiGenerated     Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([key])
   @@index([category])
+  @@index([status])
+  @@index([styleId])
 }
 
 // ─── EMAIL LOG (Phase 15a — SendGrid) ────────────────────────────────────────
@@ -1341,11 +1352,22 @@ model SmsTemplate {
   isDraft     Boolean  @default(false)
   description String?
   variables   String?  // JSON-stringified array of {token, description} — display in editor
+  characterCount  Int?
+  segmentCount    Int      @default(1)
+  status          String   @default("draft")
+  styleId         String?
+  style           CommunicationStyle? @relation(fields: [styleId], references: [id])
+  generationPrompt String? @db.Text
+  variableKeys    String[]
+  workflowTags    String[]
+  aiGenerated     Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([key])
   @@index([category])
+  @@index([status])
+  @@index([styleId])
 }
 
 model SmsLog {
@@ -2796,4 +2818,39 @@ model OpsPushSubscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI TEMPLATE GENERATOR — Phase 19
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model TemplateVariable {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  label       String
+  description String?
+  category    String
+  example     String?
+  createdAt   DateTime @default(now())
+}
+
+model CommunicationStyle {
+  id           String          @id @default(cuid())
+  name         String
+  description  String
+  systemPrompt String          @db.Text
+  isGlobal     Boolean         @default(true)
+  templates    EmailTemplate[]
+  smsTemplates SmsTemplate[]
+  createdAt    DateTime        @default(now())
+}
+
+model WorkflowAction {
+  id                String   @id @default(cuid())
+  name              String
+  tag               String   @unique
+  description       String?
+  templateType      String
+  requiredVariables String[]
+  createdAt         DateTime @default(now())
 }

@@ -18,5 +18,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "tariff-partner-portal"]
+  "exclude": ["node_modules", "tariff-partner-portal", "prisma/seeds"]
 }

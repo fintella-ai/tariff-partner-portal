@@ -97,6 +97,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "widget-analytics", label: "Widget Analytics", icon: "📊" },
   { id: "reporting", label: "Reporting", icon: "📈" },
   { id: "communications", label: "Communications", icon: "💬" },
+  { id: "templates", label: "Templates", icon: "✨" },
   { id: "internalChats", label: "Internal Chats", icon: "💬" },
   { id: "partnerSupport", label: "Partner Support", icon: "🎧" },
   { id: "training", label: "Training", icon: "📖" },

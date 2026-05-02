@@ -28,7 +28,7 @@ const isGroup = (n: NavItem): n is NavGroup => (n as NavGroup).children !== unde
 const ADMIN_NAV_IDS_DEFAULT = [
   "home",
   "partners", "applications", "internal-leads", "deals", "widget-referrals", "widget-analytics", "reporting",
-  "communications", "internalChats", "partnerSupport",
+  "communications", "templates", "internalChats", "partnerSupport",
   "training", "conference", "documents",
   "campaigns", "campaignReplies", "automations", "gettingStartedEditor", "knowledgeCenter", "landingPages",
   "subscriptions", "settings", "users", "dev",
@@ -80,6 +80,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   // Reporting). This avoids duplicate tab bars and shorter mental model for
   // super admins.
   communications:  { id: "communications",  href: "/admin/communications",  icon: "💬", label: "Communications" },
+  templates:       { id: "templates",       href: "/admin/templates",       icon: "✨", label: "Templates" },
   internalChats:   { id: "internalChats",   href: "/admin/internal-chats",  icon: "💬", label: "Internal Chats" },
   partnerSupport:  { id: "partnerSupport",  href: "/admin/support",         icon: "🙋", label: "Partner Support" },
   training:     { id: "training", href: "/admin/training", icon: "📖", label: "Training" },
