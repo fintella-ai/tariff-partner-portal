@@ -145,6 +145,8 @@ export default function AdminPartnersPage() {
   const [tablePage, setTablePage] = useState(1);
   const TABLE_PAGE_SIZE = 50;
   const [search, setSearch] = useState("");
+  const [cleanupBusy, setCleanupBusy] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState<{ deleted: number } | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [levelFilter, setLevelFilter] = useState<"all" | "l1" | "l2" | "l3" | "l4plus">("all");
   // View toggle: classic list/table vs. an org-chart tree forest rooted
@@ -1163,6 +1165,37 @@ export default function AdminPartnersPage() {
         </div>
       ) : activeTab === "invited" ? (
         <>
+          {/* Cleanup unused invites */}
+          <div className="mb-3 flex items-center gap-3">
+            <button
+              onClick={async () => {
+                if (!confirm("Delete all unused auto-generated invite links? Used invites (where someone signed up) are preserved.")) return;
+                setCleanupBusy(true);
+                try {
+                  const res = await fetch("/api/admin/cleanup-invites", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ keepUsed: true }),
+                  });
+                  const data = await res.json();
+                  setCleanupResult({ deleted: data.deleted || 0 });
+                  if (data.deleted > 0) {
+                    const invRes = await fetch("/api/admin/invites");
+                    if (invRes.ok) { const d = await invRes.json(); setInvites(d.invites || []); }
+                  }
+                } catch {} finally { setCleanupBusy(false); }
+              }}
+              disabled={cleanupBusy}
+              className="text-[12px] px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition disabled:opacity-50 min-h-[44px]"
+            >
+              {cleanupBusy ? "Cleaning..." : "Clean Up Unused Invites"}
+            </button>
+            {cleanupResult && (
+              <span className="font-body text-[13px] text-green-400">
+                {cleanupResult.deleted > 0 ? `${cleanupResult.deleted} unused invites deleted` : "No unused invites found"}
+              </span>
+            )}
+          </div>
           {/* Bulk action bar */}
           {(selectedInviteIds.length > 0 || bulkResult) && (
             <div className="mb-3 p-3 rounded-lg border border-[var(--app-border)] flex flex-wrap items-center gap-3" style={{ background: "var(--app-input-bg)" }}>
