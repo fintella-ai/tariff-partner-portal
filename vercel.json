@@ -47,6 +47,10 @@
     {
       "path": "/api/cron/deadline-alerts",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/agreement-refresh",
+      "schedule": "0 */3 * * *"
     }
   ]
 }

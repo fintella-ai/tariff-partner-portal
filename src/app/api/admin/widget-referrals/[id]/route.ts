@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/sendgrid";
 import { FIRM_SHORT } from "@/lib/constants";
 
+const VALID_STATUSES = ["submitted", "contacted", "qualified", "converted", "rejected", "archived"];
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -18,10 +20,9 @@ export async function PATCH(
   }
 
   const body = await req.json();
-  const { status, notes } = body;
+  const { status, notes, clientCompanyName, clientContactName, clientEmail, clientPhone, estimatedImportValue, htsCodes, tmsReference } = body;
 
-  const validStatuses = ["submitted", "contacted", "qualified", "converted", "rejected"];
-  if (!validStatuses.includes(status)) {
+  if (status && !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
@@ -36,15 +37,23 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const data: Record<string, any> = {};
+  if (status) data.status = status;
+  if (notes !== undefined) data.notes = notes;
+  if (clientCompanyName !== undefined) data.clientCompanyName = clientCompanyName;
+  if (clientContactName !== undefined) data.clientContactName = clientContactName;
+  if (clientEmail !== undefined) data.clientEmail = clientEmail;
+  if (clientPhone !== undefined) data.clientPhone = clientPhone || null;
+  if (estimatedImportValue !== undefined) data.estimatedImportValue = estimatedImportValue || null;
+  if (htsCodes !== undefined) data.htsCodes = htsCodes;
+  if (tmsReference !== undefined) data.tmsReference = tmsReference || null;
+
   const updated = await prisma.widgetReferral.update({
     where: { id: params.id },
-    data: {
-      status,
-      ...(notes !== undefined ? { notes } : {}),
-    },
+    data,
   });
 
-  if (status === "converted" && referral.partner.email) {
+  if (status === "converted" && referral.status !== "converted" && referral.partner.email) {
     sendEmail({
       to: referral.partner.email,
       subject: `Your referral for ${referral.clientCompanyName} has been converted!`,
@@ -56,4 +65,26 @@ export async function PATCH(
   }
 
   return NextResponse.json({ success: true, referral: updated });
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const user = session.user as any;
+  if (!["super_admin", "admin"].includes(user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const referral = await prisma.widgetReferral.findUnique({ where: { id: params.id } });
+  if (!referral) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await prisma.widgetReferral.delete({ where: { id: params.id } });
+  return NextResponse.json({ success: true });
 }

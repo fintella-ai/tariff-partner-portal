@@ -18,6 +18,7 @@ type Partner = {
   mobilePhone: string | null;
   status: string;
   tier: string;
+  partnerType: string;
   commissionRate?: number; // Prisma returns it, consumed by tree view
   referredByPartnerCode: string | null;
   notes: string | null;
@@ -121,18 +122,14 @@ export default function AdminPartnersPage() {
   // column-width hook below can key off it.
   const [showBulk, setShowBulk] = useState(false);
   const bulkOn = canBulkAct && showBulk;
-  // 11 columns when bulk-select is on: [select] + Partner, Level, Referred By,
-  // Code, Phone, Email, Status, Agreement, W9, Joined, Score, Tier.
-  // 10 columns without: Partner, Level, Referred By, Code, Phone, Email,
-  //                      Status, Agreement, W9, Joined, Score, Tier.
-  // Storage key flips with `bulkOn` so the width map for 10-col vs 9-col
-  // modes stays distinct and the layout never lands on a mismatched
-  // array length after toggling.
+  // Columns when bulk-select is on: [select] + Partner, Level, Referred By,
+  // Code, Phone, Email, Status, Agreement, W9, Onboarding, Joined, Score, Tier, Type.
+  // Without bulk: same minus [select].
   const { columnWidths: partnerCols, getResizeHandler: partnerResize } = useResizableColumns(
     bulkOn
-      ? [36, 180, 70, 130, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80]
-      : [180, 70, 130, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80],
-    { storageKey: bulkOn ? "partners-v8-bulk" : "partners-v8" }
+      ? [36, 180, 70, 130, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80, 90]
+      : [180, 70, 130, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80, 90],
+    { storageKey: bulkOn ? "partners-v9-bulk" : "partners-v9" }
   );
   const partnerGridCols = partnerCols.map((w) => `${w}px`).join(" ");
 
@@ -1587,6 +1584,7 @@ export default function AdminPartnersPage() {
                 { label: "Joined", col: "joined" as SortCol },
                 { label: "Score", col: "score" as SortCol },
                 { label: "Tier", col: null },
+                { label: "Type", col: null },
               ]) : ([
                 { label: "Partner", col: "name" as SortCol },
                 { label: "Level", col: null },
@@ -1601,6 +1599,7 @@ export default function AdminPartnersPage() {
                 { label: "Joined", col: "joined" as SortCol },
                 { label: "Score", col: "score" as SortCol },
                 { label: "Tier", col: null },
+                { label: "Type", col: null },
               ])).map((h, i) => (
                 h.label === "__select" ? (
                   <div key="__select" className="flex items-center justify-center relative">
@@ -1725,6 +1724,23 @@ export default function AdminPartnersPage() {
                       );
                     })()}
                   </div>
+                  <div className="text-center">
+                    {(() => {
+                      const pt = p.partnerType || "referral";
+                      const ptBadge: Record<string, string> = {
+                        referral: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+                        corporate: "bg-purple-500/10 text-purple-400 border border-purple-500/20",
+                        customs_broker: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+                        licensed: "bg-green-500/10 text-green-400 border border-green-500/20",
+                      };
+                      const ptLabel: Record<string, string> = { referral: "Referral", corporate: "Corporate", customs_broker: "Broker", licensed: "Licensed" };
+                      return (
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase ${ptBadge[pt] || ptBadge.referral}`}>
+                          {ptLabel[pt] || pt}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
               );
             })}
@@ -1831,6 +1847,23 @@ export default function AdminPartnersPage() {
                     );
                   })()}
                   <span className="font-body text-[10px] text-[var(--app-text-muted)] tabular-nums ml-1">Score: {p.engagementScore ?? 0}</span>
+                  <span className="ml-auto">
+                    {(() => {
+                      const pt = p.partnerType || "referral";
+                      const ptBadge: Record<string, string> = {
+                        referral: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+                        corporate: "bg-purple-500/10 text-purple-400 border border-purple-500/20",
+                        customs_broker: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+                        licensed: "bg-green-500/10 text-green-400 border border-green-500/20",
+                      };
+                      const ptLabel: Record<string, string> = { referral: "Referral", corporate: "Corporate", customs_broker: "Broker", licensed: "Licensed" };
+                      return (
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold tracking-wider uppercase ${ptBadge[pt] || ptBadge.referral}`}>
+                          {ptLabel[pt] || pt}
+                        </span>
+                      );
+                    })()}
+                  </span>
                 </div>
               </div>
             ))}
