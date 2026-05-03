@@ -605,6 +605,14 @@ async function postHandler(req: NextRequest): Promise<Response> {
       "ior",
       "Importer of Record"
     );
+    // Client IOR classification — determines Tier 1 (full commission) vs Tier 2 (50%).
+    // Accepts explicit boolean, or infers from the free-text importerOfRecord field.
+    const isIorRaw = get("is_importer_of_record", "isImporterOfRecord", "is_ior");
+    const isImporterOfRecord: boolean = isIorRaw !== undefined && isIorRaw !== null
+      ? String(isIorRaw).toLowerCase() === "true" || String(isIorRaw) === "1"
+      : importerOfRecord
+        ? /\b(we are|yes|i am|the client|they are the)\b/i.test(String(importerOfRecord))
+        : true;
 
     // Deal stage (passed through from Frost Law's system — stored as-is per PR #12)
     const externalStage = get(
@@ -726,6 +734,7 @@ async function postHandler(req: NextRequest): Promise<Response> {
           importCountries: importCountries || null,
           annualImportValue: annualImportValue || null,
           importerOfRecord: importerOfRecord || null,
+          isImporterOfRecord: isImporterOfRecord,
           affiliateNotes: affiliateNotes || null,
           epLevel1: epLevel1 || null,
           consultBookedDate: consultBookedDate || null,
@@ -1074,6 +1083,10 @@ async function patchHandler(req: NextRequest): Promise<Response> {
     if (annualImportValue) data.annualImportValue = annualImportValue;
     const importerOfRecord = pickStr("importer_of_record", "importerOfRecord", "ior");
     if (importerOfRecord) data.importerOfRecord = importerOfRecord;
+    const isIorPatch = body.is_importer_of_record ?? body.isImporterOfRecord ?? body.is_ior;
+    if (isIorPatch !== undefined && isIorPatch !== null) {
+      data.isImporterOfRecord = String(isIorPatch).toLowerCase() === "true" || isIorPatch === true || isIorPatch === 1;
+    }
 
     // Product details
     const productType = pickStr("product_type", "productType");
@@ -1253,9 +1266,13 @@ async function patchHandler(req: NextRequest): Promise<Response> {
         if (existingForDeal) {
           ledgerSkipReason = "ledger_already_exists";
         } else {
+          const effectiveIor = data.isImporterOfRecord !== undefined
+            ? data.isImporterOfRecord
+            : deal.isImporterOfRecord;
           const computed = await computeDealCommissions(prisma, {
             partnerCode: deal.partnerCode,
             firmFeeAmount: effectiveFirmFee,
+            isImporterOfRecord: effectiveIor,
           });
           entriesToCreate = computed.entries;
           waterfallSnapshot = {
@@ -1428,9 +1445,13 @@ async function patchHandler(req: NextRequest): Promise<Response> {
           });
           const effFee = fin.firmFeeAmount;
           if (effFee > 0) {
+            const effIor = data.isImporterOfRecord !== undefined
+              ? data.isImporterOfRecord
+              : deal.isImporterOfRecord;
             const computed = await computeDealCommissions(prisma, {
               partnerCode: deal.partnerCode,
               firmFeeAmount: effFee,
+              isImporterOfRecord: effIor,
             });
             for (const entry of computed.entries) {
               // Use upsert so concurrent webhook replays don't trip the

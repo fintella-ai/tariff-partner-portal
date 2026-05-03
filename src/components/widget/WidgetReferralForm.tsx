@@ -38,6 +38,7 @@ export default function WidgetReferralForm({ token, commissionRate, prefill, onP
     importDateRange: [] as string[],
     htsCodes: "",
     tmsReference: "",
+    isImporterOfRecord: null as boolean | null,
   });
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; referralId?: string; message?: string; duplicate?: boolean } | null>(null);
@@ -82,6 +83,7 @@ export default function WidgetReferralForm({ token, commissionRate, prefill, onP
           importDateRange: form.importDateRange.join("; "),
           htsCodes: form.htsCodes.split(/[,\n]/).map((s) => s.trim()).filter(Boolean),
           documentUrls: prefill?.documentUrls || [],
+          isImporterOfRecord: form.isImporterOfRecord ?? true,
         }),
       });
       const data = await res.json();
@@ -116,7 +118,7 @@ export default function WidgetReferralForm({ token, commissionRate, prefill, onP
             setForm({
               clientCompanyName: "", clientContactName: "", clientEmail: "",
               clientPhone: "", estimatedImportValue: "", importDateRange: [],
-              htsCodes: "", tmsReference: "",
+              htsCodes: "", tmsReference: "", isImporterOfRecord: null,
             });
           }}
           style={{
@@ -209,6 +211,49 @@ export default function WidgetReferralForm({ token, commissionRate, prefill, onP
           onChange={(e) => set("clientPhone", e.target.value)}
           style={inputStyle()} placeholder="+1 (555) 123-4567"
         />
+      </div>
+
+      <div>
+        <label style={labelStyle}>
+          Is the client the Importer of Record? <span style={{ color: W.red }}>*</span>
+        </label>
+        <div style={{ display: "flex", gap: 8 }}>
+          {[
+            { label: "Yes", value: true },
+            { label: "No", value: false },
+          ].map((opt) => (
+            <button
+              key={String(opt.value)}
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, isImporterOfRecord: opt.value }))}
+              style={{
+                flex: 1,
+                padding: "10px 16px",
+                borderRadius: RADII.sm,
+                border: `1px solid ${form.isImporterOfRecord === opt.value ? W.gold : W.border}`,
+                background: form.isImporterOfRecord === opt.value
+                  ? "rgba(196,160,80,0.12)"
+                  : "rgba(255,255,255,0.03)",
+                color: form.isImporterOfRecord === opt.value ? W.gold : W.textSecondary,
+                fontSize: 13,
+                fontWeight: form.isImporterOfRecord === opt.value ? 600 : 400,
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {form.isImporterOfRecord === false && (
+          <div style={{
+            marginTop: 6, padding: "8px 12px", fontSize: 11,
+            color: W.textDim, background: "rgba(196,160,80,0.06)",
+            borderRadius: RADII.sm, borderLeft: `2px solid ${W.gold}`,
+          }}>
+            Tier 2 client — commission rates are adjusted for non-IOR filings.
+          </div>
+        )}
       </div>
 
       <div>

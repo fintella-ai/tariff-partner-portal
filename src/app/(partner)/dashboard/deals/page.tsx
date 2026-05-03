@@ -130,7 +130,16 @@ export default function DealsPage() {
                     <div className="font-body text-[13px] font-medium text-[var(--app-text)] leading-snug flex-1 min-w-0">
                       {deal.dealName}
                     </div>
-                    <StageBadge stage={deal.stage} />
+                    <div className="flex items-center gap-1.5">
+                      <StageBadge stage={deal.stage} />
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                        deal.isImporterOfRecord !== false
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                      }`}>
+                        {deal.isImporterOfRecord !== false ? "T1" : "T2"}
+                      </span>
+                    </div>
                   </div>
                   <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-3">
                     {fmtDateTime(deal.createdAt)}
@@ -187,7 +196,16 @@ export default function DealsPage() {
                     <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">{fmtDateTime(deal.createdAt)}</div>
                   </div>
                   <div className="font-body text-[11px] text-[var(--app-text-secondary)] text-center truncate">{deal.serviceOfInterest || "—"}</div>
-                  <div className="text-center"><StageBadge stage={deal.stage} /></div>
+                  <div className="text-center flex items-center justify-center gap-1">
+                    <StageBadge stage={deal.stage} />
+                    <span className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium ${
+                      deal.isImporterOfRecord !== false
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                    }`}>
+                      {deal.isImporterOfRecord !== false ? "T1" : "T2"}
+                    </span>
+                  </div>
                   <div className="font-body text-[13px] text-[var(--app-text)] text-center">{fmt$(fin.refund)}</div>
                   <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">
                     {formatRate(fin.firmFeeRate)}
@@ -351,6 +369,14 @@ function DealDetail({ deal, onSupport }: { deal: any; onSupport: () => void }) {
                 <div className="font-body text-[13px] text-[var(--app-text-secondary)] mt-0.5">{f.value}</div>
               </div>
             ))}
+            <div>
+              <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Client Tier</div>
+              <div className={`font-body text-[13px] mt-0.5 font-medium ${
+                deal.isImporterOfRecord !== false ? "text-emerald-400" : "text-amber-400"
+              }`}>
+                {deal.isImporterOfRecord !== false ? "Tier 1 — Full Commission" : "Tier 2 — 50% Commission"}
+              </div>
+            </div>
           </div>
         </div>
       )}

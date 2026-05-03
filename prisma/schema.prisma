@@ -910,6 +910,7 @@ model Deal {
   importCountries       String?   // countries they import from
   annualImportValue     String?   // dropdown value (e.g. "$1M - $5M")
   importerOfRecord      String?   // who is listed as importer of record
+  isImporterOfRecord    Boolean   @default(true) // true = client IS the IOR (Tier 1, full commission); false = NOT the IOR (Tier 2, 50% commission)
   affiliateNotes        String?   // affiliate notes from referral form
   // Enterprise Partner tracking — carried via the `ep` URL/body param on the
   // initial POST to /api/webhook/referral (legacy `utm_medium` variants still
@@ -1844,6 +1845,7 @@ model ClientSubmission {
   importCountries    String?
   annualImportValue  String?
   importerOfRecord   String?
+  isImporterOfRecord Boolean  @default(true)
   affiliateNotes     String?
   serviceOfInterest  String   @default("Tariff Refund Support")
   importCategory     String?
@@ -2163,6 +2165,7 @@ model WidgetReferral {
   importDateRange       String?
   htsCodes              String[]
   entryCount            Int?
+  isImporterOfRecord    Boolean  @default(true)
   status                String   @default("submitted")
   tmsReference          String?
   notes                 String?

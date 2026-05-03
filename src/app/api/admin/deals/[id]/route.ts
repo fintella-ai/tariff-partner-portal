@@ -67,6 +67,7 @@ export async function PUT(
     if (body.importCountries !== undefined) data.importCountries = strOrNull(body.importCountries);
     if (body.annualImportValue !== undefined) data.annualImportValue = strOrNull(body.annualImportValue);
     if (body.importerOfRecord !== undefined) data.importerOfRecord = strOrNull(body.importerOfRecord);
+    if (body.isImporterOfRecord !== undefined) data.isImporterOfRecord = Boolean(body.isImporterOfRecord);
     if (body.stage !== undefined) data.stage = body.stage;
     if (body.productType !== undefined) data.productType = body.productType || null;
     if (body.importedProducts !== undefined) data.importedProducts = body.importedProducts || null;
