@@ -132,26 +132,32 @@ export default function HeroCalculator() {
         </div>
 
         <div className="p-5">
-          {/* Drag & drop zone */}
-          <div
-            className="mb-4 p-4 rounded-xl border-2 border-dashed text-center transition-colors cursor-pointer"
+          {/* Drag & drop + click to upload zone */}
+          <label
+            className="mb-4 p-4 rounded-xl border-2 border-dashed text-center transition-colors cursor-pointer block"
             style={{
               borderColor: dragOver ? "var(--brand-gold)" : "var(--app-border)",
               background: dragOver ? "rgba(196,160,80,0.05)" : "rgba(0,0,0,0.15)",
             }}
           >
+            <input
+              type="file"
+              accept=".pdf,.csv,.xlsx,.xls,.txt"
+              className="hidden"
+              onChange={() => {}}
+            />
             <div className="flex items-center justify-center gap-2 text-sm" style={{ color: "var(--app-text-muted)" }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
-              Drop a CF 7501 or entry summary for instant analysis
+              Drop a CF 7501 or click to upload for instant analysis
             </div>
             <div className="text-[10px] mt-1" style={{ color: "var(--app-text-faint)" }}>
               Full document intake available after signup
             </div>
-          </div>
+          </label>
 
           {/* Or manual entry */}
           <div className="flex items-center gap-3 mb-4">
