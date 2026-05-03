@@ -385,7 +385,6 @@ export default function AdminDealsPage() {
           l3CommissionStatus: editL3Status,
           notes: editNotes,
           affiliateNotes: editAffiliateNotes,
-          isImporterOfRecord: editIor,
           estimatedRefundAmount: refundParsed ?? 0,
           actualRefundAmount: actualRefundParsed,
           firmFeeRate: feeRateDecimal,
@@ -400,7 +399,7 @@ export default function AdminDealsPage() {
           // Only super_admin can modify EP Level 1 or reassign the partner.
           // Omit those keys entirely for other roles so the server-side guard
           // doesn't see an attempted edit and 403 the whole save.
-          ...(isSuperAdmin ? { epLevel1: editEpLevel1 } : {}),
+          ...(isSuperAdmin ? { epLevel1: editEpLevel1, isImporterOfRecord: editIor } : {}),
           ...(isSuperAdmin && editPartnerCode ? { partnerCode: editPartnerCode } : {}),
         }),
       });
@@ -880,6 +879,7 @@ export default function AdminDealsPage() {
                   </div>
                   <div className="mt-3">
                     <label className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Client Tier (IOR Status)</label>
+                    {isSuperAdmin ? (
                     <div className="flex gap-2 mt-1">
                       {[
                         { label: "Tier 1 — Importer of Record", value: true },
@@ -901,6 +901,16 @@ export default function AdminDealsPage() {
                         </button>
                       ))}
                     </div>
+                    ) : (
+                    <div className={`mt-1 px-3 py-2 rounded text-xs font-medium border ${
+                      editIor
+                        ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
+                        : "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                    }`}>
+                      {editIor ? "Tier 1 — Importer of Record" : "Tier 2 — Not IOR (50% commission)"}
+                      <span className="text-[var(--app-text-muted)] ml-2">(super admin can change)</span>
+                    </div>
+                    )}
                   </div>
                   <div className="mt-3">
                     <label className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Affiliate Notes</label>

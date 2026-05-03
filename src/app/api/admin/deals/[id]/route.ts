@@ -67,7 +67,7 @@ export async function PUT(
     if (body.importCountries !== undefined) data.importCountries = strOrNull(body.importCountries);
     if (body.annualImportValue !== undefined) data.annualImportValue = strOrNull(body.annualImportValue);
     if (body.importerOfRecord !== undefined) data.importerOfRecord = strOrNull(body.importerOfRecord);
-    if (body.isImporterOfRecord !== undefined) {
+    if (body.isImporterOfRecord !== undefined && role === "super_admin") {
       data.isImporterOfRecord = Boolean(body.isImporterOfRecord);
       data.serviceOfInterest = `Tariff Refund Support (${body.isImporterOfRecord ? "Tier 1" : "Tier 2"})`;
     }
