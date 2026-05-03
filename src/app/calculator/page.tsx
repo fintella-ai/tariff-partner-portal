@@ -1315,7 +1315,7 @@ function CalculatorInner() {
                 </svg>
               </Link>
               <Link
-                href="/webinar"
+                href="/partners/brokers"
                 className="h-11 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 px-6 border transition-colors"
                 style={{
                   borderColor: "var(--brand-gold)",
@@ -1323,7 +1323,7 @@ function CalculatorInner() {
                   background: "transparent",
                 }}
               >
-                Watch the Demo
+                Learn More
               </Link>
             </div>
           </div>
