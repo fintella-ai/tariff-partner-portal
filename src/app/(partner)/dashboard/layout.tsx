@@ -92,7 +92,8 @@ const BUILT_IN_PARTNER_ICONS: Record<string, string> = {
   "feature-request": "/icons/features-lightbulb.svg",
   "my-leads": "/icons/my-leads-target.svg",
   "earnings-calculator": "/icons/earnings-calculator.svg",
-  templates: "/icons/features-lightbulb.svg",
+  templates: "/icons/templates-doc.svg",
+  widget: "/icons/widget-referrals-plug.svg",
 };
 
 // Mobile bottom bar items (subset)

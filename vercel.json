@@ -59,6 +59,14 @@
     {
       "path": "/api/cron/optimize-variants",
       "schedule": "0 5 * * 1"
+    },
+    {
+      "path": "/api/cron/compute-send-times",
+      "schedule": "0 4 * * 0"
+    },
+    {
+      "path": "/api/cron/template-decay",
+      "schedule": "0 7 * * *"
     }
   ]
 }

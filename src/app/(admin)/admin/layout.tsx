@@ -56,6 +56,10 @@ const BUILT_IN_ADMIN_ICONS: Record<string, string> = {
   "internal-leads": "/icons/internal-leads-funnel.svg",
   gettingStartedEditor: "/icons/getting-started-checklist.svg",
   landingPages: "/icons/landing-pages-globe.svg",
+  "widget-referrals": "/icons/widget-referrals-plug.svg",
+  "widget-analytics": "/icons/widget-analytics-chart.svg",
+  templates: "/icons/templates-doc.svg",
+  knowledgeCenter: "/icons/knowledge-brain.svg",
 };
 
 const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
