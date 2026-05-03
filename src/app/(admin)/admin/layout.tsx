@@ -31,6 +31,7 @@ const ADMIN_NAV_IDS_DEFAULT = [
   "communications", "templates", "internalChats", "partnerSupport",
   "training", "conference", "documents",
   "campaigns", "campaignReplies", "automations", "gettingStartedEditor", "knowledgeCenter", "landingPages",
+  "brokerFunnel",
   "subscriptions", "settings", "users", "dev",
 ];
 
@@ -54,6 +55,7 @@ const BUILT_IN_ADMIN_ICONS: Record<string, string> = {
   users: "/icons/users-shield-key.svg",
   applications: "/icons/applications-inbox.svg",
   "internal-leads": "/icons/internal-leads-funnel.svg",
+  brokerFunnel: "/icons/broker-funnel-chart.svg",
   gettingStartedEditor: "/icons/getting-started-checklist.svg",
   landingPages: "/icons/landing-pages-globe.svg",
   "widget-referrals": "/icons/widget-referrals-plug.svg",
@@ -102,6 +104,7 @@ const ADMIN_NAV_ITEMS_MAP: Record<string, NavItem> = {
   billing:      { id: "billing", href: "/admin/billing", icon: "💳", label: "Billing" },
   users:        { id: "users", href: "/admin/users", icon: "🔐", label: "Admin Users" },
   landingPages: { id: "landingPages", href: "/admin/landing-pages", icon: "🌐", label: "Landing Pages" },
+  brokerFunnel: { id: "brokerFunnel", href: "/admin/broker-funnel", icon: "🚢", label: "Broker Funnel" },
   dev:          { id: "dev", href: "/admin/dev", icon: "🛠️", label: "Development" },
   features:     { id: "features", href: "/admin/features", icon: "💡", label: "Feature Requests" },
 };

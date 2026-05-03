@@ -38,6 +38,7 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
     "training", "conference", "documents",
     "automations", "gettingStartedEditor", "aiActivity", "aiPermissions", "knowledgeCenter",
     "payouts", "revenue", "reports",
+    "brokerFunnel",
     "settings", "billing", "users", "dev", "features",
   ],
   admin: [
@@ -47,6 +48,7 @@ export const ROLE_VISIBLE_NAV: Record<AdminRole, string[]> = {
     "training", "conference", "documents",
     "automations", "gettingStartedEditor", "aiActivity", "aiPermissions", "knowledgeCenter",
     "payouts", "reports",
+    "brokerFunnel",
     "settings",
   ],
   accounting: [

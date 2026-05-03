@@ -111,6 +111,7 @@ const ALL_ADMIN_NAV_ITEMS = [
   { id: "knowledgeCenter", label: "Knowledge Center", icon: "🧠" },
   { id: "aiPermissions", label: "AI Permissions", icon: "🛡️" },
   { id: "landingPages", label: "Landing Pages", icon: "🌐" },
+  { id: "brokerFunnel", label: "Broker Funnel", icon: "🚢" },
   { id: "settings", label: "Settings", icon: "⚙️" },
   { id: "subscriptions", label: "Subscriptions", icon: "💎" },
   { id: "users", label: "Admin Users", icon: "🔐" },
