@@ -28,6 +28,7 @@ export default function BrokerSignupForm({ variant, rate }: Props) {
   const [phone, setPhone] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [clientCount, setClientCount] = useState("");
+  const [additionalNotes, setAdditionalNotes] = useState("");
 
   /* UX state */
   const [submitting, setSubmitting] = useState(false);
@@ -68,6 +69,7 @@ export default function BrokerSignupForm({ variant, rate }: Props) {
           phone,
           companyName,
           clientCount,
+          additionalNotes: additionalNotes.trim() || null,
           splitVariant: variant,
           commissionRate: rate,
           ...utmParams,
@@ -314,6 +316,26 @@ export default function BrokerSignupForm({ variant, rate }: Props) {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* ── Additional notes ──────────────────────────────────── */}
+        <div>
+          <label className={labelClass} style={labelStyle}>
+            Anything else you&apos;d like us to know? <span style={{ color: "var(--app-text-faint)" }}>(optional)</span>
+          </label>
+          <textarea
+            value={additionalNotes}
+            onChange={(e) => setAdditionalNotes(e.target.value)}
+            rows={3}
+            placeholder="Questions, special circumstances, or how we can help..."
+            className={inputClass}
+            style={{
+              background: "rgba(0,0,0,0.3)",
+              borderColor: "var(--app-border)",
+              color: "var(--app-text)",
+              resize: "none",
+            }}
+          />
         </div>
 
         {/* ── Submit ────────────────────────────────────────────── */}

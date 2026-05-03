@@ -1742,6 +1742,7 @@ model PartnerApplication {
   partnerType       String?   // "broker" (licensed customs broker) or "referral" (normal partner)
   clientCount       String?   // "0-10", "10-25", "25-50", "50+"
   splitVariant      String?   // "A" (10%), "B" (15%), "C" (20%) — commission split test
+  additionalNotes   String?   // "Is there anything else you'd like us to know?"
   ipAddress         String?
   userAgent         String?
   createdAt         DateTime @default(now())

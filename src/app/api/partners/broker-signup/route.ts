@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const isBroker = body.isBroker === true;
     const clientCount = String(body.clientCount ?? "").trim() || null;
     const splitVariant = String(body.splitVariant ?? "").trim() || null;
+    const additionalNotes = String(body.additionalNotes ?? "").trim() || null;
 
     // ── Validation ──────────────────────────────────────────────────────
     if (!firstName || !lastName || !email) {
@@ -97,6 +98,10 @@ export async function POST(req: NextRequest) {
         email,
         phone,
         companyName,
+        partnerType: isBroker ? "broker" : "referral",
+        clientCount,
+        splitVariant,
+        additionalNotes,
         audienceContext,
         referralSource: "broker_landing",
         utmSource: String(body.utmSource ?? "").trim() || null,
