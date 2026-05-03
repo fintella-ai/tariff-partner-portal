@@ -91,6 +91,26 @@ This 25% is split across up to three partner tiers:
 The total across all three tiers always equals 25% of the firm fee — never
 more, never less. This is called the "waterfall model."
 
+### Client Tier — Importer of Record (IOR) Classification
+Every deal is classified as **Tier 1** or **Tier 2** based on whether the
+client is the Importer of Record (IOR):
+
+- **Tier 1 (IOR = Yes)**: The client IS the Importer of Record. Partners
+  earn their **full commission rate**. The service is labeled "Tariff Refund
+  Support (Tier 1)".
+- **Tier 2 (IOR = No)**: The client is NOT the Importer of Record (e.g., a
+  consignee or buyer). The filing is more complex. All partner commission
+  rates are **cut by 50%**. The service is labeled "Tariff Refund Support
+  (Tier 2)".
+
+Example: An L1 partner at 25% referring a Tier 2 client earns 12.5% instead
+of 25%. The waterfall math still applies the same way — all rates in the
+chain are halved, so the total payout is 12.5% of the firm fee.
+
+The IOR question is answered on the client intake form before the deal is
+created. Partners can see the client tier on every deal in their Deals page.
+Admins can change the tier in the deal edit panel if needed.
+
 ## Deal Pipeline Stages
 1. **New Lead** — client just submitted
 2. **No Consultation Booked** — reached out but consultation not scheduled
