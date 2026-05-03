@@ -15,7 +15,7 @@
     "db:seed-partners": "npx ts-node --compiler-options {\"module\":\"commonjs\"} scripts/seed-partners.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.91.1",
+    "@anthropic-ai/sdk": "^0.92.0",
     "@prisma/client": "^5.20.0",
     "@react-pdf/renderer": "^4.5.1",
     "@sentry/nextjs": "^10.50.0",
