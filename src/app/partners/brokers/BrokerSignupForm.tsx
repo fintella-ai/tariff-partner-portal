@@ -82,7 +82,7 @@ export default function BrokerSignupForm({ variant, rate }: Props) {
         setSuccess(true);
         /* Fire Google Ads conversion */
         if (window.gtag) {
-          window.gtag("event", "conversion", { send_to: "AW-18128579100" });
+          window.gtag("event", "conversion", { send_to: "AW-18128579100/4HUdCLXiiKccEJzUsMRD" });
         }
       } else if (data.alreadyApplied) {
         setError("You've already applied. Check your email for next steps or sign in to your portal.");
