@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/format";
 
-const COMMISSION_RATE = 0.25;
+const BROKER_RATE = 0.25;
+const REFERRAL_RATE = 0.10;
 
 export async function POST(req: NextRequest) {
   try {
@@ -84,11 +85,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const commissionRate = COMMISSION_RATE;
+    const commissionRate = isBroker ? BROKER_RATE : REFERRAL_RATE;
 
     const audienceContext = isBroker
-      ? `Licensed customs broker with ${clientCount || "unknown"} import clients. 25% commission.`
-      : `Referral partner. ${clientCount || "unknown"} clients. 25% commission.`;
+      ? `Licensed customs broker with ${clientCount || "unknown"} import clients. ${BROKER_RATE * 100}% commission.`
+      : `Referral partner. ${clientCount || "unknown"} clients. ${REFERRAL_RATE * 100}% commission.`;
 
     // ── Create application ──────────────────────────────────────────────
     const application = await prisma.partnerApplication.create({
