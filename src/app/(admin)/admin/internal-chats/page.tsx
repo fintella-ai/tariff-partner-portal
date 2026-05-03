@@ -4,10 +4,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import TeamChatPanel from "../team-chat/TeamChatPanel";
 import ChannelsListPanel from "../channels/ChannelsListPanel";
 import DmFlagsListPanel from "../partner-dm-flags/DmFlagsListPanel";
+import AdminDmPanel from "./AdminDmPanel";
 
-type Tab = "team-chat" | "channels" | "dmflags";
+type Tab = "team-chat" | "partner-dm" | "channels" | "dmflags";
 const TABS: { id: Tab; label: string }[] = [
   { id: "team-chat", label: "Team Chat" },
+  { id: "partner-dm", label: "Partner DM" },
   { id: "channels",  label: "Channels" },
   { id: "dmflags",   label: "DM Flags" },
 ];
@@ -36,6 +38,7 @@ function InternalChatsHostInner() {
         ))}
       </div>
       {tab === "team-chat" && <TeamChatPanel />}
+      {tab === "partner-dm" && <AdminDmPanel />}
       {tab === "channels"  && <ChannelsListPanel />}
       {tab === "dmflags"   && <DmFlagsListPanel />}
     </div>

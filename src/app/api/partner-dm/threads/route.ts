@@ -25,7 +25,7 @@ export async function GET() {
         select: { partnerCode: true, firstName: true, lastName: true },
       })
     : [];
-  const nameMap: Record<string, string> = {};
+  const nameMap: Record<string, string> = { ADMIN: "Fintella Team" };
   for (const p of partners) nameMap[p.partnerCode] = `${p.firstName} ${p.lastName}`.trim();
 
   // Unread counts
