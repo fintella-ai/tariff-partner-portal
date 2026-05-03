@@ -20,7 +20,7 @@
     "@react-pdf/renderer": "^4.5.1",
     "@sentry/nextjs": "^10.50.0",
     "@simplewebauthn/browser": "^9.0.1",
-    "@simplewebauthn/server": "^9.0.3",
+    "@simplewebauthn/server": "^13.3.0",
     "@tavily/core": "^0.7.3",
     "@twilio/voice-sdk": "^2.18.2",
     "@types/pg": "^8.20.0",
