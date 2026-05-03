@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { SetVariantCookie } from "./SetVariantCookie";
 import BrokerSignupForm from "./BrokerSignupForm";
+import HeroCalculator from "./HeroCalculator";
 
 export const metadata: Metadata = {
   title: "The Only Tariff Refund Widget for CargoWise & Magaya | Fintella",
@@ -212,55 +213,8 @@ export default function BrokersLandingPage() {
               on every recovery.
             </p>
 
-            {/* Video placeholder */}
-            <div
-              className="max-w-3xl mx-auto mb-10 rounded-2xl overflow-hidden"
-              style={{
-                background: "var(--app-gold-overlay-subtle)",
-                border: "1px solid var(--app-gold-overlay-border-subtle)",
-              }}
-            >
-              <div
-                className="relative flex items-center justify-center"
-                style={{ aspectRatio: "16/9" }}
-              >
-                {process.env.BROKER_VIDEO_URL ? (
-                  <video
-                    src={process.env.BROKER_VIDEO_URL}
-                    controls
-                    className="w-full h-full object-cover"
-                    playsInline
-                    preload="metadata"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-4">
-                    <div
-                      className="w-16 h-16 rounded-full flex items-center justify-center"
-                      style={{
-                        background: "var(--app-gold-overlay)",
-                        border: "1px solid var(--app-gold-overlay-border)",
-                      }}
-                    >
-                      <svg
-                        width="28"
-                        height="28"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        style={{ color: "var(--brand-gold)", marginLeft: 3 }}
-                      >
-                        <polygon points="5 3 19 12 5 21 5 3" />
-                      </svg>
-                    </div>
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: "var(--app-text-muted)" }}
-                    >
-                      Watch the 60-Second Demo
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Live calculator — the product IS the demo */}
+            <HeroCalculator splitRate={splitRate} />
 
             {/* Works with row */}
             <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
