@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cookies } from "next/headers";
+// import { cookies } from "next/headers";
 import { SetVariantCookie } from "./SetVariantCookie";
 import BrokerSignupForm from "./BrokerSignupForm";
 import HeroCalculator from "./HeroCalculator";
@@ -107,21 +107,13 @@ const FAQ_ITEMS = [
 /* ── Page ────────────────────────────────────────────────────────────── */
 
 export default function BrokersLandingPage() {
-  const cookieStore = cookies();
-  const existingVariant = cookieStore.get("broker_variant")?.value;
-  const variant =
-    existingVariant && ["A", "B", "C"].includes(existingVariant)
-      ? existingVariant
-      : ["A", "B", "C"][Math.floor(Math.random() * 3)];
-  const RATES: Record<string, number> = { A: 10, B: 15, C: 20 };
-  const splitRate = RATES[variant] || 15;
+  const splitRate = 25;
 
   return (
     <main
       className="min-h-screen overflow-hidden font-body"
       style={{ background: "var(--app-bg)", color: "var(--app-text)" }}
     >
-      <SetVariantCookie variant={variant} />
 
       {/* ── Section 1: Nav ──────────────────────────────────────────── */}
       <nav
@@ -420,7 +412,7 @@ export default function BrokersLandingPage() {
       {/* ── Section 4: Inline Signup Form ───────────────────────────── */}
       <section className="py-20">
         <div className="max-w-2xl mx-auto px-6">
-          <BrokerSignupForm variant={variant} rate={splitRate} />
+          <BrokerSignupForm variant="standard" rate={25} />
         </div>
       </section>
 

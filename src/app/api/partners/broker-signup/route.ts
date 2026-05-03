@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/format";
 
-const VARIANT_RATES: Record<string, number> = { A: 0.10, B: 0.15, C: 0.20 };
+const COMMISSION_RATE = 0.25;
 
 export async function POST(req: NextRequest) {
   try {
@@ -83,16 +83,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── Commission rate from split variant ──────────────────────────────
-    const commissionRate =
-      splitVariant && VARIANT_RATES[splitVariant]
-        ? VARIANT_RATES[splitVariant]
-        : 0.15;
+    const commissionRate = COMMISSION_RATE;
 
-    // ── Build audience context (stores broker-specific data) ────────────
     const audienceContext = isBroker
-      ? `Licensed customs broker with ${clientCount || "unknown"} import clients. Commission variant ${splitVariant} (${Math.round(commissionRate * 100)}%).`
-      : `Referral partner. ${clientCount || "unknown"} clients. Variant ${splitVariant}.`;
+      ? `Licensed customs broker with ${clientCount || "unknown"} import clients. 25% commission.`
+      : `Referral partner. ${clientCount || "unknown"} clients. 25% commission.`;
 
     // ── Create application ──────────────────────────────────────────────
     const application = await prisma.partnerApplication.create({
