@@ -38,6 +38,10 @@ type Application = {
   utmMedium: string | null;
   utmCampaign: string | null;
   utmContent: string | null;
+  partnerType: string | null;
+  clientCount: string | null;
+  splitVariant: string | null;
+  additionalNotes: string | null;
   createdAt: string;
   updatedAt: string;
   bookings: BookingWithSlot[];
@@ -845,6 +849,19 @@ function ApplicationDetail({
         <Field label="Submitted" value={fmtDateTime(app.createdAt)} />
         <Field label="Upline code" value={app.uplineCode} />
         <Field label="Status" value={app.status} />
+        {app.partnerType && (
+          <Field label="Partner Type" value={
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
+              app.partnerType === "broker"
+                ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
+            }`}>
+              {app.partnerType === "broker" ? "Licensed Customs Broker" : "Referral Partner"}
+            </span>
+          } />
+        )}
+        {app.clientCount && <Field label="Client Book Size" value={app.clientCount + " import clients"} />}
+        {app.splitVariant && <Field label="Commission Variant" value={`Variant ${app.splitVariant}`} />}
       </div>
 
       {app.audienceContext && (
@@ -854,6 +871,17 @@ function ApplicationDetail({
           </div>
           <div className="text-sm whitespace-pre-wrap p-3 rounded-lg bg-[var(--app-bg)] border border-[var(--app-border)]">
             {app.audienceContext}
+          </div>
+        </div>
+      )}
+
+      {app.additionalNotes && (
+        <div>
+          <div className="text-xs uppercase tracking-wider text-[var(--app-text-muted)] mb-1">
+            Additional Notes from Applicant
+          </div>
+          <div className="text-sm whitespace-pre-wrap p-3 rounded-lg bg-[var(--app-bg)] border border-[var(--app-border)]">
+            {app.additionalNotes}
           </div>
         </div>
       )}
