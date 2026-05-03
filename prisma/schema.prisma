@@ -1739,6 +1739,9 @@ model PartnerApplication {
   utmMedium         String?
   utmCampaign       String?
   utmContent        String?
+  partnerType       String?   // "broker" (licensed customs broker) or "referral" (normal partner)
+  clientCount       String?   // "0-10", "10-25", "25-50", "50+"
+  splitVariant      String?   // "A" (10%), "B" (15%), "C" (20%) — commission split test
   ipAddress         String?
   userAgent         String?
   createdAt         DateTime @default(now())
