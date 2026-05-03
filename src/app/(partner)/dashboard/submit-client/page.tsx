@@ -16,19 +16,9 @@ export default function SubmitClientPage() {
   const partnerCode = user?.partnerCode || "DEMO";
   const partnerName = user?.name || "Partner";
   const [agreementSigned, setAgreementSigned] = useState<boolean | null>(null);
-  // Incrementing key forces the iframe to unmount/remount, resetting the
-  // Frost Law flow back to the submission form. Used after a partner
-  // finishes one referral (form → calendar book) and wants to submit
-  // another without reloading the whole dashboard page.
+  const [isTrialMode, setIsTrialMode] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
 
-  // ── Fetch agreement status ────────────────────────────────────────────────
-  // Gate is satisfied only when BOTH the agreement is signed/approved AND
-  // the partner row itself is active. Post-#76 the SignWell webhook flips
-  // Partner.status automatically on document_completed, so the happy path
-  // converges — but checking both guards against any path that marks the
-  // agreement signed without the webhook firing (e.g. manual admin doc
-  // upload with a race) and against stale local state.
   useEffect(() => {
     fetch("/api/agreement")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -37,10 +27,11 @@ export default function SubmitClientPage() {
           data.agreement?.status === "signed" ||
           data.agreement?.status === "approved";
         const partnerOk = data.partnerStatus === "active";
-        setAgreementSigned(agreementOk && partnerOk);
+        const trialOk = (data.dealCount ?? 0) < 1;
+        setAgreementSigned((agreementOk && partnerOk) || trialOk);
+        setIsTrialMode(!agreementOk && trialOk);
       })
       .catch(() => {
-        // If API fails, default to allowing access (demo mode)
         setAgreementSigned(true);
       });
   }, []);
@@ -116,6 +107,13 @@ export default function SubmitClientPage() {
       <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-4">
         Use the form below to submit a client referral. This submission is tracked to your partner account.
       </p>
+
+      {isTrialMode && (
+        <div className="mb-4 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+          <div className="font-body text-[13px] text-amber-400 font-medium">You have 1 free trial referral</div>
+          <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-1">Sign your partnership agreement to continue referring clients after this submission.</div>
+        </div>
+      )}
 
       {/* Partner info bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 card px-4 py-3">

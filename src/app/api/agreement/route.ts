@@ -70,12 +70,16 @@ export async function GET(req: NextRequest) {
     // Post-#76 the SignWell webhook flips Partner.status automatically, so
     // in the happy path both fields converge — but this guards against any
     // future path that marks an agreement signed without the webhook firing.
-    const partnerRow = await prisma.partner.findUnique({
-      where: { partnerCode },
-      select: { status: true },
-    });
+    const [partnerRow, dealCount] = await Promise.all([
+      prisma.partner.findUnique({
+        where: { partnerCode },
+        select: { status: true },
+      }),
+      prisma.deal.count({ where: { partnerCode } }),
+    ]);
 
     return NextResponse.json({
+      dealCount,
       agreement: agreement
         ? {
             id: agreement.id,
