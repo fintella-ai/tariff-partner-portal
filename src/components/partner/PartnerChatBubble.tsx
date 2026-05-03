@@ -19,12 +19,16 @@ interface Props {
   preferredPersona: PersonaId;
   liveChatEnabled: boolean;
   aiEnabled: boolean;
+  embedded?: boolean;
+  onClose?: () => void;
 }
 
 export default function PartnerChatBubble({
   preferredPersona,
   liveChatEnabled,
   aiEnabled,
+  embedded = false,
+  onClose,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -283,6 +287,47 @@ export default function PartnerChatBubble({
 
   const currentPersona = PERSONAS[resolvePersonaId(persona)];
   const isMobile = device.isMobile;
+
+  // ─── EMBEDDED MODE (inside UnifiedChatWidget) ──────────────────────────
+  if (embedded) {
+    if (!open) setOpen(true);
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-[var(--app-bg-secondary)]" style={{ borderBottom: "1px solid var(--app-border)" }}>
+          <PersonaSwitcherRow active={persona} onSwitch={setPersona} size={24} />
+        </div>
+        <ChatPanel
+          messages={messages}
+          sending={sending}
+          onSend={handleSend}
+          persona={persona}
+          liveChatEnabled={liveChatEnabled}
+          onTalkToPerson={handleTalkToPerson}
+        />
+        {showSupportLink && !showTicketForm && (
+          <div className="px-4 py-2 border-t border-[var(--app-border)]">
+            <Link
+              href="/dashboard/support"
+              className="font-body text-[11px] text-brand-gold hover:text-brand-gold/80 transition-colors"
+            >
+              Open Support Page &rarr;
+            </Link>
+          </div>
+        )}
+        {showTicketForm && (
+          <InlineTicketForm
+            prefillSubject={ticketPrefill.subject}
+            prefillCategory={ticketPrefill.category}
+            prefillDescription={ticketPrefill.description}
+            prefillPriority={ticketPrefill.priority}
+            prefillDealId={ticketPrefill.dealId}
+            onCreated={() => setShowTicketForm(false)}
+            onCancel={() => setShowTicketForm(false)}
+          />
+        )}
+      </div>
+    );
+  }
 
   // ─── COLLAPSED BUBBLE ──────────────────────────────────────────────────
   if (!open) {

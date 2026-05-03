@@ -12,8 +12,8 @@ import { useTheme } from "@/components/layout/ThemeProvider";
 import { EditLayoutProvider } from "@/components/admin/EditLayoutContext";
 import EditLayoutButton from "@/components/admin/EditLayoutButton";
 import EditableText from "@/components/ui/EditableText";
-import PartnerChatBubble from "@/components/partner/PartnerChatBubble";
 import ChannelChatWidget from "@/components/partner/ChannelChatWidget";
+import UnifiedChatWidget from "@/components/partner/UnifiedChatWidget";
 
 // ─── NAV STRUCTURE ───────────────────────────────────────────────────────────
 // Main nav items (top section of sidebar)
@@ -957,10 +957,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </footer>
       </div>
 
-      {/* ── AI CHAT BUBBLE ──
-          Replaces the old live-chat FAB + panel. The AI widget includes
-          "Talk to a person" which covers the live-chat use case. */}
-      <PartnerChatBubble
+      <UnifiedChatWidget
         preferredPersona="finn"
         liveChatEnabled={liveChatSettingEnabled}
         aiEnabled={aiEnabled}
