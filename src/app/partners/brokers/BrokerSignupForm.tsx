@@ -172,9 +172,22 @@ export default function BrokerSignupForm({ variant, rate }: Props) {
       >
         Join the Network
       </h2>
-      <p className="font-body text-xs mb-6" style={{ color: "var(--app-text-muted)" }}>
+      <p className="font-body text-xs mb-2" style={{ color: "var(--app-text-muted)" }}>
         Free to join. Start referring today.
       </p>
+      <div
+        className="font-body text-[10px] leading-relaxed mb-6 p-3 rounded-lg"
+        style={{
+          color: "var(--app-text-secondary)",
+          background: "rgba(196,160,80,0.04)",
+          border: "1px solid rgba(196,160,80,0.12)",
+        }}
+      >
+        The information you provide below must be accurate and match your legal
+        documents. This data will be used to create your partner profile and
+        generate your partnership agreement. Inaccurate information may delay
+        your application or void your agreement.
+      </div>
 
       {/* Error */}
       {error && (
