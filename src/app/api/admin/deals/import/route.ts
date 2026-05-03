@@ -153,6 +153,7 @@ export async function POST(req: NextRequest) {
           importCountries: row.importCountries || null,
           annualImportValue: row.annualImportValue || null,
           importerOfRecord: row.importerOfRecord || null,
+          isImporterOfRecord: row.isImporterOfRecord !== undefined ? Boolean(row.isImporterOfRecord) : true,
           affiliateNotes: row.affiliateNotes || null,
           epLevel1: row.epLevel1 || null,
           externalDealId: row.externalDealId || null,

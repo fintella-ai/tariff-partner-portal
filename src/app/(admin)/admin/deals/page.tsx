@@ -47,6 +47,7 @@ type Deal = {
   importCountries: string | null;
   annualImportValue: string | null;
   importerOfRecord: string | null;
+  isImporterOfRecord: boolean;
   affiliateNotes: string | null;
   epLevel1: string | null;
   // Deal tracking
@@ -218,6 +219,7 @@ export default function AdminDealsPage() {
   // ("2000000" → "2,000,000") don't fight controlled inputs, parsed on save.
   // firmFeeRatePct is the percentage form (0..100); converted to decimal
   // (0..1) on save to match the DB schema convention.
+  const [editIor, setEditIor] = useState(true);
   const [editRefund, setEditRefund] = useState("");
   const [editActualRefund, setEditActualRefund] = useState("");
   const [editFirmFeeRatePct, setEditFirmFeeRatePct] = useState("");
@@ -303,6 +305,7 @@ export default function AdminDealsPage() {
       setEditL3Status(deal.l3CommissionStatus);
       setEditNotes(deal.notes || "");
       setEditAffiliateNotes(deal.affiliateNotes || "");
+      setEditIor(deal.isImporterOfRecord);
       setEditRefund(deal.estimatedRefundAmount ? String(deal.estimatedRefundAmount) : "");
       setEditActualRefund(deal.actualRefundAmount != null ? String(deal.actualRefundAmount) : "");
       setEditFirmFeeRatePct(
@@ -382,6 +385,7 @@ export default function AdminDealsPage() {
           l3CommissionStatus: editL3Status,
           notes: editNotes,
           affiliateNotes: editAffiliateNotes,
+          isImporterOfRecord: editIor,
           estimatedRefundAmount: refundParsed ?? 0,
           actualRefundAmount: actualRefundParsed,
           firmFeeRate: feeRateDecimal,
@@ -765,7 +769,7 @@ export default function AdminDealsPage() {
                 )}
               </div>
               <div className="font-body text-[11px] text-[var(--app-text-secondary)] text-center truncate" title={deal.serviceOfInterest || ""}>
-                {deal.serviceOfInterest || "—"}
+                {(deal.serviceOfInterest || "Tariff Refund Support").replace(/\s*\(Tier [12]\)/, "")} <span className={`font-medium ${deal.isImporterOfRecord ? "text-emerald-400" : "text-amber-400"}`}>({deal.isImporterOfRecord ? "Tier 1" : "Tier 2"})</span>
               </div>
               <div className="text-center"><StageBadge stage={deal.stage} /></div>
               <div className="font-body text-[13px] text-[var(--app-text)] text-center">{fmt$(fin.refund)}</div>
@@ -873,6 +877,30 @@ export default function AdminDealsPage() {
                         />
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-3">
+                    <label className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Client Tier (IOR Status)</label>
+                    <div className="flex gap-2 mt-1">
+                      {[
+                        { label: "Tier 1 — Importer of Record", value: true },
+                        { label: "Tier 2 — Not IOR (50% commission)", value: false },
+                      ].map((opt) => (
+                        <button
+                          key={String(opt.value)}
+                          type="button"
+                          onClick={() => setEditIor(opt.value)}
+                          className={`flex-1 px-3 py-2 rounded text-xs font-medium border transition-all ${
+                            editIor === opt.value
+                              ? opt.value
+                                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
+                                : "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                              : "border-[var(--app-border)] bg-transparent text-[var(--app-text-muted)]"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="mt-3">
                     <label className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider block mb-1">Affiliate Notes</label>
@@ -1367,9 +1395,9 @@ export default function AdminDealsPage() {
                 </div>
                 <StageBadge stage={deal.stage} />
               </div>
-              {deal.serviceOfInterest && (
-                <div className="font-body text-[11px] text-[var(--app-text-secondary)] mt-1">{deal.serviceOfInterest}</div>
-              )}
+              <div className="font-body text-[11px] text-[var(--app-text-secondary)] mt-1">
+                {(deal.serviceOfInterest || "Tariff Refund Support").replace(/\s*\(Tier [12]\)/, "")} <span className={`font-medium ${deal.isImporterOfRecord ? "text-emerald-400" : "text-amber-400"}`}>({deal.isImporterOfRecord ? "Tier 1" : "Tier 2"})</span>
+              </div>
               <div className="grid grid-cols-3 gap-2 mt-3">
                 <div>
                   <div className="font-body text-[9px] text-[var(--app-text-muted)] uppercase tracking-wider">Refund</div>

@@ -132,6 +132,9 @@ export default function DealsPage() {
                     </div>
                     <StageBadge stage={deal.stage} />
                   </div>
+                  <div className="font-body text-[11px] text-[var(--app-text-secondary)] mb-1">
+                    {(deal.serviceOfInterest || "Tariff Refund Support").replace(/\s*\(Tier [12]\)/, "")} <span className={`font-medium ${deal.isImporterOfRecord !== false ? "text-emerald-400" : "text-amber-400"}`}>({deal.isImporterOfRecord !== false ? "Tier 1" : "Tier 2"})</span>
+                  </div>
                   <div className="font-body text-[11px] text-[var(--app-text-muted)] mb-3">
                     {fmtDateTime(deal.createdAt)}
                   </div>
@@ -186,7 +189,9 @@ export default function DealsPage() {
                     <div className="font-body text-[13px] font-medium text-[var(--app-text)] truncate">{deal.dealName}</div>
                     <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-0.5 truncate">{fmtDateTime(deal.createdAt)}</div>
                   </div>
-                  <div className="font-body text-[11px] text-[var(--app-text-secondary)] text-center truncate">{deal.serviceOfInterest || "—"}</div>
+                  <div className="font-body text-[11px] text-[var(--app-text-secondary)] text-center truncate">
+                    {(deal.serviceOfInterest || "Tariff Refund Support").replace(/\s*\(Tier [12]\)/, "")} <span className={`font-medium ${deal.isImporterOfRecord !== false ? "text-emerald-400" : "text-amber-400"}`}>({deal.isImporterOfRecord !== false ? "Tier 1" : "Tier 2"})</span>
+                  </div>
                   <div className="text-center"><StageBadge stage={deal.stage} /></div>
                   <div className="font-body text-[13px] text-[var(--app-text)] text-center">{fmt$(fin.refund)}</div>
                   <div className="font-body text-[12px] text-[var(--app-text-muted)] text-center">
@@ -351,6 +356,14 @@ function DealDetail({ deal, onSupport }: { deal: any; onSupport: () => void }) {
                 <div className="font-body text-[13px] text-[var(--app-text-secondary)] mt-0.5">{f.value}</div>
               </div>
             ))}
+            <div>
+              <div className="font-body text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">Client Tier</div>
+              <div className={`font-body text-[13px] mt-0.5 font-medium ${
+                deal.isImporterOfRecord !== false ? "text-emerald-400" : "text-amber-400"
+              }`}>
+                {deal.isImporterOfRecord !== false ? "Tier 1 — Full Commission" : "Tier 2 — 50% Commission"}
+              </div>
+            </div>
           </div>
         </div>
       )}

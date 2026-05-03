@@ -168,6 +168,7 @@ export async function POST(
       const computed = await computeDealCommissions(prisma, {
         partnerCode: deal.partnerCode,
         firmFeeAmount: effectiveFirmFee,
+        isImporterOfRecord: deal.isImporterOfRecord,
       });
 
       if (computed.entries.length === 0) {

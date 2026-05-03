@@ -330,7 +330,7 @@ export async function getL1CommissionRateSnapshot(
  */
 export async function computeDealCommissions(
   db: Pick<PrismaClient, "partner">,
-  deal: { partnerCode: string; firmFeeAmount: number }
+  deal: { partnerCode: string; firmFeeAmount: number; isImporterOfRecord?: boolean }
 ): Promise<DealCommissionComputation> {
   if (!deal.firmFeeAmount || deal.firmFeeAmount <= 0) {
     return { entries: [], chain: [], totalAmount: 0, waterfall: { l1Amount: 0, l1Rate: 0, l2Amount: 0, l2Rate: 0, l3Amount: 0, l3Rate: 0, totalRate: 0 } };
@@ -404,7 +404,14 @@ export async function computeDealCommissions(
     }
   }
 
-  const waterfall = calcWaterfallCommissions(deal.firmFeeAmount, chain);
+  // IOR multiplier: when the client is NOT the Importer of Record (Tier 2),
+  // all partner commission rates are cut by 50%.
+  const iorMultiplier = deal.isImporterOfRecord === false ? 0.5 : 1;
+  const effectiveChain: PartnerChainNode[] = iorMultiplier < 1
+    ? chain.map((n) => ({ ...n, commissionRate: n.commissionRate * iorMultiplier }))
+    : chain;
+
+  const waterfall = calcWaterfallCommissions(deal.firmFeeAmount, effectiveChain);
 
   // Phase 1 flag gate: when the sliding-window model is enabled, rebuild
   // the ledger entries from calcSlidingWindowWaterfall instead of the
@@ -419,14 +426,14 @@ export async function computeDealCommissions(
   if (useSlidingWindow()) {
     const slide = calcSlidingWindowWaterfall(
       deal.firmFeeAmount,
-      chain.map((n) => ({ partnerCode: n.partnerCode, commissionRate: n.commissionRate })),
+      effectiveChain.map((n) => ({ partnerCode: n.partnerCode, commissionRate: n.commissionRate })),
     );
-    const slidingEntries = buildLedgerEntriesFromSliding(slide, chain, { payoutDownlineEnabled });
+    const slidingEntries = buildLedgerEntriesFromSliding(slide, effectiveChain, { payoutDownlineEnabled });
     const totalAmount = slidingEntries.reduce((s, e) => s + e.amount, 0);
     return { entries: slidingEntries, chain, totalAmount, waterfall };
   }
 
-  const entries = buildLedgerEntries(waterfall, chain, { payoutDownlineEnabled });
+  const entries = buildLedgerEntries(waterfall, effectiveChain, { payoutDownlineEnabled });
 
   const totalAmount = entries.reduce((s, e) => s + e.amount, 0);
   return { entries, chain, totalAmount, waterfall };
