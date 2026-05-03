@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Fire-and-forget invite email — never block the response
+      // Fire-and-forget invite email
       import("@/lib/sendgrid")
         .then(({ sendDownlineInviteEmail }) =>
           sendDownlineInviteEmail({
@@ -154,6 +154,32 @@ export async function POST(req: NextRequest) {
           }),
         )
         .catch(() => {});
+
+      // Admin notification — new broker/referral partner signed up
+      const partnerLabel = isBroker ? "customs broker" : "referral partner";
+      const rateLabel = `${Math.round(commissionRate * 100)}%`;
+      prisma.notification.create({
+        data: {
+          recipientType: "admin",
+          recipientId: "all",
+          type: "deal_update",
+          title: `New ${isBroker ? "Broker" : "Referral"} Partner Signup`,
+          message: `${firstName} ${lastName} (${email}) signed up as a ${partnerLabel} at ${rateLabel} commission via the broker landing page.${clientCount ? ` ${clientCount} import clients.` : ""}`,
+          link: "/admin/partners",
+        },
+      }).catch(() => {});
+
+      // Notify John (PTNS4XDMN) as the upline
+      prisma.notification.create({
+        data: {
+          recipientType: "partner",
+          recipientId: "PTNS4XDMN",
+          type: "deal_update",
+          title: `New ${isBroker ? "Broker" : "Referral"} Partner Joined`,
+          message: `${firstName} ${lastName} signed up as your L2 ${partnerLabel} at ${rateLabel}. Invite sent automatically.`,
+          link: "/dashboard/downline",
+        },
+      }).catch(() => {});
     } catch (err) {
       console.error("[broker-signup] auto-invite failed:", err);
     }
