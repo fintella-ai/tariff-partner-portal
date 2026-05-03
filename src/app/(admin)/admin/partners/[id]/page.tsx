@@ -111,6 +111,10 @@ export default function PartnerDetailPage() {
   const [callingPartner, setCallingPartner] = useState(false);
   const [callMessage, setCallMessage] = useState<string | null>(null);
   const [showComposeEmail, setShowComposeEmail] = useState(false);
+  const [showComposeSms, setShowComposeSms] = useState(false);
+  const [smsDraft, setSmsDraft] = useState("");
+  const [sendingSms, setSendingSms] = useState(false);
+  const [smsResult, setSmsResult] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [noteFiles, setNoteFiles] = useState<File[]>([]);
   const [postingNote, setPostingNote] = useState(false);
@@ -1920,6 +1924,33 @@ export default function PartnerDetailPage() {
                 <span>{callingPartner ? "Initiating..." : "Call Partner"}</span>
               </button>
             )}
+            {partner?.mobilePhone && (
+              <button
+                onClick={() => { setShowComposeSms((v) => !v); setSmsResult(null); }}
+                className={`font-body text-[11px] rounded-lg px-3 py-2 min-h-[40px] active:scale-95 transition-all flex items-center gap-1.5 ${
+                  showComposeSms
+                    ? "text-black bg-emerald-500 border border-emerald-500"
+                    : "text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/10"
+                }`}
+                title="Send an SMS to this partner"
+              >
+                <span>💬</span>
+                <span>{showComposeSms ? "Close SMS" : "Send SMS"}</span>
+              </button>
+            )}
+            {partner?.partnerCode && (
+              <button
+                onClick={() => {
+                  const url = `/admin/internal-chats?tab=partner-dm&partner=${partner.partnerCode}`;
+                  router.push(url);
+                }}
+                className="font-body text-[11px] text-purple-400 border border-purple-500/30 rounded-lg px-3 py-2 min-h-[40px] hover:bg-purple-500/10 active:scale-95 transition-all flex items-center gap-1.5"
+                title="Open direct message thread with this partner"
+              >
+                <span>✉️</span>
+                <span>Direct Message</span>
+              </button>
+            )}
           </div>
         </div>
         {showComposeEmail && partner?.email && (
@@ -1933,6 +1964,63 @@ export default function PartnerDetailPage() {
                 void fetchPartner();
               }}
             />
+          </div>
+        )}
+        {showComposeSms && partner?.mobilePhone && (
+          <div className="px-5 py-4 border-b border-[var(--app-border)] bg-[var(--app-card-bg)]">
+            <div className="font-body text-xs font-semibold text-emerald-400 mb-2">Send SMS to {partner.firstName} {partner.lastName}</div>
+            <div className="font-body text-[10px] text-[var(--app-text-muted)] mb-2">To: {partner.mobilePhone}</div>
+            <textarea
+              value={smsDraft}
+              onChange={(e) => setSmsDraft(e.target.value)}
+              rows={3}
+              maxLength={1600}
+              placeholder="Type your SMS message..."
+              className="w-full px-3 py-2 rounded-lg font-body text-sm resize-none mb-2"
+              style={{ background: "var(--app-input-bg)", border: "1px solid var(--app-border)", color: "var(--app-text)", outline: "none" }}
+            />
+            <div className="flex items-center justify-between">
+              <span className="font-body text-[10px] text-[var(--app-text-faint)]">{smsDraft.length}/1600</span>
+              <button
+                onClick={async () => {
+                  if (!smsDraft.trim()) return;
+                  setSendingSms(true);
+                  setSmsResult(null);
+                  try {
+                    const res = await fetch("/api/admin/sms/send", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        to: partner.mobilePhone,
+                        body: smsDraft.trim(),
+                        partnerCode: partner.partnerCode,
+                      }),
+                    });
+                    if (res.ok) {
+                      setSmsResult("SMS sent");
+                      setSmsDraft("");
+                      void fetchPartner();
+                    } else {
+                      const data = await res.json().catch(() => ({}));
+                      setSmsResult(data.error || "Failed to send");
+                    }
+                  } catch {
+                    setSmsResult("Network error");
+                  } finally {
+                    setSendingSms(false);
+                  }
+                }}
+                disabled={sendingSms || !smsDraft.trim()}
+                className="font-body text-xs font-semibold px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40 transition-colors"
+              >
+                {sendingSms ? "Sending..." : "Send SMS"}
+              </button>
+            </div>
+            {smsResult && (
+              <div className={`mt-2 font-body text-[11px] ${smsResult === "SMS sent" ? "text-emerald-400" : "text-red-400"}`}>
+                {smsResult}
+              </div>
+            )}
           </div>
         )}
         {callMessage && (
