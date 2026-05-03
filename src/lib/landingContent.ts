@@ -153,6 +153,9 @@ export interface LandingContentData {
     version: number; // bumped on every publish
     generatedAt: string | null; // ISO timestamp of last regenerate-from-portal run
   };
+
+  // Section order for admin landing editor (optional — uses default if not set)
+  sectionOrder?: string[];
 }
 
 export const DEFAULT_LANDING_CONTENT: LandingContentData = {

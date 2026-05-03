@@ -20,7 +20,7 @@ type Tab =
   | "exitIntent"
   | "publish";
 
-const TABS: { id: Tab; label: string }[] = [
+const DEFAULT_TABS: { id: Tab; label: string }[] = [
   { id: "hero", label: "Hero" },
   { id: "lawfirms", label: "Law firms" },
   { id: "opportunity", label: "Opportunity" },
@@ -37,9 +37,13 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "seo", label: "SEO" },
   { id: "publish", label: "Publish" },
 ];
+const TAB_MAP = Object.fromEntries(DEFAULT_TABS.map((t) => [t.id, t]));
 
 export default function LandingEditorPage() {
   const [tab, setTab] = useState<Tab>("hero");
+  const [sectionOrder, setSectionOrder] = useState<Tab[]>(DEFAULT_TABS.map((t) => t.id));
+  const [reorderMode, setReorderMode] = useState(false);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
@@ -72,6 +76,11 @@ export default function LandingEditorPage() {
       setLandingV2Live(data.landingV2Live);
       setLastRegeneratedAt(data.lastRegeneratedAt);
       setLastPublishedAt(data.lastPublishedAt);
+      if (data.draft?.sectionOrder && Array.isArray(data.draft.sectionOrder)) {
+        const validOrder = (data.draft.sectionOrder as string[]).filter((id) => TAB_MAP[id as Tab]);
+        const missing = DEFAULT_TABS.map((t) => t.id).filter((id) => !validOrder.includes(id));
+        setSectionOrder([...validOrder as Tab[], ...missing]);
+      }
     } finally {
       setLoading(false);
     }
@@ -251,16 +260,57 @@ export default function LandingEditorPage() {
         />
       </div>
 
-      <div className="flex gap-1 border-b border-[var(--app-border)] overflow-x-auto">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-3 py-2 text-xs font-medium whitespace-nowrap transition border-b-2 ${tab === t.id ? "border-[var(--brand-gold)] text-[var(--app-text)]" : "border-transparent text-[var(--app-text-muted)] hover:text-[var(--app-text)]"}`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="flex items-center gap-1 border-b border-[var(--app-border)] overflow-x-auto">
+        {sectionOrder.map((id, i) => {
+          const t = TAB_MAP[id];
+          if (!t) return null;
+          return (
+            <div
+              key={t.id}
+              className={`flex items-center gap-0.5 ${dragIdx === i ? "opacity-50" : ""}`}
+              draggable={reorderMode}
+              onDragStart={() => setDragIdx(i)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => {
+                if (dragIdx === null || dragIdx === i) return;
+                const next = [...sectionOrder];
+                const [moved] = next.splice(dragIdx, 1);
+                next.splice(i, 0, moved);
+                setSectionOrder(next);
+                setDragIdx(null);
+                if (draft) setDraft({ ...draft, sectionOrder: next });
+              }}
+            >
+              {reorderMode && (
+                <div className="flex flex-col -mr-0.5">
+                  <button
+                    onClick={() => { if (i === 0) return; const n = [...sectionOrder]; [n[i-1], n[i]] = [n[i], n[i-1]]; setSectionOrder(n); if (draft) setDraft({ ...draft, sectionOrder: n }); }}
+                    className="text-[8px] text-[var(--app-text-muted)] hover:text-brand-gold leading-none"
+                    title="Move up"
+                  >▲</button>
+                  <button
+                    onClick={() => { if (i === sectionOrder.length - 1) return; const n = [...sectionOrder]; [n[i], n[i+1]] = [n[i+1], n[i]]; setSectionOrder(n); if (draft) setDraft({ ...draft, sectionOrder: n }); }}
+                    className="text-[8px] text-[var(--app-text-muted)] hover:text-brand-gold leading-none"
+                    title="Move down"
+                  >▼</button>
+                </div>
+              )}
+              <button
+                onClick={() => setTab(t.id)}
+                className={`px-3 py-2 text-xs font-medium whitespace-nowrap transition border-b-2 ${tab === t.id ? "border-[var(--brand-gold)] text-[var(--app-text)]" : "border-transparent text-[var(--app-text-muted)] hover:text-[var(--app-text)]"}`}
+              >
+                {t.label}
+              </button>
+            </div>
+          );
+        })}
+        <button
+          onClick={() => setReorderMode(!reorderMode)}
+          className={`ml-auto px-2 py-1 text-[10px] rounded transition ${reorderMode ? "bg-brand-gold/20 text-brand-gold" : "text-[var(--app-text-muted)] hover:text-[var(--app-text)]"}`}
+          title="Toggle section reorder mode"
+        >
+          {reorderMode ? "Done" : "⇅ Reorder"}
+        </button>
       </div>
 
       <div className="space-y-4">
