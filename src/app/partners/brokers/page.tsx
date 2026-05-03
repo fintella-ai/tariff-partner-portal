@@ -1034,6 +1034,27 @@ export default function BrokersLandingPage() {
         </div>
       </section>
 
+      {/* ── Disclaimer ─────────────────────────────────────────────── */}
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <p
+          className="text-[10px] leading-relaxed text-center"
+          style={{ color: "var(--app-text-faint)", opacity: 0.6 }}
+        >
+          <strong>Disclaimer:</strong> Fintella is a technology platform and partner referral
+          network. Fintella does not provide legal, tax, accounting, or compliance advice.
+          All refund calculations and estimates shown on this page are based on published
+          IEEPA executive order tariff rates and are for informational purposes only. A
+          full entry-level review by qualified counsel is required before any filing.
+          Actual refund amounts depend on entry-specific data, CBP processing, eligibility
+          determinations, and case outcomes. Commission projections are estimates and are
+          not guaranteed — commissions are paid only on successful recoveries. All tariff
+          recovery cases are handled by independent, licensed legal counsel operating under
+          their own professional obligations. Past results do not guarantee future outcomes.
+          By using this calculator or applying to the partner program, you acknowledge that
+          you have read and understand these terms.
+        </p>
+      </div>
+
       {/* ── Footer ──────────────────────────────────────────────────── */}
       <footer
         style={{ borderTop: "1px solid var(--app-border-subtle)" }}
