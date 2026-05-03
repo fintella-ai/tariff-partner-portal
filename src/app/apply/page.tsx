@@ -142,7 +142,7 @@ function ApplyForm() {
             Become a Fintella Partner
           </h1>
           <p className="font-body text-base mb-8" style={{ color: "var(--app-text-muted)" }}>
-            Join the network of customs brokers and professionals earning 25% commission
+            Join the network of customs brokers and professionals earning 10-25% commission
             on every IEEPA tariff recovery. Free tools, no cost to join, your clients stay yours.
           </p>
 
@@ -150,7 +150,7 @@ function ApplyForm() {
             {[
               { icon: "🧮", title: "Free IEEPA Calculator", desc: "Instant refund estimates for your clients" },
               { icon: "📄", title: "AI Document Intake", desc: "Drop a CF 7501 — get results in 30 seconds" },
-              { icon: "💰", title: "25% Commission", desc: "Earn on every successful recovery" },
+              { icon: "💰", title: "10-25% Commission", desc: "Earn on every successful recovery" },
               { icon: "🔌", title: "TMS Widget", desc: "Embed directly in CargoWise or Magaya" },
               { icon: "📊", title: "Full Reporting", desc: "Track deals, commissions, and downline" },
             ].map((item) => (

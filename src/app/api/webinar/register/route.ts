@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         lastName,
         email: email.trim().toLowerCase(),
         phone: phone?.trim() || null,
-        commissionRate: 0.25,
+        commissionRate: 0.20,
         tier: "l2",
         referredByCode: "PTNS4XDMN",
         notes: [

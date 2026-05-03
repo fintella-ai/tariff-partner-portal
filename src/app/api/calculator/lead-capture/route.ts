@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       source: "calculator",
       status: "prospect",
       tier: "l2",
-      commissionRate: 0.25,
+      commissionRate: 0.20,
       referredByCode: "PTNS4XDMN",
       notes,
     },

@@ -1282,7 +1282,7 @@ function CalculatorInner() {
               {[
                 { num: "1", title: "Run the Calculator", desc: "Free estimate for any client — takes 30 seconds" },
                 { num: "2", title: "Share the PDF", desc: "Professional Fintella-branded recovery analysis" },
-                { num: "3", title: "Earn Commission", desc: "25% on every successful recovery" },
+                { num: "3", title: "Earn Commission", desc: "10–25% on every successful recovery" },
               ].map((step) => (
                 <div key={step.num} className="flex items-start gap-3">
                   <div
