@@ -16,7 +16,6 @@ export default function SubmitClientPage() {
   const partnerCode = user?.partnerCode || "DEMO";
   const partnerName = user?.name || "Partner";
   const [agreementSigned, setAgreementSigned] = useState<boolean | null>(null);
-  const [isTrialMode, setIsTrialMode] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
 
   useEffect(() => {
@@ -27,9 +26,7 @@ export default function SubmitClientPage() {
           data.agreement?.status === "signed" ||
           data.agreement?.status === "approved";
         const partnerOk = data.partnerStatus === "active";
-        const trialOk = (data.dealCount ?? 0) < 1;
-        setAgreementSigned((agreementOk && partnerOk) || trialOk);
-        setIsTrialMode(!agreementOk && trialOk);
+        setAgreementSigned(agreementOk && partnerOk);
       })
       .catch(() => {
         setAgreementSigned(true);
@@ -107,13 +104,6 @@ export default function SubmitClientPage() {
       <p className="font-body text-[13px] text-[var(--app-text-muted)] mb-4">
         Use the form below to submit a client referral. This submission is tracked to your partner account.
       </p>
-
-      {isTrialMode && (
-        <div className="mb-4 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
-          <div className="font-body text-[13px] text-amber-400 font-medium">You have 1 free trial referral</div>
-          <div className="font-body text-[11px] text-[var(--app-text-muted)] mt-1">Sign your partnership agreement to continue referring clients after this submission.</div>
-        </div>
-      )}
 
       {/* Partner info bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 card px-4 py-3">
