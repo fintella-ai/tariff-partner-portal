@@ -352,6 +352,12 @@ export default function BrokerSignupForm({ variant, rate }: Props) {
           >
             Have questions? Book a call
           </a>
+          <p className="font-body text-[9px] leading-relaxed mt-3 max-w-sm mx-auto" style={{ color: "var(--app-text-faint)" }}>
+            By applying, you agree to receive communications about the partner program.
+            Fintella does not provide legal, tax, or compliance advice. All recovery cases
+            are handled by independent licensed counsel. Commission estimates are not guaranteed
+            and depend on case outcomes.
+          </p>
         </div>
       </form>
     </div>

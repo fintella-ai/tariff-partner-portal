@@ -206,7 +206,7 @@ export default function BrokersLandingPage() {
             </p>
 
             {/* Live calculator — the product IS the demo */}
-            <HeroCalculator splitRate={splitRate} />
+            <HeroCalculator />
 
             {/* Works with row */}
             <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
