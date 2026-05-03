@@ -127,9 +127,9 @@ export default function AdminPartnersPage() {
   // Without bulk: same minus [select].
   const { columnWidths: partnerCols, getResizeHandler: partnerResize } = useResizableColumns(
     bulkOn
-      ? [36, 180, 70, 130, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80, 90]
-      : [180, 70, 130, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80, 90],
-    { storageKey: bulkOn ? "partners-v9-bulk" : "partners-v9" }
+      ? [36, 180, 70, 130, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80, 90, 60]
+      : [180, 70, 130, 120, 140, 180, 90, 110, 80, 120, 110, 60, 80, 90, 60],
+    { storageKey: bulkOn ? "partners-v10-bulk" : "partners-v10" }
   );
   const partnerGridCols = partnerCols.map((w) => `${w}px`).join(" ");
 
@@ -257,6 +257,8 @@ export default function AdminPartnersPage() {
 
   // Engagement tier filter
   const [engagementTierFilter, setEngagementTierFilter] = useState<"" | "hot" | "active" | "cooling" | "cold">("");
+  // Commission rate filter
+  const [rateFilter, setRateFilter] = useState<string>("");
 
   // Sort state
   type SortCol = "name" | "code" | "status" | "joined" | "score";
@@ -605,6 +607,11 @@ export default function AdminPartnersPage() {
    .filter((p) => {
     if (!engagementTierFilter) return true;
     return (p.engagementTier || "cold") === engagementTierFilter;
+  })
+   .filter((p) => {
+    if (!rateFilter) return true;
+    const pRate = typeof p.commissionRate === "number" ? p.commissionRate : 0.20;
+    return pRate.toFixed(2) === parseFloat(rateFilter).toFixed(2);
   })
    .slice().sort((a, b) => {
     // Priority bump: any row needing review jumps to the top.
@@ -1144,7 +1151,7 @@ export default function AdminPartnersPage() {
           onChange={(e) => { setSearch(e.target.value); setTablePage(1); }}
           placeholder={activeTab === "invited" ? "Search by name or email..." : "Search by name, email, or partner code..."}
         />
-        {activeTab !== "invited" && (
+        {activeTab !== "invited" && (<>
           <select
             value={engagementTierFilter}
             onChange={(e) => setEngagementTierFilter(e.target.value as "" | "hot" | "active" | "cooling" | "cold")}
@@ -1156,7 +1163,17 @@ export default function AdminPartnersPage() {
             <option value="cooling">Cooling</option>
             <option value="cold">Cold</option>
           </select>
-        )}
+          <select
+            value={rateFilter}
+            onChange={(e) => { setRateFilter(e.target.value); setTablePage(1); }}
+            className="text-sm rounded-lg px-3 py-1.5 bg-[var(--app-input-bg)] border border-[var(--app-input-border)] text-[var(--app-text)] font-body outline-none focus:border-brand-gold/40 transition-colors min-h-[44px] sm:min-h-0 sm:w-36"
+          >
+            <option value="">All Rates</option>
+            {Array.from(new Set(partners.map((p) => typeof p.commissionRate === "number" ? p.commissionRate : 0.20))).sort().map((r) => (
+              <option key={r} value={r}>{Math.round(r * 100)}%</option>
+            ))}
+          </select>
+        </>)}
       </div>
 
       {loading ? (
@@ -1641,6 +1658,7 @@ export default function AdminPartnersPage() {
                 { label: "Score", col: "score" as SortCol },
                 { label: "Tier", col: null },
                 { label: "Type", col: null },
+                { label: "Rate", col: null },
               ]) : ([
                 { label: "Partner", col: "name" as SortCol },
                 { label: "Level", col: null },
@@ -1656,6 +1674,7 @@ export default function AdminPartnersPage() {
                 { label: "Score", col: "score" as SortCol },
                 { label: "Tier", col: null },
                 { label: "Type", col: null },
+                { label: "Rate", col: null },
               ])).map((h, i) => (
                 h.label === "__select" ? (
                   <div key="__select" className="flex items-center justify-center relative">
@@ -1796,6 +1815,9 @@ export default function AdminPartnersPage() {
                         </span>
                       );
                     })()}
+                  </div>
+                  <div className="font-mono text-[12px] text-center font-semibold" style={{ color: "var(--brand-gold)" }}>
+                    {typeof p.commissionRate === "number" ? `${Math.round(p.commissionRate * 100)}%` : "20%"}
                   </div>
                 </div>
               );
