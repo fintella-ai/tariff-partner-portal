@@ -261,6 +261,11 @@ export default function AdminPartnersPage() {
   const [engagementTierFilter, setEngagementTierFilter] = useState<"" | "hot" | "active" | "cooling" | "cold">("");
   // Commission rate filter
   const [rateFilter, setRateFilter] = useState<string>("");
+  // Additional column filters
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [agreementFilter, setAgreementFilter] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [w9Filter, setW9Filter] = useState<string>("");
 
   // Sort state
   type SortCol = "name" | "code" | "status" | "joined" | "score";
@@ -642,6 +647,22 @@ export default function AdminPartnersPage() {
     if (!rateFilter) return true;
     const pRate = typeof p.commissionRate === "number" ? p.commissionRate : 0.20;
     return pRate.toFixed(2) === parseFloat(rateFilter).toFixed(2);
+  })
+   .filter((p) => {
+    if (!statusFilter) return true;
+    return p.status === statusFilter;
+  })
+   .filter((p) => {
+    if (!agreementFilter) return true;
+    return (p.agreementStatus || "none") === agreementFilter;
+  })
+   .filter((p) => {
+    if (!typeFilter) return true;
+    return (p.partnerType || "referral") === typeFilter;
+  })
+   .filter((p) => {
+    if (!w9Filter) return true;
+    return (p.w9Status || "needed") === w9Filter;
   })
    .slice().sort((a, b) => {
     // Priority bump: any row needing review jumps to the top.
@@ -1202,6 +1223,35 @@ export default function AdminPartnersPage() {
             {Array.from(new Set(partners.map((p) => typeof p.commissionRate === "number" ? p.commissionRate : 0.20))).sort().map((r) => (
               <option key={r} value={r}>{Math.round(r * 100)}%</option>
             ))}
+          </select>
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setTablePage(1); }} className="text-sm rounded-lg px-3 py-1.5 bg-[var(--app-input-bg)] border border-[var(--app-input-border)] text-[var(--app-text)] font-body outline-none focus:border-brand-gold/40 transition-colors min-h-[44px] sm:min-h-0 sm:w-32">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="blocked">Blocked</option>
+          </select>
+          <select value={agreementFilter} onChange={(e) => { setAgreementFilter(e.target.value); setTablePage(1); }} className="text-sm rounded-lg px-3 py-1.5 bg-[var(--app-input-bg)] border border-[var(--app-input-border)] text-[var(--app-text)] font-body outline-none focus:border-brand-gold/40 transition-colors min-h-[44px] sm:min-h-0 sm:w-36">
+            <option value="">All Agreements</option>
+            <option value="signed">Signed</option>
+            <option value="partner_signed">Partner Signed</option>
+            <option value="pending">Pending</option>
+            <option value="viewed">Viewed</option>
+            <option value="voided">Voided</option>
+            <option value="none">No Agreement</option>
+            <option value="not_sent">Not Sent</option>
+          </select>
+          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setTablePage(1); }} className="text-sm rounded-lg px-3 py-1.5 bg-[var(--app-input-bg)] border border-[var(--app-input-border)] text-[var(--app-text)] font-body outline-none focus:border-brand-gold/40 transition-colors min-h-[44px] sm:min-h-0 sm:w-32">
+            <option value="">All Types</option>
+            <option value="referral">Referral</option>
+            <option value="customs_broker">Broker</option>
+            <option value="corporate">Corporate</option>
+            <option value="licensed">Licensed</option>
+          </select>
+          <select value={w9Filter} onChange={(e) => { setW9Filter(e.target.value); setTablePage(1); }} className="text-sm rounded-lg px-3 py-1.5 bg-[var(--app-input-bg)] border border-[var(--app-input-border)] text-[var(--app-text)] font-body outline-none focus:border-brand-gold/40 transition-colors min-h-[44px] sm:min-h-0 sm:w-28">
+            <option value="">All W9</option>
+            <option value="submitted">Submitted</option>
+            <option value="approved">Approved</option>
+            <option value="needed">Needed</option>
           </select>
           <button
             onClick={async () => {
