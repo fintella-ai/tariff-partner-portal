@@ -72,6 +72,14 @@ function Inner() {
   const esRef = useRef<EventSource | null>(null);
   const feedBottomRef = useRef<HTMLDivElement>(null);
 
+  // AI generation state
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [aiType, setAiType] = useState<string>("general");
+  const [aiInstructions, setAiInstructions] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiUsedAi, setAiUsedAi] = useState(false);
+
   const loadChannel = useCallback(async () => {
     const r = await fetch(`/api/admin/channels/${channelId}`);
     if (!r.ok) return;
@@ -198,6 +206,35 @@ function Inner() {
     if (r.ok) window.location.href = "/admin/channels";
   };
 
+  const generateWithAi = async () => {
+    setAiGenerating(true);
+    setAiError(null);
+    try {
+      const r = await fetch("/api/admin/announcements/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: aiType,
+          channelId,
+          instructions: aiInstructions.trim() || undefined,
+        }),
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${r.status}`);
+      }
+      const data = await r.json();
+      setDraft(data.draft || "");
+      setAiUsedAi(data.ai === true);
+      setShowAiPanel(false);
+      setAiInstructions("");
+    } catch (e) {
+      setAiError((e as Error).message);
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   if (!channel) return <div className="p-6 text-sm opacity-70">Loading channel…</div>;
 
   return (
@@ -234,14 +271,80 @@ function Inner() {
           <div ref={feedBottomRef} />
         </div>
 
+        {/* AI Generate Panel */}
+        {showAiPanel && (
+          <div className="theme-card p-4 space-y-3 border-l-4 border-[var(--app-accent,#3b82f6)]">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium">Generate with AI</div>
+              <button
+                type="button"
+                onClick={() => { setShowAiPanel(false); setAiError(null); }}
+                className="text-xs opacity-60 hover:opacity-100"
+              >
+                Close
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-[11px] tracking-wider uppercase opacity-60 mb-1">Announcement Type</label>
+              <select
+                className="theme-input w-full text-sm"
+                value={aiType}
+                onChange={(e) => setAiType(e.target.value)}
+              >
+                <option value="general">General Update</option>
+                <option value="network_update">Partner Network Update</option>
+                <option value="milestone">Milestone Announcement</option>
+                <option value="deadline_reminder">Deadline Reminder</option>
+                <option value="feature">Feature Announcement</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] tracking-wider uppercase opacity-60 mb-1">
+                Special Instructions (optional)
+              </label>
+              <textarea
+                className="theme-input w-full text-sm"
+                rows={2}
+                placeholder="e.g., Focus on customs brokers, mention the new calculator, highlight Q1 deadlines..."
+                value={aiInstructions}
+                onChange={(e) => setAiInstructions(e.target.value)}
+              />
+            </div>
+
+            {aiError && <div className="text-xs text-red-500">{aiError}</div>}
+
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] opacity-50">
+                AI reads live deals, partners, and milestones to draft the announcement.
+              </div>
+              <button
+                type="button"
+                disabled={aiGenerating}
+                onClick={generateWithAi}
+                className="theme-btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
+              >
+                {aiGenerating ? "Generating..." : "Generate Draft"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Compose */}
         <div className="theme-card p-3 space-y-2 sticky bottom-2">
+          {aiUsedAi && draft && (
+            <div className="text-[11px] px-2 py-1 rounded bg-[var(--app-accent,#3b82f6)]/10 text-[var(--app-accent,#3b82f6)] flex items-center justify-between">
+              <span>AI-generated draft -- review and edit before posting</span>
+              <button type="button" onClick={() => setAiUsedAi(false)} className="opacity-60 hover:opacity-100 ml-2">Dismiss</button>
+            </div>
+          )}
           <textarea
             className="theme-input w-full text-sm"
-            rows={2}
+            rows={draft.length > 200 ? 6 : 2}
             placeholder="Write an announcement…"
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => { setDraft(e.target.value); if (aiUsedAi) setAiUsedAi(false); }}
           />
           {showCallLink && !pendingCall && (
             <CallLinkComposer
@@ -251,19 +354,28 @@ function Inner() {
           )}
           {pendingCall && (
             <div className="text-xs opacity-80 flex items-center gap-2">
-              📞 Call attached: {pendingCall.title || pendingCall.url}
+              Call attached: {pendingCall.title || pendingCall.url}
               <button type="button" onClick={() => setPendingCall(null)} className="text-red-500">Remove</button>
             </div>
           )}
           {error && <div className="text-xs text-red-500">{error}</div>}
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setShowCallLink((v) => !v)}
-              className="text-sm theme-btn-secondary px-3 py-1.5"
-            >
-              {showCallLink ? "Close" : "📞 Add call link"}
-            </button>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCallLink((v) => !v)}
+                className="text-sm theme-btn-secondary px-3 py-1.5"
+              >
+                {showCallLink ? "Close" : "Add call link"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAiPanel((v) => !v)}
+                className="text-sm theme-btn-secondary px-3 py-1.5"
+              >
+                {showAiPanel ? "Close AI" : "Generate with AI"}
+              </button>
+            </div>
             <button
               type="button"
               disabled={sending || (!draft.trim() && !pendingCall)}
