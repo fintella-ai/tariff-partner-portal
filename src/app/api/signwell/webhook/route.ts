@@ -262,11 +262,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (eventType === "document_viewed") {
+      // HARD RULE: Only set "viewed" if the PARTNER viewed, not the co-signer
+      const viewerEmail = body.data?.object?.email || body.data?.recipient?.email || "";
+      const viewSettings = await prisma.portalSettings.findUnique({ where: { id: "global" }, select: { fintellaSignerEmail: true } });
+      const isCosignerView = viewSettings?.fintellaSignerEmail && viewerEmail.toLowerCase() === viewSettings.fintellaSignerEmail.toLowerCase();
+
       const agreement = await prisma.partnershipAgreement.findFirst({
         where: { signwellDocumentId: docId },
       });
 
-      if (agreement && agreement.status === "pending") {
+      if (agreement && agreement.status === "pending" && !isCosignerView) {
         await prisma.partnershipAgreement.update({
           where: { id: agreement.id },
           data: { status: "viewed", viewedAt: new Date() },

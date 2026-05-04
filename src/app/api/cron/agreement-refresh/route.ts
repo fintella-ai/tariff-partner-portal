@@ -66,18 +66,20 @@ export async function GET(req: NextRequest) {
       const doc = await docRes.json();
       const recipients = doc.recipients || [];
       const allSigned = recipients.every((r: any) => r.status === "completed");
-      // Identify the partner recipient (not the co-signer) to check if THEY signed
+      // HARD RULE: Only the PARTNER's actions change status. Co-signer auto-sign is invisible.
+      // Partner is always signer #1, Fintella co-signer is always #2.
       const partnerRecipient = recipients.find((r: any) =>
         r.email?.toLowerCase() !== cosignerEmail?.toLowerCase()
       ) || recipients[0];
       const partnerSigned = partnerRecipient?.status === "completed";
+      const partnerViewed = partnerRecipient?.status === "viewed";
 
       let newStatus = agreement.status;
       if (allSigned && doc.status === "completed") {
         newStatus = "signed";
       } else if (partnerSigned) {
         newStatus = "partner_signed";
-      } else if (doc.status === "viewed" || recipients.some((r: any) => r.status === "viewed")) {
+      } else if (partnerViewed) {
         newStatus = "viewed";
       }
 
