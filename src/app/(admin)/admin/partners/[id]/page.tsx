@@ -1709,7 +1709,7 @@ export default function PartnerDetailPage() {
                       ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
                       : "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]"
             }`}>
-              {agreement?.status === "approved" ? "signed & approved" : agreement?.status?.replace("_", " ") || "none"}
+              {{ pending: "Awaiting Signature", viewed: "Viewed", signed: "Signed", partner_signed: "Partner Signed", voided: "Voided", approved: "Signed & Approved", amended: "Amended", not_sent: "Not Sent" }[agreement?.status || ""] || agreement?.status?.replace("_", " ") || "none"}
             </span>
           </div>
           {(agreement?.status === "pending" || agreement?.status === "partner_signed") && (agreement.embeddedSigningUrl || agreement.cosignerSigningUrl) && (
