@@ -14,6 +14,7 @@ import { sendAgreementReadyEmail, sendAgreementReminderEmail } from "@/lib/sendg
 import { sendAgreementReadySms } from "@/lib/twilio";
 import { getEmbeddedSigningUrl } from "@/lib/signwell";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
+import { appendPartnerRow } from "@/lib/google-sheets";
 
 /**
  * GET /api/admin/agreement/[partnerCode]
@@ -438,6 +439,17 @@ export async function POST(
       lastName: partner.lastName,
     }).catch((err) =>
       console.error("[AdminAgreement] agreement-ready SMS failed:", err)
+    );
+
+    // Fire-and-forget: sync partner row to Google Sheet
+    appendPartnerRow({
+      firstName: partner.firstName,
+      lastName: partner.lastName,
+      email: partnerEmail,
+      createdAt: partner.createdAt,
+      commissionRate: effectiveRate,
+    }).catch((err) =>
+      console.error("[AdminAgreement] Google Sheets append failed:", err)
     );
 
     return NextResponse.json({ agreement }, { status: 201 });

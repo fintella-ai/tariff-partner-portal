@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/format";
+import { appendPartnerRow } from "@/lib/google-sheets";
 
 const BROKER_RATE = 0.25;
 const REFERRAL_RATE = 0.10;
@@ -113,6 +114,17 @@ export async function POST(req: NextRequest) {
         userAgent: userAgent?.slice(0, 500) ?? null,
       },
     });
+
+    // Fire-and-forget: sync to Google Sheet
+    appendPartnerRow({
+      firstName,
+      lastName,
+      email,
+      createdAt: application.createdAt,
+      commissionRate,
+    }).catch((err) =>
+      console.error("[broker-signup] Google Sheets append failed:", err)
+    );
 
     // ── Auto-approve: create invite + update application ────────────────
     try {

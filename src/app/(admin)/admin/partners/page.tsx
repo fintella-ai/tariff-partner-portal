@@ -259,6 +259,9 @@ export default function AdminPartnersPage() {
   const [engagementTierFilter, setEngagementTierFilter] = useState<"" | "hot" | "active" | "cooling" | "cold">("");
   // Commission rate filter
   const [rateFilter, setRateFilter] = useState<string>("");
+  // Google Sheets sync
+  const [sheetSyncing, setSheetSyncing] = useState(false);
+  const [sheetSyncResult, setSheetSyncResult] = useState<{ count: number } | null>(null);
 
   // Sort state
   type SortCol = "name" | "code" | "status" | "joined" | "score";
@@ -685,6 +688,36 @@ export default function AdminPartnersPage() {
           </button>
           <button onClick={() => { setShowForm(!showForm); setShowInvite(false); resetOnBehalf(); }} className="font-body text-[12px] px-4 min-h-[44px] border border-[var(--app-border)] rounded-lg theme-text-secondary hover:theme-text transition-colors">
             + Add Directly
+          </button>
+          <button
+            disabled={sheetSyncing}
+            onClick={async () => {
+              setSheetSyncing(true);
+              setSheetSyncResult(null);
+              try {
+                const res = await fetch("/api/admin/partners/sync-sheet", { method: "POST" });
+                const data = await res.json();
+                if (res.ok) {
+                  setSheetSyncResult({ count: data.count });
+                } else {
+                  alert(data.error || "Sync failed");
+                }
+              } catch {
+                alert("Connection error");
+              } finally {
+                setSheetSyncing(false);
+              }
+            }}
+            className="font-body text-[12px] px-4 min-h-[44px] border border-green-500/30 rounded-lg text-green-400 hover:bg-green-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+          >
+            {sheetSyncing ? (
+              <><span className="inline-block w-3 h-3 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" /> Syncing...</>
+            ) : (
+              <>Sync to Google Sheets</>
+            )}
+            {sheetSyncResult && !sheetSyncing && (
+              <span className="text-[10px] opacity-70">({sheetSyncResult.count})</span>
+            )}
           </button>
         </div>
       </div>
