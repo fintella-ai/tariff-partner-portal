@@ -375,11 +375,15 @@ export async function POST(
       });
     }
 
-    // Send via SignWell
+    // Send via PandaDoc
+    const amendmentMessage = body.amendmentMessage ? String(body.amendmentMessage).trim() : "";
+    const docMessage = amendmentMessage
+      ? `Hi ${partnerName}, your previous partnership agreement has been updated. ${amendmentMessage}\n\nPlease review and sign your new ${FIRM_NAME} partnership agreement.`
+      : `Hi ${partnerName}, please review and sign your ${FIRM_NAME} partnership agreement.`;
     const { documentId, embeddedSigningUrl, cosignerSigningUrl } = await sendForSigning({
       name: `${FIRM_SHORT} Partnership Agreement — ${partnerName}`,
-      subject: `${FIRM_SHORT} Partnership Agreement`,
-      message: `Hi ${partnerName}, please review and sign your ${FIRM_NAME} partnership agreement.`,
+      subject: amendmentMessage ? `${FIRM_SHORT} — Updated Partnership Agreement` : `${FIRM_SHORT} Partnership Agreement`,
+      message: docMessage,
       recipients,
       templateId: templateId || undefined,
       templateFields,
