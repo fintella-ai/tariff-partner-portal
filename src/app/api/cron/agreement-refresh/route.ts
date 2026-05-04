@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getEmbeddedSigningUrl } from "@/lib/pandadoc";
 
 /**
  * GET /api/cron/agreement-refresh
  *
- * Auto-polls SignWell every 5 minutes for agreements in
+ * Auto-polls PandaDoc every 5 minutes for agreements in
  * pending/viewed/partner_signed. Catches status changes ~5 min
  * after partner signs and ~15 min after partner views, even if
  * webhooks are delayed or missed.
@@ -20,9 +21,9 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const SIGNWELL_API_KEY = process.env.SIGNWELL_API_KEY || "";
-  if (!SIGNWELL_API_KEY) {
-    return NextResponse.json({ skipped: true, reason: "SIGNWELL_API_KEY not set" });
+  const PANDADOC_API_KEY = process.env.PANDADOC_API_KEY || "";
+  if (!PANDADOC_API_KEY) {
+    return NextResponse.json({ skipped: true, reason: "PANDADOC_API_KEY not set" });
   }
 
   const agreements = await prisma.partnershipAgreement.findMany({
@@ -54,8 +55,8 @@ export async function GET(req: NextRequest) {
 
     try {
       const docRes = await fetch(
-        `https://www.signwell.com/api/v1/documents/${agreement.signwellDocumentId}`,
-        { headers: { "X-Api-Key": SIGNWELL_API_KEY } }
+        `https://api.pandadoc.com/public/v1/documents/${agreement.signwellDocumentId}`,
+        { headers: { Authorization: `API-Key ${PANDADOC_API_KEY}` } }
       );
 
       if (!docRes.ok) {
@@ -65,27 +66,30 @@ export async function GET(req: NextRequest) {
 
       const doc = await docRes.json();
       const recipients = doc.recipients || [];
-      const allSigned = recipients.every((r: any) => r.status === "completed");
+
       // HARD RULE: Only the PARTNER's actions change status. Co-signer auto-sign is invisible.
       // Partner is always signer #1, Fintella co-signer is always #2.
       const partnerRecipient = recipients.find((r: any) =>
         r.email?.toLowerCase() !== cosignerEmail?.toLowerCase()
       ) || recipients[0];
-      const partnerSigned = partnerRecipient?.status === "completed";
-      const partnerViewed = partnerRecipient?.status === "viewed";
+
+      const partnerCompleted = partnerRecipient?.has_completed || partnerRecipient?.completed;
+      const partnerViewed = !partnerCompleted && (doc.status === "document.viewed");
 
       let newStatus = agreement.status;
-      if (allSigned && doc.status === "completed") {
+      if (doc.status === "document.completed") {
         newStatus = "signed";
-      } else if (partnerSigned) {
+      } else if (partnerCompleted) {
         newStatus = "partner_signed";
       } else if (partnerViewed) {
         newStatus = "viewed";
       }
 
-      const cosignerRecipient = doc.recipients_with_urls?.find((r: any) => r.email === cosignerEmail)
-        || doc.recipients_with_urls?.[1];
-      const cosignerUrl = cosignerRecipient?.embedded_signing_url || null;
+      // Get co-signer signing URL if partner has signed
+      let cosignerUrl: string | null = null;
+      if (cosignerEmail && newStatus === "partner_signed") {
+        cosignerUrl = await getEmbeddedSigningUrl(agreement.signwellDocumentId, cosignerEmail).catch(() => null);
+      }
 
       if (newStatus !== agreement.status || cosignerUrl) {
         await prisma.partnershipAgreement.update({

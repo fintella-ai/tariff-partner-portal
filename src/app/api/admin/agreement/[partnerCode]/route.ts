@@ -9,10 +9,10 @@ import {
   resolveAgreementTemplateId,
   getCompletedDocumentFields,
   mapSignWellFieldsToPayoutData,
-} from "@/lib/signwell";
+  getEmbeddedSigningUrl,
+} from "@/lib/pandadoc";
 import { sendAgreementReadyEmail, sendAgreementReminderEmail } from "@/lib/sendgrid";
 import { sendAgreementReadySms } from "@/lib/twilio";
-import { getEmbeddedSigningUrl } from "@/lib/signwell";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
 
 /**
@@ -44,31 +44,21 @@ export async function GET(
       const cosignerEmail = settings?.fintellaSignerEmail;
       if (!cosignerEmail) return NextResponse.json({ cosignerUrl: null });
 
-      // Fetch document from SignWell and find the co-signer's URL
-      const SIGNWELL_API_KEY = process.env.SIGNWELL_API_KEY || "";
-      if (!SIGNWELL_API_KEY) return NextResponse.json({ cosignerUrl: null });
+      // Fetch co-signer signing URL via PandaDoc session
+      const PANDADOC_API_KEY = process.env.PANDADOC_API_KEY || "";
+      if (!PANDADOC_API_KEY) return NextResponse.json({ cosignerUrl: null });
 
       try {
-        const docRes = await fetch(`https://www.signwell.com/api/v1/documents/${docId}`, {
-          headers: { "X-Api-Key": SIGNWELL_API_KEY },
-        });
-        if (docRes.ok) {
-          const doc = await docRes.json();
-          // Find the co-signer's URL by email match
-          const match = doc.recipients_with_urls?.find((r: any) => r.email === cosignerEmail);
-          const cosignerUrl = match?.embedded_signing_url
-            || doc.recipients_with_urls?.[1]?.embedded_signing_url
-            || null;
-          return NextResponse.json({ cosignerUrl });
-        }
+        const cosignerUrl = await getEmbeddedSigningUrl(docId, cosignerEmail);
+        return NextResponse.json({ cosignerUrl });
       } catch {}
       return NextResponse.json({ cosignerUrl: null });
     }
 
-    // Refresh: query SignWell for actual document status + co-sign URL
+    // Refresh: query PandaDoc for actual document status + co-sign URL
     if (action === "refresh") {
-      const SIGNWELL_API_KEY = process.env.SIGNWELL_API_KEY || "";
-      if (!SIGNWELL_API_KEY) return NextResponse.json({ error: "SignWell not configured" }, { status: 400 });
+      const PANDADOC_API_KEY = process.env.PANDADOC_API_KEY || "";
+      if (!PANDADOC_API_KEY) return NextResponse.json({ error: "PandaDoc not configured" }, { status: 400 });
 
       const agreement = await prisma.partnershipAgreement.findFirst({
         where: { partnerCode: params.partnerCode, status: { in: ["pending", "viewed", "partner_signed"] } },
@@ -76,30 +66,47 @@ export async function GET(
       });
       if (!agreement?.signwellDocumentId) return NextResponse.json({ error: "No active agreement found" }, { status: 404 });
 
-      const docRes = await fetch(`https://www.signwell.com/api/v1/documents/${agreement.signwellDocumentId}`, {
-        headers: { "X-Api-Key": SIGNWELL_API_KEY },
+      const docRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${agreement.signwellDocumentId}`, {
+        headers: { Authorization: `API-Key ${PANDADOC_API_KEY}` },
       });
-      if (!docRes.ok) return NextResponse.json({ error: "Failed to fetch from SignWell" }, { status: 502 });
+      if (!docRes.ok) return NextResponse.json({ error: "Failed to fetch from PandaDoc" }, { status: 502 });
 
       const doc = await docRes.json();
       const recipients = doc.recipients || [];
-      const allSigned = recipients.every((r: any) => r.status === "completed");
-      const partnerSigned = recipients.length > 0 && recipients[0]?.status === "completed";
 
+      // Map PandaDoc statuses to internal statuses
       let newStatus = agreement.status;
-      if (allSigned && doc.status === "completed") {
+      if (doc.status === "document.completed") {
         newStatus = "signed";
-      } else if (partnerSigned) {
-        newStatus = "partner_signed";
-      } else if (doc.status === "viewed" || recipients.some((r: any) => r.status === "viewed")) {
+      } else if (doc.status === "document.viewed") {
         newStatus = "viewed";
       }
 
+      // Check individual recipients for partner_signed state
       const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
       const cosignerEmail = settings?.fintellaSignerEmail;
-      const cosignerRecipient = doc.recipients_with_urls?.find((r: any) => r.email === cosignerEmail)
-        || doc.recipients_with_urls?.[1];
-      const cosignerUrl = cosignerRecipient?.embedded_signing_url || null;
+
+      const partnerRecipient = recipients.find((r: any) =>
+        r.email?.toLowerCase() !== cosignerEmail?.toLowerCase()
+      ) || recipients[0];
+      const cosignerRecipientObj = recipients.find((r: any) =>
+        r.email?.toLowerCase() === cosignerEmail?.toLowerCase()
+      ) || recipients[1];
+
+      const partnerCompleted = partnerRecipient?.has_completed || partnerRecipient?.completed;
+      const cosignerCompleted = cosignerRecipientObj?.has_completed || cosignerRecipientObj?.completed;
+
+      if (doc.status === "document.completed" || (partnerCompleted && cosignerCompleted)) {
+        newStatus = "signed";
+      } else if (partnerCompleted) {
+        newStatus = "partner_signed";
+      }
+
+      // Get co-signer signing URL if needed
+      let cosignerUrl: string | null = null;
+      if (cosignerEmail && newStatus === "partner_signed") {
+        cosignerUrl = await getEmbeddedSigningUrl(agreement.signwellDocumentId, cosignerEmail).catch(() => null);
+      }
 
       if (newStatus !== agreement.status || cosignerUrl) {
         await prisma.partnershipAgreement.update({
@@ -143,8 +150,8 @@ export async function GET(
       return NextResponse.json({
         status: newStatus,
         cosignerUrl,
-        signwellStatus: doc.status,
-        recipients: recipients.map((r: any) => ({ name: r.name, email: r.email, status: r.status })),
+        pandadocStatus: doc.status,
+        recipients: recipients.map((r: any) => ({ name: `${r.first_name || ""} ${r.last_name || ""}`.trim(), email: r.email, status: r.has_completed ? "completed" : "pending" })),
       });
     }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { getCompletedPdfUrl } from "@/lib/signwell";
+import { getCompletedPdfUrl } from "@/lib/pandadoc";
 
 /**
  * POST /api/admin/dev/signwell-backfill-pdfs
