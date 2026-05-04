@@ -16,7 +16,7 @@ import {
   sendForSigning,
   resolveAgreementTemplateId,
   buildPartnerTemplateFields,
-} from "@/lib/pandadoc";
+} from "@/lib/signwell";
 
 /**
  * Walk up the chain to find the top-of-chain L1 for a new L2 or L3 partner.

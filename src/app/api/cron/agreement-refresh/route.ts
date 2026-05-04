@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getEmbeddedSigningUrl } from "@/lib/pandadoc";
+import { getEmbeddedSigningUrl } from "@/lib/signwell";
 
 /**
  * GET /api/cron/agreement-refresh
  *
- * Auto-polls PandaDoc every 5 minutes for agreements in
+ * Auto-polls SignWell every 5 minutes for agreements in
  * pending/viewed/partner_signed. Catches status changes ~5 min
  * after partner signs and ~15 min after partner views, even if
  * webhooks are delayed or missed.
@@ -21,9 +21,9 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const PANDADOC_API_KEY = process.env.PANDADOC_API_KEY || "";
-  if (!PANDADOC_API_KEY) {
-    return NextResponse.json({ skipped: true, reason: "PANDADOC_API_KEY not set" });
+  const SIGNWELL_API_KEY = process.env.SIGNWELL_API_KEY || "";
+  if (!SIGNWELL_API_KEY) {
+    return NextResponse.json({ skipped: true, reason: "SIGNWELL_API_KEY not set" });
   }
 
   const agreements = await prisma.partnershipAgreement.findMany({
@@ -55,8 +55,8 @@ export async function GET(req: NextRequest) {
 
     try {
       const docRes = await fetch(
-        `https://api.pandadoc.com/public/v1/documents/${agreement.signwellDocumentId}`,
-        { headers: { Authorization: `API-Key ${PANDADOC_API_KEY}` } }
+        `https://www.signwell.com/api/v1/documents/${agreement.signwellDocumentId}`,
+        { headers: { "X-Api-Key": SIGNWELL_API_KEY } }
       );
 
       if (!docRes.ok) {
