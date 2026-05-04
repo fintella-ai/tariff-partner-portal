@@ -44,6 +44,9 @@ const TEMPLATE_LABELS: Record<string, string> = {
   broker_drip_4_social_proof: "Social Proof — Broker Success",
   broker_drip_5_last_chance: "Last Chance — Personal Offer",
   broker_recruitment_cold: "Legacy Cold Email",
+  broker_cold_email_1: "Email 1 — Your Clients Are Leaving $50K+ on the Table",
+  broker_cold_email_2: "Email 2 — The Tool No One Else Has (CargoWise Widget)",
+  broker_cold_email_3: "Email 3 — 180-Day Deadline Urgency",
 };
 
 export default function CampaignsPage() {
@@ -79,6 +82,29 @@ export default function CampaignsPage() {
           { templateKey: "broker_drip_3_urgency", delayDays: 5 },
           { templateKey: "broker_drip_4_social_proof", delayDays: 5 },
           { templateKey: "broker_drip_5_last_chance", delayDays: 7 },
+        ],
+      }),
+    });
+    if (res.ok) await load();
+    setCreating(false);
+  }
+
+  async function createColdEmailCampaign() {
+    setCreating(true);
+    // First, seed the templates if they don't exist yet
+    await fetch("/api/admin/campaigns/seed-cold-emails", { method: "POST" });
+    // Then create the campaign
+    const res = await fetch("/api/admin/campaigns", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Broker Cold Outreach v2",
+        description: "3-email cold outreach for 14,454 customs broker contacts. Drives to /partners/brokers with UTM tracking. Emails spaced 3 days apart on Tue/Thu at 9 AM local.",
+        audience: "all_leads",
+        steps: [
+          { templateKey: "broker_cold_email_1", delayDays: 0 },
+          { templateKey: "broker_cold_email_2", delayDays: 3 },
+          { templateKey: "broker_cold_email_3", delayDays: 3 },
         ],
       }),
     });
@@ -134,15 +160,24 @@ export default function CampaignsPage() {
             Multi-step drip sequences for broker outreach
           </p>
         </div>
-        {campaigns.length === 0 && (
+        <div className="flex gap-2">
           <button
-            onClick={createDefaultCampaign}
+            onClick={createColdEmailCampaign}
             disabled={creating}
             className="font-body text-[13px] font-medium px-5 py-2.5 rounded-lg bg-[var(--brand-gold)] text-black hover:bg-[var(--brand-gold)]/90 transition-colors disabled:opacity-40"
           >
-            {creating ? "Creating..." : "Create Broker Outreach Campaign"}
+            {creating ? "Creating..." : "New 3-Email Cold Outreach"}
           </button>
-        )}
+          {campaigns.length === 0 && (
+            <button
+              onClick={createDefaultCampaign}
+              disabled={creating}
+              className="font-body text-[12px] font-medium px-4 py-2 rounded-lg bg-white/5 text-[var(--app-text-muted)] hover:bg-white/10 transition-colors disabled:opacity-40"
+            >
+              {creating ? "Creating..." : "Create 5-Step Calculator Campaign"}
+            </button>
+          )}
+        </div>
       </div>
 
       {campaigns.length === 0 && !creating && (
