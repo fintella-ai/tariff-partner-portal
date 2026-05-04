@@ -4,11 +4,12 @@ import { prisma } from "@/lib/prisma";
 /**
  * GET /api/cron/agreement-refresh
  *
- * Auto-polls SignWell every 3 hours for agreements stuck in
- * pending/viewed/partner_signed. Updates status + cosigner URL
- * so admins don't have to manually click Refresh.
+ * Auto-polls SignWell every 5 minutes for agreements in
+ * pending/viewed/partner_signed. Catches status changes ~5 min
+ * after partner signs and ~15 min after partner views, even if
+ * webhooks are delayed or missed.
  *
- * Vercel cron schedule: 0 *\/3 * * *  (every 3 hours)
+ * Vercel cron schedule: *\/5 * * * *  (every 5 minutes)
  */
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
