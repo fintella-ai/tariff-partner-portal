@@ -10,7 +10,7 @@ import {
   getCompletedDocumentFields,
   mapSignWellFieldsToPayoutData,
   getEmbeddedSigningUrl,
-} from "@/lib/pandadoc";
+} from "@/lib/signwell";
 import { sendAgreementReadyEmail, sendAgreementReminderEmail } from "@/lib/sendgrid";
 import { sendAgreementReadySms } from "@/lib/twilio";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
@@ -44,9 +44,8 @@ export async function GET(
       const cosignerEmail = settings?.fintellaSignerEmail;
       if (!cosignerEmail) return NextResponse.json({ cosignerUrl: null });
 
-      // Fetch co-signer signing URL via PandaDoc session
-      const PANDADOC_API_KEY = process.env.PANDADOC_API_KEY || "";
-      if (!PANDADOC_API_KEY) return NextResponse.json({ cosignerUrl: null });
+      const SIGNWELL_API_KEY = process.env.SIGNWELL_API_KEY || "";
+      if (!SIGNWELL_API_KEY) return NextResponse.json({ cosignerUrl: null });
 
       try {
         const cosignerUrl = await getEmbeddedSigningUrl(docId, cosignerEmail);
@@ -55,10 +54,10 @@ export async function GET(
       return NextResponse.json({ cosignerUrl: null });
     }
 
-    // Refresh: query PandaDoc for actual document status + co-sign URL
+    // Refresh: query SignWell for actual document status + co-sign URL
     if (action === "refresh") {
-      const PANDADOC_API_KEY = process.env.PANDADOC_API_KEY || "";
-      if (!PANDADOC_API_KEY) return NextResponse.json({ error: "PandaDoc not configured" }, { status: 400 });
+      const SIGNWELL_API_KEY = process.env.SIGNWELL_API_KEY || "";
+      if (!SIGNWELL_API_KEY) return NextResponse.json({ error: "SignWell not configured" }, { status: 400 });
 
       const agreement = await prisma.partnershipAgreement.findFirst({
         where: { partnerCode: params.partnerCode, status: { in: ["pending", "viewed", "partner_signed"] } },
@@ -66,58 +65,55 @@ export async function GET(
       });
       if (!agreement?.signwellDocumentId) return NextResponse.json({ error: "No active agreement found" }, { status: 404 });
 
-      const docRes = await fetch(`https://api.pandadoc.com/public/v1/documents/${agreement.signwellDocumentId}`, {
-        headers: { Authorization: `API-Key ${PANDADOC_API_KEY}` },
+      const docRes = await fetch(`https://www.signwell.com/api/v1/documents/${agreement.signwellDocumentId}`, {
+        headers: { "X-Api-Key": SIGNWELL_API_KEY },
       });
-      if (!docRes.ok) return NextResponse.json({ error: "Failed to fetch from PandaDoc" }, { status: 502 });
+      if (!docRes.ok) return NextResponse.json({ error: "Failed to fetch from SignWell" }, { status: 502 });
 
       const doc = await docRes.json();
       const recipients = doc.recipients || [];
 
-      // Map PandaDoc statuses to internal statuses
-      let newStatus = agreement.status;
-      if (doc.status === "document.completed") {
-        newStatus = "signed";
-      } else if (doc.status === "document.viewed") {
-        newStatus = "viewed";
-      }
-
-      // Check individual recipients for partner_signed state
       const settings = await prisma.portalSettings.findUnique({ where: { id: "global" } });
       const cosignerEmail = settings?.fintellaSignerEmail;
 
+      // HARD RULE: Only partner's actions change status. Co-signer is invisible.
       const partnerRecipient = recipients.find((r: any) =>
         r.email?.toLowerCase() !== cosignerEmail?.toLowerCase()
       ) || recipients[0];
-      const cosignerRecipientObj = recipients.find((r: any) =>
-        r.email?.toLowerCase() === cosignerEmail?.toLowerCase()
-      ) || recipients[1];
+      const allSigned = recipients.every((r: any) => r.status === "completed");
+      const partnerSigned = partnerRecipient?.status === "completed";
+      const partnerViewed = partnerRecipient?.status === "viewed";
 
-      const partnerCompleted = partnerRecipient?.has_completed || partnerRecipient?.completed;
-      const cosignerCompleted = cosignerRecipientObj?.has_completed || cosignerRecipientObj?.completed;
-
-      if (doc.status === "document.completed" || (partnerCompleted && cosignerCompleted)) {
+      let newStatus = agreement.status;
+      if (allSigned && doc.status === "completed") {
         newStatus = "signed";
-      } else if (partnerCompleted) {
+      } else if (partnerSigned) {
         newStatus = "partner_signed";
+      } else if (partnerViewed) {
+        newStatus = "viewed";
       }
 
-      // Get co-signer signing URL if needed
-      let cosignerUrl: string | null = null;
-      if (cosignerEmail && newStatus === "partner_signed") {
-        cosignerUrl = await getEmbeddedSigningUrl(agreement.signwellDocumentId, cosignerEmail).catch(() => null);
-      }
+      const cosignerRecipientObj = doc.recipients_with_urls?.find((r: any) => r.email === cosignerEmail)
+        || doc.recipients_with_urls?.[1];
+      const cosignerUrl = cosignerRecipientObj?.embedded_signing_url || null;
 
       if (newStatus !== agreement.status || cosignerUrl) {
         await prisma.partnershipAgreement.update({
           where: { id: agreement.id },
           data: {
             status: newStatus,
+            ...(newStatus === "signed" ? { signedDate: new Date() } : {}),
             ...(cosignerUrl ? { cosignerSigningUrl: cosignerUrl } : {}),
           },
         });
 
-        // Create admin notification + task when partner signed (catches missed webhooks)
+        if (newStatus === "signed") {
+          await prisma.partner.update({
+            where: { partnerCode: params.partnerCode },
+            data: { status: "active" },
+          }).catch(() => {});
+        }
+
         if (newStatus === "partner_signed" && agreement.status !== "partner_signed") {
           const partnerRow = await prisma.partner.findUnique({
             where: { partnerCode: params.partnerCode },
@@ -150,8 +146,7 @@ export async function GET(
       return NextResponse.json({
         status: newStatus,
         cosignerUrl,
-        pandadocStatus: doc.status,
-        recipients: recipients.map((r: any) => ({ name: `${r.first_name || ""} ${r.last_name || ""}`.trim(), email: r.email, status: r.has_completed ? "completed" : "pending" })),
+        recipients: recipients.map((r: any) => ({ name: r.name, email: r.email, status: r.status })),
       });
     }
 
@@ -375,7 +370,7 @@ export async function POST(
       });
     }
 
-    // Send via PandaDoc
+    // Send via SignWell
     const amendmentMessage = body.amendmentMessage ? String(body.amendmentMessage).trim() : "";
     const docMessage = amendmentMessage
       ? `Hi ${partnerName}, your previous partnership agreement has been updated. ${amendmentMessage}\n\nPlease review and sign your new ${FIRM_NAME} partnership agreement.`

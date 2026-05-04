@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getCompletedPdfUrl } from "@/lib/pandadoc";
+import { getCompletedPdfUrl } from "@/lib/signwell";
 
 const DOC_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 

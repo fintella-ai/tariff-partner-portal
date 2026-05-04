@@ -7,7 +7,7 @@ import {
   isSignWellConfigured,
   buildPartnerTemplateFields,
   resolveAgreementTemplateId,
-} from "@/lib/pandadoc";
+} from "@/lib/signwell";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
 
 /**

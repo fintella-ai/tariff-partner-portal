@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/format";
-import { sendForSigning, buildPartnerTemplateFields } from "@/lib/pandadoc";
+import { sendForSigning, buildPartnerTemplateFields } from "@/lib/signwell";
 import { hashSync } from "bcryptjs";
 import { FIRM_NAME, FIRM_SHORT } from "@/lib/constants";
 import { checkAuthRateLimit } from "@/lib/auth-rate-limit";
