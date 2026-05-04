@@ -19,6 +19,12 @@ export async function POST() {
     return NextResponse.json({ error: "Super admin only" }, { status: 403 });
   }
 
+  // Also fix any partner_signed back to pending first
+  await prisma.partnershipAgreement.updateMany({
+    where: { status: "partner_signed" },
+    data: { status: "pending" },
+  });
+
   const agreements = await prisma.partnershipAgreement.findMany({
     where: { status: { notIn: ["voided", "not_sent"] } },
   });
