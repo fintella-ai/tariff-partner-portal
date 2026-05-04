@@ -83,6 +83,8 @@ const docBadge: Record<string, string> = {
   signed: "bg-green-500/10 text-green-400 border border-green-500/20",
   pending: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
   viewed: "bg-purple-500/10 text-purple-400 border border-purple-500/20",
+  partner_signed: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+  voided: "bg-red-500/10 text-red-400 border border-red-500/20",
   amended: "bg-orange-500/10 text-orange-400 border border-orange-500/20",
   not_sent: "bg-[var(--app-input-bg)] text-[var(--app-text-muted)] border border-[var(--app-border)]",
   none: "bg-red-500/10 text-red-400 border border-red-500/20",
@@ -90,6 +92,18 @@ const docBadge: Record<string, string> = {
   uploaded: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
   under_review: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
   needed: "bg-red-500/10 text-red-400 border border-red-500/20",
+};
+const agreementLabel: Record<string, string> = {
+  pending: "Awaiting Signature",
+  viewed: "Viewed",
+  signed: "Signed",
+  partner_signed: "Partner Signed",
+  voided: "Voided",
+  amended: "Amended",
+  not_sent: "Not Sent",
+  none: "None",
+  approved: "Approved",
+  under_review: "Review",
 };
 
 const statusBadge: Record<string, string> = {
@@ -1872,7 +1886,7 @@ export default function AdminPartnersPage() {
                   </div>
                   <div className="text-center">
                     <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${docBadge[p.agreementStatus] || docBadge.none}`}>
-                      {p.agreementStatus === "under_review" ? "review" : p.agreementStatus}
+                      {agreementLabel[p.agreementStatus] || p.agreementStatus}
                     </span>
                   </div>
                   <div className="text-center">
@@ -1994,7 +2008,7 @@ export default function AdminPartnersPage() {
                     <div className="flex items-center gap-1.5">
                       <span className="font-body text-[9px] text-[var(--app-text-muted)] uppercase">Agmt:</span>
                       <span className={`inline-block rounded-full px-2 py-0.5 font-body text-[9px] font-semibold tracking-wider uppercase ${docBadge[p.agreementStatus] || docBadge.none}`}>
-                        {p.agreementStatus === "under_review" ? "review" : p.agreementStatus}
+                        {agreementLabel[p.agreementStatus] || p.agreementStatus}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
