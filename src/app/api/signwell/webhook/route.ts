@@ -198,68 +198,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Individual signer completed — partner signed but co-signer hasn't yet
-    // SignWell may use: document_signed, recipient_completed, document_recipient_completed
-    const isPartialSign = ["document_signed", "recipient_completed", "document_recipient_completed", "recipient_signed"].includes(eventType || "");
-    if (isPartialSign) {
-      // Check if this is the co-signer (Fintella auto-signer), not the partner
-      const recipientEmail = body.data?.object?.email || body.data?.recipient?.email || "";
-      const settings = await prisma.portalSettings.findUnique({ where: { id: "global" }, select: { fintellaSignerEmail: true } });
-      const cosignerEmail = settings?.fintellaSignerEmail || "";
-      const isCosigner = cosignerEmail && recipientEmail.toLowerCase() === cosignerEmail.toLowerCase();
-
-      const agreement = await prisma.partnershipAgreement.findFirst({
-        where: { signwellDocumentId: docId },
-      });
-
-      if (agreement && agreement.status === "pending" && !isCosigner) {
-        // Partner has signed — update to partner_signed so the UI
-        // shows "Your Signature Complete" + "Awaiting Co-sign"
-        await prisma.partnershipAgreement.update({
-          where: { id: agreement.id },
-          data: { status: "partner_signed" },
-        });
-
-        // Notify the partner that their part is done
-        await prisma.notification.create({
-          data: {
-            recipientType: "partner",
-            recipientId: agreement.partnerCode,
-            type: "agreement_signed",
-            title: "Your Signature Complete",
-            message: "Your partnership agreement signature is complete. Awaiting Fintella co-signer to finalize.",
-            link: "/dashboard/documents",
-          },
-        }).catch(() => {});
-
-        // Notify ALL admins to co-sign. Link by the partner's Prisma id
-        // (the segment the `/admin/partners/[id]` route expects) — earlier
-        // versions used a synthesized `p-{code}` shape that 404'd.
-        const partnerRow = await prisma.partner.findUnique({
-          where: { partnerCode: agreement.partnerCode },
-          select: { id: true },
-        });
-        const link = partnerRow
-          ? `/admin/partners/${partnerRow.id}?tab=documents`
-          : `/admin/partners?search=${encodeURIComponent(agreement.partnerCode)}`;
-        const admins = await prisma.user.findMany({
-          where: { role: { in: ["super_admin", "admin"] } },
-          select: { email: true },
-        });
-        for (const admin of admins) {
-          await prisma.notification.create({
-            data: {
-              recipientType: "admin",
-              recipientId: admin.email,
-              type: "document_request",
-              title: "Partner Agreement Ready for Co-sign",
-              message: `Partner ${agreement.partnerCode} has signed their agreement. Click to co-sign and complete.`,
-              link,
-            },
-          }).catch(() => {});
-        }
-      }
-    }
+    // With auto-signing enabled, recipient_completed events are IGNORED.
+    // The co-signer auto-signs instantly after the partner, so there's no
+    // "partner_signed" intermediate state. We only care about document_completed
+    // (both signed) which is handled above.
 
     if (eventType === "document_viewed") {
       // HARD RULE: Only set "viewed" if the PARTNER viewed, not the co-signer

@@ -68,19 +68,16 @@ export async function GET(req: NextRequest) {
       const recipients = doc.recipients || [];
 
       // HARD RULE: Only the PARTNER's actions change status. Co-signer auto-sign is invisible.
-      // Partner is always signer #1, Fintella co-signer is always #2.
+      // With auto-signing, there is NO "partner_signed" state — document completes instantly.
+      const allSigned = recipients.every((r: any) => r.status === "completed");
       const partnerRecipient = recipients.find((r: any) =>
         r.email?.toLowerCase() !== cosignerEmail?.toLowerCase()
       ) || recipients[0];
-
-      const partnerCompleted = partnerRecipient?.has_completed || partnerRecipient?.completed;
-      const partnerViewed = !partnerCompleted && (doc.status === "document.viewed");
+      const partnerViewed = partnerRecipient?.status === "viewed";
 
       let newStatus = agreement.status;
-      if (doc.status === "document.completed") {
+      if (allSigned && doc.status === "completed") {
         newStatus = "signed";
-      } else if (partnerCompleted) {
-        newStatus = "partner_signed";
       } else if (partnerViewed) {
         newStatus = "viewed";
       }
