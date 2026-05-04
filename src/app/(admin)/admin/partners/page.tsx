@@ -391,14 +391,19 @@ export default function AdminPartnersPage() {
     if (selectedPartnerIds.size === 0) return;
     const rate = parseFloat(bulkAgreementRate);
     const selected = partners.filter((p) => selectedPartnerIds.has(p.id));
-    const noAgreement = selected.filter((p) => !p.agreementStatus || p.agreementStatus === "not_sent" || p.agreementStatus === "none");
-    const hasAgreement = selected.filter((p) => p.agreementStatus && p.agreementStatus !== "not_sent" && p.agreementStatus !== "none");
+    const noAgreement = selected.filter((p) => !p.agreementStatus || p.agreementStatus === "not_sent" || p.agreementStatus === "none" || p.agreementStatus === "voided");
+    const hasAgreement = selected.filter((p) => p.agreementStatus && !["not_sent", "none", "voided"].includes(p.agreementStatus));
 
     let msg = `Send ${Math.round(rate * 100)}% agreement to ${selectedPartnerIds.size} partner(s)?`;
     if (noAgreement.length > 0) msg += `\n\n${noAgreement.length} will receive a new agreement.`;
     if (hasAgreement.length > 0) msg += `\n\n${hasAgreement.length} have an existing agreement — it will be voided and replaced.`;
 
-    if (!confirm(msg)) return;
+    let amendmentMessage = "";
+    if (hasAgreement.length > 0) {
+      amendmentMessage = prompt("These partners have existing agreements that will be replaced.\n\nEnter a message explaining the amendment (shown to partners before signing):") || "";
+    }
+
+    if (!confirm(msg + (amendmentMessage ? `\n\nAmendment message: "${amendmentMessage}"` : ""))) return;
     setBulkBusy(true);
     let sent = 0;
     let failed = 0;
@@ -407,7 +412,7 @@ export default function AdminPartnersPage() {
         const res = await fetch(`/api/admin/agreement/${p.partnerCode}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rate }),
+          body: JSON.stringify({ rate, ...(amendmentMessage ? { amendmentMessage } : {}) }),
         });
         if (res.ok) sent++;
         else failed++;
@@ -417,6 +422,29 @@ export default function AdminPartnersPage() {
     await fetchPartners();
     setBulkBusy(false);
     alert(`Agreements sent: ${sent}${failed > 0 ? `, failed: ${failed}` : ""}`);
+  };
+
+  const bulkVoidAgreements = async () => {
+    if (selectedPartnerIds.size === 0) return;
+    const selected = partners.filter((p) => selectedPartnerIds.has(p.id));
+    const withAgreement = selected.filter((p) => p.agreementStatus && p.agreementStatus !== "not_sent" && p.agreementStatus !== "none" && p.agreementStatus !== "voided");
+    if (withAgreement.length === 0) { alert("No active agreements to void."); return; }
+    const reason = prompt(`Void ${withAgreement.length} agreement(s)?\n\nEnter reason (this will be sent to partners when you resend a new agreement):`);
+    if (reason === null) return;
+    setBulkBusy(true);
+    let voided = 0;
+    let failed = 0;
+    for (const p of withAgreement) {
+      try {
+        const res = await fetch(`/api/admin/agreement/${p.partnerCode}`, { method: "DELETE" });
+        if (res.ok) voided++;
+        else failed++;
+      } catch { failed++; }
+    }
+    clearSelection();
+    await fetchPartners();
+    setBulkBusy(false);
+    alert(`Voided: ${voided}${failed > 0 ? `, failed: ${failed}` : ""}${reason ? `\nReason saved: "${reason}"` : ""}`);
   };
 
   const resolvedInviteRate = (): number | null => {
@@ -1558,6 +1586,14 @@ export default function AdminPartnersPage() {
                 className="font-body text-[12px] text-brand-gold/80 border border-brand-gold/30 rounded-lg px-3 py-1.5 hover:bg-brand-gold/10 transition-colors disabled:opacity-50"
               >
                 Send Agreement
+              </button>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => void bulkVoidAgreements()}
+                className="font-body text-[12px] text-orange-400/80 border border-orange-500/30 rounded-lg px-3 py-1.5 hover:bg-orange-500/10 transition-colors disabled:opacity-50"
+              >
+                Void Agreements
               </button>
               <span className="text-[var(--app-text-faint)]">·</span>
               <button
