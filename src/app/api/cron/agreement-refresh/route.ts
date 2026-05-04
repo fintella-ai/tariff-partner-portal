@@ -66,7 +66,11 @@ export async function GET(req: NextRequest) {
       const doc = await docRes.json();
       const recipients = doc.recipients || [];
       const allSigned = recipients.every((r: any) => r.status === "completed");
-      const partnerSigned = recipients.length > 0 && recipients[0]?.status === "completed";
+      // Identify the partner recipient (not the co-signer) to check if THEY signed
+      const partnerRecipient = recipients.find((r: any) =>
+        r.email?.toLowerCase() !== cosignerEmail?.toLowerCase()
+      ) || recipients[0];
+      const partnerSigned = partnerRecipient?.status === "completed";
 
       let newStatus = agreement.status;
       if (allSigned && doc.status === "completed") {

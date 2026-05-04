@@ -202,11 +202,17 @@ export async function POST(req: NextRequest) {
     // SignWell may use: document_signed, recipient_completed, document_recipient_completed
     const isPartialSign = ["document_signed", "recipient_completed", "document_recipient_completed", "recipient_signed"].includes(eventType || "");
     if (isPartialSign) {
+      // Check if this is the co-signer (Fintella auto-signer), not the partner
+      const recipientEmail = body.data?.object?.email || body.data?.recipient?.email || "";
+      const settings = await prisma.portalSettings.findUnique({ where: { id: "global" }, select: { fintellaSignerEmail: true } });
+      const cosignerEmail = settings?.fintellaSignerEmail || "";
+      const isCosigner = cosignerEmail && recipientEmail.toLowerCase() === cosignerEmail.toLowerCase();
+
       const agreement = await prisma.partnershipAgreement.findFirst({
         where: { signwellDocumentId: docId },
       });
 
-      if (agreement && agreement.status === "pending") {
+      if (agreement && agreement.status === "pending" && !isCosigner) {
         // Partner has signed — update to partner_signed so the UI
         // shows "Your Signature Complete" + "Awaiting Co-sign"
         await prisma.partnershipAgreement.update({
