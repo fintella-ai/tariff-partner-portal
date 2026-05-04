@@ -155,6 +155,15 @@ export async function POST(req: NextRequest) {
         )
         .catch(() => {});
 
+      // Push to Google Sheets
+      import("@/lib/google-sheets").then(({ appendPartnerRow }) =>
+        appendPartnerRow({
+          firstName, lastName, email,
+          createdAt: new Date().toISOString().split("T")[0],
+          commissionRate: `${Math.round(commissionRate * 100)}%`,
+        })
+      ).catch(() => {});
+
       // Admin notification — new broker/referral partner signed up
       const partnerLabel = isBroker ? "customs broker" : "referral partner";
       const rateLabel = `${Math.round(commissionRate * 100)}%`;

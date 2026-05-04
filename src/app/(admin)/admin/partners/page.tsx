@@ -147,6 +147,8 @@ export default function AdminPartnersPage() {
   const [search, setSearch] = useState("");
   const [cleanupBusy, setCleanupBusy] = useState(false);
   const [cleanupResult, setCleanupResult] = useState<{ deleted: number } | null>(null);
+  const [sheetSyncing, setSheetSyncing] = useState(false);
+  const [sheetResult, setSheetResult] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [levelFilter, setLevelFilter] = useState<"all" | "l1" | "l2" | "l3" | "l4plus">("all");
   // View toggle: classic list/table vs. an org-chart tree forest rooted
@@ -1173,6 +1175,21 @@ export default function AdminPartnersPage() {
               <option key={r} value={r}>{Math.round(r * 100)}%</option>
             ))}
           </select>
+          <button
+            onClick={async () => {
+              setSheetSyncing(true); setSheetResult(null);
+              try {
+                const res = await fetch("/api/admin/partners/sync-sheet", { method: "POST" });
+                const data = await res.json();
+                setSheetResult(data.count || 0);
+              } catch { setSheetResult(-1); }
+              finally { setSheetSyncing(false); }
+            }}
+            disabled={sheetSyncing}
+            className="text-xs rounded-lg px-3 py-1.5 border border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:border-brand-gold/40 transition min-h-[44px] sm:min-h-0"
+          >
+            {sheetSyncing ? "Syncing..." : sheetResult !== null ? `✓ ${sheetResult} synced` : "📊 Sync to Sheets"}
+          </button>
         </>)}
       </div>
 
