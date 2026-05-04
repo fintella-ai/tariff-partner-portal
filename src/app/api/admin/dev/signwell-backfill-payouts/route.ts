@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { getCompletedDocumentFields, mapSignWellFieldsToPayoutData } from "@/lib/signwell";
+import { getCompletedDocumentFields, mapSignWellFieldsToPayoutData } from "@/lib/pandadoc";
 
 /**
  * POST /api/admin/dev/signwell-backfill-payouts

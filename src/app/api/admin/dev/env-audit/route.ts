@@ -22,7 +22,8 @@ const AUDIT_GROUPS = {
     "SEED_ADMIN_PASSWORD",
   ],
   "Integrations live today": [
-    "SIGNWELL_API_KEY",
+    "PANDADOC_API_KEY",
+    "PANDADOC_TEMPLATE_ID",
     "FROST_LAW_API_KEY",
     "NEXT_PUBLIC_SENTRY_DSN",
   ],
