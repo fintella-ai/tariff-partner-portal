@@ -1,15 +1,21 @@
 {
   "_metadata": {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "generatedDate": "2026-04-29",
-    "description": "Comprehensive IEEPA tariff rate database for tariff refund calculator. Covers all rate changes from Feb 2025 through SCOTUS termination Feb 2026 and Section 122 replacement.",
-    "legalAuthority": "International Emergency Economic Powers Act (50 U.S.C. 1701 et seq.), Trade Act of 1974 Section 122 (19 U.S.C. 2132)",
+    "lastUpdated": "2026-09-07",
+    "description": "Comprehensive IEEPA tariff rate database for tariff refund calculator. Covers all rate changes from Feb 2025 through SCOTUS termination Feb 2026, Section 122 replacement (expired Jul 24, 2026), and Section 301 Forced Labor replacement (effective Jul 24, 2026).",
+    "legalAuthority": "International Emergency Economic Powers Act (50 U.S.C. 1701 et seq.), Trade Act of 1974 Section 122 (19 U.S.C. 2132), Trade Act of 1974 Section 301 (19 U.S.C. 2411)",
     "sources": [
       "Executive Orders 14193, 14194, 14195, 14228, 14257, 14259, 14266, 14357",
       "Federal Register notices",
       "CBP CSMS guidance messages",
       "White House Annex I and Annex II",
-      "Learning Resources, Inc. v. Trump (SCOTUS, Feb 20, 2026)"
+      "Learning Resources, Inc. v. Trump (SCOTUS, Feb 20, 2026)",
+      "Burlap & Barrel, Inc. v. United States (CIT, May 7, 2026) — Section 122 invalidated; Federal Circuit stayed Jun 11, 2026",
+      "Section 301 USTR Determination (Mar 12 investigation → Jul 24, 2026 implementation)",
+      "CAPE Phase 2 Trade Information Notice (Jul 23, 2026)",
+      "CBP CAPE Phase 3 Delay Notice (Aug 25, 2026)",
+      "Freestyle World, Inc. v. United States (CIT No. 26-01088) — new lead IEEPA refund case after Euro-Notions Florida voluntary dismissal"
     ]
   },
   "rates": [
@@ -332,7 +338,21 @@
       "effectiveDate": "2026-02-24",
       "endDate": "2026-07-23",
       "htsChapter99": "9903.03.01",
-      "notes": "Replacement tariff under Section 122 of Trade Act of 1974 (19 USC 2132). 10% global surcharge. Effective 12:01 AM ET Feb 24, 2026. Max 150 days, expires Jul 24, 2026. Max statutory rate is 15%. As of Apr 2026, rate remains 10% - Trump announced intent to raise to 15% on Feb 22 via social media but no formal proclamation issued. Same Annex II exclusions apply (USMCA goods, Section 232 products, critical minerals, pharmaceuticals, semiconductors, certain electronics).",
+      "notes": "Replacement tariff under Section 122 of Trade Act of 1974 (19 USC 2132). 10% global surcharge. Effective 12:01 AM ET Feb 24, 2026. Max 150 days, expires Jul 24, 2026. Max statutory rate is 15%. Rate remained 10% throughout — Trump's Feb 22 social media intent to raise to 15% was never formally proclaimed. Same Annex II exclusions apply (USMCA goods, Section 232 products, critical minerals, pharmaceuticals, semiconductors, certain electronics). LEGAL STATUS: CIT invalidated these tariffs on May 7, 2026 (Burlap & Barrel, Inc. v. United States) — held unlawful because the statutory balance-of-payments deficit condition was not satisfied. Federal Circuit stayed the CIT ruling Jun 11, 2026 pending government appeal; Section 122 continued to be collected through Jul 23, 2026 expiration. The refundability of collected Section 122 duties is governed by the appeal, not the expiry.",
+      "supersededBy": "S301-FORCED-LABOR-01"
+    },
+    {
+      "id": "S301-FORCED-LABOR-01",
+      "executiveOrder": "USTR Section 301 Determination (Jul 2026)",
+      "name": "Section 301 Forced Labor Tariff (10% / 12.5%) — 60 Economies",
+      "rateType": "section301",
+      "countryCode": "60-ECONOMIES",
+      "countryName": "60 Economies (see notes for tier breakdown)",
+      "rate": 0.1,
+      "effectiveDate": "2026-07-24",
+      "endDate": null,
+      "htsChapter99": null,
+      "notes": "Replaced expiring Section 122 tariffs effective 12:01 AM ET July 24, 2026. USTR launched Section 301 investigations March 12, 2026 into 60 economies for failure to prohibit imports made with forced labor. Two-tier structure: 10% on 14 economies with a prohibition on forced-labor imports but partial enforcement; 12.5% on 46 economies with no prohibition. Combined these cover approximately 99.4% of U.S. imports by value. Legal basis: Trade Act of 1974 Section 301 (19 U.S.C. 2411) — no 150-day statutory cap unlike Section 122, and not subject to Congressional override. NOTE: These are NOT IEEPA tariffs and are NOT refundable through CAPE. Importers seeking IEEPA refunds for entries made Feb 1 2025 – Feb 23 2026 use the separate IEEPA/CAPE process. Section 301 entries (Jul 24, 2026 onward) are a separate forward-looking tariff obligation.",
       "supersededBy": null
     },
     {
