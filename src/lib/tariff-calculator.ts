@@ -30,15 +30,18 @@ export interface RateLookupResult {
 
 /**
  * How an eligible entry should be filed with CBP:
- *  - cape_phase1: unliquidated OR liquidated within the 80-day CAPE Phase-1 window → automated CAPE refund
- *  - protest:     liquidated 80–180 days ago → must file a formal protest (19 U.S.C. §1514)
- *  - litigation:  liquidated > 180 days ago → protest window closed, CIT litigation only
+ *  - cape_phase1: unliquidated OR liquidated within the 80-day window → automated CAPE refund (Phase 1, live Apr 20, 2026)
+ *  - cape_phase2: reconciliation-flagged entry (types 01/02/06) where Type 09 not yet filed → CAPE Phase 2 (live Jun 29, 2026)
+ *                 CRITICAL: submit the CAPE declaration BEFORE filing the reconciliation entry (Type 09) or the path closes permanently.
+ *  - cape_phase3: finally-liquidated entry (>80 days) per CIT reliquidation order (Jul 17, 2026) → CAPE Phase 3 (DELAYED as of Aug 25, 2026)
+ *  - protest:     liquidated 80–180 days ago → formal protest (19 U.S.C. §1514) — also file as protective measure while Phase 3 is delayed
+ *  - litigation:  liquidated > 180 days ago → protest window closed; CIT litigation or CAPE Phase 3 (when live)
  *  - none:        not eligible for any refund path
  */
-export type FilingMethod = "cape_phase1" | "protest" | "litigation" | "none";
+export type FilingMethod = "cape_phase1" | "cape_phase2" | "cape_phase3" | "protest" | "litigation" | "none";
 
 export interface EligibilityResult {
-  status: string;         // "eligible" | "excluded_expired" | "excluded_adcvd" | "excluded_type" | "excluded_date" | "excluded_drawback" | "excluded_usmca"
+  status: string;         // "eligible" | "excluded_expired" | "excluded_adcvd" | "excluded_type" | "excluded_date" | "excluded_drawback" | "excluded_usmca" | "excluded_recon_filed"
   reason: string;
   deadlineDays?: number;
   isUrgent?: boolean;
@@ -76,6 +79,9 @@ export interface EntryForEligibility {
   isDrawback?: boolean;     // entry is on drawback — CAPE rejects ("ENTRY ON DRAWBACK")
   hasSection232?: boolean;  // entry contains Section 232 goods (exempt from IEEPA per Annex II)
   hasSection301?: boolean;  // entry contains Section 301 duties (not refundable; only IEEPA portion is)
+  // Phase 2 (live Jun 29, 2026): reconciliation-flagged entries
+  isReconFlagged?: boolean;  // entry is flagged for reconciliation (waiting for a Type 09) — eligible via Phase 2 if Type 09 not yet filed
+  hasReconFiled?: boolean;   // the Type 09 reconciliation entry has already been filed — LOCKS OUT of CAPE Phase 2 permanently
 }
 
 export interface EntryForCape {
@@ -205,7 +211,16 @@ export function calculateInterest(
 
 // ── 4. checkEligibility ─────────────────────────────────────────────────────
 
-/** CBP entry types excluded from CAPE Phase 1 */
+/**
+ * CBP entry types excluded from CAPE (Phase 1 and Phase 2, as of 2026-09-07):
+ *  - 08 (duty deferral), 23 (TIB), 47 (drawback) — excluded from all phases
+ *  - 09 (reconciliation summary) — the Type 09 ITSELF is not directly filed through CAPE;
+ *    however, the underlying entries (types 01/02/06) flagged for reconciliation ARE now
+ *    eligible via Phase 2 (live Jun 29, 2026) PROVIDED the Type 09 has not yet been filed.
+ *    See `isReconFlagged` / `hasReconFiled` on EntryForEligibility.
+ * Phase 3 (finally-liquidated entries) is expected to expand eligibility further but is
+ * currently DELAYED pending CBP validation work (delayed Aug 25, 2026; no new launch date).
+ */
 const EXCLUDED_ENTRY_TYPES = new Set(["08", "09", "23", "47"]);
 
 /**
@@ -278,6 +293,18 @@ export function checkEligibility(entry: EntryForEligibility): EligibilityResult 
     };
   }
 
+  // 2b. Reconciliation lock-out (Phase 2) — if the Type 09 reconciliation entry has already
+  //     been filed, the underlying entry is permanently locked out of the CAPE Phase 2 path.
+  //     Filing the Type 09 first was the single most common Phase 2 rejection. The refund (if any)
+  //     must now flow through the reconciliation entry, which is complex and may require counsel.
+  if (entry.isReconFlagged && entry.hasReconFiled) {
+    return {
+      status: "excluded_recon_filed",
+      reason: "Reconciliation entry (Type 09) has already been filed — CAPE Phase 2 path is permanently closed for these entries. Consult counsel; refund may flow through the reconciliation entry.",
+      filingMethod: "none",
+    };
+  }
+
   // 3. USMCA exemption — USMCA-compliant CA/MX goods paid no IEEPA fentanyl duty (eff. Mar 7, 2025)
   if (
     entry.isUsmca &&
@@ -292,11 +319,11 @@ export function checkEligibility(entry: EntryForEligibility): EligibilityResult 
     };
   }
 
-  // 4. Entry type exclusion
+  // 4. Entry type exclusion (types 08/23/47 excluded from all CAPE phases; type 09 itself not directly CAPE-filed)
   if (EXCLUDED_ENTRY_TYPES.has(entry.entryType)) {
     return {
       status: "excluded_type",
-      reason: `Entry type ${entry.entryType} excluded from CAPE Phase 1`,
+      reason: `Entry type ${entry.entryType} excluded from all CAPE phases`,
       filingMethod: "none",
     };
   }
@@ -329,31 +356,73 @@ export function checkEligibility(entry: EntryForEligibility): EligibilityResult 
       };
     }
 
-    // Within 80 days of liquidation → CAPE Phase-1 automated; 80–180 days → formal protest
-    const filingMethod: FilingMethod =
-      daysSinceLiquidation <= CAPE_PHASE1_LIQUIDATION_WINDOW_DAYS ? "cape_phase1" : "protest";
+    if (daysSinceLiquidation <= CAPE_PHASE1_LIQUIDATION_WINDOW_DAYS) {
+      // Within 80 days: CAPE Phase 1 (standard) or Phase 2 (reconciliation-flagged, live Jun 29, 2026)
+      const filingMethod: FilingMethod = entry.isReconFlagged ? "cape_phase2" : "cape_phase1";
+      const base: EligibilityResult = {
+        status: "eligible",
+        reason:
+          filingMethod === "cape_phase2"
+            ? "Reconciliation-flagged entry within 80 days — eligible via CAPE Phase 2. Submit CAPE declaration BEFORE filing the reconciliation entry (Type 09)."
+            : "Liquidated within 80 days — eligible via CAPE Phase 1",
+        deadlineDays: daysRemaining,
+        isUrgent: daysRemaining <= URGENT_THRESHOLD_DAYS,
+        deadlineDate,
+        filingMethod,
+      };
+      if (entry.isReconFlagged) {
+        // Attach the critical ordering warning — filing Type 09 first permanently forfeits Phase 2.
+        // Compose with any Section 232/301 flags from applySectionReviewFlag.
+        const withFlags = applySectionReviewFlag(base, entry);
+        return {
+          ...withFlags,
+          needsReview: true,
+          reviewNote: [
+            "CRITICAL FILING SEQUENCE (CAPE Phase 2): Submit the CAPE declaration FIRST. Filing the reconciliation entry (Type 09) before the CAPE declaration permanently locks these entries out of the Phase 2 refund path.",
+            ...(withFlags.reviewNote ? [withFlags.reviewNote] : []),
+          ].join(" "),
+        };
+      }
+      return applySectionReviewFlag(base, entry);
+    }
 
+    // 80–180 days since liquidation: CAPE Phase 3 is planned (but DELAYED as of Aug 25, 2026);
+    // a formal protest (19 U.S.C. §1514) remains the reliable path and should be filed as a
+    // protective measure before the deadline while Phase 3 availability is uncertain.
     const base: EligibilityResult = {
       status: "eligible",
-      reason:
-        filingMethod === "cape_phase1"
-          ? "Liquidated within 80 days — eligible via CAPE Phase 1"
-          : "Liquidated 80–180 days ago — eligible via formal protest (19 U.S.C. §1514)",
+      reason: "Liquidated 80–180 days ago — eligible via formal protest (19 U.S.C. §1514). CAPE Phase 3 (finally-liquidated entries) is planned but currently delayed; file a protest now as a protective measure.",
       deadlineDays: daysRemaining,
       isUrgent: daysRemaining <= URGENT_THRESHOLD_DAYS,
       deadlineDate,
-      filingMethod,
+      filingMethod: "protest",
+      needsReview: true,
+      reviewNote: "CAPE Phase 3 (finally-liquidated entries) is delayed pending CBP validation work as of Aug 25, 2026. File a formal protest before the 180-day deadline to preserve all refund options. When Phase 3 launches, a CAPE declaration may also be filed.",
     };
     return applySectionReviewFlag(base, entry);
   }
 
-  // 7. Unliquidated, non-AD/CVD, in date range → eligible via CAPE Phase 1, no deadline yet
-  const base: EligibilityResult = {
+  // 7. Unliquidated, non-AD/CVD, in date range → eligible via CAPE Phase 1 (or Phase 2 for recon-flagged)
+  const filingMethod: FilingMethod = entry.isReconFlagged ? "cape_phase2" : "cape_phase1";
+  const unliqBase: EligibilityResult = {
     status: "eligible",
-    reason: "Unliquidated entry — eligible via CAPE Phase 1, no immediate deadline",
-    filingMethod: "cape_phase1",
+    reason: entry.isReconFlagged
+      ? "Unliquidated reconciliation-flagged entry — eligible via CAPE Phase 2. Submit CAPE declaration BEFORE filing the reconciliation entry (Type 09)."
+      : "Unliquidated entry — eligible via CAPE Phase 1, no immediate deadline",
+    filingMethod,
   };
-  return applySectionReviewFlag(base, entry);
+  if (entry.isReconFlagged) {
+    const withFlags = applySectionReviewFlag(unliqBase, entry);
+    return {
+      ...withFlags,
+      needsReview: true,
+      reviewNote: [
+        "CRITICAL FILING SEQUENCE (CAPE Phase 2): Submit the CAPE declaration FIRST. Filing the reconciliation entry (Type 09) before the CAPE declaration permanently locks these entries out of the Phase 2 refund path.",
+        ...(withFlags.reviewNote ? [withFlags.reviewNote] : []),
+      ].join(" "),
+    };
+  }
+  return applySectionReviewFlag(unliqBase, entry);
 }
 
 // ── 5. validateEntryNumber ──────────────────────────────────────────────────
@@ -512,7 +581,8 @@ export function getRoutingBucket(eligibilityStatus: string): RoutingBucket {
   ) {
     return "not_applicable";
   }
-  // excluded_type / excluded_adcvd / excluded_expired → needs counsel / litigation
+  // excluded_type / excluded_adcvd / excluded_expired / excluded_recon_filed → needs counsel / litigation
+  // Note: excluded_recon_filed means Phase 2 is closed (Type 09 already filed); refund path is complex.
   return "legal_required";
 }
 
