@@ -205,19 +205,38 @@ export function calculateInterest(
 
 // ── 4. checkEligibility ─────────────────────────────────────────────────────
 
-/** CBP entry types excluded from CAPE Phase 1 */
+/**
+ * CBP entry types excluded from CAPE (Phases 1 and 2).
+ *
+ * Phase 1 (launched Apr 20, 2026): covered unliquidated entries and entries
+ * liquidated within 80 days for standard types (01, 02, 06) that are NOT
+ * flagged for reconciliation and NOT on drawback.
+ *
+ * Phase 2 (launched Jun 29, 2026): CAPE now also accepts entries of type 01,
+ * 02, and 06 that ARE flagged for reconciliation, provided the Type 09
+ * reconciliation entry has not yet been filed. The underlying entry type
+ * (01/02/06) is what CAPE processes — not the Type 09 itself. Type 09
+ * (filed reconciliation entry), 08, 23, and 47 (drawback) remain excluded.
+ *
+ * CRITICAL CAPE Phase-2 filing sequence: File the CAPE declaration BEFORE the
+ * Type 09 reconciliation entry. If the Type 09 is filed first, the underlying
+ * entry is permanently locked out of CAPE for Phase 2.
+ */
 const EXCLUDED_ENTRY_TYPES = new Set(["08", "09", "23", "47"]);
+
+/** Date CAPE Phase 2 launched — now also accepts reconciliation-flagged 01/02/06 entries. */
+export const CAPE_PHASE2_LAUNCH_DATE = new Date("2026-06-29T00:00:00Z");
 
 /**
  * Legal protest deadline: a protest must be filed within 180 days of
  * liquidation under 19 U.S.C. §1514. After this, the only path is CIT
- * litigation. (NOT to be confused with the 80-day CAPE Phase-1 window.)
+ * litigation. (NOT to be confused with the 80-day CAPE automated window.)
  */
 const PROTEST_WINDOW_DAYS = 180;
 
 /**
- * CAPE Phase-1 scope: CBP automatically processes unliquidated entries and
- * entries liquidated within the last 80 days. Entries liquidated 80–180 days
+ * CAPE automated window: CBP processes unliquidated entries and entries
+ * liquidated within the last 80 days. Entries liquidated 80–180 days
  * ago are still recoverable, but require a formal protest rather than the
  * automated CAPE channel.
  */

@@ -1,7 +1,7 @@
 {
   "_metadata": {
     "version": "1.0.0",
-    "generatedDate": "2026-04-29",
+    "generatedDate": "2026-09-09",
     "description": "Comprehensive IEEPA tariff rate database for tariff refund calculator. Covers all rate changes from Feb 2025 through SCOTUS termination Feb 2026 and Section 122 replacement.",
     "legalAuthority": "International Emergency Economic Powers Act (50 U.S.C. 1701 et seq.), Trade Act of 1974 Section 122 (19 U.S.C. 2132)",
     "sources": [
@@ -332,7 +332,35 @@
       "effectiveDate": "2026-02-24",
       "endDate": "2026-07-23",
       "htsChapter99": "9903.03.01",
-      "notes": "Replacement tariff under Section 122 of Trade Act of 1974 (19 USC 2132). 10% global surcharge. Effective 12:01 AM ET Feb 24, 2026. Max 150 days, expires Jul 24, 2026. Max statutory rate is 15%. As of Apr 2026, rate remains 10% - Trump announced intent to raise to 15% on Feb 22 via social media but no formal proclamation issued. Same Annex II exclusions apply (USMCA goods, Section 232 products, critical minerals, pharmaceuticals, semiconductors, certain electronics).",
+      "notes": "Replacement tariff under Section 122 of Trade Act of 1974 (19 USC 2132). 10% global surcharge. Effective 12:01 AM ET Feb 24, 2026. Max 150 days, expires Jul 24, 2026. CIT ruled Section 122 unconstitutional 2-1 on May 7, 2026; government appealed to Federal Circuit. Ruling did not stay collection pending appeal. Section 122 expired by statute at midnight Jul 24, 2026 regardless of litigation outcome.",
+      "supersededBy": "S301-FL-10PCT"
+    },
+    {
+      "id": "S301-FL-10PCT",
+      "executiveOrder": "Presidential Action (Jul 23, 2026) — Section 301 Forced Labor",
+      "name": "Section 301 Forced Labor Tariff (10%) — Partial Compliance Countries",
+      "rateType": "section301",
+      "countryCode": "S301-PARTIAL",
+      "countryName": "Countries with forced-labor import prohibition or commitment",
+      "rate": 0.1,
+      "effectiveDate": "2026-07-24",
+      "endDate": null,
+      "htsChapter99": "9903.05.96",
+      "notes": "Section 301 of Trade Act of 1974 (19 U.S.C. § 2411). USTR concluded 60 economies fail to prohibit importation of goods produced with forced labor. Two-tier structure: 10% on economies that have a forced-labor import prohibition OR have committed to enact one. Affected 10% countries: Argentina, Bangladesh, Cambodia, Canada, Ecuador, El Salvador, Guatemala, Honduras, India, Indonesia, Jordan, Malaysia, Mexico, Pakistan, Sri Lanka, Trinidad and Tobago, United Kingdom. HTS codes 9903.05.96 through 9903.06.21 (country-specific ranges). Effective 12:01 AM ET July 24, 2026, immediately upon Section 122 expiry. Exclusions: USMCA-compliant goods (Canada, Mexico), CAFTA-DR textile/apparel (six Central American and Caribbean nations). In-transit relief: goods loaded before 12:01 AM Jul 24 and entered before 12:01 AM Jul 28, 2026 are exempt. Source: USTR press release Jul 2026; Federal Register notice forthcoming.",
+      "supersededBy": null
+    },
+    {
+      "id": "S301-FL-125PCT",
+      "executiveOrder": "Presidential Action (Jul 23, 2026) — Section 301 Forced Labor",
+      "name": "Section 301 Forced Labor Tariff (12.5%) — Non-Compliant Countries",
+      "rateType": "section301",
+      "countryCode": "S301-NONCOMPLIANT",
+      "countryName": "Countries with no meaningful forced-labor enforcement (remaining ~43 of 60 economies)",
+      "rate": 0.125,
+      "effectiveDate": "2026-07-24",
+      "endDate": null,
+      "htsChapter99": "9903.05.96",
+      "notes": "Higher 12.5% tier for economies found to have made no meaningful effort to prohibit imports produced with forced labor. Applies to all other economies of the 60 covered that are NOT in the 10% partial-compliance tier. Same effective date (12:01 AM ET July 24, 2026), same exclusions (USMCA, CAFTA-DR textiles), same HTS code range (9903.05.96–9903.06.21). Source: USTR press release Jul 2026; White House Presidential Action Jul 23, 2026.",
       "supersededBy": null
     },
     {
