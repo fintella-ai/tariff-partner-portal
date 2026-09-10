@@ -1,8 +1,8 @@
 {
   "_metadata": {
-    "version": "1.0.0",
-    "generatedDate": "2026-04-29",
-    "description": "Comprehensive IEEPA tariff rate database for tariff refund calculator. Covers all rate changes from Feb 2025 through SCOTUS termination Feb 2026 and Section 122 replacement.",
+    "version": "1.1.0",
+    "generatedDate": "2026-09-10",
+    "description": "Comprehensive IEEPA tariff rate database for tariff refund calculator. Covers all rate changes from Feb 2025 through SCOTUS termination Feb 2026 and Section 122 replacement (expired Jul 24, 2026). IRS interest rates updated through Q4 2026. CAPE Phase 2 launched Jun 29 (reconciliation-flagged entries); Phase 3 (finally liquidated) delayed as of Aug 25 per CBP.",
     "legalAuthority": "International Emergency Economic Powers Act (50 U.S.C. 1701 et seq.), Trade Act of 1974 Section 122 (19 U.S.C. 2132)",
     "sources": [
       "Executive Orders 14193, 14194, 14195, 14228, 14257, 14259, 14266, 14357",
@@ -4878,14 +4878,42 @@
         "underpaymentRateLargeCorporate": 0.08,
         "federalShortTermRate": 0.03,
         "compounding": "daily"
+      },
+      {
+        "quarter": "Q3 2026",
+        "startDate": "2026-07-01",
+        "endDate": "2026-09-30",
+        "overpaymentRate": 0.07,
+        "overpaymentRateCorporate": 0.06,
+        "overpaymentRateCorporateLarge": 0.045,
+        "underpaymentRate": 0.07,
+        "underpaymentRateLargeCorporate": 0.09,
+        "federalShortTermRate": 0.04,
+        "compounding": "daily",
+        "source": "IRS Rev. Rul. 2026-Q3; Tax Notes 'Interest Rates Increase for Third Quarter of 2026'"
+      },
+      {
+        "quarter": "Q4 2026",
+        "startDate": "2026-10-01",
+        "endDate": "2026-12-31",
+        "overpaymentRate": 0.07,
+        "overpaymentRateCorporate": 0.06,
+        "overpaymentRateCorporateLarge": 0.045,
+        "underpaymentRate": 0.07,
+        "underpaymentRateLargeCorporate": 0.09,
+        "federalShortTermRate": 0.04,
+        "compounding": "daily",
+        "source": "IRS announcement 'Interest rates remain the same for the fourth quarter of 2026' (no change from Q3)"
       }
     ]
   },
   "capePhase1": {
-    "description": "Consolidated Administration and Processing of Entries (CAPE) Phase 1 - IEEPA Duty Refund Program",
+    "description": "Consolidated Administration and Processing of Entries (CAPE) Phase 1 - IEEPA Duty Refund Program. Phase 2 (reconciliation-flagged entries 01/02/06 without filed type 09) launched Jun 29, 2026. Phase 3 (finally liquidated entries, only for importers with CIT lawsuits) delayed by CBP Aug 25, 2026 — no new launch date as of Sep 2026. Lead CIT case: Freestyle World, Inc. v. United States (No. 26-01088).",
     "launchDate": "2026-04-20",
+    "phase2LaunchDate": "2026-06-29",
+    "phase3Status": "delayed — CBP announced Aug 25, 2026 it is adding validations; no new launch date set",
     "systemName": "CAPE (within ACE)",
-    "legalBasis": "Learning Resources, Inc. v. Trump (SCOTUS Feb 20, 2026); CIT order Mar 4, 2026",
+    "legalBasis": "Learning Resources, Inc. v. Trump (SCOTUS Feb 20, 2026); CIT order Mar 4, 2026; CIT Phase 3 order Jul 17, 2026 (Freestyle World lead case)",
     "refundScope": "IEEPA duties ONLY. Section 232, Section 301, and other duties on same entry are NOT refundable.",
     "refundPeriod": {
       "startDate": "2025-02-04",
